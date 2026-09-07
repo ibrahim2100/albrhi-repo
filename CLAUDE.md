@@ -1786,6 +1786,7 @@ X being told this account may not *listen* to a Space at all, so a link somebody
 anything** — the strip is hidden by withholding `-_t1_initializeFleets` and the tab by its own
 `audiospace` entry, and both kept working with the keys removed.
 
+**Confirmed on a device in 0.18.4: the strip and the tab are still hidden, and a Space opens.**
 Settled by measurement rather than reasoning: **BHTwitter 4.5 hides the same strip through the
 same selector, names the same `audiospace` tab, and carries none of the four voice-room keys
 anywhere in its binary.** A hide that has worked for years never touches the capability. What
