@@ -14,9 +14,14 @@
 /// sets `contentSize`, and without the width constraint the content is free to be zero wide.
 ///
 @interface SCILicenseUIController : UIViewController
+@property (nonatomic, strong) UIView *badge;          ///< the mark that answers "is it on"
+@property (nonatomic, strong) UILabel *badgeGlyph;
 @property (nonatomic, strong) UILabel *statusLabel;
+@property (nonatomic, strong) UILabel *termLabel;     ///< when it ends, in words
 @property (nonatomic, strong) UILabel *deviceLabel;
 @property (nonatomic, strong) UITextField *entry;
+@property (nonatomic, strong) UIButton *applyButton;
+@property (nonatomic, strong) UIActivityIndicatorView *spinner;
 @end
 
 @implementation SCILicenseUIController
@@ -28,15 +33,43 @@
 /// — the exact ambiguity `SCILocalizeAPI.h` was written to end for the preference-bundle kit. Two
 /// languages, inline, is the smaller price: there are fourteen strings and they are all about one
 /// subject.
-static NSString *SCIText(NSString *english, NSString *arabic) {
+static BOOL SCIArabic(void) {
     NSString *language = [[NSLocale preferredLanguages] firstObject] ?: @"en";
-    return [language hasPrefix:@"ar"] ? arabic : english;
+    return [language hasPrefix:@"ar"];
+}
+
+static NSString *SCIText(NSString *english, NSString *arabic) {
+    return SCIArabic() ? arabic : english;
+}
+
+/// A date in the language this screen is speaking.
+///
+/// **`NSDateFormatter` follows the system locale and this screen follows `preferredLanguages`**,
+/// which are not the same setting — so an English sentence took an Arabic month name and read
+/// «Until 16 9 — 2026 سبتمبر days left». One of the two has to give, and it is the formatter:
+/// the sentence around it is already chosen.
+static NSString *SCIDate(NSTimeInterval when) {
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    formatter.locale = [NSLocale localeWithLocaleIdentifier:SCIArabic() ? @"ar" : @"en_GB"];
+    formatter.dateStyle = NSDateFormatterLongStyle;
+    formatter.timeStyle = NSDateFormatterNoStyle;
+    return [formatter stringFromDate:[NSDate dateWithTimeIntervalSince1970:when]];
+}
+
+/// Wraps a run so bidi cannot rearrange it against the sentence holding it — the same fix, and the
+/// same reason, as the licence app's own `SCIRun`: a date's digits and the words either side of
+/// them are one left-to-right run as far as the algorithm is concerned.
+static NSString *SCIRunText(NSString *text) {
+    return text.length ? [NSString stringWithFormat:@"\u2068%@\u2069", text] : @"";
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
 
-    self.view.backgroundColor = [UIColor systemBackgroundColor];
+    // **Grouped, not plain** — `secondarySystemGroupedBackground` (what the cards are drawn in) is
+    // white in light mode, and so is `systemBackground`. Built on the plain colour the cards were
+    // perfectly present and completely invisible, which is what the simulator showed in one look.
+    self.view.backgroundColor = [UIColor systemGroupedBackgroundColor];
     self.title = SCIText(@"Licence", @"الترخيص");
 
     self.navigationItem.rightBarButtonItem =
@@ -72,13 +105,17 @@ static NSString *SCIText(NSString *english, NSString *arabic) {
     ]];
 
     self.statusLabel = [self label:@"" bold:YES];
+    self.termLabel = [self note:@""];
     self.deviceLabel = [self label:@"" bold:NO];
     self.deviceLabel.font = [UIFont monospacedSystemFontOfSize:15 weight:UIFontWeightRegular];
 
-    [stack addArrangedSubview:self.statusLabel];
-    [stack addArrangedSubview:[self note:SCIText(
-        @"Albrhi needs a licence. Without one the tweak installs nothing and the app behaves as if it were not there.",
-        @"البرهي يحتاج ترخيصاً. بلا ترخيص لا تُركّب الأداة شيئاً ويتصرّف التطبيق كأنها غير موجودة.")]];
+    // **The answer before the reading.** "Is this on?" is the question every visit to this screen
+    // starts with, and a sentence in body text is a slower way to answer it than a coloured mark
+    // — which is also the half somebody can read across a room while somebody else holds the
+    // phone. The words stay underneath it, because a colour alone says "something" and never
+    // "expired on the fourth".
+    [stack addArrangedSubview:[self header]];
+    [stack addArrangedSubview:[self card:@[self.statusLabel, self.termLabel]]];
 
     // **A store copy says so, at the top, before anything about keys.**
     //
@@ -86,11 +123,7 @@ static NSString *SCIText(NSString *english, NSString *arabic) {
     // asked to think about one. The screen names the shop, gives the one code, and says when the
     // copy stops -- which is the only part of it that will ever surprise anybody.
     if (SCILicenseStoreID().length) {
-        NSDateFormatter *when = [[NSDateFormatter alloc] init];
-        when.dateStyle = NSDateFormatterMediumStyle;
-        when.timeStyle = NSDateFormatterNoStyle;
-        NSString *until = [when stringFromDate:
-            [NSDate dateWithTimeIntervalSince1970:SCILicenseStoreExpiry()]];
+        NSString *until = SCIRunText(SCIDate(SCILicenseStoreExpiry()));
 
         [stack addArrangedSubview:[self heading:SCIText(@"This copy", @"هذه النسخة")]];
 
@@ -120,13 +153,14 @@ static NSString *SCIText(NSString *english, NSString *arabic) {
     }
 
     [stack addArrangedSubview:[self heading:SCIText(@"This device", @"هذا الجهاز")]];
-    [stack addArrangedSubview:self.deviceLabel];
-    [stack addArrangedSubview:[self button:SCIText(@"Copy device code", @"نسخ رمز الجهاز")
-                                   action:@selector(copyDevice)
-                                  primary:NO]];
-    [stack addArrangedSubview:[self note:SCIText(
-        @"Send this to get a key. It is a one-way value provisioned on this device — it is not a serial number and cannot be turned back into one.",
-        @"أرسله للحصول على مفتاح. قيمة تُنشأ على هذا الجهاز باتجاهٍ واحد — ليست رقماً تسلسلياً ولا يمكن إرجاعها إليه.")]];
+    [stack addArrangedSubview:[self card:@[
+        self.deviceLabel,
+        [self button:SCIText(@"Copy device code", @"نسخ رمز الجهاز")
+              action:@selector(copyDevice) primary:NO],
+        [self note:SCIText(
+            @"Send this to get a key. It is a one-way value provisioned on this device — it is not a serial number and cannot be turned back into one.",
+            @"أرسله للحصول على مفتاح. قيمة تُنشأ على هذا الجهاز باتجاهٍ واحد — ليست رقماً تسلسلياً ولا يمكن إرجاعها إليه.")],
+    ]]];
 
     [stack addArrangedSubview:[self heading:SCIText(@"Enter a licence", @"إدخال ترخيص")]];
 
@@ -140,24 +174,151 @@ static NSString *SCIText(NSString *english, NSString *arabic) {
     [self.entry.heightAnchor constraintEqualToConstant:44].active = YES;
     [stack addArrangedSubview:self.entry];
 
-    [stack addArrangedSubview:[self button:SCIText(@"Apply", @"تفعيل")
-                                   action:@selector(apply)
-                                  primary:YES]];
-    [stack addArrangedSubview:[self note:SCIText(
-        @"Paste whatever you were sent — a short code or a long key. Albrhi works out which.",
-        @"الصق ما وصلك — كوداً قصيراً أو مفتاحاً طويلاً. البرهي يعرف أيّهما.")]];
+    self.applyButton = [self button:SCIText(@"Activate", @"تفعيل")
+                             action:@selector(apply) primary:YES];
 
-    [stack addArrangedSubview:[self button:SCIText(@"Ask the server now", @"اسأل الخادم الآن")
-                                   action:@selector(sync)
-                                  primary:NO]];
-    [stack addArrangedSubview:[self button:SCIText(@"Remove the key", @"إزالة المفتاح")
-                                   action:@selector(remove)
-                                  primary:NO]];
+    self.spinner = [[UIActivityIndicatorView alloc]
+        initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleMedium];
+    self.spinner.hidesWhenStopped = YES;
+    self.spinner.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.applyButton addSubview:self.spinner];
+    [NSLayoutConstraint activateConstraints:@[
+        [self.spinner.trailingAnchor constraintEqualToAnchor:self.applyButton.trailingAnchor],
+        [self.spinner.centerYAnchor constraintEqualToAnchor:self.applyButton.centerYAnchor],
+    ]];
+
+    [stack addArrangedSubview:self.applyButton];
+    [stack addArrangedSubview:[self note:SCIText(
+        @"Paste whatever you were sent — a short code or a long key. Albrhi works out which, checks it on the spot, and turns itself on.",
+        @"الصق ما وصلك — كوداً قصيراً أو مفتاحاً طويلاً. البرهي يعرف أيّهما، ويتحقّق منه في حينه، ويشتغل.")]];
+
+    [stack addArrangedSubview:[self heading:SCIText(@"Other", @"أخرى")]];
+    [stack addArrangedSubview:[self card:@[
+        [self button:SCIText(@"Ask the server now", @"اسأل الخادم الآن")
+              action:@selector(sync) primary:NO],
+        [self button:SCIText(@"Remove the key", @"إزالة المفتاح")
+              action:@selector(remove) primary:NO],
+    ]]];
 
     [self refresh];
 }
 
 #pragma mark - Small pieces
+
+/// The identity, and the one mark that answers the question.
+- (UIView *)header {
+    UIView *row = [[UIView alloc] init];
+
+    self.badge = [[UIView alloc] init];
+    self.badge.translatesAutoresizingMaskIntoConstraints = NO;
+    self.badge.layer.cornerRadius = 27;
+    [row addSubview:self.badge];
+
+    self.badgeGlyph = [[UILabel alloc] init];
+    self.badgeGlyph.translatesAutoresizingMaskIntoConstraints = NO;
+    self.badgeGlyph.textAlignment = NSTextAlignmentCenter;
+    self.badgeGlyph.font = [UIFont systemFontOfSize:30 weight:UIFontWeightBold];
+    self.badgeGlyph.textColor = [UIColor whiteColor];
+    [self.badge addSubview:self.badgeGlyph];
+
+    UILabel *name = [[UILabel alloc] init];
+    name.translatesAutoresizingMaskIntoConstraints = NO;
+    name.text = SCIText(@"Albrhi", @"البرهي");
+    name.font = [UIFont systemFontOfSize:26 weight:UIFontWeightBold];
+
+    UILabel *what = [[UILabel alloc] init];
+    what.translatesAutoresizingMaskIntoConstraints = NO;
+    what.text = SCIText(@"Licence", @"الترخيص");
+    what.font = [UIFont systemFontOfSize:15];
+    what.textColor = [UIColor secondaryLabelColor];
+
+    [row addSubview:name];
+    [row addSubview:what];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.badge.leadingAnchor constraintEqualToAnchor:row.leadingAnchor],
+        [self.badge.topAnchor constraintEqualToAnchor:row.topAnchor],
+        [self.badge.bottomAnchor constraintEqualToAnchor:row.bottomAnchor],
+        [self.badge.widthAnchor constraintEqualToConstant:54],
+        [self.badge.heightAnchor constraintEqualToConstant:54],
+
+        [self.badgeGlyph.centerXAnchor constraintEqualToAnchor:self.badge.centerXAnchor],
+        [self.badgeGlyph.centerYAnchor constraintEqualToAnchor:self.badge.centerYAnchor],
+
+        [name.leadingAnchor constraintEqualToAnchor:self.badge.trailingAnchor constant:14],
+        [name.topAnchor constraintEqualToAnchor:self.badge.topAnchor constant:4],
+        [name.trailingAnchor constraintLessThanOrEqualToAnchor:row.trailingAnchor],
+
+        [what.leadingAnchor constraintEqualToAnchor:name.leadingAnchor],
+        [what.topAnchor constraintEqualToAnchor:name.bottomAnchor constant:2],
+    ]];
+
+    return row;
+}
+
+/// A grouped card, the shape iOS uses for a set of related rows. Everything on this screen that
+/// belongs together is inside one, so the eye has three things to read rather than fifteen.
+- (UIView *)card:(NSArray<UIView *> *)rows {
+    UIView *card = [[UIView alloc] init];
+    card.backgroundColor = [UIColor secondarySystemGroupedBackgroundColor];
+    card.layer.cornerRadius = 14;
+
+    UIStackView *inner = [[UIStackView alloc] initWithArrangedSubviews:rows];
+    inner.translatesAutoresizingMaskIntoConstraints = NO;
+    inner.axis = UILayoutConstraintAxisVertical;
+    inner.spacing = 10;
+    [card addSubview:inner];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [inner.topAnchor constraintEqualToAnchor:card.topAnchor constant:14],
+        [inner.bottomAnchor constraintEqualToAnchor:card.bottomAnchor constant:-14],
+        [inner.leadingAnchor constraintEqualToAnchor:card.leadingAnchor constant:14],
+        [inner.trailingAnchor constraintEqualToAnchor:card.trailingAnchor constant:-14],
+    ]];
+
+    return card;
+}
+
+/// The licence's own end date, in words rather than a number.
+///
+/// **Three different facts share one field** and only one of them is a date: `until` of zero is a
+/// lifetime licence, a date in the past is a licence that ended, and no licence at all is neither.
+/// The panel already paid for reading those as one thing — "0 valid of 3" on a screen holding two
+/// lifetime licences — so they are asked apart here.
+- (NSString *)termSentence {
+    if (SCILicenseCurrentState() != SCILicenseStateValid && !SCILicenseStoreActive()) {
+        return SCIText(@"No licence on this device yet.", @"لا ترخيص على هذا الجهاز بعد.");
+    }
+
+    if (SCILicenseIsLifetime()) return SCIText(@"Lifetime — it does not end.", @"مدى الحياة — لا تنتهي.");
+
+    NSTimeInterval ends = SCILicenseStoreActive() ? SCILicenseStoreExpiry() : SCILicenseTermEnds();
+    if (ends <= 0) return @"";
+
+    NSString *date = SCIRunText(SCIDate(ends));
+
+    double left = ends - [NSDate date].timeIntervalSince1970;
+    if (left <= 0) {
+        return [NSString stringWithFormat:SCIText(@"Ended on %@", @"انتهت في %@"), date];
+    }
+
+    // The number of days beside the date, because "the fourth of October" answers a different
+    // question from "eight days" and somebody deciding whether to renew wants the second.
+    NSInteger days = (NSInteger)ceil(left / 86400.0);
+    if (days == 1) {
+        return [NSString stringWithFormat:SCIText(@"Until %@ — one day left", @"حتى %@ — يوم واحد"),
+                date];
+    }
+
+    // The count through the same locale as the date beside it. Left as `%ld` it came out «١٦
+    // سبتمبر ٢٠٢٦ — 9 يوماً»: two numbering systems in one line, which reads as a half-translated
+    // screen and is the sort of detail that decides whether something looks finished.
+    NSNumberFormatter *counter = [[NSNumberFormatter alloc] init];
+    counter.locale = [NSLocale localeWithLocaleIdentifier:SCIArabic() ? @"ar" : @"en_GB"];
+
+    return [NSString stringWithFormat:SCIText(@"Until %@ — %@ days left", @"حتى %@ — %@ يوماً"),
+            date, SCIRunText([counter stringFromNumber:@(days)])];
+}
 
 - (UILabel *)label:(NSString *)text bold:(BOOL)bold {
     UILabel *label = [[UILabel alloc] init];
@@ -219,13 +380,40 @@ static NSString *SCIText(NSString *english, NSString *arabic) {
     SCIPanelGateInvalidate();
     [self refresh];
 
+    // **The relaunch sentence is said only to those who need it.** A process that was allowed when
+    // it started has its hooks in place and comes to life on the invalidate above; one that was
+    // refused installed nothing at `%ctor`, and no licence can put a hook in retroactively. Saying
+    // it to everybody is a small untruth that teaches people to ignore the true version.
+    if (SCIPanelGateWasAllowedAtLaunch()) {
+        [self say:SCIText(@"Activated. Everything is on.", @"فُعِّلت. كل شيء يعمل الآن.")];
+        return;
+    }
+
     [self say:SCIText(@"Activated. Close the app fully and open it again so every part of the "
                       @"tweak starts.",
                       @"فُعِّلت. أغلق التطبيق تماماً وافتحه من جديد ليبدأ كل جزء من الأداة.")];
 }
 
+/// The button says what it is doing, because a network call with no sign of life is a button that
+/// did nothing as far as anybody watching can tell — the same complaint TikTok's silent save
+/// earned before it grew an indicator.
+- (void)working:(BOOL)busy {
+    self.applyButton.enabled = !busy;
+    self.applyButton.alpha = busy ? 0.5 : 1.0;
+    busy ? [self.spinner startAnimating] : [self.spinner stopAnimating];
+}
+
 - (void)refresh {
     self.statusLabel.text = SCILicenseStatusLine();
+
+    // Live means: a valid key, or a store copy the server has accepted. Both are "it works", and
+    // the mark is about that and nothing finer.
+    BOOL live = SCILicenseStoreID().length ? SCILicenseStoreActive()
+                                           : (SCILicenseCurrentState() == SCILicenseStateValid);
+
+    self.badge.backgroundColor = live ? [UIColor systemGreenColor] : [UIColor systemRedColor];
+    self.badgeGlyph.text = live ? @"✓" : @"!";
+    self.termLabel.text = [self termSentence];
 
     // A store copy is licensed or it is not, and the ordinary status line -- written for keys,
     // servers and grace periods -- describes none of that.
@@ -246,7 +434,7 @@ static NSString *SCIText(NSString *english, NSString *arabic) {
         self.statusLabel.text = [NSString stringWithFormat:@"%@ · %@",
             self.statusLabel.text,
             [NSString stringWithFormat:SCIText(@"for %@ only", @"لـ%@ وحدها"),
-                [scope substringFromIndex:4]]];
+                SCIRunText([scope substringFromIndex:4])]];
     }
 }
 
@@ -276,14 +464,16 @@ static NSString *SCIText(NSString *english, NSString *arabic) {
 - (void)apply {
     NSString *text = [self.entry.text stringByTrimmingCharactersInSet:
         [NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    if (!text.length) return;
+    if (!text.length) { [self working:NO]; return; }
 
     [self.view endEditing:YES];
+    [self working:YES];
 
     // The store's own code, tried first and only where such a build exists. It is not a key and
     // not a short code: it goes to neither the verifier nor the server.
     if (SCILicenseStoreAccepts(text)) {
         SCILicenseActivateStore(text, ^(SCILicenseServerResult result) {
+            [self working:NO];
             [self refresh];
 
             switch (result) {
@@ -317,6 +507,10 @@ static NSString *SCIText(NSString *english, NSString *arabic) {
     }
 
     if ([text hasPrefix:@"ALB1."]) {
+        // An offline key needs no network at all: it is verified against the public half compiled
+        // into this binary, so the answer is immediate and the spinner would be a flicker.
+        [self working:NO];
+
         SCILicenseState state = SCILicenseStateNone;
         if (SCILicenseStoreKey(text, &state)) {
             self.entry.text = @"";
@@ -330,6 +524,7 @@ static NSString *SCIText(NSString *english, NSString *arabic) {
     // Anything else goes down the path that can ask the server, so an unrecognised string still
     // gets a real answer rather than "that is not a key".
     SCILicenseRedeemCode(text, ^(SCILicenseRedeemResult result) {
+        [self working:NO];
         [self refresh];
 
         switch (result) {

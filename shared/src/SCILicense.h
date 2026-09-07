@@ -318,6 +318,15 @@ void SCILicenseRedeemWithServer(NSString *code,
 /// Zero when there is no licence or it carries no end date.
 NSTimeInterval SCILicenseTermEnds(void);
 
+/// How long to wait before asking the server again, as a function of two numbers alone.
+///
+/// Exposed for one reason: a table of intervals is testable and the code that gathers a token and
+/// a term from a device is not. `tokenLeft` is seconds until the signed token expires and is
+/// negative when none is stored; `termLeft` is seconds until the licence ends, or
+/// `kSCITermForever`.
+NSTimeInterval SCICheckIntervalFor(double tokenLeft, double termLeft);
+extern const double kSCITermForever;
+
 /// One day, in seconds. The owner's choice, and the single place it lives.
 extern const NSTimeInterval SCILicenseGraceSeconds;
 

@@ -12,6 +12,17 @@ static NSString *const kSCIPanelDomain = @"com.albrhi.panel";
 /// -1 not asked yet, 0 no, 1 yes. See SCIPanelAllowsThisApp for why this is not a dispatch_once.
 static int sciGateAnswer = -1;
 
+/// What the very first question of this process was answered with, kept apart from the cache
+/// above because it must **not** move when a licence is entered.
+///
+/// It is what makes "activated" an honest word. A tweak that was allowed when the process started
+/// has its hooks installed and comes to life the moment the gate is invalidated; one that was
+/// refused installed nothing at `%ctor`, and no licence entered afterwards can put a hook in
+/// retroactively. The screen said "close the app and open it again" to everybody because nothing
+/// could tell those two apart — and telling somebody to relaunch when they do not have to is a
+/// small lie that makes the true version of the sentence easy to ignore.
+static int sciGateAtLaunch = -1;
+
 static NSString *SCIPanelKeyForThisApp(void) {
     NSString *bundle = [[NSBundle mainBundle] bundleIdentifier];
     return bundle.length ? [@"app_enabled_" stringByAppendingString:bundle] : nil;
@@ -329,6 +340,7 @@ BOOL SCIPanelAllowsThisApp(void) {
     }
 
     sciGateAnswer = allowed ? 1 : 0;
+    if (sciGateAtLaunch < 0) sciGateAtLaunch = sciGateAnswer;
     return allowed;
 #endif
 }
@@ -339,6 +351,14 @@ BOOL SCIPanelAllowsThisApp(void) {
 // Called when a licence is entered or removed. Nothing else invalidates it: the per-app switch is
 // set in the panel, which is a different process, and a tweak that re-read it constantly would be
 // asking cfprefsd about another application's domain on every preference read.
+BOOL SCIPanelGateWasAllowedAtLaunch(void) {
+    // Never asked at all is not the same as refused: a screen reached before anything queried the
+    // gate should not claim the tweak stood down. The honest answer for "unknown" is the cautious
+    // one, since telling somebody to relaunch costs them a moment and not doing so costs them a
+    // feature they think is broken.
+    return sciGateAtLaunch == 1;
+}
+
 void SCIPanelGateInvalidate(void) {
     sciGateAnswer = -1;
 }

@@ -12,6 +12,11 @@ const NSTimeInterval SCILicenseGraceSeconds = 24 * 60 * 60;   // one day, the ow
 /// stops working the same day, rare enough that it is not a request per launch.
 static const NSTimeInterval kSCILicenseCheckInterval = 6 * 60 * 60;
 
+/// What `SCICheckIntervalFor` is handed for a licence with no end date. Not zero and not a huge
+/// number: both of those are also real answers to "how long is left", and a sentinel that can be
+/// confused with a measurement is the bug this project has already paid for in `until = 0`.
+const double kSCITermForever = -1e12;
+
 static NSString *const kSCILicenseKeyPref     = @"licence_key";
 static NSString *const kSCILicenseEndpoint    = @"https://ibrahim2100.github.io/albrhi-repo/licence/revoked.json";
 static NSString *const kSCICodesEndpoint     = @"https://ibrahim2100.github.io/albrhi-repo/licence/codes.json";
@@ -635,6 +640,68 @@ void SCILicenseForgetKey(void) {
 
 #pragma mark - Check-in
 
+///
+/// **How often this device should ask, and it is not one number.**
+///
+/// Six hours flat was the old answer, and it was expensive in a way nothing on the device could
+/// see: the last-check time lives in `[NSUserDefaults standardUserDefaults]` — *each app's own*
+/// domain — while the token it renews lives in the shared one. So a phone with four patched apps
+/// asked **sixteen times a day** and renewed the same token sixteen times, and every one of those
+/// is a write on the server's side. Cloudflare KV's free allowance is a thousand writes a day:
+/// sixty phones, and ordinary customers exhaust it between them, after which activation and
+/// renewal fail for everybody until midnight. **The ceiling was never an attacker.**
+///
+/// What the cadence has to guarantee is smaller than it looks. The token lasts seven days, so one
+/// ask a day leaves six days of slack — and the only thing that genuinely wants speed is the day
+/// the *term* ends, because that is when a customer who has just paid is waiting for the tweak to
+/// come back. So the interval is driven by the licence's own end date rather than by the token's,
+/// and the two rules are combined by taking whichever is shorter.
+///
+/// The cost is stated rather than hidden: a withdrawn licence now dies within a day instead of
+/// within six hours. The design already promises only "within a week", and this sits well inside
+/// it.
+///
+/// The table on its own, as a function of two numbers — so it can be tested without a device, a
+/// server or a stored key, which is the only reason it is written apart from the code that
+/// gathers them.
+///
+/// `tokenLeft` is seconds until the signed token expires, negative when there is no valid one.
+/// `termLeft` is seconds until the licence itself ends; **`kSCITermForever` means it never does**.
+NSTimeInterval SCICheckIntervalFor(double tokenLeft, double termLeft) {
+    // **The last-chance rule, unchanged.** A token with under two days left belongs to a phone
+    // that has been unreachable for five days, and the next minute of signal is the only thing
+    // between a paying user and a closed gate. Nothing below may make this slower.
+    if (tokenLeft >= 0 && tokenLeft < 2 * 86400) return 30 * 60;
+
+    // Lifetime, or nothing stored yet. There is no end approaching, so the only question left is
+    // whether the licence has been withdrawn — and that has a week to arrive in.
+    if (termLeft == kSCITermForever) return 24 * 60 * 60;
+
+    // Ended already, and waiting for the renewal that turns it back on. Eight hours is eager
+    // without being a device knocking on a door all day; after a week with no answer nobody is
+    // coming, and it settles to daily.
+    if (termLeft <= 0) return termLeft > -7 * 86400 ? 8 * 60 * 60 : 24 * 60 * 60;
+
+    // The last three days, where a payment is most likely to be in flight.
+    if (termLeft < 3 * 86400) return 8 * 60 * 60;
+
+    return 24 * 60 * 60;
+}
+
+static NSTimeInterval SCICheckInterval(void) {
+    double now = [NSDate date].timeIntervalSince1970;
+
+    double tokenLeft = -1;
+    NSDictionary *payload = nil;
+    if (SCIEvaluateKey(SCILicenseStoredKey(), &payload) == SCILicenseStateValid) {
+        NSNumber *expiry = payload[@"exp"];
+        if ([expiry isKindOfClass:[NSNumber class]]) tokenLeft = expiry.doubleValue - now;
+    }
+
+    double until = SCILicenseTermEnds();
+    return SCICheckIntervalFor(tokenLeft, until <= 0 ? kSCITermForever : until - now);
+}
+
 void SCILicenseCheckInIfDue(void) {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSTimeInterval last = [defaults doubleForKey:kSCILastCheckDefault];
@@ -647,20 +714,7 @@ void SCILicenseCheckInIfDue(void) {
     // with when a gate is placed before the thing it gates.
     //
     if (SCILicenseServerBase()) {
-        NSTimeInterval interval = kSCILicenseCheckInterval;
-
-        // Renew sooner when the token is close to running out. Six hours is right for a healthy
-        // token and far too slow for one with a day left: at that point the sync is not a
-        // formality, it is the only thing standing between a paying user and a closed gate.
-        NSDictionary *payload = nil;
-        if (SCIEvaluateKey(SCILicenseStoredKey(), &payload) == SCILicenseStateValid) {
-            NSNumber *expiry = payload[@"exp"];
-            double left = [expiry isKindOfClass:[NSNumber class]]
-                ? expiry.doubleValue - [NSDate date].timeIntervalSince1970 : 0;
-            if (left < 2 * 86400) interval = 30 * 60;
-        }
-
-        if (last > 0 && [NSDate date].timeIntervalSince1970 - last < interval) return;
+        if (last > 0 && [NSDate date].timeIntervalSince1970 - last < SCICheckInterval()) return;
 
         // Not waited on, and its result is deliberately dropped: whatever it decides lands in the
         // stored token for the *next* question, and a launch must never sit behind a network call.

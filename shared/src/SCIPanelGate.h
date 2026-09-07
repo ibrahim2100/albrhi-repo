@@ -72,6 +72,11 @@ void SCIPanelGateInvalidate(void);
 
 BOOL SCIPanelAllowsThisApp(void);
 
+/// Whether this process was allowed when it started — which decides whether a licence entered now
+/// needs the app reopened. Hooks a `%ctor` did not install cannot appear retroactively; hooks that
+/// are already in place start deciding differently the moment the gate is invalidated.
+BOOL SCIPanelGateWasAllowedAtLaunch(void);
+
 /// How that answer was arrived at, for a diagnostics page.
 ///
 /// "The switch does nothing" has several explanations that look identical from the app —

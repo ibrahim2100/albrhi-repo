@@ -1226,6 +1226,39 @@ for a moment has already shown a customer list to whoever was looking), and the 
 **injected** rather than typed — a sixty-character admin token typed on a phone keyboard in public
 is the one thing a screen lock does not help with.
 
+**Sixteen asks a day for one token, and the ceiling was never an attacker.** The check-in ran
+every six hours, and the last-check time lives in `[NSUserDefaults standardUserDefaults]` — *each
+app's own* domain — while the token it renews lives in the shared one. A phone with four patched
+apps therefore asked sixteen times a day and renewed the same token sixteen times, and every ask
+is a write on the server's side. Cloudflare KV's free allowance is a thousand writes a day: sixty
+phones and ordinary customers exhaust it between them, after which activation and renewal fail
+for everybody until midnight.
+
+The cadence is driven by the **licence's own end date** now rather than the token's: a day in the
+ordinary case, eight hours in the last three days and after it has ended (where a payment is most
+likely to be in flight), and the thirty-minute last-chance rule untouched for a token about to die
+after days offline — the two combined by taking whichever is shorter. **The cost is stated rather
+than hidden**: a withdrawn licence dies within a day instead of within six hours, and the design
+already promises only "within a week". The table is a pure function of two numbers for one reason:
+it can then be driven directly, which is how twelve cases were checked before any device saw it.
+
+**"Close the app and open it again" was being said to everybody, and it is only true for some.**
+A process allowed when it started has its hooks in place and comes to life the moment the gate is
+invalidated; one refused at `%ctor` installed nothing, and no licence entered later can put a hook
+in retroactively. `SCIPanelGateWasAllowedAtLaunch()` keeps the first answer apart from the cache so
+the screen can tell those apart — **a relaunch demanded from somebody who does not need one is a
+small untruth that teaches people to ignore the true version of the sentence.**
+
+**And two faults in the redesigned licence screen were invisible until it was looked at.** The
+cards were drawn in `secondarySystemGroupedBackground` on a `systemBackground` view — the same
+white in light mode, so they were perfectly present and completely invisible. And the date came
+out «Until 16 9 — 2026 سبتمبر days left», because `NSDateFormatter` follows the *system locale*
+while this screen chooses its language from `preferredLanguages`: two settings, not one. The
+formatter is told which language the sentence is in, the date and the day count are wrapped in
+FSI…PDI, and the count goes through the same locale as the date — «١٦ سبتمبر ٢٠٢٦ — ٩ يوماً» rather
+than one line carrying two numbering systems. Third feature running to the simulator, third time
+it answered in one look.
+
 ### Store copies
 
 **A build for one shop: one code, any number of devices, three months — and it is a different
@@ -2763,9 +2796,9 @@ far less surface area than a real compressor for a few-kilobyte archive.
 
 ## Known state
 
-Instagram **4.1.17** · YouTube **1.31.3** · X **0.18.4** · Panel **0.9.37** · Watch **0.6.1** · TikTok **0.20.2** ·
+Instagram **4.1.18** · YouTube **1.31.4** · X **0.18.5** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
 Spotify **0.2.4** · YT Music **0.9.2** ·
-NextUp **0.2.1** · suite **1.76.5**. **CarPlay is gone** — removed from this repository, to be
+NextUp **0.2.1** · suite **1.77.0**. **CarPlay is gone** — removed from this repository, to be
 rebuilt from scratch in one of its own.
 
 **This line is read first in every session, so it being out of date costs more than it being
