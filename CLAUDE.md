@@ -1828,6 +1828,30 @@ that advertises one — and the row now says that in both languages instead of p
 spoken articles. **Ask of any feature-switch override whether it hides a thing or forbids it**;
 the name of the switch on the screen is the promise, and «إخفاء» is not «تعطيل».
 
+**A counter moving on a path that is not the path, again — "no search history" emptied a list
+nobody was looking at.** The hook was `TTSSearchTypeaheadViewController -setRecentQueries:`, which
+is a real declared method that really is called, so the tally climbed and the report said the
+queries were withheld. **The row on screen is drawn by a different controller**: that class owns a
+`recentSearchViewController` — a `TTSRecentSearchTypeaheadViewController` with its own adapter and
+its own `results` — so the parent was emptied and the child went on drawing. The same class also
+declares `recentUsers` and `recentUserIDs`: a search history is the accounts searched for as well
+as the words typed, and **one surface had three inputs of which one was being answered**.
+
+The other half of the report — "and it is still being recorded" — no display hook can answer.
+`TTSRecentSearchesDatastore` is where a search is written down and names it in its own selectors,
+`-storeRecentSearchQuery:` and `-storeRecentSearchUserID:`; refusing the write is the honest layer,
+since nothing downstream is then handed a half-built list to un-draw. **`-storeRecentSearchUserID:`
+takes `q`, a long long, not an object** — read from `v24@0:8q16` rather than from the name, which
+is the mistake that crashed TikTok twice. And `clearRecentSearches` exists and is deliberately not
+called: erasing what somebody already has because they turned a switch on is not a side effect to
+take on their behalf.
+
+Every class and selector here came from `tools/objc-classes.py` on X 12.20's own
+`XAppLibraries.framework` — which is also where the answer was hiding, since neither the main
+executable nor `T1Twitter` names any of them. **And the report is three lines now instead of one**:
+queries and users, lists drawn, writes refused. One number covering three surfaces is exactly what
+let a feature announce success while the row it exists to hide sat there in full.
+
 **And "Hide Spaces" was aiming at the wrong surface the whole time — it was never a tab.** Two
 releases moved tabs, correctly, while the thing being complained about was the row of live audio
 rooms above the Home timeline. That strip is set up by `-_t1_initializeFleets` (named for Fleets,
@@ -2796,9 +2820,9 @@ far less surface area than a real compressor for a few-kilobyte archive.
 
 ## Known state
 
-Instagram **4.1.18** · YouTube **1.31.4** · X **0.18.5** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
+Instagram **4.1.18** · YouTube **1.31.4** · X **0.18.6** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
 Spotify **0.2.4** · YT Music **0.9.2** ·
-NextUp **0.2.1** · suite **1.77.0**. **CarPlay is gone** — removed from this repository, to be
+NextUp **0.2.1** · suite **1.77.1**. **CarPlay is gone** — removed from this repository, to be
 rebuilt from scratch in one of its own.
 
 **This line is read first in every session, so it being out of date costs more than it being
