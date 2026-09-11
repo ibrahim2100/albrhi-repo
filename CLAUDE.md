@@ -334,6 +334,35 @@ accessor name would not be. Wired in *after* the object path fails, so it is add
 that downloads today can change — the same discipline as the TikTok dictionary/accessor split, one
 app over. **When an object accessor comes back hollow, ask whether the raw dictionary still has it.**
 
+**And that fix was correct and unreachable, because the fault was one stage earlier.** The next
+report said the same story still failed -- with **`Last download treated as: —`**, and
+`+downloadMedia:` records a kind on *every* branch it takes, including "neither". A blank there
+is not a failed download, it is proof the downloader was **never entered**: the search returned
+nil, `err_no_media` was shown above it, and the dictionary path never once ran. **A diagnostic
+that is blank rather than wrong tells you which stage to look at**, and this one named a stage
+nobody had suspected. The dictionary work was right, downstream of the break, and unchanged.
+
+**A hooked method's argument cannot be renamed out from under it; a list of class names can.**
+The search bound `IGStoryModernVideoView`/`IGStoryPhotoView` by name and matched nothing on
+Instagram **439** -- and the same-generation reference still names those exact classes, so the
+answer was never a newer name to substitute. What was already in hand is
+`-fullscreenSectionController:willDisplayStoryModel:`, hooked for the mark-as-seen skip since
+before this bug and firing on both tested builds: it *hands over* the section controller and the
+model. Same shape as TikTok's `-configWithModel:`, one app over -- **prefer the object a hook is
+already given over any search for the object**.
+
+Two guards make that safe rather than merely shorter. The model may be the whole reel and not the
+item on screen, so a candidate is only handed on once it answers one of the three questions the
+downloader itself asks -- passing it unvalidated saves the tray's cover, which is the
+repost-cover bug for a third time. And the accessor is not guessed: a ladder of names, each
+behind `-respondsToSelector:`, with **which one answered recorded**. The view search stays as the
+second route, widened to any centre-covering view whose name mentions a story (a Swift-mangled
+`_TtC…Story…` included) and **recording every such class whether it answered or not** -- the same
+fix the YouTube scanner needed, since a filter built from the names you expect cannot show you
+the name you did not. The route row separates *the viewer never named a story* from *it did, and
+nothing answered*, because those need opposite fixes and a nil weak reference looks identical in
+both.
+
 **One collection, three ways in, and a filter on one of them looks like a filter that sometimes
 works.** YouTube's `YTInnerTubeCollectionViewController` fills `sectionRenderers` through
 `-addSectionsFromArray:`, `-insertSections:byPosition:error:` and
@@ -2834,9 +2863,9 @@ far less surface area than a real compressor for a few-kilobyte archive.
 
 ## Known state
 
-Instagram **4.1.19** · YouTube **1.31.4** · X **0.18.6** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
+Instagram **4.1.20** · YouTube **1.31.4** · X **0.18.6** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
 Spotify **0.2.4** · YT Music **0.9.2** ·
-NextUp **0.2.1** · suite **1.77.2**. **CarPlay is gone** — removed from this repository, to be
+NextUp **0.2.1** · suite **1.77.3**. **CarPlay is gone** — removed from this repository, to be
 rebuilt from scratch in one of its own.
 
 **This line is read first in every session, so it being out of date costs more than it being
