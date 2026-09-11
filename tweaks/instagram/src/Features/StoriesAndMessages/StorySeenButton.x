@@ -6,6 +6,7 @@ extern NSString * const SCIStorySeenSentNotification;
 #import "../../Utils.h"
 #import "../../Localization/SCILocalize.h"
 #import "../../Downloader/SCIMediaDownloader.h"
+#import "../../Settings/SCIDiagnosticsViewController.h"
 
 ///
 /// Floating controls over the story viewer.
@@ -190,6 +191,11 @@ static id SCICurrentStorySection(UIViewController *viewer) {
     // moves on; advancing instantly can cut it off.
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.35 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         id section = SCICurrentStorySection(self);
+
+        // Reported, not only logged. "Setting a state variable is not reporting it" has
+        // cost this project three investigations, and this line -- whether the eye button
+        // could advance at all -- has never once reached a report.
+        [SCIDiagnostics recordStoryAdvanceFound:(section != nil)];
 
         if (section) {
             ((void (*)(id, SEL, NSInteger))objc_msgSend)(section, @selector(advanceToNextItemWithNavigationAction:), 0);

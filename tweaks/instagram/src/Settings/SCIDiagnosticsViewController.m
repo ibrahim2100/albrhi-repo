@@ -23,6 +23,8 @@ static NSString *_lastButtonMediaClass = nil;
 static BOOL _buttonEverPressed = NO;
 static NSString *_lastDownloadKind = nil;
 static NSString *_storyRoute = nil;
+static NSString *_storyAudio = nil;
+static NSString *_storyAdvance = nil;
 static NSMutableArray<NSString *> *_storyClasses = nil;
 static NSString *_lastDashXML = nil;
 static NSInteger _lastDashRepresentations = 0;
@@ -261,6 +263,15 @@ static NSMutableArray<NSString *> *_dateRewriteSamples = nil;
             if (![_storyClasses containsObject:name]) [_storyClasses addObject:name];
         }
     }
+}
+
++ (void)recordStoryAudio:(NSString *)keyPath {
+    _storyAudio = keyPath ? [keyPath copy] : SCILocalized(@"diag_story_audio_none");
+}
+
++ (void)recordStoryAdvanceFound:(BOOL)found {
+    _storyAdvance = found ? SCILocalized(@"diag_story_advance_ok")
+                          : SCILocalized(@"diag_story_advance_none");
 }
 
 + (void)recordStorySeenIntercept {
@@ -609,6 +620,12 @@ static NSMutableArray<NSString *> *_dateRewriteSamples = nil;
             @{@"title": SCILocalized(@"diag_story_route"),
               @"detail": _storyRoute ?: @"\u2014",
               @"ok": @(_storyRoute != nil)},
+            @{@"title": SCILocalized(@"diag_story_audio"),
+              @"detail": _storyAudio ?: @"\u2014",
+              @"ok": @(_storyAudio != nil)},
+            @{@"title": SCILocalized(@"diag_story_advance"),
+              @"detail": _storyAdvance ?: @"\u2014",
+              @"ok": @(_storyAdvance != nil)},
             @{@"title": SCILocalized(@"diag_story_classes"),
               @"detail": (_storyClasses.count
                           ? [_storyClasses componentsJoinedByString:@"\n"]

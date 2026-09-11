@@ -1053,6 +1053,114 @@ static const void *SCIParentAudioKey = &SCIParentAudioKey;
     } @catch (__unused id error) {}
 }
 
+/// A saveable audio URL out of a story item's dictionary, and the key path it came from.
+///
+/// **A photo story with music is Instagram's own named case, and the object does not
+/// carry it.** `+getAudioUrlForMedia:` resolves `sundialOriginalAudioAsset` /
+/// `sundialMusicAsset` -- reel and feed accessors that a story item does not answer --
+/// so the photo branch found no audio, offered no choice, and saved a silent picture.
+/// Third time the answer has been "the object is hollow, the dictionary still has it".
+///
+/// **The subtree is confirmed; the leaf is not, so the leaf is searched rather than
+/// named.** `story_music_stickers`, `story_music_lyric_stickers`, `music_metadata`,
+/// `original_audio` and `is_story_image_with_music` are all real keys in a
+/// same-generation reference's own binary. The nested URL key is in none of it, and
+/// this project has lost three releases to guessing a hop it had not read -- so the
+/// music subtree is walked for whatever URL it actually holds, which also survives the
+/// rename that a hard-coded path would not. The key path that answered is reported.
+///
+/// Cover art lives in the same subtree, so a candidate is refused on an image
+/// extension or an artwork-shaped key name rather than trusted for being a URL.
++ (NSURL *)audioURLFromMediaDict:(NSDictionary *)dict keyPath:(NSString **)outKeyPath {
+    if (![dict isKindOfClass:[NSDictionary class]]) return nil;
+
+    NSArray<NSString *> *roots = @[@"story_music_stickers", @"story_music_lyric_stickers",
+                                   @"music_metadata", @"original_audio",
+                                   @"story_original_sound_info", @"audio"];
+
+    NSMutableDictionary *bestSoFar = [NSMutableDictionary dictionary];
+    for (NSString *root in roots) {
+        id subtree = dict[root];
+        if (subtree) [self sciWalkForAudio:subtree path:root depth:0 best:bestSoFar];
+    }
+
+    NSString *found = bestSoFar[@"url"];
+    if (!found.length) return nil;
+
+    if (outKeyPath) *outKeyPath = bestSoFar[@"path"];
+    return [NSURL URLWithString:found];
+}
+
+/// One step of the music-subtree walk. A method rather than a block, because a block
+/// that calls itself is a retain cycle ARC refuses outright (check.py rule 11).
+/// Depth-limited: an unbounded walk over a structure the app owns is a cost
+/// proportional to data this tweak does not control.
++ (void)sciWalkForAudio:(id)node
+                   path:(NSString *)path
+                  depth:(NSInteger)depth
+                   best:(NSMutableDictionary *)best {
+    if (depth > 6) return;
+
+    if ([node isKindOfClass:[NSArray class]]) {
+        NSInteger index = 0;
+        for (id child in (NSArray *)node) {
+            [self sciWalkForAudio:child
+                             path:[NSString stringWithFormat:@"%@[%ld]", path, (long)index++]
+                            depth:depth + 1
+                             best:best];
+        }
+        return;
+    }
+    if (![node isKindOfClass:[NSDictionary class]]) return;
+
+    for (id rawKey in (NSDictionary *)node) {
+        if (![rawKey isKindOfClass:[NSString class]]) continue;
+
+        NSString *key = (NSString *)rawKey;
+        id value = ((NSDictionary *)node)[key];
+        NSString *here = path.length ? [NSString stringWithFormat:@"%@.%@", path, key] : key;
+
+        if ([value isKindOfClass:[NSDictionary class]] || [value isKindOfClass:[NSArray class]]) {
+            [self sciWalkForAudio:value path:here depth:depth + 1 best:best];
+            continue;
+        }
+        if (![value isKindOfClass:[NSString class]]) continue;
+
+        NSString *text = (NSString *)value;
+        if (![text hasPrefix:@"http"]) continue;
+
+        NSString *lowerKey = key.lowercaseString;
+        if ([lowerKey rangeOfString:@"url"].location == NSNotFound) continue;
+
+        // Cover art and profile pictures sit beside the track in the same subtree, so a
+        // candidate is refused by shape rather than trusted for being a URL.
+        BOOL refused = NO;
+        for (NSString *bad in @[@"cover", @"thumbnail", @"thumb", @"image", @"artwork",
+                                @"profile", @"display", @"icon"]) {
+            if ([lowerKey rangeOfString:bad].location != NSNotFound) { refused = YES; break; }
+        }
+        if (refused) continue;
+
+        NSString *ext = [NSURL URLWithString:text].path.pathExtension.lowercaseString;
+        for (NSString *bad in @[@"jpg", @"jpeg", @"png", @"webp", @"heic", @"gif"]) {
+            if ([ext isEqualToString:bad]) { refused = YES; break; }
+        }
+        if (refused) continue;
+
+        NSInteger score = 1;
+        if ([lowerKey rangeOfString:@"download_url"].location != NSNotFound) score = 4;
+        else if ([lowerKey rangeOfString:@"audio"].location != NSNotFound) score = 3;
+        else if ([ext isEqualToString:@"m4a"] || [ext isEqualToString:@"aac"] ||
+                 [ext isEqualToString:@"mp3"] || [ext isEqualToString:@"mp4"]) score = 2;
+
+        if (score > [best[@"score"] integerValue]) {
+            best[@"score"] = @(score);
+            best[@"url"] = text;
+            best[@"path"] = here;
+        }
+    }
+}
+
 + (NSURL *)getAudioUrlForMedia:(id)mediaLike {
     if (!mediaLike) return nil;
 

@@ -70,6 +70,13 @@
 + (nullable NSDictionary *)mediaDictionary:(nullable id)media;
 + (nullable NSURL *)videoURLFromMediaDict:(nullable NSDictionary *)dict;
 
+/// A saveable audio URL out of a story item's dictionary, with the key path it came
+/// from written into @c outKeyPath for the diagnostics page. A photo story with music
+/// carries its track here and on no accessor the object answers -- see the
+/// implementation for why the leaf is searched rather than named.
++ (nullable NSURL *)audioURLFromMediaDict:(nullable NSDictionary *)dict
+                                  keyPath:(NSString *_Nullable *_Nullable)outKeyPath;
+
 + (NSURL *)getVideoUrl:(IGVideo *)video;
 + (NSURL *)getVideoUrlForMedia:(id)media;
 + (NSURL *)getAudioUrlForMedia:(id)mediaLike;

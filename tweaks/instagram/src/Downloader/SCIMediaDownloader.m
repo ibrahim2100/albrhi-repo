@@ -351,6 +351,17 @@
         // an ordinary photo still downloads with one press and no questions.
         if ([SCIUtils getBoolPref:@"photo_as_video"]) {
             NSURL *audioUrl = [SCIUtils getAudioUrlForMedia:media];
+
+            // A photo *story* with music answers none of the reel accessors above, so
+            // this branch found no audio and saved a silent picture -- the hollow-object
+            // bug a third time, in the one place the choice was already built and waiting.
+            if (!audioUrl) {
+                NSString *keyPath = nil;
+                audioUrl = [SCIUtils audioURLFromMediaDict:[SCIUtils mediaDictionary:media]
+                                                   keyPath:&keyPath];
+                [SCIDiagnostics recordStoryAudio:(audioUrl ? keyPath : nil)];
+            }
+
             if (audioUrl) {
                 // The choice is always offered — the setting decides whether the
                 // clip is on the table, never that it is taken for granted.

@@ -72,6 +72,15 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)recordStorySearchRoute:(nullable NSString *)route
                        classes:(nullable NSArray<NSString *> *)classNames;
 
+/// The key path a photo story's music was found at, or nil when the dictionary held
+/// none. The leaf key is searched rather than named, so this is what says what it is
+/// actually called on this build.
++ (void)recordStoryAudio:(nullable NSString *)keyPath;
+
+/// Whether the mark-as-seen button found a section controller to advance with.
+/// It used to write this to the log alone, which no report has ever carried.
++ (void)recordStoryAdvanceFound:(BOOL)found;
+
 /// Whether the newer build's Swift seen-state store was found and hooked, and under which
 /// runtime name.
 ///
