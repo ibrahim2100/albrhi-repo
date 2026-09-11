@@ -474,6 +474,24 @@
 
 // MARK: - On-screen story download
 
+/// The section controller and model Instagram last said it was about to display.
+/// Weak: they belong to the app, and a stale one simply fails the checks below.
+static __weak id sciStorySection = nil;
+static __weak id sciStoryModel = nil;
+/// What the delegate handed over, kept as text. "Never told about a story" and "told,
+/// and nothing on those objects answered" need opposite fixes and are indistinguishable
+/// from two nil weak references.
+static NSString *sciStoryNoted = nil;
+
++ (void)noteStorySection:(id)controller model:(id)model {
+    sciStorySection = controller;
+    sciStoryModel = model;
+
+    sciStoryNoted = [NSString stringWithFormat:@"%@ / %@",
+                     controller ? NSStringFromClass([controller class]) : @"nil",
+                     model ? NSStringFromClass([model class]) : @"nil"];
+}
+
 + (void)downloadVisibleStoryInView:(UIView *)root anchor:(UIView *)anchor {
     id media = [self currentStoryMediaInView:root];
     if (!media) {
@@ -484,53 +502,145 @@
     [self downloadMedia:media sourceLabel:nil anchor:(anchor ?: root)];
 }
 
+/// Whether a candidate is something `+downloadMedia:` could actually resolve.
+///
+/// The delegate hands over a *model*, and on this app that is as likely to be the
+/// whole reel as the item inside it -- so an unvalidated candidate risks saving a
+/// tray's cover instead of the story on screen, which is the repost-cover bug for a
+/// third time. A candidate earns its place by answering one of the three questions
+/// the downloader itself asks, and nothing is handed on that answers none of them.
++ (BOOL)looksLikeStoryItem:(id)candidate {
+    if (!candidate) return NO;
+
+    if ([SCIUtils mediaDictionary:candidate]) return YES;
+    if ([self videoDeclarationSignalFor:candidate]) return YES;
+
+    IGVideo *video = nil;
+    @try { video = SCISafeValueForKey(candidate, @"video"); } @catch (__unused id e) {}
+    if ([self hasPlayableVideo:video]) return YES;
+
+    @try { if ([SCIUtils getPhotoUrlForMedia:candidate]) return YES; } @catch (__unused id e) {}
+
+    return NO;
+}
+
+/// The item the story viewer is showing, taken from the objects it handed us.
+///
+/// Every name here is tried behind `-respondsToSelector:` and the one that answered
+/// is recorded, so a build that names it differently produces a report naming what it
+/// *does* answer rather than a silent nil. The section controller is asked first: the
+/// model may be the reel, and only an accessor whose name says "item" is trusted on it.
++ (id)storyItemFromDelegateObjectsRoute:(NSString **)route {
+    id section = sciStorySection;
+    id model = sciStoryModel;
+    if (!section && !model) return nil;
+
+    NSArray<NSString *> *names = @[@"currentStoryItem", @"storyItem", @"currentItem",
+                                   @"currentReelItem", @"item"];
+
+    for (id host in @[section ?: [NSNull null], model ?: [NSNull null]]) {
+        if (host == [NSNull null]) continue;
+
+        for (NSString *name in names) {
+            @try {
+                SEL selector = NSSelectorFromString(name);
+                if (![host respondsToSelector:selector]) continue;
+
+                id candidate = ((id (*)(id, SEL))objc_msgSend)(host, selector);
+                if (![self looksLikeStoryItem:candidate]) continue;
+
+                if (route) {
+                    *route = [NSString stringWithFormat:@"%@ -%@",
+                              NSStringFromClass([host class]), name];
+                }
+                return candidate;
+            } @catch (__unused id e) {}
+        }
+    }
+
+    // The model may itself be the item on a build that hands one over directly.
+    if ([self looksLikeStoryItem:model]) {
+        if (route) {
+            *route = [NSString stringWithFormat:@"%@ (the model itself)",
+                      NSStringFromClass([model class])];
+        }
+        return model;
+    }
+
+    return nil;
+}
+
 /// Locates the media of the story currently on screen. Adjacent stories are kept
 /// mounted off-screen, so the candidate covering the viewer's centre wins.
 + (id)currentStoryMediaInView:(UIView *)root {
-    if (!root) return nil;
+    NSString *route = nil;
+    id fromDelegate = [self storyItemFromDelegateObjectsRoute:&route];
+    if (fromDelegate) {
+        [SCIDiagnostics recordStorySearchRoute:route classes:nil];
+        return fromDelegate;
+    }
+
+    NSString *handed = sciStoryNoted
+        ? [NSString stringWithFormat:@"nothing answered on %@", sciStoryNoted]
+        : @"the viewer never named a story";
+
+    if (!root) {
+        [SCIDiagnostics recordStorySearchRoute:handed classes:nil];
+        return nil;
+    }
 
     CGPoint centre = CGPointMake(CGRectGetMidX(root.bounds), CGRectGetMidY(root.bounds));
-    return [self storyMediaSearchIn:root root:root centre:centre];
+    NSMutableArray<NSString *> *seen = [NSMutableArray array];
+    id media = [self storyMediaSearchIn:root root:root centre:centre seen:seen];
+
+    [SCIDiagnostics recordStorySearchRoute:(media
+            ? [NSString stringWithFormat:@"found by searching the views (%@)", handed]
+            : [NSString stringWithFormat:@"%@, and no view matched", handed])
+                                   classes:seen];
+    return media;
 }
 
-+ (id)storyMediaSearchIn:(UIView *)view root:(UIView *)root centre:(CGPoint)centre {
++ (id)storyMediaSearchIn:(UIView *)view
+                    root:(UIView *)root
+                  centre:(CGPoint)centre
+                    seen:(NSMutableArray<NSString *> *)seen {
     if (!view) return nil;
-
-    static NSArray<NSString *> *itemClasses = nil;
-    static NSArray<NSString *> *legacyClasses = nil;
-    static dispatch_once_t once;
-    dispatch_once(&once, ^{
-        itemClasses = @[@"IGStoryModernVideoView", @"IGStoryPhotoView"];
-        legacyClasses = @[@"IGStoryVideoView"];
-    });
 
     if (!view.hidden && view.alpha > 0.05 && !CGRectIsEmpty(view.bounds)) {
         BOOL coversCentre = CGRectContainsPoint([view convertRect:view.bounds toView:root], centre);
         NSString *cls = NSStringFromClass([view class]);
 
-        if (coversCentre) {
-            for (NSString *name in itemClasses) {
-                Class c = NSClassFromString(name);
-                if (c && [view isKindOfClass:c]) {
-                    @try { id item = SCISafeValueForKey(view, @"item"); if (item) return item; } @catch (__unused id e) {}
-                }
+        //
+        // **A hard-coded class list cannot show you the name you did not expect, and
+        // this one matched nothing on 439.** `IGStoryModernVideoView` and
+        // `IGStoryPhotoView` are still the names a same-generation reference uses, so
+        // they stay first -- but any centre-covering view whose name mentions a story
+        // is now asked as well, including a Swift-mangled `_TtC…Story…`, and every one
+        // of them is recorded whether it answered or not. A device report then names
+        // the real class instead of costing another round of guessing.
+        //
+        if (coversCentre && [cls rangeOfString:@"Story" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            if (![seen containsObject:cls]) [seen addObject:cls];
+
+            for (NSString *name in @[@"item", @"storyItem", @"currentStoryItem", @"reelItem"]) {
+                @try {
+                    id item = SCISafeValueForKey(view, name);
+                    if ([self looksLikeStoryItem:item]) return item;
+                } @catch (__unused id e) {}
             }
-            for (NSString *name in legacyClasses) {
-                Class c = NSClassFromString(name);
-                if (c && [view isKindOfClass:c]) {
-                    @try {
-                        id caption = SCISafeValueForKey(view, @"captionDelegate");
-                        id item = caption ? SCISafeValueForKey(caption, @"currentStoryItem") : nil;
-                        if (item) return item;
-                    } @catch (__unused id e) {}
-                }
-            }
-            (void)cls;
+
+            // The older build reaches its item through the caption delegate rather
+            // than through a property of its own.
+            @try {
+                id caption = SCISafeValueForKey(view, @"captionDelegate");
+                id item = caption ? SCISafeValueForKey(caption, @"currentStoryItem") : nil;
+                if ([self looksLikeStoryItem:item]) return item;
+            } @catch (__unused id e) {}
         }
     }
 
     for (UIView *sub in view.subviews) {
-        id media = [self storyMediaSearchIn:sub root:root centre:centre];
+        id media = [self storyMediaSearchIn:sub root:root centre:centre seen:seen];
         if (media) return media;
     }
 

@@ -22,6 +22,8 @@ static NSArray<NSString *> *_timestampResults = nil;
 static NSString *_lastButtonMediaClass = nil;
 static BOOL _buttonEverPressed = NO;
 static NSString *_lastDownloadKind = nil;
+static NSString *_storyRoute = nil;
+static NSMutableArray<NSString *> *_storyClasses = nil;
 static NSString *_lastDashXML = nil;
 static NSInteger _lastDashRepresentations = 0;
 static NSArray<NSString *> *_lastDashCandidates = nil;
@@ -246,6 +248,19 @@ static NSMutableArray<NSString *> *_dateRewriteSamples = nil;
 + (void)recordSeenReplayBegan:(BOOL)began ended:(BOOL)ended {
     _seenReplay = [NSString stringWithFormat:@"begin=%@  end=%@",
                    began ? @"sent" : @"failed", ended ? @"sent" : @"failed"];
+}
+
++ (void)recordStorySearchRoute:(NSString *)route classes:(NSArray<NSString *> *)classNames {
+    _storyRoute = [route copy];
+
+    // Accumulated rather than replaced: a story the search missed and one it found are
+    // two taps, and keeping only the last would throw away the report worth reading.
+    if (classNames.count) {
+        if (!_storyClasses) _storyClasses = [NSMutableArray array];
+        for (NSString *name in classNames) {
+            if (![_storyClasses containsObject:name]) [_storyClasses addObject:name];
+        }
+    }
 }
 
 + (void)recordStorySeenIntercept {
@@ -589,6 +604,16 @@ static NSMutableArray<NSString *> *_dateRewriteSamples = nil;
             @{@"title": SCILocalized(@"diag_quality_source"),
               @"detail": _lastVideoClass ?: @"—",
               @"ok": @(_lastVideoClass != nil)}
+        ]},
+        @{@"header": SCILocalized(@"diag_section_story"), @"rows": @[
+            @{@"title": SCILocalized(@"diag_story_route"),
+              @"detail": _storyRoute ?: @"\u2014",
+              @"ok": @(_storyRoute != nil)},
+            @{@"title": SCILocalized(@"diag_story_classes"),
+              @"detail": (_storyClasses.count
+                          ? [_storyClasses componentsJoinedByString:@"\n"]
+                          : SCILocalized(@"diag_story_classes_none")),
+              @"ok": @(_storyClasses.count > 0)}
         ]},
         @{@"header": SCILocalized(@"diag_section_dash"), @"rows": [self dashRows]},
         @{@"header": SCILocalized(@"diag_section_transcode"), @"rows": [self transcodeRows]},

@@ -61,6 +61,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (void)recordStorySeenIntercept;
 
+/// How the story download button reached its item, and every centre-covering view
+/// class whose name mentions a story.
+///
+/// «no media» has two readings that need opposite fixes -- nothing was on screen, or
+/// the item was there under a name this build does not share with the one the search
+/// was written against. The class list is the half that answers the second without a
+/// further round trip, which is the same fix the YouTube scanner needed when its
+/// hand-picked filter could not show the name nobody expected.
++ (void)recordStorySearchRoute:(nullable NSString *)route
+                       classes:(nullable NSArray<NSString *> *)classNames;
+
 /// Whether the newer build's Swift seen-state store was found and hooked, and under which
 /// runtime name.
 ///

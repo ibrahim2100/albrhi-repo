@@ -80,6 +80,12 @@ static id SCICurrentStorySection(UIViewController *viewer) {
     %orig;
 
     sciCurrentStorySection = controller;
+
+    // The same two objects answer the download button's "which story is on screen".
+    // Handed to the downloader rather than searched for: a delegate argument cannot be
+    // renamed out from under a hook, and the view search that was doing this job found
+    // nothing at all on 439.
+    [SCIMediaDownloader noteStorySection:controller model:model];
 }
 
 - (void)viewDidAppear:(BOOL)animated {

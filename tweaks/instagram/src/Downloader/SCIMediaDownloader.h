@@ -41,6 +41,19 @@ NS_ASSUME_NONNULL_BEGIN
 /// it. Powers the on-screen story download button.
 + (void)downloadVisibleStoryInView:(UIView *)root anchor:(nullable UIView *)anchor;
 
+/// The section controller and model the story viewer is about to display, handed
+/// over by Instagram's own delegate call.
+///
+/// **A hooked method's argument needs no class-name search, and the search is what
+/// broke.** The view route below binds `IGStoryModernVideoView`/`IGStoryPhotoView` by
+/// name; on a build that renames or re-nests them it matches nothing, the item comes
+/// back nil, and the button says "no media" before the downloader is ever entered --
+/// which is exactly what a device on 439 reported, with the download-kind row blank.
+/// `-fullscreenSectionController:willDisplayStoryModel:` is already hooked for the
+/// mark-as-seen skip and already fires on both tested builds, so the object arrives
+/// for free and cannot be renamed out from under us.
++ (void)noteStorySection:(nullable id)controller model:(nullable id)model;
+
 /// Whether this media has a video that can actually be resolved to a URL right now —
 /// asking every source `+downloadVideo:` itself would use, including the DASH manifest.
 ///
