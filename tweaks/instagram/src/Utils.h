@@ -64,6 +64,12 @@
 + (NSURL *)getPhotoUrl:(IGPhoto *)photo;
 + (NSURL *)getPhotoUrlForMedia:(IGMedia *)media;
 
+/// A story item's raw API dictionary, and a saveable video URL out of it -- the path a
+/// hollow story `IGVideo` forces, since the real `video_versions` / `video_dash_manifest`
+/// live in the dictionary rather than on the object. See the implementation.
++ (nullable NSDictionary *)mediaDictionary:(nullable id)media;
++ (nullable NSURL *)videoURLFromMediaDict:(nullable NSDictionary *)dict;
+
 + (NSURL *)getVideoUrl:(IGVideo *)video;
 + (NSURL *)getVideoUrlForMedia:(id)media;
 + (NSURL *)getAudioUrlForMedia:(id)mediaLike;

@@ -309,6 +309,22 @@
     // asked separately now, and a declared video that will not resolve says so instead
     // of quietly handing back a different file than the one that was asked for.
     //
+    //
+    // **A story's video is not on the object, it is in the dictionary.** A reel item's
+    // `IGVideo` is a hollow shell — `+hasPlayableVideo:` above correctly answered NO —
+    // but the item's own API dictionary still carries `video_versions` and
+    // `video_dash_manifest`. Without this, a video story fell through to the photo branch
+    // below and saved the poster frame, which is exactly the repost-cover bug wearing a
+    // story's clothes. Tried before the photo branch so the video wins when there is one,
+    // and only reached after the object path has already failed, so no post regresses.
+    //
+    NSURL *dictVideo = [SCIUtils videoURLFromMediaDict:[SCIUtils mediaDictionary:media]];
+    if (dictVideo) {
+        [SCIDiagnostics recordDownloadKind:@"video (from item dictionary)"];
+        [self downloadURL:dictVideo sourceLabel:sourceLabel isVideo:YES];
+        return;
+    }
+
     NSString *signal = [self videoDeclarationSignalFor:media];
     if (signal) {
         // The signal is named, not just counted. "Declared but no rendition resolved"

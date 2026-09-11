@@ -351,6 +351,104 @@ static os_unfair_lock sBoolPrefLock = OS_UNFAIR_LOCK_INIT;
 
     return [SCIUtils getPhotoUrl:photo];
 }
+
+/// The story item's own API dictionary, where a story's real video lives.
+///
+/// **A story's `IGVideo` is a hollow shell, the same shape as a photo post's and a
+/// repost's** -- so `-videoVersions` and the rest answer nothing and the download
+/// falls through to the poster frame. The data is not gone; it is in the item's raw
+/// dictionary under `video_versions` / `video_dash_manifest`, which the object
+/// accessors are not exposing for a reel item. This reaches it the way the reference
+/// tweak does: by asking the item for its dictionary rather than the wrong object for
+/// a URL. Additive -- it is consulted only after the accessor path has already failed,
+/// so no post that downloads today can change.
+///
+/// Three accessors, each behind `-respondsToSelector:`, and the first that returns a
+/// dictionary carrying a video or image key wins. Names read from the reference build's
+/// strings, not invented: `dictionaryRepresentation`, `igMedia` (whose own dictionary
+/// is then asked), `dictionary`.
++ (NSDictionary *)mediaDictionary:(id)media {
+    if (!media) return nil;
+
+    NSArray<NSString *> *keys = @[@"video_versions", @"video_dash_manifest",
+                                  @"image_versions2", @"media_type"];
+
+    BOOL (^looksLikeMedia)(id) = ^BOOL(id candidate) {
+        if (![candidate isKindOfClass:[NSDictionary class]]) return NO;
+        for (NSString *key in keys) {
+            if (candidate[key] != nil) return YES;
+        }
+        return NO;
+    };
+
+    // The item directly, then the IGMedia it may wrap, each asked for a dictionary.
+    NSMutableArray *hosts = [NSMutableArray arrayWithObject:media];
+    @try {
+        id inner = SCISafeValueForKey(media, @"igMedia");
+        if (inner) [hosts addObject:inner];
+    } @catch (__unused id e) {}
+
+    for (id host in hosts) {
+        for (NSString *name in @[@"dictionaryRepresentation", @"dictionary", @"jsonDictionary"]) {
+            @try {
+                SEL selector = NSSelectorFromString(name);
+                if (![host respondsToSelector:selector]) continue;
+                id dict = ((id (*)(id, SEL))objc_msgSend)(host, selector);
+                if (looksLikeMedia(dict)) return dict;
+            } @catch (__unused id e) {}
+        }
+    }
+
+    return nil;
+}
+
+/// A saveable video URL out of a media dictionary, DASH first then progressive.
+///
+/// The DASH manifest goes through the same ladder parser the object path uses, so an
+/// AV1-only story is refused here exactly as an AV1-only post is (the transcode path
+/// still owns that case). `video_versions` is Instagram's progressive ladder, ordered
+/// high to low, each entry `{url,width,height}` -- the largest area wins, matching what
+/// `+getBestVideoUrl:` does with the object's own versions.
++ (NSURL *)videoURLFromMediaDict:(NSDictionary *)dict {
+    if (![dict isKindOfClass:[NSDictionary class]]) return nil;
+
+    // DASH first: the ladder may carry a higher rendition than the progressive list,
+    // and the existing parser already knows which families iOS can save.
+    id manifest = dict[@"video_dash_manifest"];
+    if ([manifest isKindOfClass:[NSString class]] && [manifest length]) {
+        NSURL *best = nil;
+        long long bestArea = 0;
+        for (NSDictionary *rep in [self dashRepresentationsFromXML:manifest]) {
+            NSString *family = rep[@"family"];
+            if (![family isEqualToString:@"h264"] && ![family isEqualToString:@"hevc"]) continue;
+            long long area = [rep[@"area"] longLongValue];
+            if (area < bestArea) continue;
+            NSURL *url = [NSURL URLWithString:rep[@"url"]];
+            if (url) { best = url; bestArea = area; }
+        }
+        if (best) return best;
+    }
+
+    // Progressive: pick the largest by area, not position -- the list is usually
+    // ordered but a saved copy should not depend on it.
+    id versions = dict[@"video_versions"];
+    if ([versions isKindOfClass:[NSArray class]]) {
+        NSURL *best = nil;
+        long long bestArea = 0;
+        for (id entry in versions) {
+            if (![entry isKindOfClass:[NSDictionary class]]) continue;
+            NSString *urlString = entry[@"url"];
+            if (![urlString isKindOfClass:[NSString class]] || !urlString.length) continue;
+            long long area = [entry[@"width"] longLongValue] * [entry[@"height"] longLongValue];
+            if (best && area < bestArea) continue;
+            NSURL *url = [NSURL URLWithString:urlString];
+            if (url) { best = url; bestArea = area; }
+        }
+        if (best) return best;
+    }
+
+    return nil;
+}
 // Extract the pixel area (width*height) from a version dictionary, if present.
 // Read a numeric-ish property from either an IGAPIVideoVersion object (via
 // selectors width/height/bandwidth) or an NSDictionary (via keys). Returns 0 if absent.

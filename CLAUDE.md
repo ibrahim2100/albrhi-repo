@@ -320,6 +320,20 @@ missing but the question. When a guard and the thing it guards resolve the same 
 by different routes, the guard is wrong by construction, and it fails silently in the
 direction of doing less.
 
+**A story's video is not on the object, it is in the dictionary — the hollow-`IGVideo` bug wearing
+a third set of clothes.** The story download button saved the poster frame of a video story, which
+is the repost-cover shape exactly: a reel item's `IGVideo` is a hollow shell, `+hasPlayableVideo:`
+correctly answers NO, and the flow falls through to the photo branch. The data was never gone — a
+story item carries its real renditions in its own API dictionary under `video_versions` and
+`video_dash_manifest`, which the object accessors do not expose for a reel item. `+mediaDictionary:`
+asks the item for `dictionaryRepresentation`/`igMedia`, and `+videoURLFromMediaDict:` reads the
+manifest (through the existing ladder parser, so AV1 is still refused to the transcoder) then the
+progressive list. **Read for architecture only from RyukGram** (SCInsta-derived, source since
+closed; nothing copied): the keys are Instagram's own API JSON, stable across versions, where an
+accessor name would not be. Wired in *after* the object path fails, so it is additive and no post
+that downloads today can change — the same discipline as the TikTok dictionary/accessor split, one
+app over. **When an object accessor comes back hollow, ask whether the raw dictionary still has it.**
+
 **One collection, three ways in, and a filter on one of them looks like a filter that sometimes
 works.** YouTube's `YTInnerTubeCollectionViewController` fills `sectionRenderers` through
 `-addSectionsFromArray:`, `-insertSections:byPosition:error:` and
@@ -2820,9 +2834,9 @@ far less surface area than a real compressor for a few-kilobyte archive.
 
 ## Known state
 
-Instagram **4.1.18** · YouTube **1.31.4** · X **0.18.6** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
+Instagram **4.1.19** · YouTube **1.31.4** · X **0.18.6** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
 Spotify **0.2.4** · YT Music **0.9.2** ·
-NextUp **0.2.1** · suite **1.77.1**. **CarPlay is gone** — removed from this repository, to be
+NextUp **0.2.1** · suite **1.77.2**. **CarPlay is gone** — removed from this repository, to be
 rebuilt from scratch in one of its own.
 
 **This line is read first in every session, so it being out of date costs more than it being
