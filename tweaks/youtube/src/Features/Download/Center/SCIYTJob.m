@@ -43,9 +43,20 @@
                                                                           : @"dl_kind_video");
             // The mark comes last, so the size stays where the eye already learned to
             // look for it when a row has not been exported.
-            return self.exported
-                ? [NSString stringWithFormat:@"%@ · %@ · %@", what, size, SCILocalized(@"dl_in_photos")]
-                : [NSString stringWithFormat:@"%@ · %@", what, size];
+            if (self.exported) {
+                return [NSString stringWithFormat:@"%@ · %@ · %@",
+                        what, size, SCILocalized(@"dl_in_photos")];
+            }
+
+            // A refused automatic copy is said on the row itself. The download succeeded
+            // and the file is here, so this is not a failure state -- it is the one line
+            // that separates "it is in the Centre because you asked for that" from "it
+            // tried to reach Photos and could not".
+            if (self.exportFailure.length) {
+                return [NSString stringWithFormat:@"%@ · %@ · %@", what, size, self.exportFailure];
+            }
+
+            return [NSString stringWithFormat:@"%@ · %@", what, size];
         }
     }
 }
@@ -69,6 +80,7 @@
     self.duration   = [coder decodeDoubleForKey:@"duration"];
     self.position   = [coder decodeDoubleForKey:@"position"];
     self.exported   = [coder decodeBoolForKey:@"exported"];
+    self.exportFailure = [coder decodeObjectOfClass:[NSString class] forKey:@"exportFailure"];
 
     // Absent on anything saved before this existed, and a missing key decodes to NO --
     // exactly right, since every job saved before Shorts had their own tab was an
@@ -96,6 +108,7 @@
     [coder encodeDouble:self.duration forKey:@"duration"];
     [coder encodeDouble:self.position forKey:@"position"];
     [coder encodeBool:self.exported forKey:@"exported"];
+    [coder encodeObject:self.exportFailure forKey:@"exportFailure"];
     [coder encodeBool:self.isShort forKey:@"short"];
 }
 

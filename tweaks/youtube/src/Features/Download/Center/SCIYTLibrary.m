@@ -282,7 +282,15 @@ NSNotificationName const SCIYTLibraryDidChangeNotification = @"SCIYTLibraryDidCh
     // could have, and that is what this whole screen exists to undo.
     if (SCIPrefEnabled(SCIPrefAutoPhotos)) {
         [self export:job completion:^(BOOL ok, NSString *detail) {
-            if (!ok) SCILogV(@"library: automatic export refused — %@", detail);
+            if (ok) return;
+
+            // Written where somebody is looking, not only to the log. This is the whole
+            // of "it does not save to Photos": the copy was asked for, it was refused,
+            // and the only record of that was a log line no report carries.
+            SCILogV(@"library: automatic export refused — %@", detail);
+            job.exportFailure = detail.length ? detail : SCILocalized(@"dl_failed");
+            [self save];
+            [self changed];
         }];
     }
 }
@@ -399,6 +407,7 @@ NSNotificationName const SCIYTLibraryDidChangeNotification = @"SCIYTLibraryDidCh
                 // as -adopt:for: -- the store has one thread.
                 dispatch_async(dispatch_get_main_queue(), ^{
                     job.exported = YES;
+                    job.exportFailure = nil;
                     [self save];
                     [self changed];
                 });

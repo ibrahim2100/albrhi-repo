@@ -85,6 +85,15 @@ typedef NS_ENUM(NSInteger, SCIYTJobState) {
 /// second tap does not make a second copy.
 @property (nonatomic) BOOL exported;
 
+/// Why the automatic copy to Photos was refused, when it was.
+///
+/// **The switch being on and the copy failing looked exactly like the switch being off:
+/// nothing in Photos and nothing said.** The refusal went to the log alone, and no log
+/// has ever reached a user -- so "it does not save to Photos" arrived as one complaint
+/// covering a setting nobody had turned on, a permission iOS had denied, and a host app
+/// that declares no reason to add to the library. Three different fixes, one silence.
+@property (nonatomic, copy, nullable) NSString *exportFailure;
+
 + (instancetype)jobWithTitle:(NSString *)title
                      quality:(nullable NSString *)quality
                         kind:(SCIYTJobKind)kind
