@@ -1,5 +1,6 @@
 #import "SCIYTLibrary.h"
 #import "SCIYTNotice.h"
+#import "SCIYTThumbnails.h"
 #import "../../../SCILog.h"
 #import "../../../Prefs.h"
 #import "../../../Localization/SCILocalize.h"
@@ -282,7 +283,23 @@ NSNotificationName const SCIYTLibraryDidChangeNotification = @"SCIYTLibraryDidCh
     // could have, and that is what this whole screen exists to undo.
     if (SCIPrefEnabled(SCIPrefAutoPhotos)) {
         [self export:job completion:^(BOOL ok, NSString *detail) {
-            if (ok) return;
+            //
+            // **"Remove after saving to Photos" was honoured by one door of two.** The swipe
+            // action read the switch; this automatic copy never did -- so somebody with both
+            // switches on got Photos and a Centre that kept everything, which is exactly the
+            // two copies the switch exists to prevent. One question, and the answer now comes
+            // from the same place whichever way the copy was made.
+            //
+            // The switch's own default stays off, deliberately: a removal cannot be undone.
+            // What changed is only that turning it on means the same thing everywhere.
+            //
+            if (ok) {
+                if (SCIPrefEnabled(SCIPrefTidyAfterPhotos)) {
+                    [SCIYTThumbnails forget:job];
+                    [self remove:job];
+                }
+                return;
+            }
 
             // Written where somebody is looking, not only to the log. This is the whole
             // of "it does not save to Photos": the copy was asked for, it was refused,
