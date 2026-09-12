@@ -946,6 +946,29 @@ a cost proportional to data you do not control is a fault waiting for a quiet da
 now and carried to the diagnostics, with a 120 ms budget per batch past which the rest goes through
 unexamined and the report names how many.
 
+**A host app's Info.plist is a fact about what a tweak can do, and it is readable from this
+machine.** YouTube downloads "do not save to Photos" had three causes wearing one silence: the
+switch is off by default (deliberate, since 0.13.0 -- the Centre is the home and Photos is a
+swipe), the copy was refused, or the Centre could not be found. The refusal was written to
+`SCILogV` alone, which on screen is byte for byte identical to the switch being off -- nothing in
+Photos and nothing said. It is on the download's own row now.
+
+Measured from a real 21.34.3 `Info.plist` rather than reasoned about: YouTube declares
+`NSPhotoLibraryUsageDescription` ("upload media you've already created") and **not**
+`NSPhotoLibraryAddUsageDescription`. So an add-only request falls back to the reading key, and
+the prompt somebody sees is about uploading -- a sentence with no visible connection to saving a
+download, and one Don't Allow is remembered for good. **The guard accepting either key is right**
+and must stay: it is what lets the save work at all. What was wrong is that `denied`,
+`restricted` and `notDetermined` collapsed into one sentence, and they need three different
+answers -- iOS Settings, nothing the user can do, and "the prompt never appeared" respectively.
+
+**And a message that promises a fallback which does not exist is worse than one that only says
+it failed.** That same refusal read "the video is being handed to you instead -- choose Save
+Video", and all three sites raising it report and stop; no share sheet is ever presented. It
+points at the Share action that genuinely sits in the same swipe menu now. Worth pairing with the
+older rule about fallbacks: **ask not only what a fallback does when it fires, but whether it
+fires at all.**
+
 **And a tweak may cost a feature; it may not cost the app.** Two releases were spent reading code
 for the cause of a hang, each finding something real and none of them the whole of it, which is the
 point at which the shape matters more than the identity. The launch guard watches for the app
@@ -2863,9 +2886,9 @@ far less surface area than a real compressor for a few-kilobyte archive.
 
 ## Known state
 
-Instagram **4.1.20** · YouTube **1.31.4** · X **0.18.6** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
+Instagram **4.1.21** · YouTube **1.31.7** · X **0.18.6** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
 Spotify **0.2.4** · YT Music **0.9.2** ·
-NextUp **0.2.1** · suite **1.77.3**. **CarPlay is gone** — removed from this repository, to be
+NextUp **0.2.1** · suite **1.77.7**. **CarPlay is gone** — removed from this repository, to be
 rebuilt from scratch in one of its own.
 
 **This line is read first in every session, so it being out of date costs more than it being

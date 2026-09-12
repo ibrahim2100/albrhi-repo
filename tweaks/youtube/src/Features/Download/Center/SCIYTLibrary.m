@@ -368,6 +368,29 @@ NSNotificationName const SCIYTLibraryDidChangeNotification = @"SCIYTLibraryDidCh
     [self changed];
 }
 
+/// Names *which* refusal came back, because three of them need three different answers
+/// and one sentence covered all of them.
+///
+/// **YouTube declares no reason to add to Photos**, measured from a real 21.34.3
+/// Info.plist: `NSPhotoLibraryUsageDescription` is there for uploading and
+/// `NSPhotoLibraryAddUsageDescription` is absent. iOS falls back to the reading key for
+/// an add-only request, so the prompt somebody sees says "upload media you've already
+/// created" -- which reads as nothing to do with saving a download, and a Don't Allow
+/// tapped once is remembered for good. That makes `denied` the likely one here, and it
+/// is fixed in iOS Settings; `restricted` cannot be fixed by the user at all; and
+/// `notDetermined` coming back means the prompt never appeared, which is a different
+/// investigation again.
+static NSString *SCIYTPhotosRefusal(PHAuthorizationStatus status) {
+    NSString *name;
+    switch (status) {
+        case PHAuthorizationStatusDenied:       name = @"denied"; break;
+        case PHAuthorizationStatusRestricted:   name = @"restricted"; break;
+        case PHAuthorizationStatusNotDetermined: name = @"not determined"; break;
+        default:                                name = @"unavailable"; break;
+    }
+    return [NSString stringWithFormat:@"%@ (%@)", SCILocalized(@"dl_no_permission"), name];
+}
+
 - (void)export:(SCIYTJob *)job completion:(void (^)(BOOL, NSString *))completion {
     void (^done)(BOOL, NSString *) = ^(BOOL ok, NSString *detail) {
         dispatch_async(dispatch_get_main_queue(), ^{ completion(ok, detail); });
@@ -393,7 +416,7 @@ NSNotificationName const SCIYTLibraryDidChangeNotification = @"SCIYTLibraryDidCh
     [PHPhotoLibrary requestAuthorizationForAccessLevel:PHAccessLevelAddOnly
                                                handler:^(PHAuthorizationStatus status) {
         if (status != PHAuthorizationStatusAuthorized && status != PHAuthorizationStatusLimited) {
-            done(NO, SCILocalized(@"dl_no_permission"));
+            done(NO, SCIYTPhotosRefusal(status));
             return;
         }
 
