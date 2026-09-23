@@ -143,10 +143,10 @@ Depends: mobilesubstrate, preferenceloader
 Conflicts: com.albrhi.roothide, com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide, com.dvntm.ytmultimate
 Replaces: com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide
 Filename: debs/com.albrhi_1.77.8_iphoneos-arm64.deb
-Size: 2177276
-MD5sum: d10dfd34a21c2d023d038c5d13bea43c
-SHA1: bf73a8cdd693191eeddef42e5dbd830f676b798c
-SHA256: adaad7a63917eb8135cc447a0f596fae21838a5dfba8d7ef63b6241d54716e8f
+Size: 2177286
+MD5sum: 0097e1b56ecfb77751dbfac3101fbec2
+SHA1: c2e82c584d188f05de28d8188a031ce411dd5b16
+SHA256: 986a61effdc77788d22a5e42afeedf1a9176703b174caadf467f3e2defc614fa
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
@@ -659,10 +659,10 @@ Depends: mobilesubstrate, preferenceloader
 Conflicts: com.albrhi.roothide, com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide, com.dvntm.ytmultimate
 Replaces: com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide
 Filename: debs/com.albrhi.roothide_1.77.8_iphoneos-arm64e.deb
-Size: 2174108
-MD5sum: 92b330efbeb6ee6fb2ef38cfc1dac616
-SHA1: be409c1df6a538d2de2a94d53fca8c561556d94d
-SHA256: 149d6c589b43c8467feb5db130e8772df2372ab4362f41a97c958cabe6a779c5
+Size: 2174128
+MD5sum: f69f784ad8098af215499c807d15fbea
+SHA1: 3bcf1b520b636becc6f375a1c9f8d07e3e932d8b
+SHA256: c518c95babf3a168512d568ed2e402f3f840fa8519016a6f55d3f93a5f3604f9
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
