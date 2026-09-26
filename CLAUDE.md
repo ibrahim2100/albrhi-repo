@@ -969,6 +969,35 @@ points at the Share action that genuinely sits in the same swipe menu now. Worth
 older rule about fallbacks: **ask not only what a fallback does when it fires, but whether it
 fires at all.**
 
+**A provider flag one implementer ignores is a feature switched off for one provider, and nothing
+says so.** YouTube Music's LLM protocol carries `expectJSONMode`; OpenAI turned it into `json_object`,
+Gemini into `responseMimeType`, and Anthropic took the parameter and never read it -- because the
+Messages API has no schemaless JSON mode, only `output_config.format` with a schema. So two JSON
+callers ran on that provider with no constraint at all, and a 250-line tolerant parser absorbed the
+difference, which is why it never showed. Callers now pass a schema through `YTMULLMCompleteJSON`,
+which uses the strongest thing each provider takes. **Grep every implementer of a protocol parameter,
+not the one you are editing**: the same shape as three places reading `app_enabled_` where the first
+sweep found two.
+
+**Structured outputs are sent to Anthropic's own host only, and the tolerant parser stays.** The base
+URL is user-configurable, and a gateway that does not know `output_config` could refuse a request
+that works today. The parser still serves the gateway path, both other providers, and `refusal` /
+`max_tokens` stops, which no schema covers. **A fix that makes a fallback rarer is not a reason to
+delete it** while any path still reaches it. The schemas are static because each new schema pays a
+one-time compile; the song's line count stays a prompt rule, and array-length constraints are not
+supported in any case.
+
+**A thinking model spends `max_tokens` on thinking too.** The translation cap was 8192, measured from
+a bill with no thinking in it; Claude Opus 5 thinks by default and Claude Opus 5.5 always does, and
+thinking counts toward the cap even when none of its text is returned. It is 32000 now. **A ceiling
+measured on one model is a measurement of that model.**
+
+**And a prompt shouting ten times in twenty lines says nothing ten times.** `ONLY`, `MUST`, `Do NOT`
+and "no exceptions" were rewritten at normal volume with every requirement kept, and a line-count
+rule stated four ways became one sentence. What stayed is worth as much as what went: the
+translation guidance only the author knows, and "never write or complete lyrics" in the description
+extractor, a failure current models still show.
+
 **And a tweak may cost a feature; it may not cost the app.** Two releases were spent reading code
 for the cause of a hang, each finding something real and none of them the whole of it, which is the
 point at which the shape matters more than the identity. The launch guard watches for the app
@@ -1641,34 +1670,6 @@ when they do not match.
 **The private key lives in `~/.albrhi/` and never enters this repository** — not in a build, not
 in CI, not in a message. `.gitignore` carries the pattern as a second line of defence, not as the
 arrangement.
-
-**Seven days is the whole live-control design, and both halves matter.** Revocation becomes real —
-withdraw a licence and the device stops within a week, with no list for it to decline to fetch —
-while a flight or a captive portal costs nobody anything, because six days of slack sit behind
-every renewal. Asking the server per launch would revoke faster and make every customer's tweaks
-dead the minute the network is. **A failed check is reported as "nothing was decided", never as a
-licence problem.**
-
-**The server address is compiled in, and that is not a convenience.** Without it every buyer has
-to be told a URL and type it correctly before they can even ask for a licence. The preference
-still overrides it, and the panel names which of the two is in use — "the built-in one" and "one I
-chose" are different facts, and only one of them is worth checking when something stops working.
-
-**The server decides; it is never trusted.** A token that does not verify against the compiled
-public key, or is not for this device, is dropped — so pointing the address at something hostile
-earns a refusal and nothing else. https is required, because a licence over plain http can be
-swapped in flight and the signature still checks out.
-
-**The term and the renewal date are two dates, and the screen must show the term.** The token
-carries `until` alongside `exp` for exactly this: telling somebody who bought a year that their
-licence expires in seven days is a support message the code wrote itself.
-
-**And the whole loop was proved before it shipped, in one harness rather than on a device.** The
-Worker was driven in node with a fake KV, the *panel's own script block* was pointed at it, and
-the token that came out of pressing «موافقة» was handed to the real Objective-C verifier, which
-accepted it. Three separate signers now exist — `licence.py`, the Worker, and the browser panel
-that preceded it — and all three had to agree byte for byte on sorted-key JSON and on P1363→DER,
-which is exactly the kind of agreement that fails silently and mints keys no phone will take.
 
 **`class_getInstanceMethod` returning NULL does not mean the object cannot answer — and reading
 that as "no" broke two whole families of class at once.** `SCISafeValueForKey`, written to retire
@@ -2887,8 +2888,8 @@ far less surface area than a real compressor for a few-kilobyte archive.
 ## Known state
 
 Instagram **4.1.21** · YouTube **1.31.8** · X **0.18.6** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
-Spotify **0.2.4** · YT Music **0.9.2** ·
-NextUp **0.2.1** · suite **1.77.8**. **CarPlay is gone** — removed from this repository, to be
+Spotify **0.2.4** · YT Music **0.9.3** ·
+NextUp **0.2.1** · suite **1.77.9**. **CarPlay is gone** — removed from this repository, to be
 rebuilt from scratch in one of its own.
 
 **This line is read first in every session, so it being out of date costs more than it being

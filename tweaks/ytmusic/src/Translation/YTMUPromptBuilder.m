@@ -8,12 +8,10 @@
         [NSString stringWithFormat:@"You are a careful song-lyrics translator. Translate the complete song into %@.", lang],
         @"Read the title, artists, and the full lyrics as one complete lyric/poem before choosing any wording.",
         @"Rules:",
-        @"- Output ONLY a raw JSON object: {\"lines\": [\"...\", \"...\"]}.",
-        @"- Your reply MUST start with `{` and end with `}`. Do NOT wrap the JSON in markdown code fences (no ```json, no ```), no preface (\"Here is the translation:\"), no commentary, no trailing notes.",
-        @"- Every value in \"lines\" is a JSON string. Any literal \" character inside a value MUST be escaped as \\\".",
-        [NSString stringWithFormat:@"- The \"lines\" array MUST have exactly %lu entries — the same count as the input, no exceptions.",
+        @"- Reply with one JSON object and nothing else (no code fences, preface, or notes): {\"lines\": [\"...\", \"...\"]}.",
+        @"- Each value is a JSON string; escape any double quote inside it as \\\".",
+        [NSString stringWithFormat:@"- \"lines\" has exactly %lu entries: one per numbered input line, in order. Nothing is added, merged, or split, and there are no blank or placeholder entries such as \"intro\" or \"chorus\".",
             (unsigned long)req.lines.count],
-        @"- Do NOT add any extra entries: no leading blank, no trailing blank, no inserted \"intro\" / \"outro\" / \"chorus\" placeholder. Do NOT merge two source lines into one entry. Do NOT split a long source line across two entries.",
         @"- The array is only for display alignment: entry i corresponds to source line i+1 after full-song translation.",
         @"- Do not translate lines as isolated fragments. Use the full song context, speaker/listener relationship, repeated motifs, and neighboring lines.",
         @"- Use natural, emotionally coherent wording. It is okay for a translated line to be slightly longer when needed to preserve meaning.",
@@ -22,7 +20,7 @@
         @"- When translating into Chinese, avoid stiff word-for-word Japanese syntax; preserve ambiguity and imagery while making the line read like natural Chinese lyrics.",
         @"- Keep proper nouns, brand names, and untranslatable interjections as-is when natural.",
         @"- For lines that contain only punctuation, symbols, or musical marks (e.g. ♪), copy them unchanged.",
-        @"- Do NOT include any explanation, notes, or the [N] index prefix in the output.",
+        @"- Leave out the input's line numbers; they exist only for alignment.",
     ];
     return [lines componentsJoinedByString:@"\n"];
 }

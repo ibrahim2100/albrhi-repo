@@ -73,6 +73,24 @@ static NSError *YTMULDEError(NSInteger code, NSString *message) {
 @property (nonatomic, strong) YTMUInflightCoalescer<YTMULyricsDescriptionExtractorCompletion> *inflight;
 @end
 
+// The reply's shape, enforced by providers that take a schema (see YTMULLMCompleteJSON). It mirrors
+// the shape the prompt spells out, which is still what JSON-mode providers go by.
+static NSDictionary *YTMULDEResponseSchema(void) {
+    return @{
+        @"type": @"object",
+        @"properties": @{
+            @"has_lyrics": @{@"type": @"boolean"},
+            @"language": @{@"type": @"string"},
+            @"source_lyrics": @{@"type": @"string"},
+            @"translation_lyrics": @{@"type": @"string"},
+            @"translation_language": @{@"type": @"string"},
+            @"confidence": @{@"type": @"number"},
+        },
+        @"required": @[@"has_lyrics", @"language", @"source_lyrics", @"translation_lyrics", @"translation_language", @"confidence"],
+        @"additionalProperties": @NO,
+    };
+}
+
 @implementation YTMULyricsDescriptionExtractor
 
 + (instancetype)sharedExtractor {
@@ -150,7 +168,7 @@ static NSError *YTMULDEError(NSInteger code, NSString *message) {
 static NSString *const YTMULDESystemPrompt =
 @"You are a lyrics extraction assistant. Your only job is to recognize and pull verbatim song lyrics from a YouTube video description block. You will receive a description that the uploader wrote — sometimes it contains the full lyrics, sometimes only fragments, sometimes nothing.\n"
 @"\n"
-@"Strict rules — non-negotiable:\n"
+@"Rules:\n"
 @"1. Output only text that LITERALLY appears in the description. Never write, complete, paraphrase, translate, transliterate, romanize, regenerate, or fix anything. Copy character-for-character including kanji form, punctuation, full-width vs half-width, capitalization, spaces.\n"
 @"2. If the description has no lyric block, return has_lyrics=false. A single line, a slogan, a hashtag list, a credit roll, a CC notice, a chord chart, or just URLs do NOT count as lyrics.\n"
 @"3. Partial lyrics are still lyrics — return has_lyrics=true, set confidence to reflect completeness (e.g. only chorus → 0.4).\n"
@@ -397,10 +415,7 @@ static NSString *const YTMULDESystemPrompt =
     NSString *originalArtist = info.artist ?: @"";
 
     __weak typeof(self) weakSelf = self;
-    [provider completeWithSystemPrompt:systemPrompt
-                            userPrompt:userPrompt
-                        expectJSONMode:YES
-                            completion:^(NSString * _Nullable text, NSError * _Nullable error) {
+    YTMULLMCompleteJSON(provider, systemPrompt, userPrompt, YTMULDEResponseSchema(), ^(NSString * _Nullable text, NSError * _Nullable error) {
         dispatch_async(dispatch_get_main_queue(), ^{
             void (^fanout)(YTMULyricsDescriptionExtraction *, NSError *) = ^(YTMULyricsDescriptionExtraction *result, NSError *err) {
                 for (YTMULyricsDescriptionExtractorCompletion cb in [weakSelf.inflight takeCompletionsForKey:videoId]) cb(result, err);
@@ -457,7 +472,7 @@ static NSString *const YTMULDESystemPrompt =
                           result.confidence);
             fanout(result, nil);
         });
-    }];
+    });
 }
 
 - (void)clearCache {

@@ -55,6 +55,25 @@ static NSError *YTMULNError(NSInteger code, NSString *message) {
 @property (nonatomic, strong) YTMUInflightCoalescer<YTMULyricsTitleNormalizerCompletion> *inflight;
 @end
 
+// The reply's shape, enforced by providers that take a schema (see YTMULLMCompleteJSON). It mirrors
+// the shape the prompt spells out, which is still what JSON-mode providers go by.
+static NSDictionary *YTMULNResponseSchema(void) {
+    NSDictionary *strings = @{@"type": @"array", @"items": @{@"type": @"string"}};
+    return @{
+        @"type": @"object",
+        @"properties": @{
+            @"title_primary": @{@"type": @"string"},
+            @"title_alts": strings,
+            @"artist_primary": @{@"type": @"string"},
+            @"artist_alts": strings,
+            @"language": @{@"type": @"string"},
+            @"confidence": @{@"type": @"number"},
+        },
+        @"required": @[@"title_primary", @"title_alts", @"artist_primary", @"artist_alts", @"language", @"confidence"],
+        @"additionalProperties": @NO,
+    };
+}
+
 @implementation YTMULyricsTitleNormalizer
 
 + (instancetype)sharedNormalizer {
@@ -308,10 +327,7 @@ static NSString *const YTMULNSystemPrompt =
                   videoId, providerName ?: @"<unknown>", info.title, info.artist);
 
     __weak typeof(self) weakSelf = self;
-    [provider completeWithSystemPrompt:systemPrompt
-                            userPrompt:userPrompt
-                        expectJSONMode:YES
-                            completion:^(NSString * _Nullable text, NSError * _Nullable error) {
+    YTMULLMCompleteJSON(provider, systemPrompt, userPrompt, YTMULNResponseSchema(), ^(NSString * _Nullable text, NSError * _Nullable error) {
         dispatch_async(dispatch_get_main_queue(), ^{
             // Fan out the result to every queued caller.
             void (^fanout)(YTMULyricsTitleNormalization *, NSError *) = ^(YTMULyricsTitleNormalization *result, NSError *err) {
@@ -356,7 +372,7 @@ static NSString *const YTMULNSystemPrompt =
                           result.artistCandidates.firstObject);
             fanout(result, nil);
         });
-    }];
+    });
 }
 
 - (void)clearCache {

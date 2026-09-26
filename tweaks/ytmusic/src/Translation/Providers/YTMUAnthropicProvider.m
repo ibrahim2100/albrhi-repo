@@ -25,6 +25,36 @@ static NSString *YTMUAnthropicMessagesURL(void) {
     return [trimmed stringByAppendingString:@"/v1/messages"];
 }
 
+// `output_config` goes only to Anthropic's own host. The base URL is user-configurable, and a gateway
+// that does not know the field could refuse a request that works today; those users keep the
+// prompt's JSON rule and the tolerant parser, exactly as before.
+static BOOL YTMUAnthropicIsOfficialHost(void) {
+    return [YTMUAnthropicMessagesURL() hasPrefix:@"https://api.anthropic.com/"];
+}
+
+static NSDictionary *YTMUAnthropicJSONFormat(NSDictionary *schema) {
+    return @{@"format": @{@"type": @"json_schema", @"schema": schema}};
+}
+
+// Static on purpose: every new schema pays a one-time compile, so the song's line count is not in it
+// (and array-length constraints are not supported anyway). The count stays a prompt rule, checked by
+// the translator's alignment step.
+static NSDictionary *YTMUAnthropicLinesSchema(void) {
+    return @{
+        @"type": @"object",
+        @"properties": @{@"lines": @{@"type": @"array", @"items": @{@"type": @"string"}}},
+        @"required": @[@"lines"],
+        @"additionalProperties": @NO,
+    };
+}
+
+// Room for thinking as well as the reply. Claude Opus 5 thinks by default and Claude Opus 5.5 always
+// does, and thinking counts toward max_tokens even when none of its text comes back -- so the old
+// 8192, sized from a thinking-free bill (~3035 output tokens for a 150-line song), could cut a long
+// song off mid-array on those models. Billing is per token generated, so the ceiling only bounds a
+// runaway; it costs nothing on an ordinary song.
+static const NSInteger YTMUAnthropicMaxTokens = 32000;
+
 // Parse Anthropic's Server-Sent Events response and accumulate the
 // model's text output. The Messages endpoint streams a sequence of
 // JSON events when `"stream": true` is set on the request body:
@@ -129,37 +159,26 @@ static NSError *YTMUAnthropicError(YTMUTranslationErrorCode code, NSString *mess
     }
     YTMUTranslationLog(@"anthropic start model=%@ lines=%lu", model, (unsigned long)request.lines.count);
 
-    // Newer Claude models (claude-haiku-4-5+ and others) reject the
-    // assistant-prefill trick we used to seed `{` for reliable JSON
-    // output, returning HTTP 400 "This model does not support
-    // assistant message prefill. The conversation must end with a
-    // user message." Drop the prefill entirely and trust the system
-    // prompt's "JSON only" rule plus the parser's first-`{...}`
-    // substring fallback in parseLinesFromJSON.
-    // max_tokens = 8192: real-world bill shows worst-case ~3035
-    // output tokens for long whole-song translations (Hi Ren, ~150
-    // lines). 8192 gives ~170% headroom for the occasional verbose
-    // model run while still bounding any pathological loop well
-    // before it could double user spending. Billing is per actual
-    // generated tokens, so this ceiling never inflates ordinary
-    // cost — it only protects against runaway. We translate the
-    // whole song in one call to preserve cross-line context
-    // (refrains, callbacks, character voices) the prompt depends on.
+    // Newer Claude models reject assistant prefill with HTTP 400, so there is none. On Anthropic's own
+    // host the reply's shape is guaranteed by structured outputs instead; through a custom gateway it
+    // rests on the prompt's JSON rule and parseLinesFromJSON's fallbacks. The whole song goes in one
+    // call to keep the cross-line context (refrains, callbacks, voices) the prompt depends on.
     // `temperature` is intentionally omitted. Newer Claude models
     // reject it with HTTP 400 "temperature is deprecated for this
     // model"; omitting it uses the model default and works across
     // both old and new models. Output stays reliable because the
     // system prompt enforces JSON-only and the parser tolerates
     // surrounding prose.
-    NSDictionary *body = @{
+    NSMutableDictionary *body = [@{
         @"model": model,
-        @"max_tokens": @8192,
+        @"max_tokens": @(YTMUAnthropicMaxTokens),
         @"system": [YTMUPromptBuilder systemPromptForRequest:request],
         @"messages": @[
             @{@"role": @"user", @"content": [YTMUPromptBuilder userPromptForRequest:request]},
         ],
         @"stream": @YES,
-    };
+    } mutableCopy];
+    if (YTMUAnthropicIsOfficialHost()) body[@"output_config"] = YTMUAnthropicJSONFormat(YTMUAnthropicLinesSchema());
     NSData *bodyData = [NSJSONSerialization dataWithJSONObject:body options:0 error:nil];
 
     NSMutableURLRequest *urlRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:YTMUAnthropicMessagesURL()]];
@@ -238,9 +257,19 @@ static NSError *YTMUAnthropicError(YTMUTranslationErrorCode code, NSString *mess
 
 #pragma mark - YTMULLMCompletionProvider
 
+// A boolean JSON mode has nothing to send here -- the Messages API enforces JSON only against a
+// schema -- so the flag was always silently dropped. Callers that want JSON reach the schema variant
+// below through YTMULLMCompleteJSON; this one is plain text (the settings screen's connectivity probe).
 - (void)completeWithSystemPrompt:(NSString *)systemPrompt
                       userPrompt:(NSString *)userPrompt
                   expectJSONMode:(BOOL)expectJSONMode
+                      completion:(void(^)(NSString *_Nullable text, NSError *_Nullable error))completion {
+    [self completeWithSystemPrompt:systemPrompt userPrompt:userPrompt jsonSchema:nil completion:completion];
+}
+
+- (void)completeWithSystemPrompt:(NSString *)systemPrompt
+                      userPrompt:(NSString *)userPrompt
+                      jsonSchema:(NSDictionary *)jsonSchema
                       completion:(void(^)(NSString *_Nullable text, NSError *_Nullable error))completion {
     NSString *apiKey = YTMUAnthropicDefaultsString(@"translationApiKey_anthropic", @"");
     NSString *model = [self modelIdentifier];
@@ -262,13 +291,14 @@ static NSError *YTMUAnthropicError(YTMUTranslationErrorCode code, NSString *mess
     // `temperature` omitted — newer Claude models reject it with
     // HTTP 400 "temperature is deprecated for this model". Default
     // temperature is fine; callers parse JSON defensively.
-    NSDictionary *body = @{
+    NSMutableDictionary *body = [@{
         @"model": model,
-        @"max_tokens": @8192,
+        @"max_tokens": @(YTMUAnthropicMaxTokens),
         @"system": systemPrompt ?: @"",
         @"messages": messages,
         @"stream": @YES,
-    };
+    } mutableCopy];
+    if (jsonSchema && YTMUAnthropicIsOfficialHost()) body[@"output_config"] = YTMUAnthropicJSONFormat(jsonSchema);
 
     NSMutableURLRequest *urlRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:YTMUAnthropicMessagesURL()]];
     urlRequest.HTTPMethod = @"POST";

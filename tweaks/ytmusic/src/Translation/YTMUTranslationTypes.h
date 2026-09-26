@@ -49,7 +49,24 @@ typedef NS_ENUM(NSInteger, YTMUTranslationErrorCode) {
                       userPrompt:(NSString *)userPrompt
                   expectJSONMode:(BOOL)expectJSONMode
                       completion:(void(^)(NSString *_Nullable text, NSError *_Nullable error))completion;
+@optional
+// The same request with the reply's JSON shape given as a schema, for a provider that can enforce
+// one at the API level rather than only ask for it in the prompt. Optional because a boolean "JSON
+// mode" is all OpenAI and Gemini need -- and Anthropic has no schemaless JSON mode, which is why it
+// used to take the flag and do nothing with it.
+- (void)completeWithSystemPrompt:(NSString *)systemPrompt
+                      userPrompt:(NSString *)userPrompt
+                      jsonSchema:(nullable NSDictionary *)jsonSchema
+                      completion:(void(^)(NSString *_Nullable text, NSError *_Nullable error))completion;
 @end
+
+// Asks for JSON the strongest way the provider supports: a schema where it takes one, JSON mode
+// otherwise. Callers pass a schema and never need to know which provider is on the other end.
+void YTMULLMCompleteJSON(id<YTMULLMCompletionProvider> provider,
+                         NSString *systemPrompt,
+                         NSString *userPrompt,
+                         NSDictionary *jsonSchema,
+                         void (^completion)(NSString *_Nullable text, NSError *_Nullable error));
 
 @protocol YTMUTranslationProvider <NSObject>
 - (NSString *)providerName;       // matches the YTMUTranslationProvider* constants above

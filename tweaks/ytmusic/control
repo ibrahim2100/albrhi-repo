@@ -1,6 +1,6 @@
 Package: com.albrhi.ytmusic
 Name: Albrhi for YouTube Music
-Version: 0.9.2
+Version: 0.9.3
 Architecture: iphoneos-arm64
 Description: Synced lyrics, no ads, background playback, the hidden speed control, seek buttons, no autoplay radio, casting, an OLED theme and SponsorBlock. WITHOUT PREMIUM: no paid subscription is unlocked and you are never reported as a subscriber. Lyrics are fetched from outside services (LRCLib, Genius, MusixMatch, NetEase, the video description) -- that is what a lyrics feature is, and it is on because it was asked for. Translating them is a separate switch, off, and needs a key you supply. Hooks carried over from YTMusicUltimate by dayanch96 and YTMEnhanced by py233, both GPLv3; their Premium claim is deliberately not included.
 Section: Tweaks

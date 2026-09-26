@@ -9,6 +9,21 @@ NSString *const YTMUTranslationProviderOpenAI    = @"openai-compatible";
 
 NSString *const YTMUTranslationErrorDomain = @"YTMUTranslationErrorDomain";
 
+void YTMULLMCompleteJSON(id<YTMULLMCompletionProvider> provider,
+                         NSString *systemPrompt,
+                         NSString *userPrompt,
+                         NSDictionary *jsonSchema,
+                         void (^completion)(NSString *_Nullable text, NSError *_Nullable error)) {
+    SEL withSchema = @selector(completeWithSystemPrompt:userPrompt:jsonSchema:completion:);
+    if ([provider respondsToSelector:withSchema]) {
+        [provider completeWithSystemPrompt:systemPrompt userPrompt:userPrompt
+                                jsonSchema:jsonSchema completion:completion];
+        return;
+    }
+    [provider completeWithSystemPrompt:systemPrompt userPrompt:userPrompt
+                        expectJSONMode:YES completion:completion];
+}
+
 NSString *YTMUTranslationDefaultModelForProvider(NSString *providerName) {
     if ([providerName isEqualToString:YTMUTranslationProviderAnthropic]) return @"claude-haiku-4-5-20251001";
     if ([providerName isEqualToString:YTMUTranslationProviderGemini]) return @"gemini-2.0-flash";
