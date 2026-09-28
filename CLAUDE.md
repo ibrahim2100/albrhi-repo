@@ -2807,6 +2807,12 @@ are in both trigger lists — starts two runs, and whichever queues *second* can
 It shows up as `cancelled`, not `failure`, with no error anywhere and no index update, which is
 the one outcome this whole section exists to prevent and the easiest to mistake for "it ran".
 
+**It happened again on 1.79.0, and the push that caused it was a suite release.** One commit
+carried Instagram 4.2.0 *and* an edit to `tools/objc-classes.py`; `tools/**` woke NextUp and Watch
+as well, and the suite's run showed `cancelled` while both of theirs went green. The recovery is a
+second commit touching only `suite/**`. **Before pushing a release, check whether the same commit
+touches `tools/` or `shared/`** -- if it does, push those separately first.
+
 The practical rule: **when only the second publisher's run matters, push a commit that touches
 only that tweak's own directory.** `tweaks/nextup/**` is excluded from `buildsuite.yml`'s
 trigger, so a change confined there starts exactly one run and nothing can cancel it. Editing a
