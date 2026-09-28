@@ -19,7 +19,7 @@
 #import "Features/Profile/SCITWProfileCopy.h"
 #import "Features/Lock/SCITWAppLock.h"
 
-NSString *SCIVersionString = @"v0.18.6";  // AlbrhiTW
+NSString *SCIVersionString = @"v0.19.0";  // AlbrhiTW
 
 %ctor {
     // Defaults registered rather than assumed: reading a key that was never written
@@ -29,6 +29,7 @@ NSString *SCIVersionString = @"v0.18.6";  // AlbrhiTW
     [[NSUserDefaults standardUserDefaults] registerDefaults:@{
         SCIPrefSwitchLayer: @YES,
         SCIPrefInlineButton: @YES,
+        SCIPrefMoveSaveButton: @NO,
         SCIPrefHidePromoted: @NO,
         SCIPrefConfirmRepost: @NO,
         SCIPrefSaveAvatar: @YES,

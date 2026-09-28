@@ -1959,6 +1959,30 @@ one device and not the other. And the report separates *not in this build* from 
 asked* from *asked and answered*, because those need three different investigations and silence
 looks identical in all three.
 
+**A button somebody places by hand is stored as a fraction of the room it has, never as points
+-- and "it must not run away" was proved in a harness before it shipped.** X 0.19.0 lets the in-video
+save button be dragged and pinned. Points are a different spot on every card (status bar, rotation,
+another device), which is how a hand-placed button walks or leaves the screen, and a button off
+screen cannot be dragged back. So the place is two numbers from 0 to 1 over the span the button's
+centre may move, and every value is clamped -- while dragging, on saving and on applying, a
+corrupted preference included. The geometry is `SCITWButtonPlacement`, pure C for exactly this
+reason: 2,879 checks run on this Mac, and a mutant with the clamp removed fails thirteen of them.
+
+**The drag's own mechanics then failed twice in a simulator harness, and neither would have shown in
+a compile.** A pan's translation starts at *recognition*, about ten points into the movement, so a
+button driven by translation trailed the finger by exactly 10,10 for the whole drag; it follows the
+finger from the touch-down point now, kept by `-gestureRecognizer:shouldReceiveTouch:`. And making
+X's recognisers wait for ours with `-shouldBeRequiredToFailByGestureRecognizer:` returning YES for
+*every* recogniser made the drag and the pin tap wait for each other -- a cycle in which a tap did
+nothing at all. YES only for recognisers on other views. **The harness copied the functions out of
+the `.x` file by marker rather than retyping them**, so what passed is what ships, and it ran on a
+paging scroll view with the card re-laid out every frame -- the worst case X's player presents.
+
+**And a layout pass never moves the button while a finger is on it**, and writes a frame only when
+it differs: the card lays out continuously while a video plays, and a pass that put the button back
+mid-drag is the jump that reads as the button running away. When pinned, the drag and the tap are
+*removed*, not disabled, so a pinned button carries no gesture of ours for X's to wait on.
+
 **`app_attest_*` is not offered, rather than offered with a warning.** Those keys are how X
 proves to its servers that the device is unmodified. Switching them off is not a privacy
 setting — it is telling the server something it will not believe, on an account that can be
@@ -2887,9 +2911,9 @@ far less surface area than a real compressor for a few-kilobyte archive.
 
 ## Known state
 
-Instagram **4.1.21** · YouTube **1.31.8** · X **0.18.6** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
+Instagram **4.1.21** · YouTube **1.31.8** · X **0.19.0** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
 Spotify **0.2.4** · YT Music **0.9.3** ·
-NextUp **0.2.1** · suite **1.77.9**. **CarPlay is gone** — removed from this repository, to be
+NextUp **0.2.1** · suite **1.78.0**. **CarPlay is gone** — removed from this repository, to be
 rebuilt from scratch in one of its own.
 
 **This line is read first in every session, so it being out of date costs more than it being

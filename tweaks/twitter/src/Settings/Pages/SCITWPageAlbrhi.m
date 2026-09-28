@@ -29,6 +29,18 @@
                              symbol:@"arrow.down.circle.fill"
                                tint:[UIColor systemBlueColor]
                             prefKey:SCIPrefInlineButton],
+                [SCITWRow switchRow:SCILocalized(@"albrhi_move_button")
+                               note:SCILocalized(@"albrhi_move_button_note")
+                             symbol:@"arrow.up.and.down.and.arrow.left.and.right"
+                               tint:[UIColor systemIndigoColor]
+                            prefKey:SCIPrefMoveSaveButton],
+                [SCITWRow actionRow:SCILocalized(@"albrhi_reset_button")
+                               note:SCILocalized(@"albrhi_reset_button_note")
+                             symbol:@"arrow.uturn.backward.circle"
+                               tint:[UIColor systemGrayColor]
+                             action:^{
+                    [[NSUserDefaults standardUserDefaults] removeObjectForKey:SCIPrefSaveButtonPlace];
+                }],
                 [SCITWRow switchRow:SCILocalized(@"albrhi_save_avatar")
                                note:SCILocalized(@"albrhi_save_avatar_note")
                              symbol:@"person.crop.circle.fill"

@@ -54,6 +54,16 @@
 /// working, which is why it is safe to default on.
 #define SCIPrefInlineButton     @"inline_download_button"
 
+/// Moving the in-video save button, and where it was put.
+///
+/// The switch is a mode, not a setting that stays on: with it on the button can be dragged and a
+/// tap pins it (which turns the switch back off), so a button that moves never also downloads.
+/// The place is stored as a fraction of the room the button has on the video card -- two numbers
+/// from 0 to 1 -- and never as points, which are a different spot on every other card and are
+/// how a user-placed button walks off. Absent means the original spot under X's back button.
+#define SCIPrefMoveSaveButton   @"move_save_button"
+#define SCIPrefSaveButtonPlace  @"save_button_place"
+
 // Promoted trends are hidden by the switch above rather than by a key of their own: it is
 // the same discovery on a sibling surface -- `-isPromoted` reachable from the
 // server-populated model, on `TwitterURT.PromotableTrend` instead of `TFNTwitterStatus`.
