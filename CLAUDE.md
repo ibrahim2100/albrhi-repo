@@ -1978,6 +1978,9 @@ nothing at all. YES only for recognisers on other views. **The harness copied th
 the `.x` file by marker rather than retyping them**, so what passed is what ships, and it ran on a
 paging scroll view with the card re-laid out every frame -- the worst case X's player presents.
 
+**Confirmed on a device in 0.19.0: the button moves, pins, and stays put.** The harness said so
+first; the owner's phone agreed, which is the only one of the two that settles it.
+
 **And a layout pass never moves the button while a finger is on it**, and writes a frame only when
 it differs: the card lays out continuously while a video plays, and a pass that put the button back
 mid-drag is the jump that reads as the button running away. When pinned, the drag and the tap are
