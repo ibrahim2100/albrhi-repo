@@ -363,6 +363,26 @@ the name you did not. The route row separates *the viewer never named a story* f
 nothing answered*, because those need opposite fixes and a nil weak reference looks identical in
 both.
 
+**"Installed" beside "0 blocked" is a finding, not a contradiction — and it was bypassOnesie
+again, one app over.** Instagram's story-seen hiding hooked `IGStorySeenStateUploader -networker`
+and returned nil. A 439 report read `-networker: installed` and `Seen receipts blocked: 0` while
+receipts went out. The class declares **three methods** — `init…networker:`, `-networker`,
+`.cxx_destruct` — so the upload is written somewhere else and reads `_networker` straight out of
+the object; the getter was never asked. The diagnostic's "installed" was `objc_getClass != Nil`,
+which says the class is there and nothing about whether the hook is reached. **4.2.0 clears the
+field itself** and puts it back when the eye button needs it, found by *identity* — the ivar
+holding the object `init` was handed — rather than by name, and proved on this machine with an
+ARC class that reads its own ivar. `tools/objc-classes.py` prints ivars and class methods now for
+exactly this question, and `--find-ivar`/`--find-method` answer "who owns this field / who
+answers this selector" in one command.
+
+**And a reference tweak's selectors are checked against the build before they are hooked, even
+when that tweak is recent.** InstaPlus's keep-deleted-messages hooks six selectors; none exists
+in 410, not even as a string, and a `%hook` on them would have *added* the methods rather than
+hooked them. 4.2.0 attaches each only where the running build declares it with the expected
+encoding, counts it, and lists the absent ones — a measurement round before a blocking one,
+because several of those also fire when *this* phone removes a message.
+
 **One collection, three ways in, and a filter on one of them looks like a filter that sometimes
 works.** YouTube's `YTInnerTubeCollectionViewController` fills `sectionRenderers` through
 `-addSectionsFromArray:`, `-insertSections:byPosition:error:` and
@@ -2914,9 +2934,9 @@ far less surface area than a real compressor for a few-kilobyte archive.
 
 ## Known state
 
-Instagram **4.1.21** · YouTube **1.31.8** · X **0.19.0** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
+Instagram **4.2.0** · YouTube **1.31.8** · X **0.19.0** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
 Spotify **0.2.4** · YT Music **0.9.3** ·
-NextUp **0.2.1** · suite **1.78.0**. **CarPlay is gone** — removed from this repository, to be
+NextUp **0.2.1** · suite **1.79.0**. **CarPlay is gone** — removed from this repository, to be
 rebuilt from scratch in one of its own.
 
 **This line is read first in every session, so it being out of date costs more than it being
@@ -3559,7 +3579,8 @@ HD attempt goes wrong again.
   added as a dead method. Established by counting the Sundial selectors in the real
   410 and 439 binaries, not by guessing — the point of keeping both IPAs around.
 - **Removed in 3.1.4:** liquid glass, teen icons, doom-scrolling limits, per-surface
-  download toggles, long-press tuning, keep-deleted-messages, quality picker. They
+  download toggles, long-press tuning, quality picker (keep-deleted-messages came back
+  later as `keep_unsent_messages`; see the 4.2.0 lesson for where it stands on 439). They
   were broken or made redundant by the inline button. Do not reintroduce without a
   reason.
 

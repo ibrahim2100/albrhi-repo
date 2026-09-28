@@ -47,6 +47,9 @@ static NSString *_reelsAdvanceSelector = nil;
 static NSInteger _unsendsKept = 0;
 static NSMutableArray<NSString *> *_unsendReasons = nil;
 static NSMutableArray<NSString *> *_unsendPaths = nil;
+/// Label order, then each label's value: an NSNumber for a count, a string for a note.
+static NSMutableArray<NSString *> *_privacyLabels = nil;
+static NSMutableDictionary<NSString *, id> *_privacyValues = nil;
 static NSArray<SCIFeatureAuditResult *> *_auditResults = nil;
 static NSString *_qualityFunnel = nil;
 static NSString *_qualityChosen = nil;
@@ -213,6 +216,36 @@ static NSMutableArray<NSString *> *_dateRewriteSamples = nil;
     }
 }
 
++ (void)privacyStore:(NSString *)label value:(id (^)(id old))update {
+    if (!label.length) return;
+
+    @synchronized (self) {
+        if (!_privacyLabels) {
+            _privacyLabels = [NSMutableArray array];
+            _privacyValues = [NSMutableDictionary dictionary];
+        }
+
+        // Bounded: a label built from something the app hands over (a request path, a topic)
+        // must not grow the page without limit on a long session.
+        if (!_privacyValues[label]) {
+            if (_privacyLabels.count >= 40) return;
+            [_privacyLabels addObject:label];
+        }
+        _privacyValues[label] = update(_privacyValues[label]);
+    }
+}
+
++ (void)privacyCount:(NSString *)label {
+    [self privacyStore:label value:^id(id old) {
+        return @([old isKindOfClass:[NSNumber class]] ? [old integerValue] + 1 : 1);
+    }];
+}
+
++ (void)privacyNote:(NSString *)label value:(NSString *)value {
+    NSString *copy = [value copy] ?: @"—";
+    [self privacyStore:label value:^id(__unused id old) { return copy; }];
+}
+
 + (void)recordQualityFunnelWithVersions:(NSInteger)versions
                         representations:(NSInteger)representations
                               videoReps:(NSInteger)videoReps
@@ -292,7 +325,10 @@ static NSMutableArray<NSString *> *_dateRewriteSamples = nil;
     // invites a fix for something that is not broken. Both are stated now.
     //
     BOOL uploaderHere = (objc_getClass("IGStorySeenStateUploader") != Nil);
-    NSString *uploader = uploaderHere ? @"IGStorySeenStateUploader -networker: installed"
+    // "installed" said here for releases while the receipts went out: the class was present and
+    // its getter was never asked. Presence is all this line can know; whether the field was found
+    // and cleared is on the Privacy section, counted where it happens.
+    NSString *uploader = uploaderHere ? @"IGStorySeenStateUploader: present — see Privacy for the field"
                                       : @"IGStorySeenStateUploader: not in this build";
 
     NSString *store;
@@ -655,6 +691,7 @@ static NSMutableArray<NSString *> *_dateRewriteSamples = nil;
               // store alone marked a perfectly working 410 as a fault.
               @"ok": @(_storySeenAnyHook)}
         ]},
+        @{@"header": SCILocalized(@"diag_section_privacy"), @"rows": [self privacyRows]},
         @{@"header": SCILocalized(@"diag_section_env"), @"rows": @[
             // What the panel's switch is doing in this app, and how that was decided.
             //
@@ -876,6 +913,26 @@ static NSMutableArray<NSString *> *_dateRewriteSamples = nil;
     [rows addObjectsFromArray:present];
 
     return rows;
+}
+
+- (NSArray<NSDictionary *> *)privacyRows {
+    @synchronized ([SCIDiagnostics class]) {
+        if (!_privacyLabels.count) {
+            return @[@{@"title": SCILocalized(@"diag_privacy_none"),
+                       @"detail": SCILocalized(@"diag_privacy_hint"),
+                       @"ok": @NO}];
+        }
+
+        NSMutableArray<NSDictionary *> *rows = [NSMutableArray array];
+        for (NSString *label in _privacyLabels) {
+            id value = _privacyValues[label];
+            BOOL count = [value isKindOfClass:[NSNumber class]];
+            [rows addObject:@{@"title": label,
+                              @"detail": count ? [NSString stringWithFormat:@"×%@", value] : value,
+                              @"ok": @(count ? [value integerValue] > 0 : YES)}];
+        }
+        return rows;
+    }
 }
 
 - (NSArray<NSDictionary *> *)reelsAutoScrollRows {

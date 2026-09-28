@@ -1,4 +1,4 @@
-import struct, sys#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Print the real method list of a class, read from a Mach-O binary's ObjC metadata.
 
     python3 tools/objc-classes.py <binary> <ClassName> [ClassName...]
@@ -18,15 +18,35 @@ before it means anything -- unmasked, the class list parses as one entry and the
 like "not in this binary", which is a *wrong* answer rather than a failure.
 
 Reading class metadata is also why no `class-dump` is needed: it parses what the runtime would.
+
+Two more things it prints, both of which a method list cannot answer: the **class methods**
+(read from the metaclass -- `+removeMessageWithMessageId:` is invisible in an instance list, and
+one reference tweak hooked six of those), and the **ivars** with their types. A Swift-or-ObjC
+variant object keeps each case's payload in a prefixed field (`_removeMessages_messageKeys`,
+`_removeItem_messageId`), and the field is the only place that shape is written down.
+
+    python3 tools/objc-classes.py <binary> --find-ivar <name>
+
+lists every class declaring an ivar of that name -- the reverse question, for when the field is
+known from a string dump and the class that owns it is not. `--find-method <selector>` does the
+same for a method, instance or class, which is how a protocol's real implementers are found: a
+selector in `__objc_methname` says somebody sends it, and only this says who answers it.
 """
-
-
+import struct, sys
 
 if len(sys.argv) < 3:
     sys.exit(__doc__)
 
 path = sys.argv[1]
-want = set(sys.argv[2:])
+find_ivar = None
+find_method = None
+if sys.argv[2] in ('--find-ivar', '--find-method'):
+    if len(sys.argv) < 4: sys.exit(__doc__)
+    if sys.argv[2] == '--find-ivar': find_ivar = sys.argv[3]
+    else: find_method = sys.argv[3]
+    want = set()
+else:
+    want = set(sys.argv[2:])
 
 f = open(path, 'rb')
 hdr = f.read(0x8000)
@@ -136,6 +156,31 @@ def methods(list_vm):
             out.append((cstr(p), cstr(t) if t else ''))
     return [m for m in out if m[0]]
 
+def ivars(list_vm):
+    """ivar_list_t: uint32 entsize, uint32 count, then {offset*, name, type, align, size}."""
+    if not list_vm: return []
+    h = read(list_vm, 8)
+    if not h: return []
+    entsize, count = struct.unpack('<II', h)
+    if count > 20000 or entsize < 24: return []
+    body = read(list_vm + 8, entsize * count) or b''
+    out = []
+    for i in range(count):
+        e = body[i*entsize:(i+1)*entsize]
+        if len(e) < 24: break
+        _, n, t = struct.unpack('<QQQ', e[:24])
+        name = cstr(unchain(n)) if n else None
+        if not name: continue
+        typ = cstr(unchain(t)) if t else ''
+        out.append('%s : %s' % (name, typ or '?'))
+    return out
+
+def class_ro(cls_vm):
+    c = read(cls_vm, 40)
+    if not c: return None, None
+    data_vm = unchain(struct.unpack('<Q', c[32:40])[0]) & ~7
+    return c, read(data_vm, 72)
+
 addr, size = sections[('__DATA', '__objc_classlist')] if ('__DATA','__objc_classlist') in sections \
     else sections[('__DATA_CONST', '__objc_classlist')]
 blob = read(addr, size)
@@ -165,11 +210,38 @@ for i in range(size // 8):
             if sro:
                 super_name = cstr(unchain(struct.unpack('<Q', sro[24:32])[0]))
 
+    ivars_vm = unchain(struct.unpack('<Q', ro[48:56])[0])
+    if find_method:
+        for sel, types in methods(unchain(struct.unpack('<Q', ro[32:40])[0])):
+            if sel == find_method: print('-[%s %s]  %s' % (name, sel, types))
+        meta_vm = unchain(struct.unpack('<Q', c[0:8])[0])
+        if meta_vm:
+            _, mro = class_ro(meta_vm)
+            if mro:
+                for sel, types in methods(unchain(struct.unpack('<Q', mro[32:40])[0])):
+                    if sel == find_method: print('+[%s %s]  %s' % (name, sel, types))
+        continue
+    if find_ivar:
+        for iv in ivars(ivars_vm):
+            if iv.split(' : ')[0] == find_ivar:
+                print('%s  (%s)' % (name, iv))
+        continue
+
     if name in want:
         methods_vm = unchain(struct.unpack('<Q', ro[32:40])[0])
         props_vm = unchain(struct.unpack('<Q', ro[64:72])[0])
+        # The metaclass is the class object's isa, and its method list is the class methods.
+        class_methods = []
+        meta_vm = unchain(struct.unpack('<Q', c[0:8])[0])
+        if meta_vm:
+            _, mro = class_ro(meta_vm)
+            if mro:
+                class_methods = sorted(set(methods(unchain(struct.unpack('<Q', mro[32:40])[0]))))
         found[name] = (sorted(set(methods(methods_vm))), sorted(set(properties(props_vm))),
-                       super_name)
+                       super_name, class_methods, ivars(ivars_vm))
+
+if find_ivar or find_method:
+    sys.exit(0)
 
 for n in sys.argv[2:]:
     print('===', n, '===')
@@ -177,11 +249,19 @@ for n in sys.argv[2:]:
     if entry is None:
         print('  NOT IN THIS BINARY')
         continue
-    ms, ps, super_name = entry
+    ms, ps, super_name, cms, ivs = entry
     print('  superclass:', super_name or '?')
     if ps:
         print('  -- properties (name : declared type) --')
         print('  ' + '\n  '.join(ps))
+    if ivs:
+        print('  -- ivars (name : type encoding) --')
+        print('  ' + '\n  '.join(ivs))
+    if cms:
+        print('  -- class methods --')
+        cw = max(len(m[0]) for m in cms)
+        for sel, types in cms:
+            print('  +%-*s  %s' % (cw, sel, types or '?'))
     print('  -- methods (selector  type encoding) --')
     width = max([len(m[0]) for m in ms] or [0])
     for sel, types in ms:

@@ -20,6 +20,10 @@ extern NSString * const SCIStorySeenSentNotification;
 
 BOOL storySeenOverrideEnabled = NO;
 
+/// In DisableStorySeen.x: puts each uploader's networker back or takes it out, to match the
+/// flag above. The flag alone changes nothing an uploader reads -- it reads its own field.
+extern void SCIStorySeenSyncUploaders(void);
+
 static const NSInteger SCIStorySeenButtonTag = 0x5CE7E;
 static const NSInteger SCIStoryDownloadButtonTag = 0x5C00D;
 
@@ -184,6 +188,7 @@ static id SCICurrentStorySection(UIViewController *viewer) {
     // global and momentary: it is put back shortly afterwards so the stories that
     // follow stay private, which is the whole point of the setting.
     storySeenOverrideEnabled = YES;
+    SCIStorySeenSyncUploaders();
 
     [SCIUtils showToastForDuration:1.4 title:SCILocalized(@"story_seen_marked_toast")];
 
@@ -209,6 +214,7 @@ static id SCICurrentStorySection(UIViewController *viewer) {
     // enough that the next one is still covered.
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         storySeenOverrideEnabled = NO;
+        SCIStorySeenSyncUploaders();
     });
 }
 

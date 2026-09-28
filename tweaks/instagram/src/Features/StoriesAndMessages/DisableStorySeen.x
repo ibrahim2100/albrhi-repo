@@ -1,5 +1,6 @@
 #import <substrate.h>
 #import <objc/runtime.h>
+#import <objc/message.h>
 #import "../../Utils.h"
 #import "../../InstagramHeaders.h"
 #import "../../Settings/SCIDiagnosticsViewController.h"
@@ -21,14 +22,32 @@
 ///
 /// The upload is blocked instead, at each build's own chokepoint:
 ///
-///   IGStorySeenStateUploader -networker        both builds — the request has no
+///   IGStorySeenStateUploader's `_networker`   both builds — the request has no
 ///                                             networker to go out on
 ///   IGStoryPendingSeenStateStore -_uploadSeenState:   the newer build's Swift store,
 ///                                             found through SCIResolveClass
 ///
-/// Both were found by reading the class metadata out of the two tested binaries. The
-/// pending store keeps its queue either way, so nothing downstream is left holding a
-/// half-built object.
+/// **The field, not the getter, and a 439 report is what said so.** This used to hook
+/// `-networker` and return nil. The report read `IGStorySeenStateUploader -networker:
+/// installed` and `Seen receipts blocked: 0` side by side while the receipts went out —
+/// installed, and never once asked. The uploader declares three methods (`init`,
+/// `-networker`, `.cxx_destruct`), so its upload is written elsewhere and reads `_networker`
+/// straight out of the object, which no getter hook sees. It is the bypassOnesie lesson from
+/// the YouTube tweak, one app over: **a stored value is true for every reader; a getter
+/// override is true only for the readers that ask.**
+///
+/// So the field itself is cleared while hiding is on and put back while it is off, and the
+/// eye button restores it for the moment it needs. The field is found by *identity* — the ivar
+/// holding the very object `-initWithUserSessionPK:networker:` was handed — rather than by
+/// its name, so a build that renames it is still found, and a build where nothing matches
+/// says so instead of pretending. InstaPlus reaches the same conclusion by refusing to build
+/// the uploader at all (read for architecture only; nothing copied), which cannot be undone
+/// for one story when the eye is pressed, and cannot be undone at all without a relaunch.
+///
+/// Every request that goes out is also looked at once, at `IGNetworkDispatcher` — the head
+/// of Instagram's network layer chain — and any whose path mentions "seen" is counted, with
+/// the path. Looked at, never changed: that line exists so that if a receipt still leaves by
+/// some route nobody has found yet, the report names the route in one round.
 ///
 
 /// Set by the eye button in StorySeenButton.x. While true the receipt is let
@@ -65,6 +84,14 @@ static BOOL SCIShouldBlockSeenReceipt(void) {
     if (storySeenOverrideEnabled && [SCIUtils getBoolPref:@"no_seen_receipt"]) {
         [[NSNotificationCenter defaultCenter] postNotificationName:SCIStorySeenSentNotification
                                                             object:nil];
+
+        // How many reels the receipt the eye lets out actually carries. One is the story on
+        // screen; more means the stories watched while hidden were queued and are leaving with
+        // it -- which would make the eye a way of undoing the setting, and is worth knowing
+        // from a number rather than from somebody noticing.
+        NSUInteger reels = [reelSeen isKindOfClass:[NSDictionary class]] ? [(NSDictionary *)reelSeen count] : 0;
+        [SCIDiagnostics privacyNote:@"Story views · reels in the last eye-pressed receipt"
+                              value:[NSString stringWithFormat:@"%lu", (unsigned long)reels]];
     }
 
     return %orig;
@@ -72,8 +99,94 @@ static BOOL SCIShouldBlockSeenReceipt(void) {
 
 %end
 
+// MARK: - The uploader's field
+
+/// Every uploader built this session, weakly — normally one per signed-in account.
+static NSHashTable *sUploaders = nil;
+static const void *kSCIRealNetworker = &kSCIRealNetworker;
+static NSString *sNetworkerIvarName = nil;
+
+/// The object ivar of `object` currently holding `value`, found by identity.
+///
+/// object_getIvar on an object-typed ivar reads a pointer and runs nothing, which is why this
+/// is safe to do on a class this code does not own: no getter, no KVC, no Swift accessor.
+static Ivar SCIIvarHolding(id object, id value) {
+    for (Class cls = object_getClass(object); cls && cls != [NSObject class]; cls = class_getSuperclass(cls)) {
+        unsigned int count = 0;
+        Ivar *fields = class_copyIvarList(cls, &count);
+        Ivar found = NULL;
+
+        for (unsigned int i = 0; fields && i < count && !found; i++) {
+            const char *type = ivar_getTypeEncoding(fields[i]);
+            if (!type || type[0] != '@') continue;
+            if (object_getIvar(object, fields[i]) == value) found = fields[i];
+        }
+
+        if (fields) free(fields);
+        if (found) return found;
+    }
+    return NULL;
+}
+
+/// Puts every known uploader's networker where it belongs right now: gone while receipts are
+/// being withheld, back while they are not. Called whenever that answer can change -- a new
+/// uploader, the eye button, the setting itself.
+void SCIStorySeenSyncUploaders(void) {
+    if (!sUploaders) return;
+
+    BOOL block = SCIShouldBlockSeenReceipt();
+    NSArray *uploaders;
+    @synchronized (sUploaders) { uploaders = sUploaders.allObjects; }
+
+    for (id uploader in uploaders) {
+        id real = objc_getAssociatedObject(uploader, kSCIRealNetworker);
+        if (!real || !sNetworkerIvarName) continue;
+
+        Ivar field = class_getInstanceVariable(object_getClass(uploader), sNetworkerIvarName.UTF8String);
+        if (!field) continue;
+
+        id want = block ? nil : real;
+        if (object_getIvar(uploader, field) == want) continue;
+
+        // WithStrongDefault: the uploader was compiled under ARC and owns this field strongly,
+        // so the old value is released and the new one retained exactly as its own code would.
+        object_setIvarWithStrongDefault(uploader, field, want);
+        [SCIDiagnostics privacyCount:block ? @"Story views · networker cleared" : @"Story views · networker restored"];
+    }
+}
+
 %hook IGStorySeenStateUploader
 
+- (id)initWithUserSessionPK:(id)pk networker:(id)networker {
+    id uploader = %orig;
+    if (!uploader || !networker) return uploader;
+
+    Ivar field = SCIIvarHolding(uploader, networker);
+    [SCIDiagnostics privacyCount:@"Story views · uploaders built"];
+
+    if (!field) {
+        // Said rather than assumed: every later "0 blocked" means something different when
+        // the field was never found.
+        [SCIDiagnostics privacyNote:@"Story views · networker field" value:@"not found — nothing holds the networker it was given"];
+        return uploader;
+    }
+
+    sNetworkerIvarName = @(ivar_getName(field));
+    [SCIDiagnostics privacyNote:@"Story views · networker field" value:sNetworkerIvarName];
+
+    // Kept strongly beside the uploader, so taking it out of the field cannot free it.
+    objc_setAssociatedObject(uploader, kSCIRealNetworker, networker, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ sUploaders = [NSHashTable weakObjectsHashTable]; });
+    @synchronized (sUploaders) { [sUploaders addObject:uploader]; }
+
+    SCIStorySeenSyncUploaders();
+    return uploader;
+}
+
+// Kept for any reader that does ask: it costs nothing, and the field alone would leave a
+// getter caller holding the real networker.
 - (id)networker {
     if (!SCIShouldBlockSeenReceipt()) {
         // Blocking is on but this one is being let through — the eye was pressed.
@@ -87,6 +200,7 @@ static BOOL SCIShouldBlockSeenReceipt(void) {
     }
 
     [SCIDiagnostics recordStorySeenIntercept];
+    [SCIDiagnostics privacyCount:@"Story views · -networker asked, withheld"];
     SCILogV(@"[Albrhi] Withheld the networker a story seen receipt needed");
 
     return nil;
@@ -107,6 +221,7 @@ static void (*orig_uploadSeenState)(id, SEL, id);
 static void sci_uploadSeenState(id self, SEL _cmd, id seenState) {
     if (SCIShouldBlockSeenReceipt()) {
         [SCIDiagnostics recordStorySeenIntercept];
+        [SCIDiagnostics privacyCount:@"Story views · Swift store upload swallowed"];
         SCILogV(@"[Albrhi] Swallowed a story seen upload");
         return;
     }
@@ -114,8 +229,72 @@ static void sci_uploadSeenState(id self, SEL _cmd, id seenState) {
     if (orig_uploadSeenState) orig_uploadSeenState(self, _cmd, seenState);
 }
 
+// MARK: - Every request, looked at once
+
+// Passive by design: %orig always runs, with the arguments it was given. Blocking here would
+// mean returning no request token to a network layer whose callers were never written to get
+// none, which is a crash waiting on the right caller -- the uploader's field is the block, and
+// this is the witness.
+%group SCIStorySeenWitness
+
+%hook IGNetworkDispatcher
+
+- (id)startRequest:(id)request policy:(id)policy callbacks:(id)callbacks {
+    if ([SCIUtils getBoolPref:@"no_seen_receipt"] && [request respondsToSelector:@selector(URL)]) {
+        NSURL *url = ((NSURL *(*)(id, SEL))objc_msgSend)(request, @selector(URL));
+        NSString *path = [url isKindOfClass:[NSURL class]] ? url.path : nil;
+
+        if (path && [path rangeOfString:@"seen" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            NSString *state = SCIShouldBlockSeenReceipt() ? @"went out while hidden" : @"went out, eye pressed";
+            [SCIDiagnostics privacyCount:[NSString stringWithFormat:@"Request %@ · %@", state, path]];
+        }
+    }
+
+    return %orig;
+}
+
+%end
+
+%end
+
+static void SCIStartSeenWitness(void) {
+    static BOOL started = NO;
+    if (started) return;
+
+    Class dispatcher = objc_getClass("IGNetworkDispatcher");
+    if (!dispatcher || !class_getInstanceMethod(dispatcher, @selector(startRequest:policy:callbacks:))) return;
+
+    started = YES;
+    %init(SCIStorySeenWitness);
+    [SCIDiagnostics privacyNote:@"Story views · request witness" value:@"IGNetworkDispatcher -startRequest:policy:callbacks:"];
+}
+
 %ctor {
     @autoreleasepool {
+        // Named because this file now has a %group: Logos only initialises the ungrouped hooks
+        // by itself when there is no group to be told about, and says so as a build error.
+        %init;
+
+        // The dispatcher lives in FBSharedFramework. Asked for at load, and once more after
+        // launch: a class the app certainly has can answer nil to a constructor that runs before
+        // its image is registered, and "not in this build" and "asked too early" look the same.
+        SCIStartSeenWitness();
+        [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidFinishLaunchingNotification
+                                                          object:nil queue:nil
+                                                      usingBlock:^(__unused NSNotification *note) {
+            SCIStartSeenWitness();
+            if (!objc_getClass("IGNetworkDispatcher")) {
+                [SCIDiagnostics privacyNote:@"Story views · request witness" value:@"IGNetworkDispatcher: not in this build"];
+            }
+        }];
+
+        // The setting can change while the app runs; the uploaders' field follows it.
+        [[NSNotificationCenter defaultCenter] addObserverForName:NSUserDefaultsDidChangeNotification
+                                                          object:nil queue:nil
+                                                      usingBlock:^(__unused NSNotification *note) {
+            SCIStorySeenSyncUploaders();
+        }];
+
         // The known runtime name first, then a search if it stops matching.
         //
         // The literal is correct for 439 and 441 and was verified against both binaries, so

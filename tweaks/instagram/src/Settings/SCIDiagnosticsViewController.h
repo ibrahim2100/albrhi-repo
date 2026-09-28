@@ -159,6 +159,20 @@ NS_ASSUME_NONNULL_BEGIN
 /// rather than leave a silent zero meaning either "never fired" or "nothing to do".
 + (void)recordUnsendPath:(NSString *)path detail:(nullable NSString *)detail;
 
+/// The three privacy features -- story views, unsent messages, online status -- counted by the
+/// point each one acts at, in one section of the report.
+///
+/// **Counted where the thing happens, not where it was decided.** Story-view hiding reported
+/// "hook installed" and "0 blocked" on 439 for releases, and those two numbers together were the
+/// finding: the upload was going out by a route none of the hooks was on. A tally per point is
+/// what separates "installed and never reached" from "reached and let through", and a
+/// row for each candidate route is what names the one that is actually used.
++ (void)privacyCount:(NSString *)label;
+
+/// A fact rather than a count -- which ivar was found, which selectors this build declares.
+/// Replaces the previous value for the same label.
++ (void)privacyNote:(NSString *)label value:(NSString *)value;
+
 /// Every stage of resolving a video's quality, counted separately.
 ///
 /// A quality picker was built three times against this pipeline and each one offered

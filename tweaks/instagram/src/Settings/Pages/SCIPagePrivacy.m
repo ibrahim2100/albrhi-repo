@@ -24,6 +24,7 @@
                     [SCISetting switchCellWithTitle:SCILocalized(@"story_seen_button_title") subtitle:SCILocalized(@"story_seen_button_sub") defaultsKey:@"story_seen_button"],
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_sm_markseen_t") subtitle:SCILocalized(@"p_sm_markseen_s") defaultsKey:@"remove_lastseen"],
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_sm_typing_t") subtitle:SCILocalized(@"p_sm_typing_s") defaultsKey:@"disable_typing_status"],
+                    [SCISetting switchCellWithTitle:SCILocalized(@"p_sm_online_t") subtitle:SCILocalized(@"p_sm_online_s") defaultsKey:@"hide_online_status"],
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_sm_screenshot_t") subtitle:SCILocalized(@"p_sm_screenshot_s") defaultsKey:@"remove_screenshot_alert"]
                 ]
             },
