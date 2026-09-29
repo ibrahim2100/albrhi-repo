@@ -60,16 +60,13 @@ void SCIYTLaunchMark(NSString *milestone) {
     }
     [sciTrailLock unlock];
 
-    // Once per milestone, not once per call: several of these are hooks that fire constantly, and
-    // what is being recorded is that they fired at all.
-    if (already) return;
-
-    // A moment later and off the main thread. The report is written to the app's own container,
-    // and the launch this is describing may be the one that is stuck.
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)),
-                   dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
-        [NSClassFromString(@"SCIYTDiagnostics") performSelector:@selector(writeReportToFile)];
-    });
+    // **Nothing is written here, and that is a change.** This used to build the whole diagnostics
+    // report and write it to a file 0.3 s after every new milestone, on every launch, on every
+    // phone -- a file and a report-sized string built for a fault that almost nobody has. The trail
+    // now stays in memory, and the one moment it has to reach a file is when the guard trips, which
+    // writes it once (below). A launch that hangs for eight seconds is the case it was for, and the
+    // guard's timer runs on a background queue exactly so that it still fires then.
+    (void)already;
 }
 
 NSString *SCIYTLaunchTrail(void) {
@@ -175,5 +172,6 @@ void SCIYTLaunchGuardStart(void) {
         // read from a settings screen; the report is a file, and it is the only evidence a launch
         // that never finished leaves behind.
         SCIYTLaunchMark(@"launch guard TRIPPED");
+        [NSClassFromString(@"SCIYTDiagnostics") performSelector:@selector(writeReportToFile)];
     });
 }

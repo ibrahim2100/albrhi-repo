@@ -1,6 +1,6 @@
 Package: com.albrhi.spotify
 Name: Albrhi for Spotify
-Version: 0.2.4
+Version: 0.2.5
 Architecture: iphoneos-arm64
 Description: No ads in Spotify — audio, display and upsell popups. WITHOUT PREMIUM: this tweak does not unlock a paid subscription, does not touch your account, and does not remove the skip limit. It blocks advertising, which it does on a free account exactly as it does on a paid one.
 Section: Tweaks

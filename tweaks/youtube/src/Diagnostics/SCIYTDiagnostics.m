@@ -141,8 +141,12 @@ static NSString *sciPanelFailure = nil;
 
 + (void)recordPanelFailure:(NSString *)reason {
     if (!reason.length) return;
+    BOOL changed = ![sciPanelFailure isEqualToString:reason];
     sciPanelFailure = [reason copy];
-    [self writeReportToFile];
+    // The one automatic write left besides the launch guard's: the settings screen failing is the
+    // case where the page that would show the report is the thing that is broken. Only when the
+    // reason is new, so a screen that fails on every open does not rewrite the file every time.
+    if (changed) [self writeReportToFile];
 }
 
 // The latest SponsorBlock line, and only the latest: this is a status, not a log, and
@@ -533,7 +537,6 @@ static NSString *sciShortsSave = nil;
 
 + (void)recordShortsSave:(NSString *)detail {
     if (detail.length) sciShortsSave = [detail copy];
-    [self writeReportToFile];
 }
 
 + (NSString *)shortsSaveState {
@@ -549,7 +552,6 @@ static NSMutableOrderedSet<NSString *> *sciPlaybackFailures = nil;
     if (sciPlaybackFailures.count >= 6) return;
 
     [sciPlaybackFailures addObject:detail];
-    [self writeReportToFile];
 }
 
 static NSMutableDictionary<NSString *, NSArray<NSNumber *> *> *sciFeedDoors = nil;
@@ -564,7 +566,6 @@ static NSMutableDictionary<NSString *, NSArray<NSNumber *> *> *sciFeedDoors = ni
     NSUInteger totalSeen = running.firstObject.unsignedIntegerValue + seen;
     NSUInteger totalDropped = running.lastObject.unsignedIntegerValue + dropped;
     sciFeedDoors[where] = @[@(totalSeen), @(totalDropped)];
-    [self writeReportToFile];
 }
 
 + (NSString *)feedEntryPoints {
@@ -582,7 +583,6 @@ static NSMutableDictionary<NSString *, NSArray<NSNumber *> *> *sciFeedDoors = ni
 + (void)recordFeedBrake:(NSString *)detail {
     if (!detail.length) return;
     sciFeedBrake = [detail copy];
-    [self writeReportToFile];
 }
 
 /// Words worth a longer look. Not a filter -- nothing here is dropped for carrying one of
@@ -1073,9 +1073,8 @@ static void SCIProbeAdSlots(id response) {
     SCILogV(@"captured video %@ (streams: %@)", sciLastVideoID,
             sciLastStreamingData ? @"yes" : @"no");
 
-    // Refreshed on the file too, so the report is complete without the page having
-    // to be reachable.
-    [self writeReportToFile];
+    // Not written to the file here any more. It was, on every captured video, which rebuilt the
+    // whole report each time a video opened. The report is written when somebody asks for it.
 }
 
 /// Only the rows the *features* depend on. The report lists more than this -- the
@@ -1142,7 +1141,6 @@ static NSMutableOrderedSet<NSString *> *sciShortsResponses = nil;
     if (sciShortsResponses.count >= 5) return;
 
     [sciShortsResponses addObject:detail];
-    [self writeReportToFile];
 }
 
 + (NSString *)shortsResponseState {
@@ -1666,11 +1664,22 @@ static NSMutableArray<NSString *> *sciStreamAttempts = nil;
     NSString *directory = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
     NSString *path = [directory stringByAppendingPathComponent:@"AlbrhiYT-report.txt"];
 
+    // **A ceiling, because a diagnostic that can grow without limit is a fault of its own.** One
+    // megabyte is far more than any report is read at; past it the tail is cut and says so, so a
+    // short file is never mistaken for a short report. The report is rebuilt from memory each time,
+    // so this bounds the file and not only its growth.
+    NSString *full = [self report];
+    const NSUInteger kMaxBytes = 1000 * 1000;
+    if ([full lengthOfBytesUsingEncoding:NSUTF8StringEncoding] > kMaxBytes) {
+        NSUInteger keep = MIN(full.length, kMaxBytes / 3);   // characters, at most 3 bytes each
+        full = [[full substringToIndex:keep] stringByAppendingString:@"\n\n--- report cut at 1 MB ---\n"];
+    }
+
     NSError *error = nil;
-    BOOL written = [[self report] writeToFile:path
-                                   atomically:YES
-                                     encoding:NSUTF8StringEncoding
-                                        error:&error];
+    BOOL written = [full writeToFile:path
+                          atomically:YES
+                            encoding:NSUTF8StringEncoding
+                               error:&error];
 
     // NSLog and not SCILogV: this line is the fallback for the case where the
     // settings section did not appear, so it cannot be behind a switch that only

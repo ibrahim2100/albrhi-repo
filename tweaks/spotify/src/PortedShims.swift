@@ -24,7 +24,16 @@ import Foundation
 /// exist to stop watching being reported at all. `NSLog` is bounded by the system and reaches the
 /// console when somebody is actually looking.
 ///
+///
+/// **And now not even that unless asked.** `NSLog` is bounded, but it is still a line per event into
+/// the system log of a phone whose owner did not ask for one, from thirty-odd call sites that
+/// include per-track and per-ad ones. Off unless the app's own defaults carry
+/// `albrhi_verbose_logging` -- read once per launch, so leaving it off costs one already-decided
+/// boolean per call. Startup lines ("hook activated", once each) are unaffected and stay.
+let albrhiVerboseLogging: Bool = UserDefaults.standard.bool(forKey: "albrhi_verbose_logging")
+
 func writeDebugLog(_ message: String) {
+    guard albrhiVerboseLogging else { return }
     NSLog("[AlbrhiSpotify] %@", message)
 }
 

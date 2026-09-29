@@ -65,8 +65,10 @@ class SPTEncorePopUpPresenterHook: ClassHook<NSObject> {
                  ?? kvcString(popUp, "descriptionText") ?? kvcString(popUp, "body")
 
         if isUpsellText(title) || isUpsellText(desc) {
-            NSLog("[EeveeSpotify][UpsellBlock] Blocked popup — title=%@ desc=%@",
-                  title ?? "(nil)", desc ?? "(nil)")
+            if albrhiVerboseLogging {
+                NSLog("[EeveeSpotify][UpsellBlock] Blocked popup — title=%@ desc=%@",
+                      title ?? "(nil)", desc ?? "(nil)")
+            }
             return
         }
 

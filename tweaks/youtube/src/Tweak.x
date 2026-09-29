@@ -7,7 +7,7 @@
 #import "Diagnostics/SCIYTDiagnostics.h"
 #import "Features/Display/SCIYTDimmer.h"
 
-NSString *SCIVersionString = @"v1.33.0";  // AlbrhiYT
+NSString *SCIVersionString = @"v1.33.1";  // AlbrhiYT
 
 ///
 /// Capture, so the diagnostics page has something true to report.
@@ -218,8 +218,9 @@ NSString *SCIVersionString = @"v1.33.0";  // AlbrhiYT
     // in here: a greeting must never be the reason a hook did not get installed.
     [SCIYTWelcome showIfFirstRun];
 
-    // Written once at launch and refreshed whenever a video is captured, so the
-    // report is retrievable from the app's container even if no hook attached.
+    // **No report is written at launch any more.** It used to be, so the report would be there
+    // even if no hook attached -- which built the entire report, on the main thread, during every
+    // launch, and rewrote the file on every captured video besides. It is written now when somebody
+    // asks (Settings > General), and once if the launch guard trips.
     SCIYTLaunchMark(@"ctor finished");
-    [SCIYTDiagnostics writeReportToFile];
 }

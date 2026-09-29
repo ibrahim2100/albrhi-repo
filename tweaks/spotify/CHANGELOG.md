@@ -1,5 +1,12 @@
 # Albrhi for Spotify — what changed
 
+## v0.2.5
+
+**لا سطر في سجلّ النظام لكل حدث بعد اليوم.** `writeDebugLog` (٣٨ موضع استدعاء، منها ما يجري لكل
+أغنية) وسطر «أُخمد إعلان» لكل إعلان ونافذة الاشتراك المحجوبة، كلها كانت `NSLog` مفتوحة. صارت
+تكتب فقط إن وُجد `albrhi_verbose_logging` في إعدادات التطبيق، ويُقرأ مرة واحدة لكل إقلاع. أسطر
+البدء («فُعّل كذا») تبقى، فهي مرة واحدة لكل بند.
+
 ## v0.2.4
 
 **A repository-wide audit pass. No feature changed; what changed is that three rules this

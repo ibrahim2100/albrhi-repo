@@ -153,8 +153,17 @@ NSString *SCITWWriteReport(void) {
     NSString *name = @"AlbrhiTW-report.txt";
     NSString *path = [documents stringByAppendingPathComponent:name];
 
+    // A ceiling, like every other report file in this repository: nothing here should be able to
+    // grow past a megabyte however long the recorder has been running.
+    NSString *text = SCITWReportText();
+    const NSUInteger kMaxBytes = 1000 * 1000;
+    if ([text lengthOfBytesUsingEncoding:NSUTF8StringEncoding] > kMaxBytes) {
+        text = [[text substringToIndex:MIN(text.length, kMaxBytes / 3)]
+                stringByAppendingString:@"\n\n--- report cut at 1 MB ---\n"];
+    }
+
     NSError *error = nil;
-    BOOL wrote = [SCITWReportText() writeToFile:path
+    BOOL wrote = [text writeToFile:path
                                      atomically:YES
                                        encoding:NSUTF8StringEncoding
                                           error:&error];

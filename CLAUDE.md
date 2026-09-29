@@ -424,6 +424,19 @@ turned into a design instead of a reason to refuse: the budget is counted in *re
 gives up, and every error the overlay reports is tallied by domain and code — so the report now
 says which errors this phone really gets.
 
+**A diagnostic that writes itself is a cost paid by every phone for a fault almost nobody has.**
+YouTube's report was rebuilt in full and written to a file at every launch, 0.3 s after every
+launch milestone, on every captured video and on every feed batch — ten call sites, each
+"so the report is retrievable even if the page is not". The owner's word for it was exact: it logs
+everything and burdens the device for nothing. **A report is written when somebody asks for it**
+(a button), plus the one case it exists for: the launch guard tripping, whose timer already runs
+on a background queue for the reason a hang cannot be reported by the thread that hung. Audit
+rule for any new diagnostic: *what writes it, and how often?* — and every file that can be written
+carries a ceiling and says so inside itself when it is hit (1 MB for reports; NextUp's log 128 KB
+*per process*, because seven processes write one file each and the total is the number that
+matters). `NSLog` is not a file but it is a line per event in the system log, so per-event ones
+sit behind a switch that is off by default (Spotify's did not).
+
 **One collection, three ways in, and a filter on one of them looks like a filter that sometimes
 works.** YouTube's `YTInnerTubeCollectionViewController` fills `sectionRenderers` through
 `-addSectionsFromArray:`, `-insertSections:byPosition:error:` and
@@ -2981,9 +2994,9 @@ far less surface area than a real compressor for a few-kilobyte archive.
 
 ## Known state
 
-Instagram **4.2.2** · YouTube **1.33.0** · X **0.19.0** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
-Spotify **0.2.4** · YT Music **0.9.3** ·
-NextUp **0.3.0** · suite **1.81.0**. **CarPlay is gone** — removed from this repository, to be
+Instagram **4.2.2** · YouTube **1.33.1** · X **0.19.1** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
+Spotify **0.2.5** · YT Music **0.9.3** ·
+NextUp **0.3.0** · suite **1.81.1**. **CarPlay is gone** — removed from this repository, to be
 rebuilt from scratch in one of its own.
 
 **This line is read first in every session, so it being out of date costs more than it being

@@ -24,7 +24,8 @@ private let killInStreamAdsService     = true
 private let killEmbeddedNPVService     = true
 private let killNativeAdsLoggerService = true
 private let killSponsoredCtxAttachment = true
-private let logAdBlockerEvents         = true
+// Was `true`: one system-log line for every ad suppressed. Follows the same switch as everything else.
+private let logAdBlockerEvents         = albrhiVerboseLogging
 
 @inline(__always)
 private func adlog(_ what: String) {
