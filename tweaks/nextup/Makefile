@@ -24,7 +24,7 @@ ROOT := ../..
 # (NUIOSMajor()), so a lower deployment target costs nothing and dropping iOS 14
 # support would be a regression this port has no reason to introduce.
 TARGET := iphone:clang:latest:14.2
-INSTALL_TARGET_PROCESSES = MediaRemoteUI Music Podcasts SpringBoard YouTubeMusic YouTube Spotify
+INSTALL_TARGET_PROCESSES = MediaRemoteUI Music Podcasts SpringBoard YouTubeMusic YouTube Spotify SoundCloud
 
 # arm64e as well as arm64, unlike every other tweak here. This one injects into
 # SpringBoard on modern devices, where the process is arm64e and an arm64-only slice is

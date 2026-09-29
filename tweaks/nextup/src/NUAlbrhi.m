@@ -17,4 +17,4 @@
 /// the port's own, and it tracks the *port's* number rather than NextUp 3's. The
 /// CHANGELOG records which upstream release each one is built from, which is the number
 /// that actually matters when comparing behaviour against Yves's repository.
-NSString *SCIVersionString = @"v0.2.1";  // AlbrhiNU
+NSString *SCIVersionString = @"v0.3.0";  // AlbrhiNU

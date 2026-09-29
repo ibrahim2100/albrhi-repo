@@ -28,6 +28,7 @@
             <string>com.google.ios.youtube</string>
             <string>com.google.ios.youtubemusic</string>
             <string>com.spotify.client</string>
+            <string>com.soundcloud.TouchApp</string>
         </array>
     </dict>
 

@@ -1,5 +1,26 @@
 # Albrhi NextUp — what changed
 
+## v0.3.0
+
+**Brought up to NextUp 3 1.2 — two upstream releases by Yves, carried over unchanged.** Upstream is
+GPLv3, so the code is taken as it stands and stays diffable against it; every line of this release
+is his work, and what this port changed is confined to the settings page and the package identity.
+
+**SoundCloud is the sixth app** (upstream 1.2, "Add SoundCloud support"). It reads SoundCloud's own
+play queue like the other five, so the row shows what SoundCloud itself would play next. New in this
+package: `NUSoundCloudProvider` and its hooks, a mach service and two Darwin notifications, the
+process in the libSandy profile and in the injection filter, and one switch on the settings page
+(`enabledSoundCloud`, bit 9 of the published state — declared in both places that must agree).
+Written against SoundCloud 8.75.0, which is upstream's number, not something tested here.
+
+**Playlists in Apple Music stop losing their cover** (upstream, "Unwrap playlist entries"). A queue
+built from a library playlist wraps each track in a playlist entry whose `-song` and
+`-artworkCatalog` answer nil, so the row showed a permanent placeholder, play-previous did nothing
+and the history stayed empty. The song is unwrapped one level down now, behind `-respondsToSelector:`.
+
+Not taken from upstream: its preference pane and header artwork, which this package replaced with
+its own page. Nothing on the device needs migrating.
+
 ## v0.2.1
 
 **"Free" is out of every description.** The tweak needs a licence; a package page saying it is

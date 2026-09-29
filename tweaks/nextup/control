@@ -1,6 +1,6 @@
 Package: com.albrhi.nextup
 Name: Albrhi NextUp (rootless)
-Version: 0.2.1
+Version: 0.3.0
 Architecture: iphoneos-arm64
 Description: See and skip what plays next, from the Lock Screen.
  .
@@ -9,8 +9,8 @@ Description: See and skip what plays next, from the Lock Screen.
  cover — on the Lock Screen, in Control Center and in the Dynamic Island. Tap the cover
  to play it now, or skip it without ever opening the app.
  .
- ▍FIVE APPS
- Apple Music, Apple Podcasts, YouTube, YouTube Music and Spotify. Each reads that app's
+ ▍SIX APPS
+ Apple Music, Apple Podcasts, YouTube, YouTube Music, Spotify and SoundCloud. Each reads that app's
  own playback queue, so the row shows what the app itself would play next — not a guess.
  .
  ▍ITS OWN ROW IN SETTINGS

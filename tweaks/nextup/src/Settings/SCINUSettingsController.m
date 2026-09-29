@@ -42,6 +42,7 @@ static const SCINUToggle kSCINUToggles[] = {
     { @"enabledYouTubeMusic", 1ULL << 6 },
     { @"enabledSpotify",      1ULL << 7 },
     { @"enabledYouTube",      1ULL << 8 },
+    { @"enabledSoundCloud",   1ULL << 9 },
 };
 
 static const size_t kSCINUToggleCount = sizeof(kSCINUToggles) / sizeof(kSCINUToggles[0]);
@@ -267,6 +268,11 @@ static const size_t kSCINUToggleCount = sizeof(kSCINUToggles) / sizeof(kSCINUTog
                                         symbol:@"waveform"
                                           tint:[UIColor systemGreenColor]
                                        support:SCILocalized(@"nextup_support_spotify")]];
+    [specifiers addObject:[self nuSwitchTitled:SCILocalized(@"nextup_app_soundcloud")
+                                           key:@"enabledSoundCloud"
+                                        symbol:@"cloud.fill"
+                                          tint:[UIColor systemOrangeColor]
+                                       support:SCILocalized(@"nextup_support_soundcloud")]];
 
     [specifiers addObject:[self nuGroupTitled:SCILocalized(@"nextup_advanced_section")
                                         footer:SCILocalized(@"nextup_log_footer")]];
