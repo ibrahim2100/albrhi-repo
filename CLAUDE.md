@@ -400,6 +400,22 @@ cell's `viewModel.messageMetadata.key.serverId`, placed from `-configureWithView
 reuse-safe bind point) and positioned in `-layoutSubviews` only when the frame moved — a badge
 given an autoresizing mask while its bubble is still zero wide stays outside it for good.
 
+**A working tweak's hook list is a map of where to look, and a generated model's getters do not
+exist until somebody asks.** YouTube 1.32.0 took ad gates from YTKACE (MIT; ships on 21.33.6 and
+21.39.4) and installed every one at runtime instead of as `%hook`, for the reason this file gives
+about `%hook` on an undeclared method: Logos *adds* it, and an added getter with no original
+replaces whatever the app resolves for itself. `YTIPlayerResponse` is protobuf, so
+`class_getInstanceMethod` answers NULL for a getter it certainly has; sending
+`+instancesRespondToSelector:` first runs the resolver, which installs the real method, and only then
+is there an original to keep. Every gate records installed / class absent / method absent / the
+encoding it found instead, and then counts its hits — **so a gate that does not apply to a build
+says so in one report rather than staying silent**. Proved on this machine with a mock that
+resolves its getters lazily: switched off, the app's own answer comes back.
+
+**Declined from that review on purpose:** its queue "without Premium" and Premium logo (paid
+features unlocked or imitated — the line this project draws), and its playback-error retry (nobody
+reported the fault, and an automatic reload can loop).
+
 **One collection, three ways in, and a filter on one of them looks like a filter that sometimes
 works.** YouTube's `YTInnerTubeCollectionViewController` fills `sectionRenderers` through
 `-addSectionsFromArray:`, `-insertSections:byPosition:error:` and
@@ -2957,9 +2973,9 @@ far less surface area than a real compressor for a few-kilobyte archive.
 
 ## Known state
 
-Instagram **4.2.2** · YouTube **1.31.8** · X **0.19.0** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
+Instagram **4.2.2** · YouTube **1.32.0** · X **0.19.0** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
 Spotify **0.2.4** · YT Music **0.9.3** ·
-NextUp **0.3.0** · suite **1.79.2**. **CarPlay is gone** — removed from this repository, to be
+NextUp **0.3.0** · suite **1.80.0**. **CarPlay is gone** — removed from this repository, to be
 rebuilt from scratch in one of its own.
 
 **This line is read first in every session, so it being out of date costs more than it being

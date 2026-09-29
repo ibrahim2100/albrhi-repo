@@ -661,6 +661,43 @@ static NSString *sciShortsAdDetail = nil;
     if (detail.length) sciShortsAdDetail = [detail copy];
 }
 
+static NSMutableArray<NSString *> *sciGateLabels = nil;
+static NSMutableDictionary<NSString *, NSString *> *sciGateStatus = nil;
+static NSMutableDictionary<NSString *, NSNumber *> *sciGateCounts = nil;
+
++ (void)registerAdGate:(NSString *)label status:(NSString *)status {
+    if (!label.length) return;
+    @synchronized (self) {
+        if (!sciGateLabels) {
+            sciGateLabels = [NSMutableArray array];
+            sciGateStatus = [NSMutableDictionary dictionary];
+            sciGateCounts = [NSMutableDictionary dictionary];
+        }
+        if (![sciGateLabels containsObject:label]) [sciGateLabels addObject:label];
+        sciGateStatus[label] = status ?: @"?";
+    }
+}
+
++ (void)countAdGate:(NSString *)label {
+    if (!label.length) return;
+    @synchronized (self) {
+        if (!sciGateCounts) return;
+        sciGateCounts[label] = @([sciGateCounts[label] integerValue] + 1);
+    }
+}
+
++ (NSString *)adGateState {
+    @synchronized (self) {
+        if (!sciGateLabels.count) return SCILocalized(@"diag_ad_gates_none");
+        NSMutableArray<NSString *> *lines = [NSMutableArray array];
+        for (NSString *label in sciGateLabels) {
+            [lines addObject:[NSString stringWithFormat:@"%@ — %@ · ×%@", label,
+                              sciGateStatus[label], sciGateCounts[label] ?: @0]];
+        }
+        return [lines componentsJoinedByString:@"\n  "];
+    }
+}
+
 + (NSString *)shortsAdState {
     if (!sciShortsAdsRefused) return SCILocalized(@"diag_shorts_ads_none");
     return [NSString stringWithFormat:SCILocalized(@"diag_shorts_ads_count"),
@@ -1279,6 +1316,8 @@ static NSMutableArray<NSString *> *sciStreamAttempts = nil;
             sciLastVideoID ?: @"?", sciActiveVideoID ?: @"?", sciResponseVideoID ?: @"?"]];
 
     [out appendFormat:@"%@\n  %@\n\n", SCILocalized(@"diag_shorts_ads"), [self shortsAdState]];
+
+    [out appendFormat:@"%@\n  %@\n\n", SCILocalized(@"diag_ad_gates"), [self adGateState]];
 
     // Above the streams section on purpose: it says what was asked of the streaming protocol,
     // and the section below says what came back. Read the other way round they are two

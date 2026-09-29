@@ -241,6 +241,15 @@
 
 /// Whether an ad page in Shorts was seen, and refused.
 + (void)recordShortsAd:(NSString *)detail;
+
+/// The runtime-installed ad gates, one line each: whether it attached on this build and how
+/// many times it has acted. `status` is written once at install (hooked, absent class, absent
+/// method, or the encoding it found instead), and `-countAdGate:` moves the tally -- kept as
+/// two acts because a gate that is hooked and never reached and a gate that is absent are two
+/// different faults that one number reads identically.
++ (void)registerAdGate:(NSString *)label status:(NSString *)status;
++ (void)countAdGate:(NSString *)label;
++ (NSString *)adGateState;
 + (NSString *)shortsAdState;
 
 /// How much of the feed this run saw, and how much of it was dropped as promoted.
