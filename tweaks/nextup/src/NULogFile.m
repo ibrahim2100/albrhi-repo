@@ -55,15 +55,17 @@ static pthread_mutex_t gNULogLock = PTHREAD_MUTEX_INITIALIZER;
 /// notices. A diagnostic that can fill a phone is a bug of its own, and "the user will remember to
 /// turn it off" is not a design.
 ///
-/// Half a megabyte is far more than any session anybody reads, and the check is a `stat` every 64
-/// lines rather than every line: the cost is then nothing while the log is on and nothing at all
-/// while it is off.
+/// 128 KB *per process*, because seven processes write one file each and the ceiling that matters is
+/// the total: seven of them at half a megabyte was three and a half megabytes on a phone whose owner
+/// asked for a megabyte at most. A session anybody reads is a few hundred lines. The check is a
+/// `stat` every 64 lines rather than every line: the cost is then nothing while the log is on and
+/// nothing at all while it is off.
 ///
 /// Truncated rather than rotated. A second file is a second thing to find, ask for and delete, and
 /// the interesting part of a log that has run this long is what it is doing *now* -- the truncation
 /// says so in the file itself, so a short log is never mistaken for a quiet process.
 ///
-static const unsigned long long kNULogMaxBytes = 512 * 1024;
+static const unsigned long long kNULogMaxBytes = 128 * 1024;
 static const int kNULogCheckEvery = 64;
 
 // First writable candidate wins, and we remember it for the process lifetime.

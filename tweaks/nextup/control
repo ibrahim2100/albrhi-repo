@@ -1,6 +1,6 @@
 Package: com.albrhi.nextup
 Name: Albrhi NextUp (rootless)
-Version: 0.3.0
+Version: 0.3.1
 Architecture: iphoneos-arm64
 Description: See and skip what plays next, from the Lock Screen.
  .
