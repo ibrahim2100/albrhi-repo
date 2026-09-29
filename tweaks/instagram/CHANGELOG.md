@@ -4,6 +4,18 @@
 Other versions should work too — the tweak looks for what it needs while the app runs
 rather than expecting a particular version number.
 
+## v4.2.2
+
+**الرسالة المحذوفة صار عليها علامة.** إبقاء الرسائل المحذوفة اشتغل على جهاز في 4.2.1 (٣ محجوبة)،
+لكن الرسالة الباقية شكلها مثل أي رسالة، فما تعرف أيها انحذف. الآن تظهر على فقاعتها شارة حمراء
+فيها سلة مهملات.
+
+الربط بين الطرفين مقيس من إنستقرام 410 نفسه، حلقة حلقة: الحذف المحجوز يحمل
+`IGDirectMessageUpdateMessageKey {_messageServerId, _messageClientContext}` (من تقرير الجهاز)،
+والرسالة المرسومة تصل لنفس المعرّف عبر `messageMetadata → key → serverId`. والربط عند
+`-configureWithViewModel:ringViewSpecFactory:launcherSet:` الذي يُستدعى مع كل إعادة استخدام للخلية،
+فلا تبقى العلامة على رسالة غلط. المعرّفات تُحفظ (بحدّ ٥٠٠) فتبقى العلامة بعد إغلاق التطبيق.
+
 ## v4.2.1
 
 **إبقاء الرسائل المحذوفة: التقرير سمّى الحلقة المفقودة.** الحذف كان يصل فعلاً للمطبّق الذي نعترضه،

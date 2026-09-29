@@ -394,6 +394,12 @@ first by name. **`+internal_classInfo` on a class is the tell**: ask the named f
 `SCISafeValueForKey`, which answers dynamically resolved getters, rather than enumerating. And a
 walk with a depth limit is a walk that stops one hop short the day the chain grows — 2 became 4.
 
+**Confirmed on a device in 4.2.1: unsent messages are kept on 410** (`3 · reason 0`). 4.2.2 marks
+them, by joining two ids read from both ends: the held key's `_messageServerId` and the drawn
+cell's `viewModel.messageMetadata.key.serverId`, placed from `-configureWithViewModel:…` (the
+reuse-safe bind point) and positioned in `-layoutSubviews` only when the frame moved — a badge
+given an autoresizing mask while its bubble is still zero wide stays outside it for good.
+
 **One collection, three ways in, and a filter on one of them looks like a filter that sometimes
 works.** YouTube's `YTInnerTubeCollectionViewController` fills `sectionRenderers` through
 `-addSectionsFromArray:`, `-insertSections:byPosition:error:` and
@@ -2951,9 +2957,9 @@ far less surface area than a real compressor for a few-kilobyte archive.
 
 ## Known state
 
-Instagram **4.2.1** · YouTube **1.31.8** · X **0.19.0** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
+Instagram **4.2.2** · YouTube **1.31.8** · X **0.19.0** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
 Spotify **0.2.4** · YT Music **0.9.3** ·
-NextUp **0.2.1** · suite **1.79.1**. **CarPlay is gone** — removed from this repository, to be
+NextUp **0.2.1** · suite **1.79.2**. **CarPlay is gone** — removed from this repository, to be
 rebuilt from scratch in one of its own.
 
 **This line is read first in every session, so it being out of date costs more than it being

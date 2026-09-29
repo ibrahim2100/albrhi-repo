@@ -41,6 +41,9 @@
 /// server, so a message kept only on this device goes with the refresh.
 ///
 
+/// In UnsentMarker.x: remembers a held key so the message it names is drawn with a mark.
+extern void SCIUnsentRememberKey(id key);
+
 static BOOL SCIWantsToKeepUnsent(void) {
     return [SCIUtils getBoolPref:@"keep_unsent_messages"];
 }
@@ -122,6 +125,7 @@ static void SCIDefuseMessageUpdate(id messageUpdate) {
 
     // Noted before the list is emptied, since afterwards there is nothing to note.
     SCIRememberHeldKeys(keys);
+    for (id key in (NSArray *)keys) SCIUnsentRememberKey(key);
 
     // The shape of one key -- its class and field names, never its values -- once per launch.
     // A log of unsent messages has to find each message from its key, and which fields a key
