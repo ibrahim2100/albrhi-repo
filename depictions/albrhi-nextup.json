@@ -92,6 +92,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v0.3.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **Brought up to NextUp 3 1.2 — two upstream releases by Yves, carried over unchanged.**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v0.2.1",
           "useBoldText": true
         },
@@ -117,20 +131,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v0.1.6",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **One line of upstream changed, and it is a safety fix rather than a port change.**",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -141,7 +141,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "0.2.1"
+          "text": "0.3.0"
         },
         {
           "class": "DepictionTableTextView",
