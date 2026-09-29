@@ -2959,13 +2959,21 @@ far less surface area than a real compressor for a few-kilobyte archive.
 
 Instagram **4.2.2** · YouTube **1.31.8** · X **0.19.0** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
 Spotify **0.2.4** · YT Music **0.9.3** ·
-NextUp **0.2.1** · suite **1.79.2**. **CarPlay is gone** — removed from this repository, to be
+NextUp **0.3.0** · suite **1.79.2**. **CarPlay is gone** — removed from this repository, to be
 rebuilt from scratch in one of its own.
 
 **This line is read first in every session, so it being out of date costs more than it being
 absent.** It said Panel 0.9.1 and suite 1.45.0 while the source served 0.9.2 and 1.46.0, and
 called NextUp unproven after it had been confirmed on a device. Move it with the four version
 numbers, not after them.
+
+**NextUp follows upstream by applying its own commits, not by re-copying.** 0.3.0 took NextUp 3
+1.1.2 → 1.2 as `git diff` between the two upstream commits, run through `patch` onto the renamed
+tree: every file except the two new SoundCloud ones applied cleanly, which is what keeping the
+`NU*` names and layout verbatim buys. What a diff cannot carry across is anything this port
+*replaced* — the preference pane — so a new app arrives as a switch to add by hand in
+`SCINUSettingsController` (and its bit in the toggle table, which must match `NUPrefs.h`), plus
+the strings. Read upstream's `git log` first; the state it was last ported at is in the changelog.
 
 **NextUp is confirmed working on iOS 16.1** — the row draws and the queue is read, on Music,
 Podcasts, YouTube, YouTube Music and Spotify. The first "it didn't work" was a jailbreak with
