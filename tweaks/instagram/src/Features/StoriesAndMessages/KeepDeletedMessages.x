@@ -1,6 +1,7 @@
 #import <objc/message.h>
 #import <objc/runtime.h>
 #import "../../Utils.h"
+#import "shared/src/SCIKVC.h"
 #import "../../InstagramHeaders.h"
 #import "../../Settings/SCIDiagnosticsViewController.h"
 
@@ -122,11 +123,29 @@ static void SCIDefuseMessageUpdate(id messageUpdate) {
     // Noted before the list is emptied, since afterwards there is nothing to note.
     SCIRememberHeldKeys(keys);
 
-    @try {
-        [messageUpdate setValue:@[] forKey:@"removeMessages_messageKeys"];
-    } @catch (__unused id error) {
-        return;
-    }
+    // The shape of one key -- its class and field names, never its values -- once per launch.
+    // A log of unsent messages has to find each message from its key, and which fields a key
+    // carries on this build is the thing that decides how; recorded so the next round is built
+    // on the device's answer rather than on Regram's newer build.
+    static dispatch_once_t keyShapeOnce;
+    id firstKey = [(NSArray *)keys firstObject];
+    if (firstKey) dispatch_once(&keyShapeOnce, ^{
+        NSMutableArray<NSString *> *names = [NSMutableArray array];
+        unsigned int fieldCount = 0;
+        Ivar *fields = class_copyIvarList(object_getClass(firstKey), &fieldCount);
+        for (unsigned int i = 0; fields && i < fieldCount && names.count < 10; i++) {
+            [names addObject:@(ivar_getName(fields[i]))];
+        }
+        if (fields) free(fields);
+        [SCIDiagnostics recordUnsendPath:@"key shape"
+                                  detail:[NSString stringWithFormat:@"%@ {%@}",
+                                          NSStringFromClass(object_getClass(firstKey)),
+                                          [names componentsJoinedByString:@","]]];
+    });
+
+    // Written straight into the field it was read from: no setter to guess, no KVC, and the
+    // object's own ARC ownership honoured.
+    object_setIvarWithStrongDefault(messageUpdate, keysIvar, @[]);
 
     [SCIDiagnostics recordUnsendKeptWithReason:reason messageCount:count];
     SCILogV(@"[Albrhi] Held back an unsend of %ld message(s), reason %ld", (long)count, (long)reason);
@@ -138,7 +157,10 @@ static void SCIDefuseMessageUpdate(id messageUpdate) {
 /// arbitrary ivars on every batch of updates — a good way to touch something that
 /// does not survive being read, and the likely cause of a crash around GIFs.
 static void SCIDefuseThreadUpdates(id updates, NSInteger depth) {
-    if (!updates || depth > 2) return;
+    // Four, not two: on 410 the chain is array → IGDirectCacheThreadUpdate → threadUpdates
+    // array → IGDirectThreadUpdate → its message update. Two stopped at the second hop, which
+    // is one of the two reasons a real unsend was never reached.
+    if (!updates || depth > 4) return;
 
     if ([updates isKindOfClass:[NSArray class]] || [updates isKindOfClass:[NSSet class]]) {
         for (id element in updates) SCIDefuseThreadUpdates(element, depth + 1);
@@ -160,6 +182,26 @@ static void SCIDefuseThreadUpdates(id updates, NSInteger depth) {
     Ivar messageUpdate = class_getInstanceVariable(cls, "_messageUpdate");
     if (messageUpdate) {
         SCIDefuseMessageUpdate(object_getIvar(updates, messageUpdate));
+        return;
+    }
+
+    // IGDirectCacheThreadUpdate, what the cache applicator is actually handed on 410.
+    //
+    // **The report named it and said it had nothing in it: `IGDirectCacheThreadUpdate {}`.**
+    // It declares no ivars, no properties and one method, `+internal_classInfo` -- a generated
+    // model whose fields are described in a table and whose getters are resolved at runtime,
+    // so they are in no method list for the search below to find. The table itself sits in the
+    // binary's strings as three neighbours, `threadUpdates`, `mutationIds`, `sequenceIds`, and
+    // the first is the list of IGDirectThreadUpdate this walker already knows how to defuse.
+    // Regram 6.3 (read for architecture only; nothing copied) asks for exactly that name.
+    //
+    // SCISafeValueForKey rather than a direct send: it answers for a dynamically resolved getter
+    // through -methodSignatureForSelector:, and returns nil rather than guessing on a build
+    // where the name is gone.
+    id nested = SCISafeValueForKey(updates, @"threadUpdates");
+    if (nested) {
+        [SCIDiagnostics recordUnsendPath:@"threadUpdates" detail:NSStringFromClass([nested class])];
+        SCIDefuseThreadUpdates(nested, depth + 1);
         return;
     }
 

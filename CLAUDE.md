@@ -383,6 +383,17 @@ hooked them. 4.2.0 attaches each only where the running build declares it with t
 encoding, counts it, and lists the absent ones — a measurement round before a blocking one,
 because several of those also fire when *this* phone removes a message.
 
+**A class with no fields is a class whose fields live somewhere else, and `{}` in a report is a
+question, not an answer.** Keep-unsent reached the right applicator on 410 and held back nothing:
+what it was handed was `IGDirectCacheThreadUpdate`, which declares no ivars, no properties and one
+method, `+internal_classInfo` — one of ~2,800 generated models whose getters are resolved at
+runtime and so appear in no method list. The walker searched ivars and then the method list, found
+neither, and reported the object empty. The field names were in the binary's strings as a
+neighbouring triple (`threadUpdates`, `mutationIds`, `sequenceIds`), and Regram 6.3 asks for the
+first by name. **`+internal_classInfo` on a class is the tell**: ask the named field through
+`SCISafeValueForKey`, which answers dynamically resolved getters, rather than enumerating. And a
+walk with a depth limit is a walk that stops one hop short the day the chain grows — 2 became 4.
+
 **One collection, three ways in, and a filter on one of them looks like a filter that sometimes
 works.** YouTube's `YTInnerTubeCollectionViewController` fills `sectionRenderers` through
 `-addSectionsFromArray:`, `-insertSections:byPosition:error:` and
@@ -2940,9 +2951,9 @@ far less surface area than a real compressor for a few-kilobyte archive.
 
 ## Known state
 
-Instagram **4.2.0** · YouTube **1.31.8** · X **0.19.0** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
+Instagram **4.2.1** · YouTube **1.31.8** · X **0.19.0** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
 Spotify **0.2.4** · YT Music **0.9.3** ·
-NextUp **0.2.1** · suite **1.79.0**. **CarPlay is gone** — removed from this repository, to be
+NextUp **0.2.1** · suite **1.79.1**. **CarPlay is gone** — removed from this repository, to be
 rebuilt from scratch in one of its own.
 
 **This line is read first in every session, so it being out of date costs more than it being
