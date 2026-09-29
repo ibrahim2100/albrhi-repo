@@ -44,6 +44,10 @@ static void SCIBuildTables(void) {
         @"high_refresh_rate_footer": @"Only changes how often a frame already decoded is redrawn — not the quality or the source of the video itself.",
         @"background_playback": @"Keep playing in the background",
         @"background_playback_note": @"Audio carries on when you leave the app or lock the screen.",
+        @"fix_playback_errors": @"Recover playback errors",
+        @"fix_playback_errors_note": @"When YouTube says an error occurred, reload the player and carry on from the same second. A few tries per video, then YouTube's own error is shown.",
+        @"diag_playback_fix": @"Playback error recovery",
+        @"diag_playback_fix_none": @"Nothing yet. Every playback error the player reports is listed here with how many times.",
 
         @"block_update_nag": @"Silence the update prompt",
         @"block_update_nag_note": @"Stops YouTube asking you to update, which would replace the app and remove this tweak.",
@@ -464,6 +468,10 @@ static void SCIBuildTables(void) {
         @"high_refresh_rate_footer": @"يغيّر فقط عدد مرّات إعادة رسم الإطار الذي فُكّت شفرته أصلاً — لا جودة الفيديو ولا مصدره.",
         @"background_playback": @"الاستمرار في الخلفية",
         @"background_playback_note": @"يكمل الصوت عند خروجك من التطبيق أو قفل الشاشة.",
+        @"fix_playback_errors": @"إصلاح أخطاء التشغيل",
+        @"fix_playback_errors_note": @"إذا قال يوتيوب «حدث خطأ»، يُعاد تحميل المشغّل ويكمل من الثانية نفسها. بضع محاولات لكل فيديو، ثم يظهر خطأ يوتيوب الأصلي.",
+        @"diag_playback_fix": @"إصلاح أخطاء التشغيل",
+        @"diag_playback_fix_none": @"لا شيء بعد. كل خطأ تشغيل يبلّغ عنه المشغّل يُدرج هنا مع عدد مرّاته.",
 
         @"block_update_nag": @"كتم تنبيه التحديث",
         @"block_update_nag_note": @"يمنع يوتيوب من مطالبتك بالتحديث، فالتحديث يستبدل التطبيق ويُزيل هذه الأداة.",

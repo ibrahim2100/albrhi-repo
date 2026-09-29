@@ -686,6 +686,34 @@ static NSMutableDictionary<NSString *, NSNumber *> *sciGateCounts = nil;
     }
 }
 
+static NSMutableArray<NSString *> *sciFixLabels = nil;
+static NSMutableDictionary<NSString *, NSNumber *> *sciFixCounts = nil;
+
++ (void)countPlaybackFix:(NSString *)label {
+    if (!label.length) return;
+    @synchronized (self) {
+        if (!sciFixLabels) {
+            sciFixLabels = [NSMutableArray array];
+            sciFixCounts = [NSMutableDictionary dictionary];
+        }
+        if (!sciFixCounts[label]) {
+            // Bounded: a label built from an error domain must not grow the page without limit.
+            if (sciFixLabels.count >= 40) return;
+            [sciFixLabels addObject:label];
+        }
+        sciFixCounts[label] = @([sciFixCounts[label] integerValue] + 1);
+    }
+}
+
++ (NSString *)playbackFixState {
+    @synchronized (self) {
+        if (!sciFixLabels.count) return SCILocalized(@"diag_playback_fix_none");
+        NSMutableArray<NSString *> *lines = [NSMutableArray array];
+        for (NSString *label in sciFixLabels) [lines addObject:[NSString stringWithFormat:@"%@ ×%@", label, sciFixCounts[label]]];
+        return [lines componentsJoinedByString:@"\n  "];
+    }
+}
+
 + (NSString *)adGateState {
     @synchronized (self) {
         if (!sciGateLabels.count) return SCILocalized(@"diag_ad_gates_none");
@@ -1318,6 +1346,8 @@ static NSMutableArray<NSString *> *sciStreamAttempts = nil;
     [out appendFormat:@"%@\n  %@\n\n", SCILocalized(@"diag_shorts_ads"), [self shortsAdState]];
 
     [out appendFormat:@"%@\n  %@\n\n", SCILocalized(@"diag_ad_gates"), [self adGateState]];
+
+    [out appendFormat:@"%@\n  %@\n\n", SCILocalized(@"diag_playback_fix"), [self playbackFixState]];
 
     // Above the streams section on purpose: it says what was asked of the streaming protocol,
     // and the section below says what came back. Read the other way round they are two

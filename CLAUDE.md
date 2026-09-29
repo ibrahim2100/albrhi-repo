@@ -413,8 +413,16 @@ says so in one report rather than staying silent**. Proved on this machine with 
 resolves its getters lazily: switched off, the app's own answer comes back.
 
 **Declined from that review on purpose:** its queue "without Premium" and Premium logo (paid
-features unlocked or imitated — the line this project draws), and its playback-error retry (nobody
-reported the fault, and an automatic reload can loop).
+features unlocked or imitated — the line this project draws).
+
+**Its playback-error retry was declined first and taken the same day, and the order is the lesson.**
+"Nobody reported it" was written from the *absence of a report*, and the owner's next message said
+the "an error occurred" screen appears often and had been assumed to be YouTube's own doing. **A
+symptom people put up with never reaches a bug list.** What made taking it safe was the loop worry
+turned into a design instead of a reason to refuse: the budget is counted in *reloads*, not errors
+(one error can cost two, three errors in a row one each), it hands the app's own error back when it
+gives up, and every error the overlay reports is tallied by domain and code — so the report now
+says which errors this phone really gets.
 
 **One collection, three ways in, and a filter on one of them looks like a filter that sometimes
 works.** YouTube's `YTInnerTubeCollectionViewController` fills `sectionRenderers` through
@@ -2973,9 +2981,9 @@ far less surface area than a real compressor for a few-kilobyte archive.
 
 ## Known state
 
-Instagram **4.2.2** · YouTube **1.32.0** · X **0.19.0** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
+Instagram **4.2.2** · YouTube **1.33.0** · X **0.19.0** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
 Spotify **0.2.4** · YT Music **0.9.3** ·
-NextUp **0.3.0** · suite **1.80.0**. **CarPlay is gone** — removed from this repository, to be
+NextUp **0.3.0** · suite **1.81.0**. **CarPlay is gone** — removed from this repository, to be
 rebuilt from scratch in one of its own.
 
 **This line is read first in every session, so it being out of date costs more than it being

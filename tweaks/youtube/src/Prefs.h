@@ -11,6 +11,9 @@
 ///
 #define SCIPrefHideAds          @"hide_ads"
 #define SCIPrefBackgroundPlay   @"background_playback"
+/// Recovers "an error occurred" playback errors by reloading the player -- on by default, and
+/// capped at two attempts per video so a video that genuinely cannot play is not reloaded forever.
+#define SCIPrefFixPlaybackErrors @"fix_playback_errors"
 #define SCIPrefHidePaidPromo    @"hide_paid_promotion"
 #define SCIPrefBlockUpdateNag   @"block_update_nag"
 /// Unlocks native, system Picture-in-Picture -- forces the one property that gates it by

@@ -250,6 +250,13 @@
 + (void)registerAdGate:(NSString *)label status:(NSString *)status;
 + (void)countAdGate:(NSString *)label;
 + (NSString *)adGateState;
+
+/// One event of the playback error recovery, counted by what it is: an error seen (by domain and
+/// code -- every one, recoverable or not), an interception, a reload, a recovery, a give-up, and
+/// whether each hook attached at all. Shown as a tally so "it keeps happening" can be told apart
+/// from "it kept being fixed".
++ (void)countPlaybackFix:(NSString *)label;
++ (NSString *)playbackFixState;
 + (NSString *)shortsAdState;
 
 /// How much of the feed this run saw, and how much of it was dropped as promoted.

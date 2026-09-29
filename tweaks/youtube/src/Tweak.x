@@ -7,7 +7,7 @@
 #import "Diagnostics/SCIYTDiagnostics.h"
 #import "Features/Display/SCIYTDimmer.h"
 
-NSString *SCIVersionString = @"v1.32.0";  // AlbrhiYT
+NSString *SCIVersionString = @"v1.33.0";  // AlbrhiYT
 
 ///
 /// Capture, so the diagnostics page has something true to report.
@@ -89,6 +89,7 @@ NSString *SCIVersionString = @"v1.32.0";  // AlbrhiYT
     [[NSUserDefaults standardUserDefaults] registerDefaults:@{
         SCIPrefHideAds: @YES,
         SCIPrefBackgroundPlay: @YES,
+        SCIPrefFixPlaybackErrors: @YES,
         SCIPrefBlockUpdateNag: @YES,
         SCIPrefHidePaidPromo: @NO,
 
