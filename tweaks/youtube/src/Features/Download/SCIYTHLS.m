@@ -4,6 +4,7 @@
 #import "../../Diagnostics/SCIYTDiagnostics.h"
 #import "SCIYTTransport.h"
 #import "SCIYTParts.h"
+#import "SCIYTDirect.h"
 #import <AVFoundation/AVFoundation.h>
 
 @implementation SCIHLSVariant
@@ -342,6 +343,11 @@ static NSString *SCIWithShape(NSString *message) {
                progress:(void (^)(double))progress
              completion:(void (^)(NSURL *, NSString *))completion {
 
+    if (variant.directVideoURL.length) {
+        [SCIYTDirect downloadVariant:variant progress:progress completion:completion];
+        return;
+    }
+
     NSString *audioPlaylist = variant.audioPlaylistURL;
 
     // The pictures first, and that is the whole download when the variant carries its own
@@ -384,6 +390,11 @@ static NSString *SCIWithShape(NSString *message) {
 + (void)downloadAudioFor:(SCIHLSVariant *)variant
                 progress:(void (^)(double))progress
               completion:(void (^)(NSURL *, NSString *))completion {
+
+    if (variant.directAudioURL.length) {
+        [SCIYTDirect downloadAudioFor:variant progress:progress completion:completion];
+        return;
+    }
 
     // The whole saving of this route: when the soundtrack is its own playlist, asking
     // for sound means downloading a few megabytes instead of a few hundred. The pictures

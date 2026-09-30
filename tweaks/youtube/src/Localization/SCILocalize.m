@@ -91,6 +91,9 @@ static void SCIBuildTables(void) {
 
         @"dl_asking": @"Asking YouTube for the formats…",
         @"dl_api_no_links": @"YouTube did not return any downloadable formats for this video. It may be private, age restricted, or blocked where you are.",
+        @"dl_direct_write_failed": @"The video was downloaded but could not be written as a file.",
+        @"dl_direct_unreadable": @"The downloaded files could not be read.",
+        @"dl_direct_incomplete": @"The download came back incomplete. Try again.",
         @"dl_why_unplayable_api": @"Found %ld formats, all in a codec iOS will not play. Saving one would give you a file that shows a black screen.",
 
         @"diag_active_video": @"Actually playing",
@@ -515,6 +518,9 @@ static void SCIBuildTables(void) {
 
         @"dl_asking": @"جارٍ سؤال يوتيوب عن الصيغ…",
         @"dl_api_no_links": @"يوتيوب لم يُرجع أي صيغة قابلة للتحميل لهذا الفيديو. قد يكون خاصًّا أو مقيَّدًا بالعمر أو محجوبًا في بلدك.",
+        @"dl_direct_write_failed": @"تم تنزيل الفيديو لكن تعذّرت كتابته كملف.",
+        @"dl_direct_unreadable": @"تعذّرت قراءة الملفات المنزَّلة.",
+        @"dl_direct_incomplete": @"وصل التنزيل ناقصًا. حاول مرة أخرى.",
         @"dl_why_unplayable_api": @"وُجدت %ld صيغة، كلها بترميز لا يشغّله iOS. حفظ أيّ منها يعطيك ملفًا بشاشة سوداء.",
 
         @"diag_active_video": @"المُشغَّل فعلًا",

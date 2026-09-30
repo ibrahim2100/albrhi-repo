@@ -504,6 +504,30 @@ still painted onto the button afterwards**, because `YTIIcon`'s `iconType` is an
 are not readable from the binary — the same refusal the Download Centre tab already made, unchanged
 by having read more of the app.
 
+**YouTube 1.34.0 stopped trying to get files out of the app and asks for them as a different
+client — the direct route, from YTKACE (MIT), as a method and not as code.** SABR cannot be
+turned off from inside the app (below), but a client YouTube has no reason to migrate still gets
+plain adaptive URLs: `VISIONOS` 1.02 against `youtubei.googleapis.com`, a visitor id from
+`/guide` and nothing else. **It is anonymous — no cookie, no account — and an earlier remark in
+this project's own history that it risked the account was wrong**, made without reading what the
+request carried. Its price is stated, not hidden: a video that needs a login is refused and the
+playlist route (which carries the app's session) takes over; a video refused once this launch
+goes straight there. Only H.264 ≤1080p and AAC are offered, because 1440p/4K are VP9/AV1.
+
+Two things about it were measured and are worth keeping. `&range=A-B` on a googlevideo URL
+returns exactly those bytes with a plain 200, so the existing parallel background fetcher
+(`SCIYTParts`) carries it with no new transport, and the joined size is compared to the
+declared `contentLength` before anything is written. And **AVFoundation on the build machine
+reads these fragmented files with every timestamp doubled** (19 s reads as 37.9 s) while the
+files' own `mvhd`/`mdhd`/`sidx` and Core Audio agree — so `SCIYTFragments` reads the boxes
+itself and hands AVAssetWriter compressed frames with their own timestamps, as `SCIYTTransport`
+does for TS. **An AAC magic cookie for Core Audio is the whole ES descriptor, not the two-byte
+AudioSpecificConfig** — given the short form the writer produced an `esds` nothing would open,
+no audio track at all, and reported success. Found only by asking the *output* what it held
+(`AVAssetReader` track count), which is why the diagnostics line compares written duration with
+what the sources claimed. Checked on Mac with a 19 s clip, a 3:33 song and a 10:35 1080p60
+film; **not yet on the phone**.
+
 **SABR cannot be turned off from inside the app. This was measured to the end — do not
 try again without new evidence.** Every format on YouTube 21.30.5 answers with an empty
 `?cpn=` URL, because the client asks a server-side controller for byte ranges instead of
@@ -2994,9 +3018,9 @@ far less surface area than a real compressor for a few-kilobyte archive.
 
 ## Known state
 
-Instagram **4.2.2** · YouTube **1.33.1** · X **0.19.1** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
+Instagram **4.2.2** · YouTube **1.34.0** · X **0.19.1** · Panel **0.9.38** · Watch **0.6.1** · TikTok **0.20.3** ·
 Spotify **0.2.5** · YT Music **0.9.3** ·
-NextUp **0.3.1** · suite **1.81.1**. **CarPlay is gone** — removed from this repository, to be
+NextUp **0.3.1** · suite **1.82.0**. **CarPlay is gone** — removed from this repository, to be
 rebuilt from scratch in one of its own.
 
 **This line is read first in every session, so it being out of date costs more than it being

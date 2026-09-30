@@ -21,6 +21,17 @@
 /// Nil when the variant carries its own sound, which is the other shape and equally valid.
 @property (nonatomic, copy) NSString *audioPlaylistURL;
 
+/// Set when this quality comes from the direct route (SCIYTDirect) rather than from a playlist.
+///
+/// A variant is still the unit the sheet, the library and the job list understand, so the
+/// direct route speaks the same type instead of growing a parallel one: what differs is only
+/// where the bytes are fetched from, and that is decided by whether these are filled.
+@property (nonatomic, copy) NSString *directVideoURL;
+@property (nonatomic, assign) long long directVideoBytes;
+@property (nonatomic, copy) NSString *directAudioURL;
+@property (nonatomic, assign) long long directAudioBytes;
+@property (nonatomic, copy) NSString *directVideoID;
+
 /// "1080p · H.264", for the quality sheet.
 - (NSString *)label;
 @end

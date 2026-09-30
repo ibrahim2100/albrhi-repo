@@ -5,6 +5,7 @@
 #import "SCIYTStreamAPI.h"
 #import "SCIYTPlayerStreams.h"
 #import "SCIYTHLS.h"
+#import "SCIYTDirect.h"
 #import "Center/SCIYTLibrary.h"
 #import "Center/SCIYTChoiceSheet.h"
 #import "Center/SCIYTDownloadCenter.h"
@@ -389,6 +390,65 @@ static NSString *sciRequestedVideoID = nil;
 + (void)beginFrom:(UIViewController *)presenter {
     if (!presenter) return;
 
+    [SCIYTDiagnostics clearStreamAttempts];
+
+    // The direct route first, and the playlist only when it cannot serve this video.
+    //
+    // The playlist is something the *app* was handed, which YouTube reshapes whenever it
+    // reshapes the app; the direct route is a request this tweak makes itself, as a client
+    // that still gets plain files (SCIYTDirect has the whole argument). It is skipped, not
+    // retried, for a video it already failed on this launch -- a second identical refusal
+    // costs a network round trip and a waiting dialog for nothing.
+    NSString *directID = sciRequestedVideoID
+        ?: [SCIYTDiagnostics activeVideoID]
+        ?: [SCIYTDiagnostics lastVideoID];
+
+    if (directID.length && ![SCIYTDirect hasFailedForVideo:directID]) {
+        [self presentDirectFrom:presenter videoID:directID];
+        return;
+    }
+
+    [self beginFromPlaylist:presenter];
+}
+
+/// The waiting dialog, then the direct route's qualities -- or, when it has none for this video,
+/// the route that existed before it, reached with the reason already in the report.
++ (void)presentDirectFrom:(UIViewController *)presenter videoID:(NSString *)videoID {
+    UIAlertController *waiting =
+        [UIAlertController alertControllerWithTitle:SCILocalized(@"dl_title")
+                                            message:SCILocalized(@"dl_asking")
+                                     preferredStyle:UIAlertControllerStyleAlert];
+
+    __block BOOL shown = NO;
+    __block void (^pending)(void) = nil;
+
+    void (^done)(void (^)(void)) = ^(void (^after)(void)) {
+        void (^close)(void) = ^{
+            [waiting dismissViewControllerAnimated:YES completion:after];
+        };
+        if (shown) close(); else pending = close;
+    };
+
+    [presenter presentViewController:waiting animated:YES completion:^{
+        shown = YES;
+        if (pending) { void (^queued)(void) = pending; pending = nil; queued(); }
+    }];
+
+    [SCIYTDirect variantsForVideo:videoID
+                       completion:^(NSArray<SCIHLSVariant *> *variants, NSString *failure) {
+        done(^{
+            if (variants.count) {
+                [self presentVariants:variants from:presenter];
+            } else {
+                [self beginFromPlaylist:presenter];
+            }
+        });
+    }];
+}
+
++ (void)beginFromPlaylist:(UIViewController *)presenter {
+    if (!presenter) return;
+
     // The activated video first, and the last MLVideo only as a fallback.
     //
     // They are not the same thing: MLVideo objects are created for videos the app is
@@ -398,7 +458,8 @@ static NSString *sciRequestedVideoID = nil;
     // The player first. If it is holding formats with links, there is no reason to ask
     // anyone for anything: no request, no borrowed client identity, nothing YouTube can
     // withdraw. The network path exists for when this comes up empty, not the reverse.
-    [SCIYTDiagnostics clearStreamAttempts];
+    // Not cleared here: -beginFrom: already did, and clearing again would erase the line
+    // saying why the direct route stood aside.
 
     // The playlist first, because it is the only route measurement says exists.
     //
@@ -626,54 +687,63 @@ static NSString *sciRequestedVideoID = nil;
                 return;
             }
 
-            // Sound or pictures, and which size, on one screen. The action sheet this
-            // replaces was eight rows reading "1080p", "720p" and so on, with no way to
-            // ask for the sound alone and nothing to tell one row from another at a
-            // glance -- and it looked like a system warning rather than a choice.
-            // The title of the video asked for, not of whichever was captured last.
-            //
-            // In Shorts those differ every time, and the download was fetching the right
-            // clip and labelling it with the next one's name -- which is exactly what
-            // "it saved the wrong video" looks like from the Download Centre.
-            NSString *title = [SCIYTDiagnostics titleForVideoID:sciRequestedVideoID]
-                ?: [SCIYTDiagnostics lastVideoTitle];
-            // The same id the title was resolved from, so the thumbnail section fetches the
-            // cover of the video that was asked for rather than of whichever was captured
-            // last -- the Shorts mismatch documented just above, in picture form.
-            [SCIYTChoiceSheet presentFrom:presenter
-                                 variants:variants
-                                    title:title
-                                  videoID:(sciRequestedVideoID ?: [SCIYTDiagnostics activeVideoID])
-                                   chosen:^(SCIHLSVariant *variant, SCIYTJobKind kind) {
-                NSString *chosenID = sciRequestedVideoID ?: [SCIYTDiagnostics activeVideoID];
-
-                // Already here? Say so rather than fetching it again.
-                //
-                // Ninety parts is minutes of waiting and a second copy of the same file, and
-                // the person asking has no way of knowing it is already saved -- the list is
-                // a different screen. Only a finished save of the same kind counts: a video
-                // and its audio are two different things to want.
-                SCIYTJob *existing = [[SCIYTLibrary shared] existingJobForVideo:chosenID kind:kind];
-                if (existing) {
-                    [self showMessage:SCILocalized(@"dl_already_have") from:presenter];
-                    return;
-                }
-
-                // Set only from the Shorts save button -- the one caller that ever hands
-                // this class a video id up front, because a long press elsewhere means
-                // "whatever is currently playing" and never means Shorts.
-                [[SCIYTLibrary shared] startVariant:variant
-                                                kind:kind
-                                               title:title
-                                             videoID:chosenID
-                                             isShort:(sciRequestedVideoID != nil)];
-
-                // And that is the end of it here. The download is a row in the centre
-                // now, so the app is handed straight back -- watching something while a
-                // video saves is the ordinary case, not an edge one.
-                [self showMessage:SCILocalized(@"dl_started") from:presenter];
-            }];
+            [self presentVariants:variants from:presenter];
         });
+    }];
+}
+
++ (void)presentVariants:(NSArray<SCIHLSVariant *> *)variants from:(UIViewController *)presenter {
+    // Sound or pictures, and which size, on one screen. The action sheet this
+    // replaces was eight rows reading "1080p", "720p" and so on, with no way to
+    // ask for the sound alone and nothing to tell one row from another at a
+    // glance -- and it looked like a system warning rather than a choice.
+    // The title of the video asked for, not of whichever was captured last.
+    //
+    // In Shorts those differ every time, and the download was fetching the right
+    // clip and labelling it with the next one's name -- which is exactly what
+    // "it saved the wrong video" looks like from the Download Centre.
+    // The direct route names the video it asked about, and that is the one every line below
+    // must agree with -- it may have fallen back to the last video seen, which the playlist
+    // route never does.
+    NSString *askedID = variants.firstObject.directVideoID
+        ?: sciRequestedVideoID ?: [SCIYTDiagnostics activeVideoID];
+    NSString *title = [SCIYTDiagnostics titleForVideoID:askedID]
+        ?: [SCIYTDiagnostics lastVideoTitle];
+    // The same id the title was resolved from, so the thumbnail section fetches the
+    // cover of the video that was asked for rather than of whichever was captured
+    // last -- the Shorts mismatch documented just above, in picture form.
+    [SCIYTChoiceSheet presentFrom:presenter
+                         variants:variants
+                            title:title
+                          videoID:askedID
+                           chosen:^(SCIHLSVariant *variant, SCIYTJobKind kind) {
+        NSString *chosenID = askedID;
+
+        // Already here? Say so rather than fetching it again.
+        //
+        // Ninety parts is minutes of waiting and a second copy of the same file, and
+        // the person asking has no way of knowing it is already saved -- the list is
+        // a different screen. Only a finished save of the same kind counts: a video
+        // and its audio are two different things to want.
+        SCIYTJob *existing = [[SCIYTLibrary shared] existingJobForVideo:chosenID kind:kind];
+        if (existing) {
+            [self showMessage:SCILocalized(@"dl_already_have") from:presenter];
+            return;
+        }
+
+        // Set only from the Shorts save button -- the one caller that ever hands
+        // this class a video id up front, because a long press elsewhere means
+        // "whatever is currently playing" and never means Shorts.
+        [[SCIYTLibrary shared] startVariant:variant
+                                        kind:kind
+                                       title:title
+                                     videoID:chosenID
+                                     isShort:(sciRequestedVideoID != nil)];
+
+        // And that is the end of it here. The download is a row in the centre
+        // now, so the app is handed straight back -- watching something while a
+        // video saves is the ordinary case, not an edge one.
+        [self showMessage:SCILocalized(@"dl_started") from:presenter];
     }];
 }
 
