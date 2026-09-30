@@ -4,20 +4,23 @@
 
 ### iOS tweaks, built in the open — bilingual, native, and written to be read
 
-**العربية · English** · a working APT source · nine tweaks, seven in one package
+**العربية · English** · a working APT source · nine tweaks, six in one package
 
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-iOS%2015%2B-lightgrey.svg)]()
+[![Platform](https://img.shields.io/badge/platform-iOS%2015%2B-lightgrey.svg)](#-compatibility)
 [![Rootless](https://img.shields.io/badge/rootless-supported-success.svg)](#-compatibility)
-[![Albrhi](https://img.shields.io/badge/Albrhi-1.58.15-blueviolet.svg)](suite/CHANGELOG.md)
-[![Instagram](https://img.shields.io/badge/Instagram-4.1.12-orange.svg)](tweaks/instagram/CHANGELOG.md)
-[![YouTube](https://img.shields.io/badge/YouTube-1.20.0-red.svg)](tweaks/youtube/CHANGELOG.md)
-[![X](https://img.shields.io/badge/X-0.14.0-black.svg)](tweaks/twitter/CHANGELOG.md)
-[![TikTok](https://img.shields.io/badge/TikTok-0.19.10-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
-[![Spotify](https://img.shields.io/badge/Spotify-0.2.3-1DB954.svg)](tweaks/spotify/CHANGELOG.md)
-[![YT Music](https://img.shields.io/badge/YT%20Music-0.3.0-FF0000.svg)](tweaks/ytmusic/CHANGELOG.md)
-[![NextUp](https://img.shields.io/badge/NextUp-0.1.5-FF375F.svg)](tweaks/nextup/CHANGELOG.md)
-[![Watch](https://img.shields.io/badge/Watch-0.5.2-FF375F.svg)](tweaks/watch/CHANGELOG.md)
+[![roothide](https://img.shields.io/badge/roothide-supported-success.svg)](#-compatibility)
+
+[![Albrhi](https://img.shields.io/badge/Albrhi-1.82.0-blueviolet.svg)](suite/CHANGELOG.md)
+[![Instagram](https://img.shields.io/badge/Instagram-4.2.2-orange.svg)](tweaks/instagram/CHANGELOG.md)
+[![YouTube](https://img.shields.io/badge/YouTube-1.34.0-red.svg)](tweaks/youtube/CHANGELOG.md)
+[![X](https://img.shields.io/badge/X-0.19.1-black.svg)](tweaks/twitter/CHANGELOG.md)
+[![TikTok](https://img.shields.io/badge/TikTok-0.20.3-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
+[![YT Music](https://img.shields.io/badge/YT%20Music-0.9.3-FF0000.svg)](tweaks/ytmusic/CHANGELOG.md)
+[![Spotify](https://img.shields.io/badge/Spotify-0.2.5-1DB954.svg)](tweaks/spotify/CHANGELOG.md)
+[![Panel](https://img.shields.io/badge/Panel-0.9.38-8E8E93.svg)](tweaks/panel/CHANGELOG.md)
+[![NextUp](https://img.shields.io/badge/NextUp-0.3.1-FF375F.svg)](tweaks/nextup/CHANGELOG.md)
+[![Watch](https://img.shields.io/badge/Watch-0.6.1-FF375F.svg)](tweaks/watch/CHANGELOG.md)
 [![Based on](https://img.shields.io/badge/based%20on-SCInsta-lightblue.svg)](https://github.com/SoCuul/SCInsta)
 
 <br/>
@@ -29,518 +32,462 @@
 [![Add to Sileo](https://img.shields.io/badge/Add%20to-Sileo-2C7CF0?style=for-the-badge&logo=apple&logoColor=white)](https://sharerepo.stkc.win/?repo=https://ibrahim2100.github.io/albrhi-repo/)
 [![Add to Zebra](https://img.shields.io/badge/Add%20to-Zebra-D4462D?style=for-the-badge&logo=apple&logoColor=white)](https://sharerepo.stkc.win/?repo=https://ibrahim2100.github.io/albrhi-repo/)
 
+<sub>Lower case, exactly as written — GitHub Pages paths are case sensitive.</sub>
+
 </div>
+
+---
+
+## Contents
+
+[Install](#-install) · [Licence](#-licence) · [What is in here](#-what-is-in-here) ·
+[Instagram](#-albrhi-for-instagram) · [YouTube](#-albrhi-for-youtube) · [X](#-albrhi-for-x) ·
+[TikTok](#-albrhi-for-tiktok) · [YouTube Music](#-albrhi-for-youtube-music) ·
+[Spotify](#-albrhi-for-spotify) · [Panel](#-albrhi-panel) · [NextUp](#-albrhi-nextup) ·
+[Watch](#-albrhi-watch) · [Compatibility](#-compatibility) · [Sideloading](#-sideloading) ·
+[Building](#-building) · [Usage](#-usage) · [How it is made](#-how-it-is-made) ·
+[Roadmap](#-roadmap) · [Credits](#-credits)
 
 ---
 
 ## ⚡ Install
 
-**There is one package to install: `com.albrhi`, listed as *Albrhi*.** It carries the
-Instagram, YouTube, X and TikTok tweaks and the Settings panel together — one thing to
-install, one thing to update, and a new tweak arrives inside it rather than as a second
-download.
+**There is one package to install: `com.albrhi`, listed as *Albrhi*.** It carries the Instagram,
+YouTube, X, TikTok and YouTube Music tweaks and the Settings panel together — one thing to install,
+one thing to update, and a new tweak arrives inside it rather than as a second download.
 
-**1 · Add the source**
-
-Tap a button above, or add it by hand:
+**1 · Add the source** — tap a button above, or **Sileo / Zebra → Sources → ＋** and paste:
 
 ```
 https://ibrahim2100.github.io/albrhi-repo/
 ```
 
-- **Sileo** → Sources → **＋** → paste the URL.
-- **Zebra** → Sources → **＋** → paste the URL.
-
-**2 · Install** *Albrhi*, then **respring**.
-
-The source serves both flavours; your package manager picks the right one:
+**2 · Install** *Albrhi*, then **respring**. The source serves both flavours and your package manager
+picks the right one:
 
 | Package | For |
 |---|---|
-| `com.albrhi` | Rootless jailbreaks (Dopamine, palera1n) |
+| `com.albrhi` | Rootless (Dopamine, palera1n) |
 | `com.albrhi.roothide` | roothide |
 
-> The two `Conflict`/`Replace` each other, so only one is ever active. What makes a package
-> roothide is its *paths*, not its control file, so the two are genuinely different builds
-> rather than the same one relabelled.
+The two `Conflict`/`Replace` each other, so only one is ever active. What makes a package roothide is
+its *paths*, not its control file — they are genuinely different builds, not one relabelled.
 
-**3 · Choose what it patches.** Settings → **Albrhi** lists every app, with a switch each.
-Turning one off leaves the package installed and its settings intact; reopen that app for
-the change to take effect.
+**3 · Choose what it patches.** **Settings → Albrhi** lists every app with a switch each. The switches
+start **off**: installing Albrhi must never silently patch four apps nobody asked about. Turn one off
+again and the package stays installed with its settings intact; reopen that app for it to take effect.
 
-> **The individual packages are no longer served.** `com.albrhi.tweak`,
-> `com.albrhi.youtube` and the rest were frozen at whatever version they last published —
-> the source was offering YouTube 1.9.0 while the suite carried 1.13.0 — and they could
-> never have updated, because nothing publishes them any more. `com.albrhi` declares
-> `Conflicts`/`Replaces` on all ten of those identities anyway, so a device could not hold
-> both. If you installed one before, it still works; install the suite and it is removed
-> for you.
+**4 · Activate.** See [Licence](#-licence) — there is a free week, taken from that same screen.
 
 <details>
-<summary><b>Other ways to install</b></summary>
+<summary><b>Other ways to install, and what is not served any more</b></summary>
 
 <br/>
 
-**From a GitHub release** — download the `.deb` for your setup from the
-[Releases page](https://github.com/ibrahim2100/albrhi-repo/releases) and open it in your package manager.
+- **From a GitHub release** — download the `.deb` for your setup from the
+  [Releases page](https://github.com/ibrahim2100/albrhi-repo/releases).
+- **Sideloading (no jailbreak)** — see [Sideloading](#-sideloading).
+- **From source** — see [Building](#-building) and [BUILD.md](BUILD.md).
 
-**Sideloading (no jailbreak)** — inject the `Albrhi_*.dylib` into a decrypted Instagram IPA with
-LiveContainer, Sideloadly or cyan.
-
-**From source** — see [Building](#-building) below and [BUILD.md](BUILD.md).
+**The individual packages (`com.albrhi.tweak`, `com.albrhi.youtube`, …) are no longer served.** They
+were frozen at whatever version they last published and could never update, because nothing
+publishes them any more. `com.albrhi` declares `Conflicts`/`Replaces` on all of them, so a device
+cannot hold both; if you installed one before, installing the suite removes it for you.
 
 </details>
 
 ---
 
-## Overview
+## 🔑 Licence
 
-**Albrhi** is a personal workshop for iOS tweaks that also happens to be a working APT source: it
-builds itself, publishes its own releases, and serves a Sileo/Zebra repository from GitHub Pages.
-It is written for learning as much as for using — the code is commented to explain *why*, not just
-what, and the reasoning behind the awkward parts is kept in [CLAUDE.md](CLAUDE.md) rather than lost.
+Albrhi needs a licence to run. Open **Settings → Albrhi → Licence**:
+
+| | |
+|---|---|
+| **A free week** | Taken from that screen, once per device, starting the moment you take it. |
+| **A key** | Bound to your device. Works with no network at all — the signature is checked on the phone. |
+| **A short code** | Like `ALB-4K7M-9QX2-P3RT`. Typed in, redeemed once, then bound to your device. |
+| **A request** | Makes a short message carrying your device, the term you want and your name; you send it, and the answer comes back as a key. |
+
+A licence renews itself quietly in the background (about once a day, and never in a way that can
+hold up a launch). A licence that has been **withdrawn stops working within a day**; a phone in
+airplane mode or behind a captive portal loses nothing, because a failed check means *nothing was
+decided*, never *not licensed*.
+
+- **The panel itself is never behind the licence**, so the screen that lets you back in is always
+  reachable.
+- **When a tweak stands down because of the licence, the panel says so** — switches that read ON while
+  nothing happens would be a screen lying to you.
+- **Nothing identifying is read from your phone.** The device id is a random value the panel writes
+  once; it is derived from nothing about you or the hardware.
+- No client-side check can be made unbreakable, and this one is not sold as one: what it buys is that
+  most people never crack anything, and that a leaked key can be revoked. The design and its honest
+  limits are written out in [docs/LICENCE-KEYS.md](docs/LICENCE-KEYS.md).
+
+---
+
+## 🧭 What is in here
+
+**Albrhi** is a personal workshop for iOS tweaks that is also a working APT source: it builds itself,
+publishes its own releases, and serves a Sileo/Zebra repository from GitHub Pages. It is written for
+learning as much as for using — the code is commented to explain *why*, and the reasoning behind the
+awkward parts is kept in [CLAUDE.md](CLAUDE.md) rather than lost.
 
 Developed by **Ibrahim Ismail AL-Rahn** ([@ibrahim2100](https://github.com/ibrahim2100)).
 
-### What is in here
+**Nine tweaks. Six ship inside `com.albrhi`; three stand on their own.**
 
-**Nine tweaks. Seven ship inside `com.albrhi`; two stand on their own.**
+| Tweak | Patches | Version | In `com.albrhi` | What it does |
+|---|---|---|:-:|---|
+| **[Instagram](#-albrhi-for-instagram)** | Instagram | 4.2.2 | ✅ | downloads, AV1 reels transcoded on the device, a quieter feed, watching stories without a receipt, unsent messages kept and marked |
+| **[YouTube](#-albrhi-for-youtube)** | YouTube | 1.34.0 | ✅ | downloads that survive app updates, their own Download Centre tab, no ads, SponsorBlock, background playback |
+| **[X](#-albrhi-for-x)** | X / Twitter | 0.19.1 | ✅ | media downloads with a button you can place yourself, and fifteen-plus switches for what X does |
+| **[TikTok](#-albrhi-for-tiktok)** | TikTok | 0.20.3 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |
+| **[YouTube Music](#-albrhi-for-youtube-music)** | YouTube Music | 0.9.3 | ✅ | synced lyrics, saving tracks, no ads, background playback |
+| **[Panel](#-albrhi-panel)** | Settings | 0.9.38 | ✅ | the Albrhi page: a switch per app, the licence, a guide, backup |
+| **[Spotify](#-albrhi-for-spotify)** | Spotify | 0.2.5 | — | no ads, no Premium popups, sponsored podcast segments skipped |
+| **[NextUp](#-albrhi-nextup)** | SpringBoard + five media apps | 0.3.1 | — | what plays next, on the Lock Screen — a GPLv3 port |
+| **[Watch](#-albrhi-watch)** | SpringBoard, Watch app | 0.6.1 | — | pair a newer watchOS than iOS expects, and hold watchOS 26 back — an MIT port |
 
-| Tweak | Patches | Version | What it does |
-|---|---|---|---|
-| **Albrhi for Instagram** | Instagram | 4.1.12 | downloads, AV1 reels transcoded on the device, a quieter feed, watching without a seen receipt |
-| **Albrhi for YouTube** | YouTube | 1.20.0 | downloads with their own player, no ads, SponsorBlock, background playback |
-| **Albrhi for X** | X / Twitter | 0.14.0 | media downloads, and the feature switches X asks itself about |
-| **Albrhi for TikTok** | TikTok | 0.19.10 | a download button in the feed, the publish date on every clip, photo posts, no ads, confirmations, privacy, extras |
-| **Albrhi for Spotify** | Spotify | 0.2.3 | no ads, no Premium popups, sponsored podcast segments skipped |
-| **Albrhi for YouTube Music** | YouTube Music | 0.3.0 | synced lyrics, no ads, background playback, speed control, seek buttons, SponsorBlock |
-| **Albrhi Panel** | Settings | 0.9.22 | the Albrhi page — one switch per patched app, and a page per tweak |
-| **Albrhi NextUp** | SpringBoard, Music, Podcasts, YouTube, YT Music, Spotify | 0.1.5 | what plays next, on the Lock Screen — **its own package** |
-| **Albrhi Watch** | SpringBoard, Watch app | 0.5.2 | pair an Apple Watch on a newer watchOS than iOS expects, and hold watchOS 26 back — **its own package** |
+Each is a self-contained Theos project under `tweaks/` with its own sources, package identity and
+version, and **they never meet at runtime**: an injection filter binds each dylib to one bundle id, so
+the YouTube tweak is never loaded into Instagram. What they share is the build plumbing — the checks,
+the build script, the licence layer and the APT index.
 
-Each is a self-contained Theos project under `tweaks/`, with its own sources, package
-identity and version number, and **they never meet at runtime**: an injection filter binds
-each dylib to one bundle id, so the YouTube tweak is never loaded into Instagram. What they
-share is the build plumbing — the checks, the build script and the APT index.
+`com.albrhi` is built by `tools/make-suite.sh`, which picks up every `tweaks/*/control` automatically.
+A tweak stays out of it only by carrying a `.no-suite` marker — Spotify, NextUp and Watch do.
 
-`com.albrhi` is the merge of the first seven, built by `tools/make-suite.sh`, which picks up
-any `tweaks/*/control` automatically. A tweak leaves the merge only by carrying a
-`.no-suite` marker file in its directory — NextUp and Watch are the two that do.
+> Albrhi is an **educational and corrective derivative** of [SCInsta](https://github.com/SoCuul/SCInsta)
+> by **SoCuul**, developed with AI assistance to improve code quality, design, performance and user
+> experience — while fully respecting the original project, its authors and its licence. Original
+> authorship is credited in-app, in this README, in the package metadata and in the source headers.
 
-**Albrhi for Locket was removed from this repository**, on the owner's instruction to isolate it
-completely: it left the suite first, then left the project. Its five `locket-v*` releases stay on
-the releases page as history, and the source no longer serves them — deleting a tweak does not
-stop an index built from published releases from offering it, so `com.albrhi.locket` is named in
-`WITHHELD_PACKAGES` as well.
+<details>
+<summary><b>Tweaks that used to be here</b></summary>
 
-**Albrhi CarPlay was removed from this repository.** It patched SpringBoard and Camera to put an
-app on the car display, and it never ran on a device: 0.3.0 and 0.4.0 each looked finished and were
-not, and 0.4.1's fixes for what a real iOS 16.1 report found missing were themselves never observed.
-A tweak that takes the home screen with it when a hook is wrong does not belong in a source that
-updates for a download button, so it is going to be rebuilt from scratch in a repository of its own.
-Its `carplay-v*` releases stay on the releases page as history, and the source no longer serves
-them — deleting a tweak does not stop an index built from published releases from offering it, so
-`com.albrhi.carplay` stays named in `WITHHELD_PACKAGES`.
+<br/>
 
-> Albrhi is an **educational and corrective derivative** of
-> [SCInsta](https://github.com/SoCuul/SCInsta) by **SoCuul**, developed with AI assistance to
-> improve code quality, design, performance and user experience — while fully respecting the
-> original project, its authors and its licence. Original authorship is credited in-app, in this
-> README, in the package metadata and in the source headers.
+**Albrhi for Locket** was removed on the owner's instruction to isolate it completely: it left the
+suite first, then the project. **Albrhi CarPlay** was removed because it patched SpringBoard and Camera
+and never ran on a device — it is going to be rebuilt from scratch in a repository of its own, since a
+wrong hook there takes the home screen with it. Both keep their releases on the releases page as
+history, and the source no longer serves them: deleting a tweak does not stop an index built from
+published releases from offering it, so their package names are named in `WITHHELD_PACKAGES`.
+
+</details>
 
 ---
 
 ## ✨ Albrhi for Instagram
 
 ### 📥 Downloads
-- One-tap **download button** in the post and reel action rows.
-- Posts, reels, stories, **whole albums** (choose one slide or all), DM media and **HD profile pictures**.
-- Always the best quality your iPhone can save. Some of Instagram's higher qualities come in a
-  format iOS will not play; Albrhi converts those **on your phone** so you still get them.
-  Nothing is ever uploaded anywhere.
+- One-tap **download button** in the post and reel action rows — posts, reels, stories, **whole
+  albums** (one slide or all), DM media and **HD profile pictures**.
+- Always the best quality your iPhone can save. Some of Instagram's higher qualities come in a format
+  iOS will not play; Albrhi converts those **on your phone**, keeping the HDR. Nothing is uploaded.
 - **Download Center** — queue, pause, resume, retry, background transfers and history.
-- Reel audio extraction · silent-video export · dedicated Photos album.
-
-### 🧹 Feed & Explore
-Hide ads, sponsored and suggested posts · suggested users, reels and Threads posts · stories tray ·
-the entire feed · explore grid · trending searches · friends map · Meta AI · disable video autoplay.
-
-### 🎬 Reels
-Tap-to-pause or tap-to-mute · always-on scrubber · disable auto-unmute · anti doom-scrolling ·
-disable scrolling · hide the header and blend button · refresh confirmation.
+- Reel audio extraction · silent-video export · a dedicated Photos album.
+- Stories (including a video story and a music-over-photo story) save as what they are, not as their
+  poster frame.
 
 ### ✉️ Stories & Messages
-View stories with no seen receipt · a story download button · save DM photos & videos (even
-view-once) with per-message mark-as-seen · **full last-active time** as a real date · **hide the
-voice and video call buttons** · hide the typing indicator · replay visual messages · disable
-screenshot detection.
+- **Watch stories with no seen receipt.** The eye button still marks one as seen when you want it to.
+- **Unsent messages stay.** When the other person takes a message back, it stays in the chat and gets
+  a **red trash badge**, so you can tell which ones were taken back. *Confirmed on Instagram 410.*
+- Hide your **"Active now"** status (experimental) · hide the typing indicator · save DM photos and
+  videos, even view-once, with per-message mark-as-seen · full last-active time as a real date ·
+  hide the voice and video call buttons · replay visual messages · disable screenshot detection.
+
+### 🧹 Feed, Explore & Reels
+Hide ads, sponsored and suggested posts · suggested users, reels and Threads posts · the stories tray ·
+the entire feed · the explore grid · trending searches · the friends map · Meta AI · video autoplay.
+Reels: tap-to-pause or mute · an always-on scrubber · auto-advance · anti doom-scrolling · hide the
+header and blend button · refresh confirmation.
 
 ### 🔒 Confirmations
-Optional prompt before like, follow, repost, call, voice message, follow-request response, Shh
-mode, comment, chat-theme change and story-sticker tap — so a mis-tap never becomes a notification.
+Optional prompt before like, follow, repost, call, voice message, follow-request response, Shh mode,
+comment, chat-theme change and story-sticker tap — so a mis-tap never becomes a notification.
 
-### 🎨 Appearance
-Custom **date & time formats** everywhere Instagram writes a time — presets, your own pattern,
-12/24-hour, combine-with-relative · **OLED black theme** · customizable accent colour.
-
-### 👤 Profile
-**Follow-back badge** under the followers count (green *follows you* / red *doesn't*) · copy account
-info · save HD profile pictures.
+### 🎨 Appearance & profile
+Custom **date & time formats** everywhere Instagram writes a time · **OLED black** · a custom accent
+colour · a **follow-back badge** under the followers count (green *follows you* / red *doesn't*) · copy
+account info.
 
 ### 🛠️ Interface
-Native inset-grouped settings with **search** · **backup & restore** all your settings to a file ·
-**copy any text** (caption, comment, bio) by long-press · full dark mode · Arabic/English with RTL ·
-navigation-bar tab ordering, hiding and swipe-between-tabs · a **Diagnostics** page reporting what
-actually attached at runtime, with one-tap issue reporting.
+Native inset-grouped settings with **search** · **backup & restore** to a file · copy any text by
+long-press · full dark mode · Arabic/English with RTL · tab ordering, hiding and swipe-between-tabs ·
+a **Diagnostics** page that reports what actually attached at runtime, scans the live view hierarchy,
+and files an issue with the whole report in one tap.
 
 ---
 
 ## ▶️ Albrhi for YouTube
 
-### 💾 Save a video
-**Hold the video** and the qualities appear — pick one, and it lands in the Download Centre
-with a percentage while it works. **Shorts get a save button** of their own, beside like and
-share, because Shorts has no long press to spare.
+### 💾 Save a video — and keep saving it after YouTube updates
+Tap YouTube's **own download button** under a video (Shorts get a save button of their own, beside
+like and share). A sheet offers the qualities and, separately, **sound only**, which is saved as a
+proper `.m4a` with the video's cover art. It lands in the Download Centre with a percentage.
 
-Video or audio, your choice. Sound is saved as a proper `.m4a` with the cover art from the
-video, so it arrives somewhere else looking like a song rather than an untitled file.
+**How it gets the file changed in 1.34.0, and the reason is resilience.** YouTube no longer hands the
+app file links, so anything read *out of the app* breaks whenever the app changes. Albrhi now asks
+YouTube **itself**, as a client that is still served plain files (the *direct route*, the method
+[YTKACE](https://github.com/itzzace/ytkace) documents), fetches the file in 8 MB pieces in parallel,
+checks that every byte YouTube declared arrived, and assembles the `.mp4` **without FFmpeg and without
+re-encoding**.
 
-YouTube no longer hands out a direct link for a video, so the tweak collects it in pieces
-and puts them back together on your phone. Most tweaks bundle a large media library to do
-that last step; Albrhi does it without one, so the download stays small and **nothing is
-re-encoded** — the quality you picked is the quality you get.
-
-Qualities your iPhone cannot play are left out of the list rather than offered and then
-failing, and if something does go wrong the message says what.
+- **It is anonymous.** No cookie, no account, no login — only a visitor id YouTube gives anyone who asks.
+- **The trade:** a video that needs an account (age-restricted, private, members-only) is refused
+  there, and the download falls through to the **playlist route**, which carries the app's own session.
+  A video that fails once is not asked about twice in a session.
+- **What it offers:** H.264 up to **1080p**, and AAC. 1440p and 4K are VP9/AV1 at YouTube and would
+  save perfectly and then not play, so they are left out rather than offered.
+- **The remux is our own**, because AVFoundation was measured reading these fragmented files with every
+  timestamp doubled (a 19-second clip reporting 37.9). The boxes are read directly and the frames are
+  written with their own timestamps. Checked on a 19 s clip, a 3:33 song and a 10:35 1080p60 film.
 
 ### 📁 The Download Centre
-A **tab of its own**, beside Home and You — not a panel over the app. YouTube draws that tab
-itself, so it has a real label, a real selected state, and its share of the width.
+A **tab of its own**, beside Home and You — not a panel over the app. YouTube draws the tab itself, so
+it has a real label, a real selected state and its share of the width. Inside: everything you have
+saved, video and audio, in a player written for the job — landscape fills the screen, double-tap to
+jump ten seconds, **picture in picture**, speed, a sleep timer, AirPlay, and it remembers where you
+stopped, days later and across restarts. A **mini bar** keeps the sound going while you browse; the
+lock screen gets the artwork, a draggable scrubber, and next/previous through your own list. Rename,
+share, or send anything to Photos. Simultaneous downloads are a setting.
 
-Inside: everything you have saved, in video and audio, with a player written for the job.
-Landscape fills the screen, the controls fade while you watch and come back with a tap, and
-double-tapping either side jumps ten seconds. **Picture in picture**, playback speed, a sleep
-timer, AirPlay, and it remembers where you stopped — days later, across restarts.
-
-A **mini bar** along the bottom keeps the sound going while you look through the rest, and
-tapping it puts the full screen back where it was. The lock screen gets the title, the artwork,
-a scrubber you can drag, and next and previous that move through your own list.
-
-Rename anything you have saved, share it, or send it to Photos — the tweak keeps it and does
-not decide for you where it should live.
+### 🗂️ Arrange the tab bar
+**Settings › Interface › Tab bar** — drag to reorder, drag across to switch a tab off, hide the `+`,
+and add **History** as a tab. The bar holds six; one screen enforces that for everything at once.
+Every decision is made on a tab's identifier, never its position.
 
 ### 🚫 No ads
-Blocked in three places, because ads arrive three different ways: the app stops asking for them,
-promoted posts are dropped from the feed, and the player refuses ads before a video, in the middle
-of one, and the kind built into the video itself.
+Blocked where they arrive — the app stops asking for them, promoted rows are dropped from the feed
+(through all three doors the feed fills by, so a pull-to-refresh cannot bring one back), and the player
+refuses ads before, during and inside a video. Extra gates for the player response, the Shorts list and
+subscription pop-ups are installed at runtime **only where the running build declares them**, and each
+one counts its own hits in the report.
 
-### ⏭️ Skip the sponsored parts
-Paid plugs, self-promotion and subscribe reminders are jumped over automatically, using segments
-other viewers submitted to **SponsorBlock**. A short line names what was skipped and offers an undo,
-and each segment is **coloured on the progress bar** so you can see what is coming. Eight categories,
-each with its own switch — intros, endcards, recaps and tangents are off until you turn them on.
-
-**Which video you are watching is never sent.** SponsorBlock offers two ways of asking, and this
-uses the private one, so the server cannot tell what you are watching. Nothing is sent at all when
-the feature is off.
-
-### 🎧 Background playback
-Audio keeps going when you leave the app or lock the screen — YouTube's own video, and anything
-saved.
-
-### 📶 A quality ceiling
-Separately for Wi-Fi and for mobile data. Set mobile to 480p and a video on the road stays at
-480p without touching what you get at home. It is a ceiling, not a fixed quality: YouTube still
-drops lower on its own when the connection cannot keep up. The full quality list is available
-too, instead of the two-line shortcut newer builds show.
-
-### 🤫 Quieter
-Silence the prompt to update — updating replaces the app and removes the tweak. And optionally hide
-the paid-promotion banner, off by default, because it is a disclosure.
+### ⏭️ SponsorBlock, background playback, and the rest
+- **Skip the sponsored parts** using segments other viewers submitted. A short line names what was
+  skipped and offers an undo; each segment is **coloured on the progress bar**. Eight categories, each
+  with a switch. **Which video you are watching is never sent** — the private lookup is used.
+- **Background playback** for YouTube's own video and anything you saved.
+- **Playback-error recovery.** The "an error occurred" screen reloads the player and resumes from the
+  same second — with a budget of three reloads per video, so a video that truly cannot play is handed
+  back to YouTube's own error rather than looped forever.
+- **A quality ceiling** separately for Wi-Fi and mobile data, plus the full quality list.
+- Silence the update prompt (updating would remove the tweak).
 
 ### ⚙️ Settings & diagnostics
-**Hold two fingers anywhere** in YouTube. Arabic and English with RTL, and a card at the top saying
-whether everything actually attached to *your* build. The report is also written to
-`Documents/AlbrhiYT-report.txt`, so it is readable even if nothing else worked.
+**Hold two fingers anywhere.** Arabic and English with RTL, and a card saying whether everything
+attached to *your* build. **The report is written when you ask for it** (Settings › General), plus once
+if the launch guard has to step in — nothing writes itself on every launch, and a file that can grow has
+a 1 MB ceiling. **A launch guard** stands the expensive hooks down if the app has not become active
+eight seconds after the tweak loaded, and says so: a tweak may cost a feature, never the app.
 
 > Hooked on YouTube's **model and service layer, never its views** — view classes get renamed between
-> releases and a tweak that hooks them quietly stops working. The one exception is the progress-bar
-> colouring, which has to be drawn on a view; it is laid out with frames rather than constraints, and
-> a fault there costs the colours, never the video.
+> releases and a tweak that hooks them quietly stops working.
+
+---
+
+## 🐦 Albrhi for X
+
+### 💾 Save anything
+**Hold any photo or video**, or use the **button on the video itself**. One capture point serves the
+timeline, full screen, quoted posts and DMs, because all four build the same media model. The in-video
+button is **yours to place**: drag it, pin it, and it stays put on every card and every device — stored
+as a fraction of the room it has, never as points, so it cannot walk off screen.
+
+### 🎛️ What X does, under your control
+X asks one place what the app may do, and Albrhi records every question it is asked — so the Switches
+page is built from **your own use**, not a table copied from elsewhere — with named features on top.
+Among them:
+
+- **No ads, Promote button, Grok, Premium nags**, less tracking, a faster launch.
+- **Links:** copied `x.com` links lose the `s` and `t` parameters, a `t.co` can show where it really
+  goes, links can open in **Safari**.
+- **Between the posts:** hide who-to-follow, topics and trend videos, **Spaces** (hidden, never forbidden —
+  a Space somebody sends you still opens), view counts and the bookmark button.
+- **Privacy:** no search history (queries *and* accounts, refused at the write), X behind **Face ID**
+  with the cover up before the prompt.
+- **A post as a picture** (long-press share), correctly laid out for right-to-left and not mirrored.
+- Ask before a like or a follow — never before an unlike or an unfollow. Communities and Profile tabs
+  in the bottom bar.
+
+**`app_attest_*` is deliberately not offered.** Those keys are how X proves to its servers that the
+device is unmodified; answering them falsely is an account risk, not a privacy setting.
+
+**Hold two fingers anywhere** for settings.
 
 ---
 
 ## 🎵 Albrhi for TikTok
 
 ### ⬇️ A download button in the feed
-A blurred disc with a down arrow, **above the profile picture** on every video, riding with
-TikTok's own rail as it fades and returns. It saves the clip you are watching — not the one
-before it — because the video is read from the controller the button is sitting inside at the
-moment you tap it, rather than from whatever was resolved most recently.
+A blurred disc with a down arrow, **above the profile picture** on every video, riding with TikTok's own
+rail. It saves the clip you are **watching**, because the video is read from the controller the button
+sits inside at the moment you tap it.
 
-Quality is **measured, not guessed**. Every link TikTok offers is collected and weighed by what
-it actually is: a watermarked copy loses to a clean one, an audio-only link loses to a video,
-and only then does size decide. Watermarking is refused at the source — the value is written,
-not the getter answered, so code reading it directly sees the same thing.
+Quality is **measured, not guessed**: every link TikTok offers is collected and weighed by what it
+actually is — a watermarked copy loses to a clean one, audio loses to video, and only then does size
+decide. Optionally HD can be fetched from an outside service; **that switch is off and stays off until
+you turn it on**, with its cost written on its own row (it tells that service which video you are
+watching).
 
-Optionally, HD can be fetched from an outside service instead. **That switch is off, and it
-stays off unless you turn it on**, with the cost written on its own row: it tells a service
-outside TikTok which video you are watching, which is the exact thing the privacy switches
-beside it exist to prevent. On some videos it returns the original upload — 60fps where TikTok's
-own stream is 30 — and on others it is byte for byte the file the tweak already had.
+### 🖼️ Photo posts · 📅 the publish date · 💬 comments
+- **Photo posts save as photos**, and it **asks first**: the picture you are on, or all of them. A
+  single picture can also be saved **as a short video with the post's own sound**.
+- **The publish date** sits above the download button — the day, the month by name, the year, and the
+  time beneath.
+- **Save media from a comment** — a *Save* row in TikTok's own long-press sheet when a comment carries
+  a picture, sticker or animation.
 
-### 📅 The publish date, on the clip itself
-When the video was posted, above the download button: the day, the month by name, the year, and
-the time on the line beneath. It is placed in the same coordinate space it is measured in and
-re-measured whenever the layout settles, so it sits in one place on every video and on every
-phone — which took four releases to be true, and the reasons are written in the changelog because
-they are the kind that come back.
-
-### 🖼️ Photo posts
-A photo post saves as photos. **It asks first**: the picture you are on, or all of them —
-and the picture you are on is the one the paging controller says is on screen, read at the tap.
-
-A single picture can also be saved **as a short video with the post's own sound over it** —
-five, ten or fifteen seconds — which is what a photo post actually was. The sound is optional
-in the export: a post whose music cannot be fetched still gives you the clip.
-
-### 🚫 Ads
-A feed item TikTok's own server marked as an ad is refused as the object is built, never hidden
-after the fact — and the splash ad on launch with it.
-
-### ✋ Confirmations
-Ask before a like — the heart *and* the double tap — and ask before a follow, on the feed and on
-a profile. Both off until you turn them on. If the question cannot be shown for any reason, the
-tap you made goes through: "ask me first" must never quietly become "liking is broken".
-
-### 🔒 Privacy
-Three separate switches, because they are three different reports to three different places: a
-story's seen mark, a message's read receipt, and a profile view. What shows on your own screen is
-never touched — only what gets sent back.
+### 🚫 Ads · ✋ Confirmations · 🔒 Privacy
+An item TikTok's own server marked as an ad is refused as the object is built — and the launch splash
+ad with it. Ask before a like or follow (off until you turn it on; if the question cannot be shown, the
+tap goes through rather than "liking is broken"). **Three separate privacy switches** — a story's seen
+mark, a message's read receipt, a profile view — because they are three different reports to three
+different places. What shows on your own screen is never touched.
 
 ### 🧩 Extras
-**More logged-in accounts** — TikTok caps how many may be signed in at once, and the cap is the
-app's own. Raised, not removed.
+More logged-in accounts · **messages taken back stay visible and are marked as such** · a record of
+profile visitors, kept as TikTok delivers them · the seek bar kept visible · the jailbreak answered for
+as an unmodified phone would.
 
-**Messages the sender took back stay visible, and say so.** TikTok had already delivered the
-message and then received an instruction to hide it; hiding is the app's own doing, and this
-refuses that instruction. Nothing is fetched back from a server — and the message is **marked as
-taken back** rather than restored as though nothing happened, because a tweak that leaves no trace
-of what it decided is deciding on your behalf without saying so.
-
-**The publish date**, above Albrhi's own button — read from the video's own `createTime` and drawn
-in a frame this tweak owns, never handed to one of TikTok's rails.
-
-**A record of profile visitors**, kept as TikTok delivers them, so somebody who blocks you
-afterwards does not erase what already arrived. TikTok's own list is never modified: Albrhi keeps
-its own, bounded, and shows it on its own screen.
-
-### 🎛️ Also
-The seek bar under the video kept visible instead of fading a moment after playback starts · the
-jailbreak answered for as an unmodified phone would · a settings screen grouped by what you came
-to change, with the full diagnostic report one row away and copyable in a tap.
-
----
-
-## 🎧 Albrhi for Spotify
-
-### No ads — and **no Premium**
-Audio and display advertising is refused where Spotify asks for it, the home feed's sponsored rows
-are filtered out of the JSON before the screen is built, and the "go Premium" popups are dropped as
-they are presented.
-
-**This does not unlock a paid subscription.** It does not touch your account, does not report you as
-a subscriber, and does not remove the skip limit or raise the audio quality — those are account
-attributes the server decides, not switches inside the app. The tweak the ad blocking comes from is
-known for exactly that, and it is the one thing deliberately not carried over. The settings page says
-so above its own switches rather than leaving it to be discovered.
-
-### Sponsored segments in podcasts
-Sponsored, self-promotion and interruption segments are skipped from SponsorBlock's community
-database, with a note saying which one was skipped — a segment skipped silently is indistinguishable
-from a track that jumped on its own. **Off until you turn it on:** it asks a third-party server about
-what is playing, and that is a cost paid only by somebody who chose it.
-
-> **The ad blocking and SponsorBlock are not this project's work.** They are
-> [EeveeSpotify](https://github.com/SideloadLabs/EeveeSpotifyReincarnated) by **Eevee** and the
-> **SideloadLabs** team, under GPLv3 — the same licence Albrhi ships under, which is what makes
-> carrying them over lawful rather than merely possible. Every ported file is kept diffable against
-> upstream; Albrhi adds the gate, the settings page and the bilingual interface.
+### 🎛️ The settings screen
+Rebuilt in 0.20.0: an identity card, a two-column grid of categories, and a card per option with an icon,
+what it does, and its switch. The full diagnostic report is one row away and copyable in a tap. **Hold
+two fingers anywhere.**
 
 ---
 
 ## 🎼 Albrhi for YouTube Music
 
-### 🎤 Synced lyrics
-Lyrics that follow the track, on the now-playing screen, with the line you are on lifted out of the
-rest. Six sources are asked and the best answer wins — LRCLib, Genius, MusixMatch, NetEase, the
-video description, and YouTube Music's own lyrics where it has them — and a wrong match is
-discarded rather than shown. Japanese, Korean and Chinese can be romanised as they play, the text
-can be selected and copied, the source can be pinned, and the timing nudged when a track is offset.
+- **🎤 Synced lyrics**, with the current line lifted out. Six sources are asked and the best answer wins
+  (LRCLib, Genius, MusixMatch, NetEase, the video description, YouTube Music's own); a wrong match is
+  discarded rather than shown. CJK romanisation, selectable text, a pinned source, timing nudges, and
+  optional translation with a key you supply yourself.
+- **💾 Save a track** through the download button YouTube Music already draws — without FFmpeg — with a
+  **Downloads tab** where the Upgrade tab used to be, and a player that behaves like the app's.
+- **🚫 No ads**, the Premium advertisement and Upgrade tab hidden, **background playback** without the
+  upsell notification, **no autoplay radio**, casting, and a true-black theme.
+- **The speed control the app already has and hides**, seek buttons, and **SponsorBlock** for the one
+  category a music app has (`music_offtopic`, off until you switch it on).
 
-> **A lyrics feature asks outside services what is playing. There is no version of it that does
-> not.** It is on because it was asked for by name; upstream ships it off. Translating those lyrics
-> is a separate switch, off by default, and does nothing at all without a key you supply yourself.
+> A lyrics feature asks outside services what is playing. There is no version of it that does not — it is
+> on because it was asked for by name.
 
-### 🚫 No ads, and background playback left alone
-Advertising is refused where YouTube Music asks for it, and the monetisation flags its player
-response carries are answered as an unmonetised video would answer them. Background playback keeps
-going without the upsell notification that interrupts it.
+**This does not unlock Premium.** The tweaks these hooks come from tell YouTube Music the account is a
+paying one; that is the single thing not carried over.
 
-### 🎛️ And seven more
-- **The speed control the app already has and hides**, on the player.
-- **Seek buttons** — previous and next become back and forward, with the original behaviour still
-  there on a long press.
-- **No autoplay radio** when the queue ends, refused on every class that decides it.
-- **Casting**, enabled where the app gates it.
-- **The history, cast and filter buttons** in the navigation bar, hidden on request.
-- **A true-black theme**, keyboard included.
-- **SponsorBlock**, for the one category a music app has — `music_offtopic`. Off until you switch
-  it on: it asks sponsor.ajay.app about the track, which is the same cost the TikTok tweak states
-  on its own HD row.
-
-### 🧪 Verified, not only compiled
-`tweaks/ytmusic/tests/host/run.sh` builds the parts that are pure logic — the LRC parser, the
-matching pipeline, the caches, the romaniser, the description extractor — against the macOS SDK
-and **runs them on the build machine: 29 tests, in about a second**. A hook still needs a device;
-a parser does not, and three of this project's most expensive bugs lived in exactly that layer.
-
-**This does not unlock Premium.** The tweaks these hooks come from answer `-isPremiumSubscriber`
-with YES on six classes, telling YouTube Music the account is a paying one. That is the single
-thing not carried over — the same line drawn for Locket's `Check0verPlus` and for Spotify.
+**Verified, not only compiled:** `tweaks/ytmusic/tests/host/run.sh` runs the pure-logic parts (LRC parser,
+matching pipeline, caches, romaniser, extractors) on the build machine in about a second.
 
 > **The hooks are not this project's work.** They are
 > [YTMusicUltimate](https://github.com/dayanch96/YTMusicUltimate) by **dayanch96** and
-> [YTMEnhanced](https://github.com/py233/YTMEnhanced) by **py233**, both under GPLv3 — the same
-> licence Albrhi ships under, which is what makes carrying them over lawful rather than merely
-> possible. Albrhi adds the gate, the packaging and the switch defaults; every ported file is kept
-> diffable against upstream, with each edit written where it is.
+> [YTMEnhanced](https://github.com/py233/YTMEnhanced) by **py233**, both GPLv3 — the licence Albrhi ships
+> under, which is what makes carrying them over lawful. Every ported file is kept diffable against
+> upstream, with each edit written where it is.
+
+---
+
+## 🎧 Albrhi for Spotify
+
+**No ads — and no Premium.** Audio and display ads are refused where Spotify asks for them, the home
+feed's sponsored rows are filtered out of the JSON before the screen is built, and the "go Premium"
+popups are dropped as they are presented.
+
+**This does not unlock a paid subscription.** It does not touch your account, does not report you as a
+subscriber, and does not raise the audio quality — those are account attributes the server decides, not
+switches inside the app. The settings page says so above its own switches.
+
+**Sponsored segments in podcasts** are skipped from SponsorBlock's database, with a note saying which
+one. **Off until you turn it on:** it asks a third-party server about what is playing.
+
+Written in **Swift and Orion**, the only tweak here that is. That costs things a Logos tweak does not:
+the constructor is not called for you, a hook group must be activated behind a check that its target
+exists, and SwiftUI cannot be compiled against the pinned SDK at all.
+
+> **The ad blocking and SponsorBlock are not this project's work.** They are
+> [EeveeSpotify](https://github.com/SideloadLabs/EeveeSpotifyReincarnated) by **Eevee** and the
+> **SideloadLabs** team, under GPLv3. Every ported file is kept diffable against upstream; Albrhi adds the
+> gate, the settings page and the bilingual interface.
 
 ---
 
 ## 🎛️ Albrhi Panel
 
-**Settings › Albrhi.** The front door: one switch per patched app, and a page for each tweak that
-has more to say than a switch.
+**Settings › Albrhi.** The front door.
 
-### 🔌 One switch above all of them
-When an app update breaks something, the answer used to be eight switches or removing the package —
-and that is the worst possible moment to be hunting through rows. The master switch stands every
-Albrhi tweak down on the next app launch **without changing a single setting below it**, and the
-apps section says so rather than leaving switches that look as though they still apply.
-
-It defaults to **on**, and that is not the opt-in rule being reversed: the per-app switch answers
-*did anyone ask for this app to be patched*, where silence must not mean yes. This one answers
-*has the user pulled the handle*, where an absent value reading as off would switch off every
-working install on the day it shipped.
-
-### 📖 A guide, built from the device
-Every tweak on **this** phone, one line on what it does, the app version it was verified against,
-and the version actually installed. Built from the same scan the main page uses, so it cannot
-describe a tweak that is not there — a hand-maintained list of nine goes stale the first time one
-is added or renamed.
-
-### 💾 Your settings, out of the phone and back
-A copy goes out through the share sheet on purpose: a rootless or roothide prefix is removed with
-the bootstrap, so a backup written beside the preferences it copies would be destroyed by exactly
-the event it exists for. **What it holds is stated rather than implied** — the panel's own domain,
-which is the master switch and the per-app switches. A file that is not one of ours is refused
-whole rather than half-applied.
-
-### 🔄 An update check, on a tap
-Never on page load: a page that phones home when it opens is a page that decided for its user. It
-asks Albrhi's own source and nothing else, takes the highest published version rather than the
-first listed, and keeps *the source could not be reached* distinct from *you are up to date*.
+- **A switch per patched app**, opt-in, and a page for each tweak that has more to say than a switch.
+- **One master switch above all of them.** When an app update breaks something, it stands every Albrhi
+  tweak down on the next launch **without changing a single setting below it**.
+- **The licence** — device, term, scope, where it came from, every app it is running in with its version
+  and when it was last seen. See [Licence](#-licence).
+- **A guide built from the device:** every tweak on *this* phone, what it does, the app version it was
+  verified against and the version actually installed — built from the same scan as the main page, so it
+  cannot describe a tweak that is not there.
+- **Your settings, out and back** through the share sheet (a file written beside the preferences it
+  copies would be destroyed by the very event it exists for). What it holds is stated; a file that is not
+  ours is refused whole.
+- **An update check, on a tap** — never on page load — that asks Albrhi's own source and keeps *could not
+  be reached* distinct from *you are up to date*.
 
 ---
 
 ## ⏭️ Albrhi NextUp
 
-### What plays next, without opening the app
-A row under the now-playing controls — the next track's title, artist and cover — on the
-**Lock Screen**, in **Control Center** and in the **Dynamic Island**. Tap the cover to play it
-now, or skip it, without ever opening the app that is playing.
+A row under the now-playing controls — the next track's title, artist and cover — on the **Lock Screen**,
+in **Control Center** and in the **Dynamic Island**. Tap the cover to play it now, or skip it, without
+opening the app that is playing.
 
-### Five apps, each read from its own queue
 | App | Support |
 |---|---|
 | **Apple Music** | Full |
 | **Apple Podcasts** | Full |
 | **YouTube Music** | Full — built against **9.28.4** |
-| **YouTube** | Full — built against **21.32.4**. A playlist or mix has a real queue; a standalone video has none, so YouTube's own **autoplay suggestion** is shown instead — playable, but not skippable or re-orderable, and its cover is 16:9 rather than square |
+| **YouTube** | Full — built against **21.32.4**. A playlist has a real queue; a standalone video shows YouTube's own autoplay suggestion, which is playable but not skippable |
 | **Spotify** | Full — built against **9.1.62** |
+| **SoundCloud** | Added with NextUp 3 1.2 |
 
-Each row shows what that app itself would play next, read from the app's own playback queue —
-not a guess. The version beside an app is the build its reader was written against: a newer app
-usually still works, and when a row goes blank after an update, that number is the first thing
-to check. The same table is on the package's depiction and under each switch in Settings.
+Each row shows what that app itself would play next, read from its own queue — not a guess. The version
+beside an app is the build its reader was written against; when a row goes blank after an update, that
+number is the first thing to check.
 
-### Settings
-**Settings › Albrhi › Albrhi NextUp** — a master switch, one per surface, and one per app.
-Changes apply immediately, with no respring. **The master is off until you turn it on**, which is
-this port's own change to the original: Albrhi does not patch anything you did not ask for, and
-this one injects into SpringBoard and five media apps.
+**Settings › Albrhi › Albrhi NextUp** — a master switch, one per surface, one per app. Changes apply
+immediately. **The master is off until you turn it on** (this port's own change), since it injects into
+SpringBoard and five media apps. The log is compiled in and **off by default**, with a 128 KB ceiling per
+process.
 
-> **A port, not an original.** Albrhi NextUp is [NextUp 3](https://github.com/Yves000/NextUp3) by
-> **Yves**, used and redistributed under the GNU GPL v3 — the same licence this project ships
-> under, which is what makes carrying the code over lawful where an unlicensed tweak may only be
-> read for architecture. The design, the private-API research and very nearly all of the
-> implementation are Yves's work. This port replaced the Settings pane with a page inside Albrhi
-> Panel and rebranded the package; the feature itself is not this project's invention.
+> **A port, not an original.** Albrhi NextUp is [NextUp 3](https://github.com/Yves000/NextUp3) by **Yves**,
+> under the GNU GPL v3. The design, the private-API research and very nearly all of the implementation are
+> Yves's work; this port replaced the Settings pane with a page of its own and rebranded the package.
+> [Its changelog](tweaks/nextup/CHANGELOG.md) lists every change rather than letting it read as original.
 
-> **It injects into SpringBoard.** A wrong hook there takes the home screen with it — have a way
-> back in (SSH, or a package manager reachable from safe mode) before installing any build. On a
-> jailbreak with per-app tweak injection, the five media apps need injection enabled too, or the
-> row stays empty: the display side is up and no provider answers it.
+> **It injects into SpringBoard.** A wrong hook there takes the home screen with it — have a way back in
+> (SSH, or a package manager reachable from safe mode) first. On a jailbreak with per-app injection, the
+> media apps need injection enabled too, or the row stays empty.
 
 ---
 
 ## ⌚ Albrhi Watch
 
-### Pair a watch iOS does not expect
-iOS refuses to pair with an Apple Watch whose watchOS is newer than it expects, and refuses to
-install companion apps onto it. Albrhi Watch answers those compatibility questions the way a
-supported pairing would — the pairing gate, the watch's declared capabilities, and the companion
-app runtime check — so setup completes and apps install.
+**Pair a watch iOS does not expect.** iOS refuses to pair with an Apple Watch whose watchOS is newer than
+it expects. Watch answers those compatibility questions the way a supported pairing would — the pairing
+gate, the declared capabilities, the companion-app runtime check — so setup completes and apps install.
+*Confirmed on a device.*
 
-### Hold watchOS 26 back
-A watch that updates to a watchOS your iPhone cannot pair with is a watch you cannot set up again.
-So the update can be held — and it is a **filter, not a blanket refusal**: the version is read from
-the update itself, so watchOS 26 and newer is withheld while the security updates for the watchOS
-your watch is on are still offered. An update whose version cannot be read is let through, because
-a hold that fires when it cannot tell what it is holding is not a filter.
+**Hold watchOS 26 back** — a **filter, not a blanket refusal**: the version is read from the update
+itself, so watchOS 26 and newer is withheld while security updates for the version your watch is on are
+still offered. An update whose version cannot be read is let through. Nothing can start a held update: the
+scan result, the install button's two actions, the download and the installation are each refused
+separately — and **the Software Update page says Albrhi is the reason**, and names the switch that undoes
+it, instead of iOS saying "up to date" in a sentence the tweak caused.
 
-Nothing can start a held update: the scan result, the install button's own two actions, the
-download and the installation are each refused separately.
+**Settings › Albrhi › Albrhi Watch.** The master is off until you turn it on. A pairing change is applied by
+a **full userspace restart**, not a respring — measured on a device.
 
-### And the page says who held it
-Withholding an update makes iOS tell you the watch is up to date — a sentence the tweak caused and
-iOS believes. So the watch's Software Update page carries a note naming Albrhi as the reason and
-the switch that undoes it, and the install row is disabled and says the same. **A tweak that makes
-the system state a fact about your device, without saying it did, is worse than the thing it hid.**
-
-### Switches, restarts and a report
-**Settings › Albrhi › Albrhi Watch.** The master is off until you turn it on: this answers the
-questions iOS asks before it agrees to pair, and that should never begin because a package landed.
-Each answer has its own switch, so a watch that pairs but misbehaves can have one of them turned
-off rather than the tweak removed. The page says whether it is on above its own switches, because
-every row below the master is inert while it is off.
-
-**A full userspace restart is what applies a pairing change** — measured on a device: the limits are
-written once by SpringBoard and every other process reads them when it next starts, so a respring
-leaves the Watch app and the daemons holding what they cached at boot. The page's own buttons
-(reload SpringBoard, reload the Watch app) are the lesser version and are named as such.
-
-The report says which classes were present on your build, what the update hold installed and what
-it skipped, which watchOS version it held, and whether the tweak ran in the Watch app at all —
-**"a pairing that fails looks exactly like a tweak that never loaded"**, and the pairing screen
-shows neither.
-
-> **The pairing core is not this project's work.** It is
-> [watched](https://github.com/34306/watched) by **34306**, used under the MIT licence — carried
-> over as code, which MIT permits, with its notice shipped inside the package as MIT requires.
-> Albrhi adds the update hold, the switches, the settings page, the diagnostics and the bilingual
-> interface.
+> **The pairing core is not this project's work.** It is [watched](https://github.com/34306/watched) by
+> **34306**, under the MIT licence — carried over as code, with its notice shipped inside the package.
 
 > **It injects into SpringBoard.** Have a way back in before installing any build.
 
@@ -548,38 +495,16 @@ shows neither.
 
 ## ⚠️ Instagram and roothide Bootstrap
 
-**On [roothide Bootstrap](https://github.com/roothide/Bootstrap), Instagram 442 and newer crashes
-when you change your profile picture. It is not caused by Albrhi, and no version of Albrhi can fix
-it.**
+**On [roothide Bootstrap](https://github.com/roothide/Bootstrap), Instagram 442 and newer crashes when you
+change your profile picture. It is not caused by Albrhi, and no version of Albrhi can fix it.**
 
-That reads like every tweak author blaming the loader, so here is how it was established rather
-than asserted. The fault was cut in half, then in half again:
+That reads like every tweak author blaming the loader, so here is how it was established. The fault was cut
+in half, then in half again: every feature removed — **crash**; every hook installed with every setting
+answering false — **crash**; a dylib of **one file that logs a line, no hooks, no classes, no load-time
+work** — **crash**; the same tweak merged by hand into the app with no jailbreak injecting it — **no crash**.
+An empty 128 KB library is enough, and the identical code injected differently does not crash at all.
 
-| what was tested | what happened |
-|---|---|
-| Albrhi's Instagram features removed from the build, one group at a time | crash |
-| **every** feature file removed | crash |
-| every hook installed, **every setting answering false** | crash |
-| every file containing a hook removed — **zero Logos symbols in the dylib** | crash |
-| a dylib of one file that logs a line: **no hooks, no classes, no load-time work** | **crash** |
-| the same tweak merged by hand into the app, with no jailbreak injecting it | **no crash** |
-
-An empty 128 KB library, hooking nothing and defining nothing, is enough to crash that screen. The
-last row is the other half of the proof: the identical code, injected differently, does not crash at
-all. What is left is the injection — Bootstrap's loader — and Albrhi is a bystander that happens to
-be the library present.
-
-**What you can do.** Turn Albrhi off for Instagram while changing a picture, or use a manually
-merged build. What will not help is a newer Albrhi, and four releases were spent proving that: each
-fixed something real on that screen — a KVC probe running on every menu with no switch gating it, a
-reference to one of Instagram's own objects held for the life of the process, an ivar read by name
-with no check that it exists, sixteen list hooks rebuilding an array they had filtered nothing out
-of — and the crash was indifferent to all four.
-
-Instagram is also the one tweak here still written the old way: hooks are installed whether or not
-the method exists on the class, where the newer tweaks read a method's real type encoding off the
-device first and stand down when it disagrees. That is worth changing on its own merits. It was not
-this.
+**What you can do:** turn Albrhi off for Instagram while changing a picture, or use a manually merged build.
 
 ---
 
@@ -587,196 +512,181 @@ this.
 
 | | |
 |---|---|
-| **iOS** | 15.0 and later |
-| **Architecture** | `arm64` — runs on arm64 and arm64e devices |
-| **Instagram** | Tested on **410, 439 and 441**, from one build *(other versions should work — see below)* |
-| **YouTube** | Tested on **21.30.5** |
+| **iOS** | 15.0 and later (NextUp 14.2–26) |
+| **Architecture** | `arm64` and `arm64e` |
+| **Jailbreaks** | Rootless (Dopamine, palera1n) · roothide · rootful (unc0ver, checkra1n) |
+| **Instagram** | Tested on **410, 439 and 441**, from one build |
+| **YouTube** | Tested on **21.30.5** (the direct route does not depend on the app version) |
 | **X / Twitter** | Tested on **12.15** |
 | **TikTok** | Tested on **46.4.0** |
-| **Watch** | iOS **15+**, any watchOS the pairing gate is asked about |
-| **NextUp** | iOS **14.2–26**, confirmed on **16.1** · Music, Podcasts, YouTube **21.32.4**, YT Music **9.28.4**, Spotify **9.1.62** |
-| **Jailbreaks** | Rootless (Dopamine, palera1n) · roothide · rootful (unc0ver, checkra1n) |
-| **Sideloading** | Supported via the bundled FLEXing sub-project |
+| **NextUp** | Confirmed on **16.1** — Music, Podcasts, YouTube **21.32.4**, YT Music **9.28.4**, Spotify **9.1.62** |
+| **Watch** | Any watchOS the pairing gate is asked about |
 
-> The tested versions are the newest builds the developer's own phone accepts. They are not
-> a ceiling: nothing here is pinned to a version number, every class is looked up at runtime,
-> and anything absent is skipped rather than crashed on.
+> The tested versions are the newest builds the developer's own phone accepts. They are not a ceiling:
+> nothing is pinned to a version number, every class is looked up at runtime, and anything absent is
+> skipped rather than crashed on. If one is not found, the **Diagnostics** page shows what the tweak can
+> actually see on your phone and reports it in one tap.
 
-<details>
-<summary><b>About that Instagram version</b></summary>
+---
 
-<br/>
+## 📲 Sideloading
 
-Albrhi is tested against **Instagram 410, 439 and 441** — one build serves all three. Three versions
-are kept so that differences between them are checked against real apps rather than assumed.
-
-Nothing is tied to a version number. The tweak looks for the parts of Instagram it needs while the
-app is running, and anything it cannot find is skipped instead of crashing. Newer versions should
-be fine — and if one is not, the **Diagnostics** page shows what the tweak can actually see on your
-phone and sends a report in one tap.
-
-</details>
+Instagram, YouTube, X and TikTok are also built as **standalone dylibs** (`Albrhi*.dylib`) attached to each
+release, for injecting into a decrypted IPA with LiveContainer, Sideloadly or cyan — or with
+`tools/ipa-inject.html` in a browser. Each carries **its own licence page** in its own settings, because a
+sideloaded build has no Settings panel to enter a key in. A dylib and the suite can never be injected
+twice: the suite declares `Conflicts`/`Replaces` on them.
 
 ---
 
 ## 🔨 Building
 
-Requires [Theos](https://theos.dev) with an iOS SDK and toolchain.
+Requires [Theos](https://theos.dev) with an iOS SDK (the pinned **iPhoneOS 16.2**), GNU `make`, `ldid`
+and `dpkg`.
 
 ```bash
 git clone https://github.com/ibrahim2100/albrhi-repo.git
 cd albrhi-repo
 git submodule update --init --recursive
-./build.sh instagram rootless
+export THEOS=$HOME/theos
+export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"   # GNU make; Apple's fails Theos
+
+python3 tools/check.py            # always first — seconds, not a five-minute compile
+./build.sh youtube rootless       # result lands in tweaks/youtube/packages/
 ```
 
-The result lands in `tweaks/instagram/packages/`. Swap `instagram` for `youtube`, `twitter`,
-`tiktok`, `panel`, `nextup` or `watch`, and `rootless` for `roothide`, `rootful` or `sideload`.
-
-**To build what people actually install**, merge the five into the suite:
+Swap `youtube` for `instagram`, `twitter`, `tiktok`, `ytmusic`, `spotify`, `panel`, `nextup` or `watch`,
+and `rootless` for `roothide`, `rootful` or `sideload`. **roothide needs a second Theos** (the roothide
+fork) — the flavour is chosen by which Theos stages the package, never by the control file:
 
 ```bash
-tools/make-suite.sh rootless
+tools/build-local.sh                # the whole suite, roothide, onto ~/Desktop/Albrhi
+tools/build-local.sh youtube rootless
 ```
 
-**Run the source checks first, always.** They take a second and catch the mistakes that have
-genuinely broken this build before — a five-minute Theos compile is a slow way to find a typo:
+It proves the flavour from the staged paths rather than the filename, and refuses to copy out a mismatch.
+See [BUILD.md](BUILD.md) and [GITHUB_BUILD.md](GITHUB_BUILD.md) for CI.
 
-```bash
-python3 tools/check.py
-```
-
-**And the parts that are pure logic are run, not only compiled.** The YouTube Music lyrics module —
-the LRC parser, the matching pipeline, the caches, the romaniser — builds against the macOS SDK and
-executes on the build machine in about a second:
+**Pure logic is run, not only compiled.** The YouTube Music lyrics module and the YouTube transport layer
+build against the macOS SDK and execute on the build machine:
 
 ```bash
 bash tweaks/ytmusic/tests/host/run.sh
+bash tweaks/youtube/tests/host/run.sh
 ```
 
-A hook needs a device and there is no way around that. A parser does not, and three of the most
-expensive bugs in this project's history lived in exactly that layer: a quality ladder that needed
-its stages counted separately, a parallel array walked by value instead of in lockstep, and a label
-measured in one coordinate space and drawn in another. Every one of them would have failed here, in
-a second, on this Mac.
-
-GitHub Actions builds are also configured — see [BUILD.md](BUILD.md) and
-[GITHUB_BUILD.md](GITHUB_BUILD.md).
+A hook needs a device and there is no way around that. A parser does not.
 
 ### Layout
 
 ```
-tweaks/<app>/     a complete tweak: Makefile, control, filter plist, src/
+tweaks/<app>/     a complete tweak: Makefile, control, filter plist, src/, CHANGELOG.md
 suite/            com.albrhi — the combined package, and the preinst that clears the old ones
-shared/           the Theos flags and build modes every tweak shares
-tools/            source checks, APT index, depiction, logo, .deb editing
+shared/           Theos flags, build modes, the panel gate and the licence layer every tweak shares
+server/           the licence server (a Cloudflare Worker)
+app/              the owner's native admin app for that server (Theos, TrollStore)
+licence/          published code hashes and the revocation list
+docs/             LICENCE-KEYS.md — how keys are issued and what they do and do not promise
+tools/            source checks, APT index, depictions, signing, .deb editing, the browser tools
 modules/ vendor/  third-party code, shared
 extra-debs/       drop a .deb here and the source publishes it
 ```
 
-Adding a tweak means adding a directory under `tweaks/` — `tools/check.py` finds it and
-checks it without being told, `./build.sh <name> rootless` builds it, and `make-suite.sh`
-pulls it into `com.albrhi` automatically. Joining the suite is the default and costs
-nothing but a version bump in `suite/control`; staying out of it takes a `.no-suite` marker
-file, which NextUp and Watch have.
+Adding a tweak means adding a directory under `tweaks/` — `tools/check.py` finds it, `./build.sh <name>`
+builds it, and `make-suite.sh` pulls it into `com.albrhi` automatically. Staying out takes a `.no-suite`
+marker, and a tweak with nothing to do with the suite gets a publishing workflow of its own.
 
 ### 🧰 The tools
 
-Everything under `tools/` is meant to be run by hand as well as by CI. None of it needs the
-repository's secrets except where noted.
+Everything under `tools/` is meant to be run by hand as well as by CI.
 
 | | |
 |---|---|
-| **`objc-classes.py`** | Prints a class's real method list, declared property types, superclass and **type encodings**, read straight out of a Mach-O's ObjC metadata. It answers "does *this* class answer *this* selector, and with what signature" — a framework-wide selector dump answers neither, and this project lost three releases to that gap. No `class-dump` needed. |
-| **`check.py`** | Nineteen source checks, run before Theos so a typo fails in seconds rather than after a five-minute compile. Every rule comes from a build that actually broke: unbalanced `%hook`/`%end`, a hooked class touching `self` without an `@interface`, a fragile `%orig`, a localization key used but never defined, a `%new` parameter carrying an attribute. Run from the repo root it re-runs itself once per tweak. |
-| **`make-suite.sh`** | Merges every tweak without a `.no-suite` marker into `com.albrhi`. Checks the staged tree against the scheme it was asked for and refuses a mismatch — a "roothide" package built from a rootless staging tree installs as rootless, which cost two releases to learn. |
-| **`make-repo.sh`** | Builds the APT index from one or more package directories. Guards against two packages sharing name + version + architecture, and labels each rootful/rootless/roothide. Wipes `debs/` and rebuilds it on purpose, so a package removed from the source disappears from Sileo instead of lingering. |
-| **`fetch-published-debs.sh`** | Gathers the newest three versions of every package **from the published releases**, which is what lets more than one workflow rebuild one index safely. Holds `WITHHELD_PACKAGES` — the explicit list of what the source will not serve, because building the index from releases means silence removes nothing. |
-| **`make-depiction.py`** | Generates the Sileo native depiction and its HTML fallback **from the changelog**, so a depiction cannot go stale relative to what shipped. |
-| **`make-logo.py`** | Rasterises the repo icon in pure Python — no image library. Drop in `tools/logo.png` to override it. |
-| **`release-notes.py`** | Pulls one version's section out of a `CHANGELOG.md` for the GitHub release body. |
-| **`deb-edit.py`** | Edits `.deb` metadata from a terminal. `label` appends `(rootless)`/`(roothide)`/`(rootful)` to the display name, read from the package's own `Architecture`, so several flavours of one tweak are not identically named in Sileo. `normalize` converts an xz control archive to gzip. CI runs both over `extra-debs/` on every push. |
-| **`deb-edit.html`** | The same job in a browser, served at `…/deb-edit/`: list and remove packages, edit metadata, publish. Carries a hand-written DEFLATE encoder, because `DecompressionStream` only arrived in iOS 16.4 and every iOS browser is WebKit. |
-| **`ipa-inject.html`** | Injects a tweak dylib into a decrypted IPA in the browser, for sideloading without a Mac. |
-| **`repo-index.html`** | The source's landing page. Builds its package list from the live index, so it never disagrees with what is being served. |
+| **`check.py`** | **Twenty-four source checks**, run before Theos. Every rule comes from a build or a device that actually broke — unbalanced `%hook`/`%end`, a hooked class touching `self` without an `@interface`, a fragile `%orig`, a missing localisation key, a `%new` parameter carrying an attribute, and `-valueForKey:` probing (which runs the app's own code and cannot be made safe by `@catch`). Run from the root it re-runs itself once per tweak. |
+| **`objc-classes.py`** | Prints a class's real methods, **declared property types**, ivars and **type encodings** straight out of a Mach-O's ObjC metadata; `--find-method` / `--find-ivar` answer "who answers this selector / owns this field". A framework-wide selector dump says a name *exists*, never on which class — this project lost releases to that gap. |
+| **`make-suite.sh`** | Merges every tweak without `.no-suite` into `com.albrhi`, and refuses a staged tree that does not match the scheme it was asked for. |
+| **`make-repo.sh`** · **`fetch-published-debs.sh`** | Build the APT index **from the published releases** (so several workflows can rebuild one index safely), with an explicit `WITHHELD_PACKAGES` list — because building the index from releases means silence removes nothing. |
+| **`make-depiction.py`** | Sileo depiction and HTML fallback generated **from the changelog**, so they cannot go stale. |
+| **`licence.py`** · **`licence-panel.html`** · **`build-store.sh`** | Issue and revoke licences; build a one-shop copy. |
+| **`inject-dylib.py`** · **`ipa-inject.html`** | Put a dylib into an IPA, with entitlements read first and handed back. |
+| **`deb-edit.py`** · **`deb-edit.html`** | Edit `.deb` metadata from a terminal or browser (served at `…/deb-edit/`). |
+| **`build-local.sh`** · **`build-dylibs.sh`** · **`build-dav1d.sh`** | Local suite builds, the standalone dylibs, and the AV1 decoder. |
+| **`release-notes.py`** · **`make-logo.py`** · **`repo-index.html`** | Release bodies from a changelog, the repo icon in pure Python, and the landing page. |
 
 ---
 
 ## 📖 Usage
 
-**On Instagram** — open the panel by **holding the ☰ button** at the top right of your profile. With
-*Settings quick-access* on, holding the **home tab** works too.
+**Instagram** — **hold the ☰ button** at the top right of your profile (with *Settings quick-access* on,
+holding the **home tab** works too). Download with the inline button; long-press a post to zoom; search any
+setting from the bar at the top.
 
-- **Download** a post/reel/story with the inline download button in the action row.
-- **Long-press** a post to **zoom** it (configurable under Downloads → Long-press action).
-- **Search** any setting from the search bar at the top of the panel.
+**YouTube** — **hold two fingers anywhere.** It is deliberately not in YouTube's own settings: two attempts
+at that crashed the app, because a settings entry must satisfy tables the tweak cannot reach. Tap YouTube's
+own download button to save; saved videos live in their own tab.
 
-**On YouTube** — open the panel by **holding two fingers anywhere**. It is deliberately not in
-YouTube's own settings: two attempts at that crashed the app, because a settings entry has to satisfy
-tables the tweak cannot reach. The gesture is on `UIWindow`, which is UIKit and cannot go missing.
+**X** — **hold two fingers anywhere**, the same gesture for the same reason. Hold a photo or video to save
+it; drag the in-video button where you want it and pin it.
 
-- **Hold the video** to save it — or use the row in the panel.
-- Saved videos live in their own tab beside *You*, with their own player.
-- A save button and the video's end time can be added to YouTube's own player layer, under
-  Interface. **Both are off by default**: they act on two classes read from another tweak's
-  open source rather than confirmed on this build, so they are asked for rather than
-  assumed, and Diagnostics reports which of the two attached.
+**TikTok** — the download button is in the feed, above the profile picture. **Hold two fingers anywhere**
+for settings; *Advanced → Status report* copies every number behind every feature, which is the fastest way
+to report something that is not working.
 
-**On X** — open the panel by **holding two fingers anywhere**, the same gesture and for the
-same reason.
+**Everywhere** — **Settings → Albrhi** is the one page listing every app Albrhi patches, with a switch
+each. Turn one off and that tweak stops loading entirely, without uninstalling anything or losing its
+settings. Reopen the app for the change to take effect.
 
-- **Hold any photo or video** to save it. One capture point serves the timeline, full
-  screen, quoted posts and DMs, because all four build the same media model.
-- The Switches page lists the feature flags X asks itself about, recorded from your own use
-  — 341 of them on X 12.14 — with seventeen named features on top of them. The
-  `app_attest_*` keys are deliberately not offered: those are how X proves to its servers
-  that the device is unmodified, and answering them falsely is an account risk, not a
-  privacy setting.
+**When something does not work:** open the tweak's diagnostics → read what actually attached → (on
+Instagram) the magnifier scans the live view hierarchy → send the report. That loop replaced several rounds
+of guessing.
 
-**On TikTok** — the download button is in the feed itself, above the profile picture. **Hold two
-fingers anywhere** for the settings.
+---
 
-- **Tap the button** to save what you are watching. A photo post asks whether you want the picture
-  you are on or all of them, and offers to save one picture as a short video with the post's sound.
-- The Status report — Advanced → *Status report* — names every number behind every feature and
-  copies the lot in one tap. It is the fastest way to report something that is not working.
-- **Ask before liking** and **ask before following** are off until you turn them on, under
-  Confirmations.
+## 🧠 How it is made
 
-**Everywhere** — Settings → **Albrhi** is the one page listing every app Albrhi patches,
-with a switch each. Turn one off and that tweak stops loading entirely, without uninstalling
-anything or losing its settings. Reopen the app for the change to take effect.
+A few habits run through the whole repository, because each was paid for:
+
+- **Measure before hooking.** What a class *is declared to have* is read from the app's own metadata
+  (`objc-classes.py`), what a method's *signature is* is read from the runtime, and a hook is installed
+  only where the running build agrees — a `%hook` on a method the class does not declare does not politely
+  do nothing, it adds one.
+- **Count the attempt, not only the result.** A diagnostic that reports the last event instead of a tally,
+  or a counter on a path that never runs, sends you fixing what is not broken. Reports say what was
+  *attempted*, what *succeeded*, and what *stood aside*.
+- **A tweak may cost a feature; it may not cost the app.** Launch guards, reload budgets, and work on a
+  layout path that is free the second time.
+- **Nothing writes itself.** Reports are written when asked, every file that can grow has a ceiling and says
+  so when it is hit.
+- **Credit and licence are not optional.** GPLv3 sources are carried over with their authorship; unlicensed
+  references are read for *architecture only*, and the line between a device tweak and a paid subscription
+  is one this project does not cross.
+
+The accumulated reasoning — what broke, why, and what was learned — lives in [CLAUDE.md](CLAUDE.md).
 
 ---
 
 ## 🗺️ Roadmap
 
-- [x] Native inline download button in post and reel action rows
-- [x] Download Center — queue, pause, resume, retry, background transfers, history
-- [x] On-device AV1 transcoding for the full quality ladder
-- [x] Custom date & time formats, OLED theme
-- [x] Searchable settings
-- [x] Backup, restore, export and import of settings
-- [x] Diagnostics — runtime info, attached hooks, live view-hierarchy scan, issue reporting
-- [x] Self-publishing APT source with a browser control panel
-- [x] **Albrhi for YouTube** — a second tweak in this repository, sharing none of Instagram's runtime
-- [x] Video downloads on YouTube, without bundling a media library to convert them
-- [x] **Albrhi for X** — the fourth tweak
-- [x] **Albrhi Panel** — one Settings page, a switch per patched app, read across the sandbox
-- [x] **`com.albrhi`** — the five in one package, so a new tweak arrives as an update rather than a download
-- [x] A save button and an end time on YouTube's own player layer
-- [x] **Albrhi for TikTok** — a download button in the feed, photo posts, confirmations, privacy
-- [x] Photo posts saved as photos, and one picture saved as a clip with the post's own sound
-- [x] **Albrhi NextUp** — a GPLv3 port of NextUp 3, configured from the panel, published on its own
-- [x] **Albrhi for YouTube Music** — synced lyrics, and seven more features carried over under GPLv3
-- [x] **A master switch, a guide, settings backup and an update check** in the panel
-- [x] **Tests that run on the build machine** — the pure-logic modules, proved without a device
-- [ ] Take that test arrangement to the other tweaks — the DASH ladder, the quality ranking and the
-      version comparison are all pure functions of their input
-- [ ] **Albrhi CarPlay, rebuilt from scratch in its own repository** — removed from this one
-- [x] Tie a SponsorBlock marker to the bar it belongs to — one global served every bar until 1.22.0
-- [ ] Settings profiles — several configurations, switched per account
-- [ ] Crash protection that isolates and disables a faulting feature rather than the whole tweak
+**Done recently**
+- [x] **YouTube direct download route** — survives app updates; own fragmented-MP4 remux, no FFmpeg
+- [x] **A licence layer** — free week, keys, short codes, server renewal, revocation, an admin app
+- [x] **Six tweaks in one package**, and Spotify, NextUp and Watch as their own, each with its own settings row
+- [x] **Albrhi for YouTube Music** — lyrics, saving tracks, Downloads tab, no ads
+- [x] **Instagram:** story-seen hiding fixed on 439, unsent messages kept **and marked**
+- [x] **YouTube:** arrangeable tab bar, History tab, playback-error recovery, extra ad gates
+- [x] **X:** fifteen features, a draggable in-video button, Face ID cover
+- [x] **TikTok:** a card-based settings screen, save media from comments
+- [x] **Tests that run on the build machine** for YouTube Music and YouTube
+
+**Next**
+- [ ] **A full log of deleted Instagram messages** — text, sender and time saved before deletion (today only the badge exists)
+- [ ] Hiding the reels **seen** mark (`write_seen_state` still goes out)
+- [ ] Confirm the YouTube direct route on a device
+- [ ] Take the host-test arrangement to the rest — the DASH ladder, the quality ranking and version comparison are pure functions
+- [ ] Spotify publishing from its own workflow
+- [ ] A backup of the licence store
+- [ ] **Albrhi CarPlay, rebuilt from scratch in its own repository**
+- [ ] Settings profiles · crash protection that disables a faulting feature rather than the whole tweak
 
 ---
 
@@ -785,37 +695,31 @@ anything or losing its settings. Reopen the app for the change to take effect.
 Issues and pull requests are welcome.
 
 1. Fork and branch from `main`.
-2. Keep one feature per file under `tweaks/instagram/src/Features/<Category>/`; register its settings page under
-   `tweaks/instagram/src/Settings/Pages/` and its defaults in that tweak's `src/Tweak.x`.
-3. Add **both** Arabic and English strings to `tweaks/instagram/src/Localization/SCILocalize.m` — never hard-code
+2. Keep one feature per file under the tweak's `src/Features/<Category>/`; in Instagram a settings page
+   registers itself in `+load` under `src/Settings/Pages/`, and defaults go in that tweak's `src/Tweak.x`.
+3. Add **both** Arabic and English strings to the tweak's `src/Localization/SCILocalize.m` — never hard-code
    user-facing text (`tools/check.py` enforces parity).
-4. Follow the `SCI` prefix and Objective-C style; build before opening the PR.
-5. By contributing you agree your work is licensed under the GPLv3.
+4. Follow the `SCI` prefix and Objective-C style; run `python3 tools/check.py` and build before opening the PR.
+5. Bump the version in `control` **and** `SCIVersionString` together, add a changelog entry — **and bump
+   `suite/control`**, or nothing ships.
+6. By contributing you agree your work is licensed under the GPLv3.
 
 ---
 
 ## 🙏 Credits
 
 - **[SoCuul](https://github.com/SoCuul)** — author of [SCInsta](https://github.com/SoCuul/SCInsta), the project Albrhi is derived from.
-- **[RyukGram](https://github.com/faroukbmiled/RyukGram)** by faroukbmiled (GPLv3) — a fellow SCInsta fork that identified the DM and timestamp hook points.
-- **[JGProgressHUD](https://github.com/JonasGessner/JGProgressHUD)** by Jonas Gessner — MIT.
-- **[dav1d](https://code.videolan.org/videolan/dav1d)** by VideoLAN — the AV1 decoder behind on-device transcoding.
-- **[SponsorBlock](https://sponsor.ajay.app)** by Ajay Ramachandran — the segment database the YouTube tweak skips by, CC BY-NC-SA 4.0.
-- **[iSponsorBlock](https://github.com/Galactic-Dev/iSponsorBlock)** by Galactic Dev (GPLv3) — the YouTube tweak's coloured progress-bar markers are derived from it.
-- **[YTMusicUltimate](https://github.com/dayanch96/YTMusicUltimate)** by **dayanch96** and
-  **[YTMEnhanced](https://github.com/py233/YTMEnhanced)** by **py233** (both GPLv3) — the YouTube
-  Music hooks, including the synced-lyrics module, are carried over from them. Their Premium claim
-  deliberately is not.
-- **[EeveeSpotify](https://github.com/whoeevee/EeveeSpotify)** (GPLv3) — the Spotify ad blocking is
-  carried over from it, without its Premium unlock.
+- **[RyukGram](https://github.com/faroukbmiled/RyukGram)** by faroukbmiled — a fellow SCInsta fork, read for where Instagram is hookable.
+- **[YTKACE](https://github.com/itzzace/ytkace)** by itzzace (MIT) — the direct download method and several ad gates; **YTPlaybackFix** by Mark02 (MIT) — the playback-error recovery approach.
+- **[iSponsorBlock](https://github.com/Galactic-Dev/iSponsorBlock)** by Galactic Dev (GPLv3) — the coloured progress-bar markers; **[SponsorBlock](https://sponsor.ajay.app)** by Ajay Ramachandran — the segment database (CC BY-NC-SA 4.0).
+- **[YTMusicUltimate](https://github.com/dayanch96/YTMusicUltimate)** by **dayanch96** and **[YTMEnhanced](https://github.com/py233/YTMEnhanced)** by **py233** (GPLv3) — the YouTube Music hooks and synced-lyrics module. Their Premium claim deliberately is not carried over.
+- **[EeveeSpotify](https://github.com/whoeevee/EeveeSpotify)** (GPLv3) — the Spotify ad blocking, without its Premium unlock.
 - **[NextUp 3](https://github.com/Yves000/NextUp3)** by **Yves** (GPLv3) — Albrhi NextUp is a port of it; the design and nearly all of the implementation are his.
-- **[LightMessaging](https://github.com/rpetrich/libhooker)** by Ryan Petrich and **[libSandy](https://github.com/opa334/libSandy)** by opa334 — the cross-process messaging and sandbox profile NextUp needs.
-- **[FLEXing](https://github.com/SoCuul/FLEXing)** — runtime debugging support.
-- **[BHTikTok](https://github.com/BandarHL/BHTikTok)** by BandarHL and the maintained fork by
-  [al3raQe](https://github.com/al3raQe/BHTikTok) — read for *where* TikTok is hookable, never for
-  code. Two compiled tweaks, NA9 For TikTok and VibeTok, were read the same cautious way and for
-  the same one question.
-- **Ibrahim Ismail AL-Rahn** — Albrhi rebuild, bilingual layer, download & transcode engine, and design.
+- **[watched](https://github.com/34306/watched)** by **34306** (MIT) — the Apple Watch pairing core.
+- **[LightMessaging](https://github.com/rpetrich/libhooker)** by Ryan Petrich and **[libSandy](https://github.com/opa334/libSandy)** by opa334 — the messaging and sandbox profile NextUp needs.
+- **[BHTikTok](https://github.com/BandarHL/BHTikTok)** by BandarHL and the fork by [al3raQe](https://github.com/al3raQe/BHTikTok), and **BHTwitter** — read for *where* an app is hookable, **never for code**; two compiled TikTok tweaks were read the same cautious way.
+- **[JGProgressHUD](https://github.com/JonasGessner/JGProgressHUD)** by Jonas Gessner (MIT) · **[dav1d](https://code.videolan.org/videolan/dav1d)** by VideoLAN (the AV1 decoder) · **[FLEXing](https://github.com/SoCuul/FLEXing)** (runtime debugging).
+- **Ibrahim Ismail AL-Rahn** — the Albrhi rebuild, bilingual layer, download and transcode engine, licence layer, and design.
 
 ---
 
@@ -832,7 +736,8 @@ Issues and pull requests are welcome.
 ## ⚖️ License
 
 Albrhi is a derivative work of SCInsta, distributed under the **GNU General Public License v3.0**
-([LICENSE](LICENSE)). The source stays open, modifications are documented, and original authorship
-is preserved as the licence requires.
+([LICENSE](LICENSE)). The source stays open, modifications are documented, and original authorship is
+preserved as the licence requires. The Albrhi *licence* described above governs who may **run** the
+released builds; it does not change the terms under which the source is published.
 
-*Albrhi is not affiliated with, endorsed by or sponsored by Instagram or Meta Platforms, Inc.*
+*Albrhi is not affiliated with, endorsed by or sponsored by Instagram, Meta Platforms, Inc., Google, YouTube, X Corp., TikTok or Spotify.*
