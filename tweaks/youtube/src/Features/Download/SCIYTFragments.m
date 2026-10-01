@@ -75,6 +75,9 @@ typedef struct {
 @property (nonatomic) uint32_t sampleRate;
 @property (nonatomic) uint32_t channels;
 @property (nonatomic, strong) NSData *audioConfig;
+@property (nonatomic) uint32_t width;
+@property (nonatomic) uint32_t height;
+@property (nonatomic, strong) NSData *av1c;          ///< the `av1C` box body, for AV1
 @property (nonatomic) uint32_t defaultDuration;
 @property (nonatomic) uint32_t defaultSize;
 @property (nonatomic) uint32_t defaultFlags;
@@ -180,6 +183,29 @@ static void SCIFReadSampleEntry(SCIFTrack *track, const uint8_t *bytes, SCIFBox 
             if (!SCIFRead(bytes, end, p, 2, &size) || p + 2 + size > end) return;
             track.pps = [NSData dataWithBytes:bytes + p + 2 length:(NSUInteger)size];
             return;
+        }
+        return;
+    }
+
+    // AV1 (`av01`): the picture is not decoded or touched, only described to the writer. The
+    // visual sample entry's width and height sit at fixed offsets, and the codec's own
+    // configuration is the `av1C` child, which the writer needs verbatim to write an entry a
+    // player will accept.
+    if (SCIFIs(&entry, "av01")) {
+        uint64_t w = 0, h = 0;
+        SCIFRead(bytes, end, body + 24, 2, &w);
+        SCIFRead(bytes, end, body + 26, 2, &h);
+        track.width = (uint32_t)w;
+        track.height = (uint32_t)h;
+
+        uint64_t at = body + 78;
+        SCIFBox child;
+        while (SCIFNextBox(bytes, end, &at, &child)) {
+            if (SCIFIs(&child, "av1C")) {
+                track.av1c = [NSData dataWithBytes:bytes + child.start + child.header
+                                            length:(NSUInteger)(child.size - child.header)];
+                return;
+            }
         }
         return;
     }
@@ -453,8 +479,32 @@ static void SCIFReadSampleEntry(SCIFTrack *track, const uint8_t *bytes, SCIFBox 
 }
 
 + (CMFormatDescriptionRef)videoFormat:(SCIFTrack *)track failure:(NSString **)failure CF_RETURNS_RETAINED {
+    // AV1 is written untouched, which is why 1440p and 4K can be offered at all: YouTube serves
+    // them as fragmented MP4 in AV1 (and as WebM in VP9, which has no such route). Whether the
+    // *phone* can play the result is a different question and it is answered where the file is
+    // opened, not here -- this only has to write a file that is correct.
+    if ([track.codec isEqualToString:@"av01"]) {
+        if (!track.av1c.length || !track.width || !track.height) {
+            if (failure) *failure = @"AV1 picture without its configuration";
+            return NULL;
+        }
+
+        NSDictionary *extensions = @{
+            (__bridge NSString *)kCMFormatDescriptionExtension_SampleDescriptionExtensionAtoms: @{ @"av1C": track.av1c }
+        };
+        CMFormatDescriptionRef format = NULL;
+        OSStatus status = CMVideoFormatDescriptionCreate(kCFAllocatorDefault, kCMVideoCodecType_AV1,
+                                                         (int32_t)track.width, (int32_t)track.height,
+                                                         (__bridge CFDictionaryRef)extensions, &format);
+        if (status != noErr) {
+            if (failure) *failure = [NSString stringWithFormat:@"the AV1 description was refused (%d)", (int)status];
+            return NULL;
+        }
+        return format;
+    }
+
     if (![track.codec hasPrefix:@"avc"] || !track.sps.length || !track.pps.length) {
-        if (failure) *failure = [NSString stringWithFormat:@"video is %@, not H.264", track.codec ?: @"unknown"];
+        if (failure) *failure = [NSString stringWithFormat:@"video is %@, not H.264 or AV1", track.codec ?: @"unknown"];
         return NULL;
     }
     // The frames in the file are length-prefixed, and the writer is told how long the prefix is.

@@ -281,7 +281,15 @@ NSNotificationName const SCIYTLibraryDidChangeNotification = @"SCIYTLibraryDidCh
 
     // Only if it was asked for. Saving to Photos used to be the one ending a download
     // could have, and that is what this whole screen exists to undo.
-    if (SCIPrefEnabled(SCIPrefAutoPhotos)) {
+    //
+    // **Not for AV1**: Photos refuses it, and the refusal would arrive as a library error code
+    // that says nothing about why. The row says it instead.
+    BOOL isAV1 = [job.quality containsString:@"AV1"];
+    if (isAV1 && SCIPrefEnabled(SCIPrefAutoPhotos)) {
+        job.exportFailure = SCILocalized(@"dl_av1_no_photos");
+        [self save];
+        [self changed];
+    } else if (SCIPrefEnabled(SCIPrefAutoPhotos)) {
         [self export:job completion:^(BOOL ok, NSString *detail) {
             //
             // **"Remove after saving to Photos" was honoured by one door of two.** The swipe

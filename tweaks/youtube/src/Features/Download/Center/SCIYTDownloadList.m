@@ -1,4 +1,6 @@
 #import "SCIYTDownloadList.h"
+#import <AVFoundation/AVFoundation.h>
+#import <VideoToolbox/VideoToolbox.h>
 #import "../../../Tweak.h"
 #import "SCIYTLibrary.h"
 #import "SCIYTPlayer.h"
@@ -157,7 +159,43 @@
         [queue addObject:candidate];
     }
 
+    // An AV1 file this iPhone cannot decode would open a player that shows nothing. Said first,
+    // with the way out: the file is intact, and an app that can play it is one share away.
+    if ([self fileIsAV1ThisDeviceCannotPlay:[job fileURL]]) {
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:SCILocalized(@"dl_av1_unplayable_title")
+                                                                       message:SCILocalized(@"dl_av1_unplayable_msg")
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        NSURL *file = [job fileURL];
+        [alert addAction:[UIAlertAction actionWithTitle:SCILocalized(@"dl_share") style:UIAlertActionStyleDefault
+                                                handler:^(__unused UIAlertAction *action) {
+            UIActivityViewController *sheet = [[UIActivityViewController alloc] initWithActivityItems:@[file] applicationActivities:nil];
+            sheet.popoverPresentationController.sourceView = self.view;
+            sheet.popoverPresentationController.sourceRect = CGRectMake(CGRectGetMidX(self.view.bounds), CGRectGetMidY(self.view.bounds), 1, 1);
+            [self presentViewController:sheet animated:YES completion:nil];
+        }]];
+        [alert addAction:[UIAlertAction actionWithTitle:SCILocalized(@"ok") style:UIAlertActionStyleCancel handler:nil]];
+        [self presentViewController:alert animated:YES completion:nil];
+        return;
+    }
+
     [SCIYTPlayer presentFrom:self jobs:queue start:start];
+}
+
+/// Whether the file's picture is AV1 and this device has no AV1 decoder. Read from the file's
+/// own track description, not from the title or the quality label a person could have renamed.
+- (BOOL)fileIsAV1ThisDeviceCannotPlay:(NSURL *)url {
+    if (!url) return NO;
+
+    AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:nil];
+    for (AVAssetTrack *track in [asset tracksWithMediaType:AVMediaTypeVideo]) {
+        for (id description in track.formatDescriptions) {
+            CMFormatDescriptionRef format = (__bridge CMFormatDescriptionRef)description;
+            if (CMFormatDescriptionGetMediaSubType(format) == kCMVideoCodecType_AV1) {
+                return !VTIsHardwareDecodeSupported(kCMVideoCodecType_AV1);
+            }
+        }
+    }
+    return NO;
 }
 
 // MARK: - Swipes

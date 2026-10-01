@@ -226,6 +226,12 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
         cell.detailTextLabel.text = [NSString stringWithFormat:@"%.1f Mbps",
                                      variant.bandwidth / 1000000.0];
     }
+    if ([variant.codecs.lowercaseString containsString:@"av01"]) {
+        NSString *hint = SCILocalized(@"dl_av1_hint");
+        cell.detailTextLabel.text = cell.detailTextLabel.text.length
+            ? [NSString stringWithFormat:@"%@ · %@", cell.detailTextLabel.text, hint] : hint;
+        cell.detailTextLabel.numberOfLines = 0;
+    }
 
     return cell;
 }

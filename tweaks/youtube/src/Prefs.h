@@ -77,6 +77,15 @@
 /// file the user cannot get back again has to be asked for.
 #define SCIPrefEmbedArtwork     @"embed_artwork"
 
+/// Offering 1440p and 4K, which YouTube serves only in AV1 (and VP9).
+///
+/// **Off, because the files are not what an iPhone usually plays.** The pictures are written
+/// untouched into an ordinary .mp4, which is correct and plays in VLC, Infuse, on a Mac and on
+/// an iPhone with an AV1 decoder (15 Pro and later) -- and not in Photos or in this Centre's own
+/// player on anything older. A choice that produces a file somebody cannot open is one they
+/// should make knowingly.
+#define SCIPrefOffer4K          @"offer_4k_av1"
+
 /// Removing a save from the Centre once it has reached Photos.
 ///
 /// Off. Photos is where a video goes to be kept and the Centre is where it goes to be

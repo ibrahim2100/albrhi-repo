@@ -110,6 +110,10 @@
                        detail:SCILocalized(@"set_shorts_button_note")
                        symbol:@"play.rectangle.on.rectangle"
                       prefKey:SCIPrefShortsButton],
+            [SCIRow switchRow:SCILocalized(@"set_offer_4k")
+                       detail:SCILocalized(@"set_offer_4k_note")
+                       symbol:@"4k.tv"
+                      prefKey:SCIPrefOffer4K],
             [SCIRow switchRow:SCILocalized(@"set_auto_photos")
                        detail:SCILocalized(@"set_auto_photos_note")
                        symbol:@"photo.on.rectangle"

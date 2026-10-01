@@ -27,7 +27,8 @@
 
 @interface SCIYTFragments : NSObject
 
-/// H.264 video and AAC audio, each in its own fragmented file, written as one .mp4.
+/// H.264 or AV1 video and AAC audio, each in its own fragmented file, written as one .mp4.
+/// AV1 is written untouched -- the file is correct, whether a given phone can play it is not decided here.
 ///
 /// Either side failing to parse is a sentence rather than a guess: the codec that is not
 /// supported, the box that was not there. On success the inputs are left alone -- the caller

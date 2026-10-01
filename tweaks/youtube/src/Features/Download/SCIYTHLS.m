@@ -14,7 +14,9 @@
                                  : SCILocalized(@"dl_unknown_quality");
 
     // The codec matters to the user only when it is the reason a quality is missing, so
-    // it is not spelled out here -- anything that reaches this point is playable.
+    // it is not spelled out -- except for AV1, which is playable by *some* devices and not
+    // others, and a person choosing 4K should see that it is the one that needs a capable player.
+    if ([self.codecs.lowercaseString containsString:@"av01"]) return [size stringByAppendingString:@" · AV1"];
     return size;
 }
 

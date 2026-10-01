@@ -851,13 +851,21 @@ instances taught; here are the facts.
 - **The direct route (1.34.0, `SCIYTDirect`, method from YTKACE, MIT) is first and confirmed on the owner's phone.** `VISIONOS` 1.02
   against `youtubei.googleapis.com`, `/guide` for a visitor id (cached a week), `/player` as JSON; **anonymous — no cookie, no account**
   (an earlier remark here that it risked the account was made without reading what the request carried). Only H.264 ≤1080p
-  (`video/mp4`, `avc1`) and AAC LC (`mp4a.40.2`, not `isDrc`, default `audioTrack`) are offered — 1440p/4K are VP9/AV1 and would save and
+  (`video/mp4`, `avc1`; **plus AV1 above 1080p behind `SCIPrefOffer4K`, off — see below**) and AAC LC (`mp4a.40.2`, not `isDrc`, default `audioTrack`) are offered — 1440p/4K are VP9/AV1 and would save and
   not play; `mp4a.40.5` is skipped. One entry per height, highest bitrate (the 60 fps copy where there is one). A chunk is the plain URL
   plus `&range=A-B` (8 MB, exact bytes with a plain 200), carried by `SCIYTParts`; the joined size is compared with the declared
   `contentLength` before anything is written. URLs carry **no `n` challenge** (checked by fetching a file). A video that needs a login is
   refused and goes to the playlist route; **a video that fails once is remembered for the session** and goes straight there
   (`+hasFailedForVideo:`). The report carries `direct:` lines (qualities, sizes, the writer's duration against what the sources claimed,
   or YouTube's own refusal). Checked on Mac with a 19 s clip, a 3:33 song and a 10:35 1080p60 film.
+- **4K (1.35.0) is AV1, written untouched.** YouTube serves 1440p and 2160p only as AV1 (`video/mp4; codecs="av01…"`, itags 400/401, fragmented MP4 — the same container the
+  route already reads) and as VP9 (WebM, which it cannot). `SCIYTFragments` reads the `av01` sample entry (width/height at body+24/+26, the `av1C` child verbatim) and describes it
+  with `CMVideoFormatDescriptionCreate(kCMVideoCodecType_AV1, …, SampleDescriptionExtensionAtoms {av1C})`; `AVAssetWriter` passthrough on macOS 27 then writes a correct
+  `.mp4` (3840×2160, 213.0 s, frames decoded at 0/1/100/212 s on this Mac, which has hardware AV1). **Unknown: whether the writer accepts AV1 on iOS 16.1** — the report's
+  `AV1 description refused` / writer-refused line says. **The owner's iPhone cannot decode AV1** (iOS 16), so the file is saved intact but: never auto-sent to Photos (the row says
+  so — Photos refuses it with an error code that explains nothing), and opening it in the Centre shows an alert with Share instead of a black player (the track's
+  `CMFormatDescriptionGetMediaSubType` is checked against `VTIsHardwareDecodeSupported(kCMVideoCodecType_AV1)`). On-device transcoding to HEVC was **not built**: software AV1 at 4K
+  on an A11–A13 is far too slow (Instagram's dav1d transcode is for short reels). Labelled `2160p · AV1` with a hint under the row; only heights above 1080 are offered, one per height.
 - **`SCIYTFragments` reads the DASH files itself** (boxes: `moov` → `trak` → `mdia`/`mdhd`/`hdlr`/`stsd` (`avc1`/`avcC`, `mp4a`/`esds`),
   `mvex`/`trex`, `moof` → `traf` → `tfhd`/`tfdt`/`trun`) and writes with `AVAssetWriter` passthrough, because **AVFoundation on the build
   machine reads these fragmented files with every timestamp doubled** (19 s reads as 37.9) while `mvhd`/`mdhd`/`sidx` and Core Audio agree —
@@ -1195,8 +1203,8 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.4.0** · YouTube **1.34.0** · X **0.19.1** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
-Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.84.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.4.0** · YouTube **1.35.0** · X **0.19.1** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
+Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.85.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

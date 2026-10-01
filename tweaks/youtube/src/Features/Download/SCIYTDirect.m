@@ -4,6 +4,7 @@
 #import "../../SCILog.h"
 #import "../../Localization/SCILocalize.h"
 #import "../../Diagnostics/SCIYTDiagnostics.h"
+#import "../../Prefs.h"
 
 static NSString * const kSCIDirectVisitorKey = @"sci_yt_direct_visitor";
 static const NSTimeInterval kSCIDirectVisitorLifetime = 7 * 24 * 60 * 60;
@@ -119,7 +120,7 @@ static long long SCIDirectNumber(id value) {
 }
 
 /// The formats that can be written into an .mp4 untouched, already split by kind.
-+ (void)sortFormats:(NSArray *)all video:(NSMutableArray<NSDictionary *> *)videos audio:(NSDictionary **)audio {
++ (void)sortFormats:(NSArray *)all video:(NSMutableArray<NSDictionary *> *)videos av1:(NSMutableArray<NSDictionary *> *)av1 audio:(NSDictionary **)audio {
     NSDictionary *bestAudio = nil;
 
     for (NSDictionary *format in all) {
@@ -134,6 +135,10 @@ static long long SCIDirectNumber(id value) {
 
         if ([mime hasPrefix:@"video/mp4"] && [codec hasPrefix:@"avc1"]) {
             [videos addObject:format];
+        } else if ([mime hasPrefix:@"video/mp4"] && [codec hasPrefix:@"av01"]) {
+            // AV1 in fragmented MP4 -- the only way YouTube serves 1440p and 4K as something this
+            // route can write. (The same resolutions in VP9 are WebM, which it cannot.)
+            [av1 addObject:format];
         } else if ([mime hasPrefix:@"audio/mp4"] && [codec hasPrefix:@"mp4a.40.2"]) {
             // Not the dynamic-range-compressed copy, and the default language when a video has
             // several dubbed ones -- the track a person who just pressed play would be hearing.
@@ -165,11 +170,24 @@ static long long SCIDirectNumber(id value) {
         if (!streamingData) { finish(@[], failure); return; }
 
         NSMutableArray<NSDictionary *> *videos = [NSMutableArray array];
+        NSMutableArray<NSDictionary *> *av1 = [NSMutableArray array];
         NSDictionary *audio = nil;
-        [self sortFormats:streamingData[@"adaptiveFormats"] video:videos audio:&audio];
+        [self sortFormats:streamingData[@"adaptiveFormats"] video:videos av1:av1 audio:&audio];
 
         if (!audio) { finish(@[], @"no AAC track served"); return; }
         if (!videos.count) { finish(@[], @"no H.264 picture served"); return; }
+
+        // 1440p and 4K, only when asked for (SCIPrefOffer4K, off): above 1080p, and joined to the
+        // H.264 list *before* the sort below, so one rule orders and de-duplicates both -- one entry
+        // per height, best bitrate, tallest first. **Not mixed in at 1080p and below**: there H.264 is
+        // what plays everywhere, and an AV1 copy would only be a smaller file fewer things can open.
+        if (SCIPrefEnabled(SCIPrefOffer4K)) {
+            for (NSDictionary *format in av1) {
+                if (SCIDirectNumber(format[@"height"]) > 1080) [videos addObject:format];
+            }
+            [SCIYTDiagnostics recordStreamAttempt:[NSString stringWithFormat:
+                @"direct (%@): 4K switch on, %lu AV1 formats served", videoID, (unsigned long)av1.count]];
+        }
 
         // One entry per height, the highest bitrate of each (which is the 60 fps copy where
         // there is one), tallest first.
