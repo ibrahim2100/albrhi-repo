@@ -526,7 +526,7 @@ AudioSpecificConfig** — given the short form the writer produced an `esds` not
 no audio track at all, and reported success. Found only by asking the *output* what it held
 (`AVAssetReader` track count), which is why the diagnostics line compares written duration with
 what the sources claimed. Checked on Mac with a 19 s clip, a 3:33 song and a 10:35 1080p60
-film; **not yet on the phone**.
+film; **confirmed on the owner's phone in 1.34.0** ("top"), which is the only check that settles how iOS 16.1 reads the output and how the background session carries `&range=` chunks.
 
 **SABR cannot be turned off from inside the app. This was measured to the end — do not
 try again without new evidence.** Every format on YouTube 21.30.5 answers with an empty

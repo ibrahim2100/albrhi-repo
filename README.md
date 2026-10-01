@@ -668,7 +668,7 @@ The accumulated reasoning — what broke, why, and what was learned — lives in
 ## 🗺️ Roadmap
 
 **Done recently**
-- [x] **YouTube direct download route** — survives app updates; own fragmented-MP4 remux, no FFmpeg
+- [x] **YouTube direct download route** — survives app updates; own fragmented-MP4 remux, no FFmpeg; confirmed on a device
 - [x] **A licence layer** — free week, keys, short codes, server renewal, revocation, an admin app
 - [x] **Six tweaks in one package**, and Spotify, NextUp and Watch as their own, each with its own settings row
 - [x] **Albrhi for YouTube Music** — lyrics, saving tracks, Downloads tab, no ads
@@ -681,7 +681,6 @@ The accumulated reasoning — what broke, why, and what was learned — lives in
 **Next**
 - [ ] **A full log of deleted Instagram messages** — text, sender and time saved before deletion (today only the badge exists)
 - [ ] Hiding the reels **seen** mark (`write_seen_state` still goes out)
-- [ ] Confirm the YouTube direct route on a device
 - [ ] Take the host-test arrangement to the rest — the DASH ladder, the quality ranking and version comparison are pure functions
 - [ ] Spotify publishing from its own workflow
 - [ ] A backup of the licence store
