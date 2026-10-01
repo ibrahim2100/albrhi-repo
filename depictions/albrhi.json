@@ -106,6 +106,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.88.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **إنستقرام 4.5.0 — إعدادات مرتّبة من جديد: صفحة «التنظيف» لكل ما يُخفى، قوائم تحديد مختصرة، وصفحات أقل. لا يتغيّر أي مفتاح محفوظ.**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.87.0",
           "useBoldText": true
         },
@@ -131,20 +145,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.85.0",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **يوتيوب 1.35.0 — تجربة 1440p و4K بصيغة AV1 (مفتاح مطفأ في التنزيلات).**",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.87.0"
+          "text": "1.88.0"
         },
         {
           "class": "DepictionTableTextView",
