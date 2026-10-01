@@ -111,7 +111,10 @@
 %hook YTGlobalConfig
 
 - (BOOL)shouldBlockUpgradeDialog {
-    if (!SCIPrefEnabled(SCIPrefBlockUpdateNag)) {
+    // Always on, with no switch (removed in 1.37.0): an update replaces the app and removes this
+    // tweak, so there was never a reason to want the prompt. Only the per-app gate is asked, so
+    // switching Albrhi off for YouTube in the panel still leaves YouTube exactly as it was.
+    if (!SCIPanelAllowsThisApp()) {
         return %orig;
     }
 

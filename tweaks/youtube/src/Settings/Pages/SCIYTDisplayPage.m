@@ -217,7 +217,7 @@ static void SCIAskForLevel(SCIYTSettingsHostController *host) {
 @implementation SCIYTDisplayPage
 
 + (void)load {
-    [SCIYTSettingsRegistry registerPageWithOrder:45
+    [SCIYTSettingsRegistry registerPageWithOrder:30
                                         title:SCILocalized(@"page_display")
                                        detail:SCILocalized(@"page_display_note")
                                        symbol:@"iphone.gen3"
@@ -268,17 +268,7 @@ static void SCIAskForLevel(SCIYTSettingsHostController *host) {
                            action:^{ SCIAskForTime(host, SCIPrefNightEnd); }],
         ];
 
-        SCISection *motion = [[SCISection alloc] init];
-        motion.title = SCILocalized(@"section_motion");
-        motion.footer = SCILocalized(@"high_refresh_rate_footer");
-        motion.rows = @[
-            [SCIRow switchRow:SCILocalized(@"high_refresh_rate")
-                       detail:SCILocalized(@"high_refresh_rate_note")
-                       symbol:@"waveform.path.ecg"
-                      prefKey:SCIPrefHighRefreshRate],
-        ];
-
-        return @[fullscreen, brightness, night, motion];
+        return @[fullscreen, brightness, night];
     }];
 }
 

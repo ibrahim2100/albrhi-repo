@@ -4,13 +4,16 @@
 #import "../../Localization/SCILocalize.h"
 #import "../../Diagnostics/SCIYTDiagnostics.h"
 #import "shared/src/SCILicenseUI.h"
-#import "../../Features/Download/SCIYTDownload.h"
+#import "../../Tweak.h"
 
 ///
-/// General, and the two ways out of it: saving the video being watched, and the report.
+/// General: the few things that are not about any one feature, the tools for when something is
+/// wrong, and who made this.
 ///
 /// Last by design. This is the section someone reaches by scrolling past everything they
-/// came for.
+/// came for. It absorbed the About page (three rows, two of them text) and the second
+/// "Licence" row that page carried -- one licence row, here -- and gave "Save this video" to
+/// Downloads, where somebody looking for it would look.
 ///
 @interface SCIYTGeneralPage : NSObject
 @end
@@ -65,18 +68,6 @@ static void SCIOpenDiagnostics(SCIYTSettingsHostController *host) {
         SCISection *general = [[SCISection alloc] init];
         general.title = SCILocalized(@"section_general");
         general.rows = @[
-            [SCIRow switchRow:SCILocalized(@"block_update_nag")
-                       detail:SCILocalized(@"block_update_nag_note")
-                       symbol:@"bell.slash.fill"
-                      prefKey:SCIPrefBlockUpdateNag],
-            [SCIRow switchRow:SCILocalized(@"verbose_logging")
-                       detail:SCILocalized(@"verbose_logging_note")
-                       symbol:@"text.alignleft"
-                      prefKey:SCIPrefVerboseLogging],
-            [SCIRow disclosureRow:SCILocalized(@"dl_row")
-                           detail:SCILocalized(@"dl_row_note")
-                           symbol:@"arrow.down.circle.fill"
-                           action:^{ [SCIYTDownload presentFrom:host]; }],
             // **The licence, inside the app.**
             //
             // Albrhi Panel's licence page exists only where PreferenceLoader does. A tweak
@@ -88,6 +79,16 @@ static void SCIOpenDiagnostics(SCIYTSettingsHostController *host) {
                            detail:SCILocalized(@"licence_row_note")
                            symbol:@"key.fill"
                            action:^{ [SCILicenseUI presentFrom:host]; }],
+        ];
+
+        SCISection *tools = [[SCISection alloc] init];
+        tools.title = SCILocalized(@"section_tools");
+        tools.footer = SCILocalized(@"section_tools_note");
+        tools.rows = @[
+            [SCIRow disclosureRow:SCILocalized(@"diagnostics")
+                           detail:SCILocalized(@"diagnostics_note")
+                           symbol:@"stethoscope"
+                           action:^{ SCIOpenDiagnostics(host); }],
             [SCIRow disclosureRow:SCILocalized(@"scan_watch")
                            detail:SCILocalized(@"scan_watch_note")
                            symbol:@"viewfinder"
@@ -108,16 +109,37 @@ static void SCIOpenDiagnostics(SCIYTSettingsHostController *host) {
                                            handler:nil]];
                                [host presentViewController:done animated:YES completion:nil];
                            }],
-            [SCIRow disclosureRow:SCILocalized(@"diagnostics")
-                           detail:SCILocalized(@"diagnostics_note")
-                           symbol:@"stethoscope"
-                           action:^{ SCIOpenDiagnostics(host); }],
+            [SCIRow switchRow:SCILocalized(@"verbose_logging")
+                       detail:SCILocalized(@"verbose_logging_note")
+                       symbol:@"text.alignleft"
+                      prefKey:SCIPrefVerboseLogging],
         ];
 
-        // How to get back here. A two-finger long press is safe and reliable and completely
-        // undiscoverable, which is the trade it makes.
-        general.footer = SCILocalized(@"panel_subtitle");
-        return @[general];
+        // Who made it, under what licence. Here because the licence requires it and because a
+        // tweak that talks to an outside service should say so where a user can find it; the
+        // SponsorBlock credit also sits beside the switch that turns it on.
+        SCISection *about = [[SCISection alloc] init];
+        about.title = SCILocalized(@"about_title");
+        about.rows = @[
+            [SCIRow disclosureRow:SCILocalized(@"about_author")
+                           detail:SCILocalized(@"about_author_note")
+                           symbol:@"person.fill"
+                           action:^{ }],
+            [SCIRow disclosureRow:SCILocalized(@"about_version")
+                           detail:SCIVersionString
+                           symbol:@"number"
+                           action:^{ }],
+            [SCIRow disclosureRow:SCILocalized(@"about_licence")
+                           detail:SCILocalized(@"about_licence_note")
+                           symbol:@"doc.text"
+                           action:^{ }],
+        ];
+        // The source, because GPLv3 requires it to be offered; and how to get back here -- a
+        // two-finger long press is safe and reliable and completely undiscoverable.
+        about.footer = [NSString stringWithFormat:@"%@\n\n%@",
+                        SCILocalized(@"about_footer"), SCILocalized(@"panel_subtitle")];
+
+        return @[general, tools, about];
     }];
 }
 

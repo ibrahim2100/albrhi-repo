@@ -24,7 +24,9 @@
 - (void)setPreferredFramesPerSecond:(NSInteger)framesPerSecond {
     SCIYTLaunchMark(@"display link: setPreferredFramesPerSecond");
 
-    if (!SCIPrefEnabled(SCIPrefHighRefreshRate)) {
+    // Always on, with no switch (removed in 1.37.0) -- it was "pure upside" and a screen of
+    // switches is not the place for one of those. Only the per-app gate is asked.
+    if (!SCIPanelAllowsThisApp()) {
         %orig;
         return;
     }

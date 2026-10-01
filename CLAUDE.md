@@ -895,8 +895,8 @@ instances taught; here are the facts.
   save button. The in-player save button sits in the player's top row (1.31.0, anchored to the control that changes, leading/trailing); a
   **Save** entry is added to the action row `YTSlimVideoScrollableDetailsActionsView` as a renderer through `-createActionViewsFromSupportedRenderers:` (really declared on 21.30.5
   while `YTSlimVideoDetailsActionView` is never constructed there — YouTube composes the row from elements in some builds; `targetId` ours, §4.5); taps arrive at
-  `-didTapButton:`, and a button becomes the download button at `-setOfflineStatus:offlineability:`, not at construction. **Hold-to-save is kept but off by default** (1.26.0 moved downloading onto YouTube's button after hold-to-speed-up started downloading; the hold's own switch was
-  missing in a second way — see §4.2).
+  `-didTapButton:`, and a button becomes the download button at `-setOfflineStatus:offlineability:`, not at construction. **Hold-to-save is gone** (removed in 1.37.0: 1.26.0 had already moved downloading onto YouTube's button after hold-to-speed-up started downloading, and a switch that
+  only re-enabled a gesture the project had retreated from was clutter — see §4.2).
 
 **The Download Centre** is a **tab**, built as a pivot renderer YouTube draws itself (real label, selected state, width) — never a circle
 painted over the bar; its icon is painted on afterwards because the `iconType` enum is unreadable. **History** (`FEhistory` browse id the app
@@ -921,7 +921,7 @@ domain and code. It was declined first on "nobody reported it" and taken the sam
 people put up with never reaches a bug list.**
 
 **SponsorBlock**: eight categories each with a switch, coloured markers on the bar (iSponsorBlock, GPLv3; **one marker set per bar** — a global
-once served every bar until 1.22.0), private hash lookup. **Quality ceiling** per Wi-Fi/mobile, full quality list. **Settings** open with two
+once served every bar until 1.22.0), private hash lookup. **Quality ceiling** per Wi-Fi/mobile, full quality list. **Settings (1.37.0: six pages — Downloads, Player incl. quality, Screen, Ads and clutter, SponsorBlock, General incl. tools and about)** open with two
 fingers anywhere (a settings entry in YouTube's own screen crashed the app twice: it must satisfy tables the tweak cannot reach); the report is
 on request (§4.4). YouTube is hooked on its model and service layer, never its views, except the marker colouring (laid out with frames; a fault
 there costs colours, never the video).
@@ -1210,8 +1210,8 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.4.1** · YouTube **1.36.0** · X **0.19.1** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
-Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.86.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.4.1** · YouTube **1.37.0** · X **0.19.1** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
+Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.87.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

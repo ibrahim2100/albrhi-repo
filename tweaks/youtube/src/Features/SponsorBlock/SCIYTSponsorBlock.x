@@ -5,7 +5,6 @@
 #import "../../SCIYTLaunchGuard.h"
 #import "../../Localization/SCILocalize.h"
 #import "SCIYTSponsorClient.h"
-#import "../Download/SCIYTDownload.h"
 #import "../Download/SCIYTPlayerStreams.h"
 #import "../../Diagnostics/SCIYTDiagnostics.h"
 #import <objc/runtime.h>
@@ -424,108 +423,6 @@ static void SCIDrawMarkers(UIView *bar, double barTotalTime) {
 %end
 
 
-// MARK: - Long press to download
-
-///
-/// Hold the video to save it.
-///
-/// On the player's own view, so the gesture is over the picture and nowhere else -- the
-/// settings row that used to be the only way in is still there, but nobody opens a
-/// settings screen to save the thing they are watching.
-///
-/// One finger here, unlike the two the settings panel needs: this gesture is confined to
-/// the player, and the only single long press YouTube itself puts there is the
-/// speed-up-while-held control, which needs a much shorter hold than this.
-///
-static char kSCIDownloadGestureArmed;
-
-/// The delegate matters as much as the recogniser.
-///
-/// 0.6.0 armed this gesture and it never fired once. A recogniser added to a view in an
-/// app that already has its own does not simply coexist: UIKit lets one win, and
-/// YouTube's player is covered in them — tap for the controls, double tap to seek, hold
-/// to speed up, pan to scrub. Ours lost every time, silently, which looks exactly like a
-/// gesture that was never added at all.
-///
-/// Answering YES to simultaneous recognition is what puts it back in contention. Safe,
-/// because nothing here consumes the touch: cancelsTouchesInView is off, so whatever
-/// YouTube meant to do with the press still happens whether or not this fires.
-@interface SCIDownloadGestureTarget : NSObject <UIGestureRecognizerDelegate>
-+ (instancetype)shared;
-@end
-
-@implementation SCIDownloadGestureTarget
-
-- (BOOL)gestureRecognizer:(UIGestureRecognizer *)recognizer
-shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)other {
-    return YES;
-}
-
-/// A press that starts on a control or inside a scrolling list is not a request to save
-/// the video: it is someone reaching for a button, or the beginning of a scroll. The
-/// player's own surface is what this gesture is for.
-- (BOOL)gestureRecognizer:(UIGestureRecognizer *)recognizer
-       shouldReceiveTouch:(UITouch *)touch {
-    UIView *hit = touch.view;
-    while (hit) {
-        if ([hit isKindOfClass:[UIControl class]]) return NO;
-        if ([hit isKindOfClass:[UIScrollView class]]) return NO;
-        hit = hit.superview;
-    }
-    return YES;
-}
-
-+ (instancetype)shared {
-    static SCIDownloadGestureTarget *shared = nil;
-    static dispatch_once_t once;
-    dispatch_once(&once, ^{ shared = [[SCIDownloadGestureTarget alloc] init]; });
-    return shared;
-}
-
-- (void)pressed:(UILongPressGestureRecognizer *)recognizer {
-    if (recognizer.state != UIGestureRecognizerStateBegan) return;
-
-    // Asked again here, not only where the gesture is armed. A recogniser already added to
-    // a view stays added, so switching this off would otherwise take effect on the next
-    // video and not on the one in front of you -- and the whole reason somebody reaches for
-    // this switch is that a press just did the wrong thing.
-    if (!SCIPrefEnabled(SCIPrefHoldToSave)) return;
-
-    UIViewController *presenter = SCIControllerForView(recognizer.view);
-
-    if (!presenter) {
-        SCILogV(@"download: nothing to present the sheet from");
-        return;
-    }
-
-    [SCIYTDownload presentFrom:presenter];
-}
-
-@end
-
-static void SCIArmDownloadGesture(UIView *view) {
-    if (!view || objc_getAssociatedObject(view, &kSCIDownloadGestureArmed)) return;
-    objc_setAssociatedObject(view, &kSCIDownloadGestureArmed, @YES, OBJC_ASSOCIATION_RETAIN);
-
-    UILongPressGestureRecognizer *press =
-        [[UILongPressGestureRecognizer alloc] initWithTarget:[SCIDownloadGestureTarget shared]
-                                                      action:@selector(pressed:)];
-    press.minimumPressDuration = 0.65;
-
-    // The delegate is what makes it fire at all -- see the note on the target class.
-    press.delegate = [SCIDownloadGestureTarget shared];
-
-    // Never swallows the touch: tap-to-pause, scrubbing and YouTube's own hold-to-speed
-    // all have to keep working whether or not this fires.
-    press.cancelsTouchesInView = NO;
-    press.delaysTouchesBegan = NO;
-    press.delaysTouchesEnded = NO;
-
-    [view addGestureRecognizer:press];
-    SCILogV(@"download: hold-to-save armed on %@", [view class]);
-}
-
-
 // MARK: - The player
 
 %hook YTPlayerViewController
@@ -534,17 +431,6 @@ static void SCIArmDownloadGesture(UIView *view) {
            didActivateVideo:(id)video
            withPlaybackData:(id)playbackData {
     %orig;
-
-    // The player's own view is where the hold-to-save gesture lives. Armed here rather than
-    // in a viewDidLoad hook because this is already a verified hook on a verified class,
-    // and self.view is UIViewController's own API -- so nothing new can go missing.
-    //
-    // **Above the SponsorBlock gate, and that is a fix rather than tidying.** It sat below
-    // it for eleven releases, so downloading by hold was silently switched off for anybody
-    // who turned SponsorBlock off -- and it also sat below a `return` taken whenever a video
-    // id could not be read, which is a fact about segment lookup and nothing to do with
-    // saving a file. Two unrelated conditions gating a feature neither of them is about.
-    if (SCIPrefEnabled(SCIPrefHoldToSave)) SCIArmDownloadGesture(self.view);
 
     if (!SCIPrefEnabled(SCIPrefSponsorBlock)) return;
 

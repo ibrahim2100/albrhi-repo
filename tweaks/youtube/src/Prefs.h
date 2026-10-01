@@ -15,15 +15,10 @@
 /// capped at two attempts per video so a video that genuinely cannot play is not reloaded forever.
 #define SCIPrefFixPlaybackErrors @"fix_playback_errors"
 #define SCIPrefHidePaidPromo    @"hide_paid_promotion"
-#define SCIPrefBlockUpdateNag   @"block_update_nag"
 /// Unlocks native, system Picture-in-Picture -- forces the one property that gates it by
 /// account plan rather than by the video itself. Read from `MLVideo`, the same class
 /// `-playableInBackground` is already hooked on.
 #define SCIPrefNativePIP        @"native_picture_in_picture"
-
-/// Lets the player's own display link run at the screen's real refresh ceiling, on a
-/// ProMotion phone where YouTube caps it under that on its own.
-#define SCIPrefHighRefreshRate  @"high_refresh_rate"
 
 #define SCIPrefVerboseLogging   @"verbose_logging"
 
@@ -53,29 +48,12 @@
 
 /// YouTube's own download button, answered by us instead of by YouTube.
 ///
-/// **On, and it is what replaces the hold below.** The hold was over the player's own
-/// picture, which is exactly where YouTube puts its hold-to-speed-up — so the two were
-/// competing for one gesture and ours won often enough that speeding a video up became
-/// a download. A button that already means "save this video" cannot be confused with
-/// anything else, and it costs no gesture at all.
+/// **On, and it replaced a hold on the picture** (removed in 1.37.0). That hold was over the
+/// player's own surface, exactly where YouTube puts its hold-to-speed-up — the two competed for
+/// one gesture and ours won often enough that speeding a video up became a download. A button
+/// that already means "save this video" cannot be confused with anything else, and it costs no
+/// gesture at all.
 #define SCIPrefNativeDownload   @"native_download_button"
-
-/// Holding the picture to save it.
-///
-/// **Off, and that is the point of 1.26.0.** It stays because somebody may have learned it
-/// and because a build where YouTube renames the action row still has a way in — but a
-/// gesture laid over the app's own gesture is a cost paid on every long press, and it was
-/// being paid by everybody to serve a feature the button now serves better.
-#define SCIPrefHoldToSave       @"hold_to_save"
-
-/// Writing the cover into the sound file itself.
-///
-/// **Off, and that is a retreat.** It shipped on in 0.22.0 and rewrote every saved song to
-/// tag it -- unverified -- and left a library that would not play. 0.23.0 stopped it
-/// producing broken files, but the trade was already wrong: what it buys is a picture when
-/// a song is sent to someone else, and what it risks is the song. Anything that replaces a
-/// file the user cannot get back again has to be asked for.
-#define SCIPrefEmbedArtwork     @"embed_artwork"
 
 /// Offering 1440p and 4K, which YouTube serves only in AV1 (and VP9).
 ///

@@ -4,16 +4,14 @@
 #import "../SCIYTTabBarController.h"
 
 ///
-/// Parts of YouTube's own screen you can switch off.
+/// Everything that takes something away from YouTube's own screen: the ads first, then the
+/// parts of the app around the video that you can switch off, then the tab bar.
 ///
-/// Its own page rather than rows scattered through the others, because these share a
-/// property nothing else here has: each one *removes* something that works. An ad blocker
-/// takes away something nobody wanted; this takes away something somebody might. Keeping
-/// them together, under one heading, means turning any of them on is a deliberate act rather
-/// than a switch stumbled over while looking for something else.
-///
-/// Every one ships off. See `Features/Interface/SCIYTHide.x` for how each is done — none of
-/// them hides a view; they answer the question the app asks before building it.
+/// One page for what used to be two (a page of two ad switches, and this). They are the same
+/// kind of thing -- each *removes* something -- and the ads are simply the one the tweak is
+/// installed for. Everything but the ads ships off, so turning any of the rest on is a
+/// deliberate act. See `Features/Interface/SCIYTHide.x` for how each is done — none of them
+/// hides a view; they answer the question the app asks before building it.
 ///
 @interface SCIYTInterfacePage : NSObject
 @end
@@ -21,11 +19,24 @@
 @implementation SCIYTInterfacePage
 
 + (void)load {
-    [SCIYTSettingsRegistry registerPageWithOrder:35
-                                        title:SCILocalized(@"page_interface")
-                                       detail:SCILocalized(@"page_interface_note")
-                                       symbol:@"eye.slash"
+    [SCIYTSettingsRegistry registerPageWithOrder:40
+                                        title:SCILocalized(@"page_clean")
+                                       detail:SCILocalized(@"page_clean_note")
+                                       symbol:@"hand.raised.fill"
                                       builder:^NSArray<SCISection *> *(__unused SCIYTSettingsHostController *host) {
+        SCISection *ads = [[SCISection alloc] init];
+        ads.title = SCILocalized(@"section_ads");
+        ads.rows = @[
+            [SCIRow switchRow:SCILocalized(@"hide_ads")
+                       detail:SCILocalized(@"hide_ads_note")
+                       symbol:@"hand.raised.fill"
+                      prefKey:SCIPrefHideAds],
+            [SCIRow switchRow:SCILocalized(@"hide_paid_promotion")
+                       detail:SCILocalized(@"hide_paid_promotion_note")
+                       symbol:@"megaphone.fill"
+                      prefKey:SCIPrefHidePaidPromo],
+        ];
+
         SCISection *player = [[SCISection alloc] init];
         player.title = SCILocalized(@"section_hide_player");
         player.rows = @[
@@ -51,6 +62,12 @@
                            detail:SCILocalized(@"set_tabs_arrange_note")
                            symbol:@"square.grid.2x2"
                            action:^{ [SCIYTTabBarController present]; }],
+            // Here and not under Downloads: it is the tab bar being changed, and somebody who
+            // wants the Download Centre tab gone looks for it with the other tab settings.
+            [SCIRow switchRow:SCILocalized(@"set_pivot_bar")
+                       detail:SCILocalized(@"set_pivot_bar_note")
+                       symbol:@"rectangle.bottomthird.inset.filled"
+                      prefKey:SCIPrefPivotBar],
         ];
 
         SCISection *bar = [[SCISection alloc] init];
@@ -84,25 +101,7 @@
                       prefKey:SCIPrefHideSharePromo],
         ];
 
-        // Added rather than hidden, which is what every other row on this page does.
-        //
-        // Both act on classes this project has not confirmed on a device -- read from
-        // YTVideoOverlay (MIT) rather than from a class dump -- so they default off and the
-        // diagnostics report names which of the two attached.
-        SCISection *overlay = [[SCISection alloc] init];
-        overlay.title = SCILocalized(@"overlay_header");
-        overlay.rows = @[
-            [SCIRow switchRow:SCILocalized(@"overlay_button_title")
-                       detail:SCILocalized(@"overlay_button_note")
-                       symbol:@"arrow.down.circle"
-                      prefKey:SCIPrefOverlayButton],
-            [SCIRow switchRow:SCILocalized(@"overlay_endtime_title")
-                       detail:SCILocalized(@"overlay_endtime_note")
-                       symbol:@"clock"
-                      prefKey:SCIPrefOverlayEndTime],
-        ];
-
-        return @[player, tabs, bar, overlay, elsewhere];
+        return @[ads, player, bar, elsewhere, tabs];
     }];
 }
 

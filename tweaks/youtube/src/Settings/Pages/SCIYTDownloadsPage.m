@@ -2,12 +2,20 @@
 #import "../../Prefs.h"
 #import "../../Localization/SCILocalize.h"
 #import "../../Features/Download/Center/SCIYTDownloadCenter.h"
+#import "../../Features/Download/SCIYTDownload.h"
 
 ///
 /// Downloads.
 ///
-/// The Centre itself is the first row rather than a setting, because it is the thing
+/// Four groups, in the order somebody meets them: how a save starts (the Centre and the
+/// buttons), how big and how good it is, what happens when it finishes, and how the saved
+/// videos play. The Centre is the first row rather than a setting, because it is the thing
 /// someone opening this screen after saving a video came looking for.
+///
+/// 1.37.0 rebuilt this page. It had fourteen rows in one list, two of which (the 4K pair) were
+/// really one question, one of which (the tab bar) belonged to the tab bar page, and two of
+/// which (a hold on the picture; the cover written into songs) were features this project had
+/// already retreated from and kept a switch for.
 ///
 @interface SCIYTDownloadsPage : NSObject
 @end
@@ -62,84 +70,142 @@
     [top presentViewController:sheet animated:YES completion:nil];
 }
 
+
+/// What the 1440p / 4K row says about itself, from the two switches behind it.
+///
+/// One question with three answers is one row. Two switches meant the second only made sense when
+/// the first was on, and a screen that lets you set "convert" while "offer" is off is a screen
+/// that lets you configure something that will never happen.
+typedef NS_ENUM(NSInteger, SCIHiRes) { SCIHiResOff = 0, SCIHiResAV1, SCIHiResHEVC };
+
+static SCIHiRes SCICurrentHiRes(void) {
+    if (!SCIPrefEnabled(SCIPrefOffer4K)) return SCIHiResOff;
+    return SCIPrefEnabled(SCIPrefConvertAV1) ? SCIHiResHEVC : SCIHiResAV1;
+}
+
+static NSString *SCIHiResLabel(SCIHiRes value) {
+    switch (value) {
+        case SCIHiResOff:  return SCILocalized(@"hires_off");
+        case SCIHiResAV1:  return SCILocalized(@"hires_av1");
+        case SCIHiResHEVC: return SCILocalized(@"hires_hevc");
+    }
+    return @"";
+}
+
++ (void)askForHiRes:(SCIYTSettingsHostController *)host {
+    if (!host) return;
+
+    UIAlertController *sheet =
+        [UIAlertController alertControllerWithTitle:SCILocalized(@"set_hires")
+                                            message:SCILocalized(@"set_hires_note")
+                                     preferredStyle:UIAlertControllerStyleActionSheet];
+
+    SCIHiRes current = SCICurrentHiRes();
+    for (NSNumber *choice in @[@(SCIHiResOff), @(SCIHiResAV1), @(SCIHiResHEVC)]) {
+        SCIHiRes value = (SCIHiRes)choice.integerValue;
+        NSString *title = [NSString stringWithFormat:@"%@%@", SCIHiResLabel(value),
+                           value == current ? @" ✓" : @""];
+        [sheet addAction:[UIAlertAction actionWithTitle:title
+                                                  style:UIAlertActionStyleDefault
+                                                handler:^(__unused UIAlertAction *action) {
+            NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+            [defaults setBool:(value != SCIHiResOff) forKey:SCIPrefOffer4K];
+            [defaults setBool:(value == SCIHiResHEVC) forKey:SCIPrefConvertAV1];
+            [host reloadSettings];
+        }]];
+    }
+
+    [sheet addAction:[UIAlertAction actionWithTitle:SCILocalized(@"cancel")
+                                              style:UIAlertActionStyleCancel
+                                            handler:nil]];
+
+    sheet.popoverPresentationController.sourceView = host.view;
+    sheet.popoverPresentationController.sourceRect =
+        CGRectMake(CGRectGetMidX(host.view.bounds), CGRectGetMidY(host.view.bounds), 1, 1);
+    [host presentViewController:sheet animated:YES completion:nil];
+}
+
 + (void)load {
     [SCIYTSettingsRegistry registerPageWithOrder:10
                                         title:SCILocalized(@"page_downloads")
                                        detail:SCILocalized(@"page_downloads_note")
                                        symbol:@"arrow.down.circle.fill"
-                                      builder:^NSArray<SCISection *> *(__unused SCIYTSettingsHostController *host) {
-        SCISection *downloads = [[SCISection alloc] init];
-        downloads.title = SCILocalized(@"set_downloads_title");
-        downloads.rows = @[
+                                      builder:^NSArray<SCISection *> *(SCIYTSettingsHostController *host) {
+        // How a save starts.
+        SCISection *start = [[SCISection alloc] init];
+        start.title = SCILocalized(@"section_dl_start");
+        start.footer = SCILocalized(@"section_dl_start_note");
+        start.rows = @[
             [SCIRow disclosureRow:SCILocalized(@"set_open_centre")
                            detail:nil
                            symbol:@"arrow.down.circle.fill"
                            action:^{ [SCIYTDownloadCenter present]; }],
-            //
-            // A disclosure that asks rather than a new cell type. This screen has switches and
-            // disclosures; inventing a segmented row for three values would be more surface than
-            // the question deserves, and the sheet can say what the trade is in a sentence.
-            //
-            [SCIRow disclosureRow:SCILocalized(@"set_parallel")
-                           detail:SCILocalized(@"set_parallel_note")
-                           symbol:@"arrow.down.to.line"
-                           action:^{ [SCIYTDownloadsPage askForParallel]; }],
-            //
-            // The two ways a save starts, next to each other on purpose: they are one
-            // decision seen from two sides, and a screen that puts them apart is a screen
-            // where somebody turns both on and then wonders why holding the video still
-            // opens a sheet.
-            //
+            // The way in that does not depend on any button being where it was: settings.
+            [SCIRow disclosureRow:SCILocalized(@"dl_row")
+                           detail:SCILocalized(@"dl_row_note")
+                           symbol:@"play.rectangle"
+                           action:^{ [SCIYTDownload presentFrom:host]; }],
             [SCIRow switchRow:SCILocalized(@"set_native_download")
                        detail:SCILocalized(@"set_native_download_note")
                        symbol:@"arrow.down.circle"
                       prefKey:SCIPrefNativeDownload],
-            [SCIRow switchRow:SCILocalized(@"set_hold_to_save")
-                       detail:SCILocalized(@"set_hold_to_save_note")
-                       symbol:@"hand.tap"
-                      prefKey:SCIPrefHoldToSave],
             [SCIRow switchRow:SCILocalized(@"set_action_row")
                        detail:SCILocalized(@"set_action_row_note")
                        symbol:@"square.and.arrow.down.on.square"
                       prefKey:SCIPrefActionRowButton],
-            [SCIRow switchRow:SCILocalized(@"set_pivot_bar")
-                       detail:SCILocalized(@"set_pivot_bar_note")
-                       symbol:@"rectangle.bottomthird.inset.filled"
-                      prefKey:SCIPrefPivotBar],
+            [SCIRow switchRow:SCILocalized(@"overlay_button_title")
+                       detail:SCILocalized(@"overlay_button_note")
+                       symbol:@"arrow.down.to.line"
+                      prefKey:SCIPrefOverlayButton],
             [SCIRow switchRow:SCILocalized(@"set_shorts_button")
                        detail:SCILocalized(@"set_shorts_button_note")
                        symbol:@"play.rectangle.on.rectangle"
                       prefKey:SCIPrefShortsButton],
-            [SCIRow switchRow:SCILocalized(@"set_offer_4k")
-                       detail:SCILocalized(@"set_offer_4k_note")
-                       symbol:@"4k.tv"
-                      prefKey:SCIPrefOffer4K],
-            [SCIRow switchRow:SCILocalized(@"set_convert_av1")
-                       detail:SCILocalized(@"set_convert_av1_note")
-                       symbol:@"wand.and.rays"
-                      prefKey:SCIPrefConvertAV1],
+        ];
+
+        // How big and how good.
+        SCISection *size = [[SCISection alloc] init];
+        size.title = SCILocalized(@"section_dl_size");
+        size.rows = @[
+            [SCIRow disclosureRow:SCILocalized(@"set_hires")
+                           detail:SCIHiResLabel(SCICurrentHiRes())
+                           symbol:@"4k.tv"
+                           action:^{ [SCIYTDownloadsPage askForHiRes:host]; }],
+            [SCIRow disclosureRow:SCILocalized(@"set_parallel")
+                           detail:SCILocalized(@"set_parallel_note")
+                           symbol:@"arrow.down.to.line"
+                           action:^{ [SCIYTDownloadsPage askForParallel]; }],
+        ];
+
+        // When it finishes.
+        SCISection *after = [[SCISection alloc] init];
+        after.title = SCILocalized(@"section_dl_after");
+        after.rows = @[
             [SCIRow switchRow:SCILocalized(@"set_auto_photos")
                        detail:SCILocalized(@"set_auto_photos_note")
                        symbol:@"photo.on.rectangle"
                       prefKey:SCIPrefAutoPhotos],
-            [SCIRow switchRow:SCILocalized(@"set_finish_notice")
-                       detail:SCILocalized(@"set_finish_notice_note")
-                       symbol:@"bell.badge"
-                      prefKey:SCIPrefFinishNotice],
             [SCIRow switchRow:SCILocalized(@"set_tidy_photos")
                        detail:SCILocalized(@"set_tidy_photos_note")
                        symbol:@"tray.and.arrow.up"
                       prefKey:SCIPrefTidyAfterPhotos],
-            [SCIRow switchRow:SCILocalized(@"set_embed_artwork")
-                       detail:SCILocalized(@"set_embed_artwork_note")
-                       symbol:@"music.note.list"
-                      prefKey:SCIPrefEmbedArtwork],
+            [SCIRow switchRow:SCILocalized(@"set_finish_notice")
+                       detail:SCILocalized(@"set_finish_notice_note")
+                       symbol:@"bell.badge"
+                      prefKey:SCIPrefFinishNotice],
+        ];
+
+        // Saved videos, once they are saved.
+        SCISection *library = [[SCISection alloc] init];
+        library.title = SCILocalized(@"section_dl_library");
+        library.rows = @[
             [SCIRow switchRow:SCILocalized(@"set_lock_skip")
                        detail:SCILocalized(@"set_lock_skip_note")
                        symbol:@"lock.iphone"
                       prefKey:SCIPrefLockScreenSkip],
         ];
-        return @[downloads];
+
+        return @[start, size, after, library];
     }];
 }
 

@@ -28,6 +28,8 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
 
 @interface SCIYTChoiceSheet () <UITableViewDataSource, UITableViewDelegate>
 @property (nonatomic, strong) NSArray<SCIHLSVariant *> *variants;
+/// The video choices as the sections they are drawn in -- see -buildGroups.
+@property (nonatomic, copy) NSArray<NSDictionary *> *groups;
 @property (nonatomic, copy) NSString *videoTitle;
 @property (nonatomic, copy) NSString *videoID;
 @property (nonatomic, copy) void (^chosen)(SCIHLSVariant *, SCIYTJobKind);
@@ -55,6 +57,7 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
     sheet.chosen = chosen;
     sheet.kind = SCIYTJobKindVideo;
     sheet.section = SCISheetSectionVideo;
+    [sheet buildGroups];
 
     UINavigationController *host = [[UINavigationController alloc] initWithRootViewController:sheet];
 
@@ -65,10 +68,51 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
         presentation.detents = @[[UISheetPresentationControllerDetent mediumDetent],
                                  [UISheetPresentationControllerDetent largeDetent]];
         presentation.prefersGrabberVisible = YES;
+
+        // Open tall when there is a lot to choose from. At the medium detent a list of eight
+        // qualities plus a header showed three rows and left the rest to be discovered by
+        // scrolling -- which read as the 1440p and 4K rows being missing.
+        if (variants.count > 4) {
+            presentation.selectedDetentIdentifier = UISheetPresentationControllerDetentIdentifierLarge;
+        }
         presentation.preferredCornerRadius = 22;
     }
 
     [presenter presentViewController:host animated:YES completion:nil];
+}
+
+/// Splits the choices into what is drawn as separate sections.
+///
+/// 1440p and 4K come from YouTube only as AV1, which behaves differently from everything else on
+/// the list -- it needs a capable player, or a conversion that takes minutes. Mixed into one list
+/// with the same kind of row they read as ordinary qualities, and the sentence explaining the
+/// difference had to be squeezed into a row's detail label, where it crushed the title. Their own
+/// section gives them a heading and room for that sentence, and puts them first: the tallest
+/// is where somebody who turned them on looks.
+- (void)buildGroups {
+    NSMutableArray<SCIHLSVariant *> *high = [NSMutableArray array];
+    NSMutableArray<SCIHLSVariant *> *standard = [NSMutableArray array];
+    for (SCIHLSVariant *variant in self.variants) {
+        [([variant.codecs.lowercaseString containsString:@"av01"] ? high : standard) addObject:variant];
+    }
+
+    NSMutableArray<NSDictionary *> *groups = [NSMutableArray array];
+    if (high.count) {
+        [groups addObject:@{
+            @"title": SCILocalized(@"dl_hires_header"),
+            @"footer": SCILocalized(SCIPrefEnabled(SCIPrefConvertAV1) ? @"dl_av1_convert_hint" : @"dl_av1_hint"),
+            @"variants": high,
+        }];
+    }
+    if (standard.count) {
+        [groups addObject:@{ @"title": SCILocalized(@"dl_quality_header"), @"variants": standard }];
+    }
+    self.groups = groups;
+}
+
+- (SCIHLSVariant *)variantAtIndexPath:(NSIndexPath *)indexPath {
+    NSArray *variants = self.groups[(NSUInteger)indexPath.section][@"variants"];
+    return variants[(NSUInteger)indexPath.row];
 }
 
 - (void)viewDidLoad {
@@ -168,11 +212,16 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
 
 // MARK: - The list
 
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return (self.section == SCISheetSectionVideo) ? (NSInteger)self.groups.count : 1;
+}
+
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     // Sound has no sizes to choose between: there is one soundtrack, and offering seven
     // identical rows of it would be a menu pretending to be a decision. A thumbnail has
     // one picture, for the same reason.
-    return (self.section == SCISheetSectionVideo) ? (NSInteger)self.variants.count : 1;
+    if (self.section != SCISheetSectionVideo) return 1;
+    return (NSInteger)[self.groups[(NSUInteger)section][@"variants"] count];
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
@@ -181,7 +230,11 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
         case SCISheetSectionThumbnail: return SCILocalized(@"dl_thumb_header");
         case SCISheetSectionVideo:     break;
     }
-    return SCILocalized(@"dl_quality_header");
+    return self.groups[(NSUInteger)section][@"title"];
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
+    return self.section == SCISheetSectionVideo ? self.groups[(NSUInteger)section][@"footer"] : nil;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -215,23 +268,21 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
         return cell;
     }
 
-    SCIHLSVariant *variant = self.variants[(NSUInteger)indexPath.row];
+    SCIHLSVariant *variant = [self variantAtIndexPath:indexPath];
     cell.textLabel.text = [variant label];
     cell.imageView.image = [UIImage systemImageNamed:@"film"];
     cell.imageView.tintColor = SCIAccent();
 
-    // Roughly how big it will be, from the bitrate the manifest states. Approximate and
-    // presented as such -- but "about 190 MB" is the difference between choosing 1080p
-    // deliberately and choosing it by accident on a phone plan.
-    if (variant.bandwidth > 0) {
-        cell.detailTextLabel.text = [NSString stringWithFormat:@"%.1f Mbps",
-                                     variant.bandwidth / 1000000.0];
-    }
-    if ([variant.codecs.lowercaseString containsString:@"av01"]) {
-        NSString *hint = SCILocalized(SCIPrefEnabled(SCIPrefConvertAV1) ? @"dl_av1_convert_hint" : @"dl_av1_hint");
-        cell.detailTextLabel.text = cell.detailTextLabel.text.length
-            ? [NSString stringWithFormat:@"%@ · %@", cell.detailTextLabel.text, hint] : hint;
-        cell.detailTextLabel.numberOfLines = 0;
+    // How big it will be: exact when the direct route knows the byte counts YouTube declared,
+    // and otherwise roughly, from the bitrate a playlist states. "About 190 MB" is the
+    // difference between choosing 1080p deliberately and choosing it by accident on a phone plan.
+    // (A converted 4K ends up larger than the AV1 it came from; the figure is the download.)
+    long long bytes = variant.directVideoBytes + variant.directAudioBytes;
+    if (bytes > 0) {
+        cell.detailTextLabel.text = [NSByteCountFormatter stringFromByteCount:bytes
+                                                                    countStyle:NSByteCountFormatterCountStyleFile];
+    } else if (variant.bandwidth > 0) {
+        cell.detailTextLabel.text = [NSString stringWithFormat:@"%.1f Mbps", variant.bandwidth / 1000000.0];
     }
 
     return cell;
@@ -245,9 +296,11 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
         return;
     }
 
+    // The soundtrack is the same whichever quality row it hangs off, so audio takes the first
+    // ordinary variant rather than whatever happens to be on top (which may be a 4K one).
     SCIHLSVariant *variant = (self.section == SCISheetSectionAudio)
-        ? self.variants.firstObject
-        : self.variants[(NSUInteger)indexPath.row];
+        ? ([self.groups.lastObject[@"variants"] firstObject] ?: self.variants.firstObject)
+        : [self variantAtIndexPath:indexPath];
 
     void (^chosen)(SCIHLSVariant *, SCIYTJobKind) = self.chosen;
     SCIYTJobKind kind = self.kind;

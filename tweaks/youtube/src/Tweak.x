@@ -7,7 +7,7 @@
 #import "Diagnostics/SCIYTDiagnostics.h"
 #import "Features/Display/SCIYTDimmer.h"
 
-NSString *SCIVersionString = @"v1.36.0";  // AlbrhiYT
+NSString *SCIVersionString = @"v1.37.0";  // AlbrhiYT
 
 ///
 /// Capture, so the diagnostics page has something true to report.
@@ -90,14 +90,12 @@ NSString *SCIVersionString = @"v1.36.0";  // AlbrhiYT
         SCIPrefHideAds: @YES,
         SCIPrefBackgroundPlay: @YES,
         SCIPrefFixPlaybackErrors: @YES,
-        SCIPrefBlockUpdateNag: @YES,
         SCIPrefHidePaidPromo: @NO,
 
         // Both pure upside with nothing to weigh against: real PIP is a system window
         // this app already knows how to fill once permitted, and a display link asking
         // for less than the screen already gives for free is not a trade anyone wants.
         SCIPrefNativePIP: @YES,
-        SCIPrefHighRefreshRate: @YES,
 
         SCIPrefVerboseLogging: @NO,
 
@@ -109,12 +107,9 @@ NSString *SCIVersionString = @"v1.36.0";  // AlbrhiYT
         SCIPrefOffer4K: @NO,
         SCIPrefConvertAV1: @NO,
 
-        // Saving from YouTube's own download button, on -- and holding the picture, off.
-        // 1.26.0 moves one to the other rather than adding a second way in: the hold was
-        // laid over the app's own hold-to-speed-up, so the two were competing for one
-        // gesture and speeding a video up had started producing a download sheet.
+        // Saving from YouTube's own download button, on. (The hold on the picture that used to
+        // sit beside it is gone: it competed with the app's own hold-to-speed-up.)
         SCIPrefNativeDownload: @YES,
-        SCIPrefHoldToSave: @NO,
 
         // SponsorBlock on, and its three least arguable categories with it: a paid
         // plug, the creator's own promotion, and a subscribe reminder are what people

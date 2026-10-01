@@ -1,6 +1,5 @@
 #import "SCIYTThumbnails.h"
 #import "SCIYTLibrary.h"
-#import "SCIYTArtwork.h"
 #import "../../../Prefs.h"
 #import "../../../SCILog.h"
 #import <AVFoundation/AVFoundation.h>
@@ -61,10 +60,9 @@
 
         [data writeToURL:[self fileFor:job] atomically:YES];
 
-        // Into the file as well as beside it, but only when asked. Everything on screen reads
-        // the copy kept here and needs nothing written into the song; tagging the song helps
-        // only once it leaves this app, and it is the one operation that can lose it.
-        if (SCIPrefEnabled(SCIPrefEmbedArtwork)) [SCIYTArtwork embedInto:job completion:nil];
+        // Kept beside the file and never written into it: everything on screen reads this copy,
+        // and rewriting a song to tag it was the one operation here that could lose the song
+        // (the switch for it shipped off, then was removed in 1.37.0 -- see the changelog).
 
         dispatch_async(dispatch_get_main_queue(), ^{ completion(image); });
         return;
