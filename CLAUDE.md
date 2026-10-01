@@ -282,7 +282,7 @@ it reads as checked and clean.** If you add a rule, prove it fails by reintroduc
 
 **Host tests** run pure logic on the build machine against the macOS SDK: `bash tweaks/ytmusic/tests/host/run.sh`
 (LRC parser, matching pipeline, caches, romaniser, extractors — 29 tests in about a second) and
-`bash tweaks/youtube/tests/host/run.sh` (the transport). A hook needs a device; a parser does not, and several of
+`bash tweaks/youtube/tests/host/run.sh` (the transport), `bash tweaks/instagram/tests/host/run.sh` (the deleted-messages log). A hook needs a device; a parser does not, and several of
 this project's most expensive bugs lived in exactly that layer. Open: the DASH ladder, the TikTok quality ranking
 and the version comparison are pure functions with no tests yet.
 
@@ -812,8 +812,18 @@ instances taught; here are the facts.
   (newer; the warning had never fired on 410 because it was hooked on the wrong spelling), replaying the selector on confirm and ending the pull on cancel through
   `-refreshControlDidEndFinishLoadingAnimation:`; the duplicate-pull guard expires after ten seconds so a sheet that never presented cannot block refreshing for good.
   Unconfirmed whether that selector is ever called by something other than the user's pull (the inbox's `refreshControl:didReleaseWithRefreshControlState:` is an empty
-  stub in 410) — the report counts which spelling fired and how many asks. **Not built:** a full log of deleted messages (needs text/sender/time saved before
-  deletion) and hiding the reels *seen* mark (`/api/v1/clips/write_seen_state` still goes out).
+  stub in 410) — the report counts which spelling fired and how many asks. **Not built:** hiding the reels *seen* mark (`/api/v1/clips/write_seen_state` still goes out).
+- **The deleted-messages log** (4.4.0, `SCIUnsentLog`, screen `SCIUnsentLogViewController` under Stories & messages) writes a row per held unsend — what was said, sender, sent and
+  deleted time — to one bounded JSON file (600 rows, 768 KB) in Application Support. **The unsend arrives as a key with no text**, so text comes from remembering every message
+  that passes through the same stream: `IGDirectMessageUpdate`'s `_insertMessages` and `_replaceMessages_messages`, read by ivar inside `SCIDefuseMessageUpdate` (memory only,
+  2,500 messages, never written). Two shapes are understood because the stream's element class was **not** known from the binary: a typed UI message (`IGDirectText`: `-text`,
+  `.message` → `IGDirectUIMessage` → `.metadata` → `.key.serverId`) and a published message (`IGDirectPublishedMessage`: `.metadata.serverId` / `.clientContext` /
+  `.serverTimestamp`, `.content` whose variant ivars `_text_string`, `_media`, … name the case). `IGDirectUIMessage` is a generated model: its fields (`metadata`,
+  `quotedMessage`, `reactions`, …) were read by following `+internal_classInfo` to its table, not by guessing. Names come from `IGDirectThreadMetadata.users` as it passes
+  (`_replaceThreadMetadata` on `IGDirectThreadUpdate`); unknown senders show their id. **A message that arrived before the launch and never replayed through the stream is logged
+  without content and says so.** The first report's `insert element` line names the real element class — if rows have no text, that line is the next round. Not logged: the
+  newer MSYS delete path (`deleteMessageDelta`), which is held back but has no row yet. 17 host tests: `bash tweaks/instagram/tests/host/run.sh` (mocks both shapes; cannot say which one
+  Instagram really sends).
 - **Reels auto-advance** forces every gate a build has, each behind `class_getInstanceMethod`: `-isAutoAdvanceEnabled` and
   `-autoAdvanceToNextItem` on both, `-shouldForceEnableAutoScroll` on the Swift `IGSundialAutoScroll` in 439 only, `-autoScrollState`
   in 410 only. Hidden for a long time because the old hook forced the 410-only getter and left the shared gate alone — established by
@@ -1185,8 +1195,8 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.3.0** · YouTube **1.34.0** · X **0.19.1** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
-Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.83.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.4.0** · YouTube **1.34.0** · X **0.19.1** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
+Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.84.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
@@ -1195,7 +1205,7 @@ YouTube, YT Music, Spotify); Watch pairing and the update hold (watchOS 26.6 ref
 comment-media Save row and photo-as-clip on every video type; YouTube's playback-error recovery's reload budget in the wild; the 1.34.0 fallback path to the playlist for
 a login-gated video.
 
-**Open work** (owner's priorities, highest first): (1) **a full log of deleted Instagram messages** — text, sender and time saved *before* deletion (only the badge exists);
+**Open work** (owner's priorities, highest first): (1) **confirm the deleted-messages log on a device** (which message shape the stream carries decides whether text is captured) and extend it to the MSYS delete path;
 (2) **an automatic backup of the licence KV** (the largest unmitigated risk in the project); (3) hiding the reels **seen** mark; (4) **publishing Spotify** — its own
 workflow shaped like `buildnextup.yml`, or into the suite; (5) host tests for `SCIYTFragments`, the DASH ladder, TikTok's ranking and version comparison; (6) the **WhatsApp
 tweak** — postponed, Watusi 3's architecture already read; (7) CarPlay rebuilt from scratch in its own repository; settings profiles; crash isolation that disables a faulting

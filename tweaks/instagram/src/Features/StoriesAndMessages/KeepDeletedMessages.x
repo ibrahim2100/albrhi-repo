@@ -4,6 +4,7 @@
 #import "shared/src/SCIKVC.h"
 #import "../../InstagramHeaders.h"
 #import "../../Settings/SCIDiagnosticsViewController.h"
+#import "SCIUnsentLog.h"
 
 ///
 /// Keeps messages that other people unsend — beta.
@@ -104,6 +105,19 @@ void SCIClearHeldUnsends(void) {
 static void SCIDefuseMessageUpdate(id messageUpdate) {
     if (!messageUpdate) return;
 
+    // Every message that goes through this stream is remembered for the moment its removal
+    // arrives -- an unsend carries a key and no text (SCIUnsentLog has the whole argument). Read
+    // from the ivars, which executes nothing; replaced messages too, since an edit changes
+    // what there is to remember.
+    static const char *const kMessageLists[] = { "_insertMessages", "_replaceMessages_messages" };
+    for (size_t i = 0; i < sizeof(kMessageLists) / sizeof(kMessageLists[0]); i++) {
+        Ivar list = class_getInstanceVariable([messageUpdate class], kMessageLists[i]);
+        id messages = list ? object_getIvar(messageUpdate, list) : nil;
+        if ([messages isKindOfClass:[NSArray class]]) {
+            for (id message in (NSArray *)messages) [SCIUnsentLog captureMessage:message];
+        }
+    }
+
     Ivar keysIvar = class_getInstanceVariable([messageUpdate class], "_removeMessages_messageKeys");
     if (!keysIvar) return;
 
@@ -125,7 +139,10 @@ static void SCIDefuseMessageUpdate(id messageUpdate) {
 
     // Noted before the list is emptied, since afterwards there is nothing to note.
     SCIRememberHeldKeys(keys);
-    for (id key in (NSArray *)keys) SCIUnsentRememberKey(key);
+    for (id key in (NSArray *)keys) {
+        SCIUnsentRememberKey(key);
+        [SCIUnsentLog recordHeldKey:key];
+    }
 
     // The shape of one key -- its class and field names, never its values -- once per launch.
     // A log of unsent messages has to find each message from its key, and which fields a key
@@ -182,6 +199,10 @@ static void SCIDefuseThreadUpdates(id updates, NSInteger depth) {
         SCIDefuseMessageUpdate(updates);
         return;
     }
+
+    // Who is in this conversation, learned from its metadata as it passes, so a row can say a name.
+    Ivar metadataField = class_getInstanceVariable(cls, "_replaceThreadMetadata");
+    if (metadataField) [SCIUnsentLog learnThreadMetadata:object_getIvar(updates, metadataField)];
 
     Ivar messageUpdate = class_getInstanceVariable(cls, "_messageUpdate");
     if (messageUpdate) {

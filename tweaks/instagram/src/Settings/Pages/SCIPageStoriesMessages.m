@@ -1,5 +1,8 @@
 #import "../SCISettingsRegistry.h"
 #import "../TweakSettings.h"
+#import "../SCISymbol.h"
+#import "../SCIUnsentLogViewController.h"
+#import "../../Features/StoriesAndMessages/SCIUnsentLog.h"
 
 @interface SCIPageStoriesMessages : NSObject
 @end
@@ -18,7 +21,11 @@
                 @"rows": @[
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_dm_save_t") subtitle:SCILocalized(@"p_dm_save_s") defaultsKey:@"dm_media_save_button"],
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_dm_lastactive_t") subtitle:SCILocalized(@"p_dm_lastactive_s") defaultsKey:@"dm_full_last_active"],
-                    [SCISetting switchCellWithTitle:SCILocalized(@"p_dm_keepunsent_t") subtitle:SCILocalized(@"p_dm_keepunsent_s") defaultsKey:@"keep_unsent_messages" requiresRestart:YES]
+                    [SCISetting switchCellWithTitle:SCILocalized(@"p_dm_keepunsent_t") subtitle:SCILocalized(@"p_dm_keepunsent_s") defaultsKey:@"keep_unsent_messages" requiresRestart:YES],
+                    [SCISetting navigationCellWithTitle:SCILocalized(@"unsent_log_title")
+                                               subtitle:SCILocalized(@"unsent_log_sub")
+                                                   icon:[SCISymbol symbolWithName:@"trash.slash.fill" color:[UIColor systemRedColor] size:20.0]
+                                         viewController:[[SCIUnsentLogViewController alloc] init]]
                 ]
             },
             @{
