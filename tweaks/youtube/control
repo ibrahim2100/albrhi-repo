@@ -1,6 +1,6 @@
 Package: com.albrhi.youtube
 Name: Albrhi for YouTube (rootless)
-Version: 1.35.0
+Version: 1.36.0
 Architecture: iphoneos-arm64
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
  .

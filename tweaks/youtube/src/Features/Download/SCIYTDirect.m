@@ -1,5 +1,6 @@
 #import "SCIYTDirect.h"
 #import "SCIYTFragments.h"
+#import "SCIYTAV1Convert.h"
 #import "SCIYTParts.h"
 #import "../../SCILog.h"
 #import "../../Localization/SCILocalize.h"
@@ -333,13 +334,41 @@ static long long SCIDirectFileSize(NSURL *file) {
             return;
         }
 
-        [SCIYTFragments mergeVideo:video audio:audio completion:^(NSURL *output, NSString *why) {
+        void (^merged)(NSURL *, NSString *) = ^(NSURL *output, NSString *why) {
             [[NSFileManager defaultManager] removeItemAtURL:video error:nil];
             [[NSFileManager defaultManager] removeItemAtURL:audio error:nil];
             if (!output) [self rememberFailure:variant.directVideoID];
             if (progress && output) progress(1.0);
             completion(output, why);
-        }];
+        };
+
+        // AV1 turned into HEVC for a phone that cannot play AV1 -- only when asked for. The bar
+        // spends its first tenth on the download and the rest on the conversion, which is where the
+        // time goes; and the screen is kept awake, because the work has to run in the foreground
+        // and a phone that locks mid-conversion has stopped doing it.
+        BOOL isAV1 = [variant.codecs.lowercaseString containsString:@"av01"];
+        if (isAV1 && SCIPrefEnabled(SCIPrefConvertAV1)) {
+            UIApplication *app = [UIApplication sharedApplication];
+            BOOL wasIdleDisabled = app.idleTimerDisabled;
+            app.idleTimerDisabled = YES;
+
+            [SCIYTAV1Convert convertVideo:video audio:audio
+                                 progress:^(double fraction) { if (progress) progress(0.1 + fraction * 0.9); }
+                               completion:^(NSURL *converted, NSString *failure) {
+                app.idleTimerDisabled = wasIdleDisabled;
+
+                if (converted) { merged(converted, nil); return; }
+
+                // A conversion that cannot finish must not cost the download: the AV1 is intact in
+                // the two files, so it is written untouched instead, and the report says why.
+                SCILogV(@"direct: conversion failed (%@), saving the AV1 as it is", failure);
+                [SCIYTDiagnostics recordStreamAttempt:@"av1→hevc: falling back to the untouched AV1 file"];
+                [SCIYTFragments mergeVideo:video audio:audio completion:merged];
+            }];
+            return;
+        }
+
+        [SCIYTFragments mergeVideo:video audio:audio completion:merged];
     }];
 }
 

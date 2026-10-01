@@ -864,8 +864,15 @@ instances taught; here are the facts.
   `.mp4` (3840×2160, 213.0 s, frames decoded at 0/1/100/212 s on this Mac, which has hardware AV1). **Unknown: whether the writer accepts AV1 on iOS 16.1** — the report's
   `AV1 description refused` / writer-refused line says. **The owner's iPhone cannot decode AV1** (iOS 16), so the file is saved intact but: never auto-sent to Photos (the row says
   so — Photos refuses it with an error code that explains nothing), and opening it in the Centre shows an alert with Share instead of a black player (the track's
-  `CMFormatDescriptionGetMediaSubType` is checked against `VTIsHardwareDecodeSupported(kCMVideoCodecType_AV1)`). On-device transcoding to HEVC was **not built**: software AV1 at 4K
-  on an A11–A13 is far too slow (Instagram's dav1d transcode is for short reels). Labelled `2160p · AV1` with a hint under the row; only heights above 1080 are offered, one per height.
+  `CMFormatDescriptionGetMediaSubType` is checked against `VTIsHardwareDecodeSupported(kCMVideoCodecType_AV1)`). **On-device conversion to HEVC is the optional second switch (1.36.0, `SCIYTAV1Convert`, off):** `SCIYTFragments`
+  exposes the parsed tracks (`SCIYTFragmentsInternal.h`: `SCIFTrack`, `SCIFSample`), each AV1 sample goes to dav1d (`apply_grain = 0`, threads left at 0, vendored static
+  `libdav1d-arm64.a` linked into this tweak too), each picture becomes an NV12 buffer for `AVAssetWriterInputPixelBufferAdaptor` and **AVAssetWriter runs the HEVC encoder** (~0.075
+  bit/pixel/frame), and the AAC is copied across untouched. **Decoding happens only when the writer asks for a frame** (`requestMediaDataWhenReady`), so memory is a few frames — unlike
+  Instagram's transcoder, which holds every compressed sample (fine for a reel, half a gigabyte for 4K). Measured on this Mac with the 213 s 4K clip: 74 s, 5326 of 5326 frames, 3840×2160
+  `hvc1`, frame at 100 s visually identical to the AV1; the iPhone figure is unknown and certainly several times slower. Two faults were caught by that test: a pointer into a memory-mapped
+  file taken outside the block while the owning track object died (crashed in `memmove` in the sound pump — use the object *inside* the block), and **dav1d does not drain on the first empty
+  ask when frame-threaded: that call arms the drain and the next performs it**, so stopping at the first EAGAIN lost the last frame (Instagram's `SCIAV1Transcoder` stopped the same way; fixed in 4.4.1). On failure the untouched AV1 is written instead; the screen is kept awake during the run (`idleTimerDisabled`) because the work needs the foreground.
+  The row is labelled `2160p · HEVC` while the switch is on (the Photos rule and the cannot-play check read the real codec/label). Labelled `2160p · AV1` with a hint under the row; only heights above 1080 are offered, one per height.
 - **`SCIYTFragments` reads the DASH files itself** (boxes: `moov` → `trak` → `mdia`/`mdhd`/`hdlr`/`stsd` (`avc1`/`avcC`, `mp4a`/`esds`),
   `mvex`/`trex`, `moof` → `traf` → `tfhd`/`tfdt`/`trun`) and writes with `AVAssetWriter` passthrough, because **AVFoundation on the build
   machine reads these fragmented files with every timestamp doubled** (19 s reads as 37.9) while `mvhd`/`mdhd`/`sidx` and Core Audio agree —
@@ -1203,8 +1210,8 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.4.0** · YouTube **1.35.0** · X **0.19.1** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
-Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.85.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.4.1** · YouTube **1.36.0** · X **0.19.1** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
+Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.86.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

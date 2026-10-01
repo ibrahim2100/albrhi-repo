@@ -86,6 +86,16 @@
 /// should make knowingly.
 #define SCIPrefOffer4K          @"offer_4k_av1"
 
+/// Converting that AV1 to HEVC while saving it, so an iPhone without an AV1 decoder can play it.
+///
+/// **Off, and slow when on.** Decoding 4K AV1 in software and encoding it again takes minutes for
+/// a three-minute clip (a Mac takes 74 s for 213 s; an iPhone of the generation that cannot play
+/// AV1 will take several times that), during which the app has to stay open. The conversion is
+/// the only way such a phone gets a 4K file it can play at all, and the only price is time, so
+/// it is offered as a choice and never done silently. If it fails the untouched AV1 file is
+/// saved instead -- a conversion that cannot finish must not cost the download.
+#define SCIPrefConvertAV1       @"convert_av1_hevc"
+
 /// Removing a save from the Centre once it has reached Photos.
 ///
 /// Off. Photos is where a video goes to be kept and the Centre is where it goes to be

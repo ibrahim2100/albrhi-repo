@@ -5,6 +5,7 @@
 #import "SCIYTTransport.h"
 #import "SCIYTParts.h"
 #import "SCIYTDirect.h"
+#import "../../Prefs.h"
 #import <AVFoundation/AVFoundation.h>
 
 @implementation SCIHLSVariant
@@ -16,7 +17,11 @@
     // The codec matters to the user only when it is the reason a quality is missing, so
     // it is not spelled out -- except for AV1, which is playable by *some* devices and not
     // others, and a person choosing 4K should see that it is the one that needs a capable player.
-    if ([self.codecs.lowercaseString containsString:@"av01"]) return [size stringByAppendingString:@" · AV1"];
+    if ([self.codecs.lowercaseString containsString:@"av01"]) {
+        // Named for what will be in the file: when the conversion is on that is HEVC, and the
+        // row in the Centre, the Photos rule and the player's "cannot play AV1" check all read it.
+        return [size stringByAppendingString:SCIPrefEnabled(SCIPrefConvertAV1) ? @" · HEVC" : @" · AV1"];
+    }
     return size;
 }
 

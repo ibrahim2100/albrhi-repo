@@ -1,4 +1,5 @@
 #import "SCIYTFragments.h"
+#import "SCIYTFragmentsInternal.h"
 #import "../../SCILog.h"
 #import "../../Localization/SCILocalize.h"
 #import "../../Diagnostics/SCIYTDiagnostics.h"
@@ -54,37 +55,6 @@ static BOOL SCIFIs(const SCIFBox *box, const char *type) {
 }
 
 // MARK: - One track
-
-typedef struct {
-    uint64_t offset;    ///< absolute position of the frame's bytes in the file
-    uint32_t length;
-    uint32_t duration;  ///< in the track's timescale
-    int64_t dts;
-    int64_t pts;
-    uint8_t sync;
-} SCIFSample;
-
-@interface SCIFTrack : NSObject
-@property (nonatomic) uint32_t trackID;
-@property (nonatomic) uint32_t timescale;
-@property (nonatomic, copy) NSString *handler;       ///< vide or soun
-@property (nonatomic, copy) NSString *codec;         ///< avc1 or mp4a
-@property (nonatomic, strong) NSData *sps;
-@property (nonatomic, strong) NSData *pps;
-@property (nonatomic) uint8_t nalLength;
-@property (nonatomic) uint32_t sampleRate;
-@property (nonatomic) uint32_t channels;
-@property (nonatomic, strong) NSData *audioConfig;
-@property (nonatomic) uint32_t width;
-@property (nonatomic) uint32_t height;
-@property (nonatomic, strong) NSData *av1c;          ///< the `av1C` box body, for AV1
-@property (nonatomic) uint32_t defaultDuration;
-@property (nonatomic) uint32_t defaultSize;
-@property (nonatomic) uint32_t defaultFlags;
-@property (nonatomic, strong) NSMutableData *samples;   ///< SCIFSample records
-@property (nonatomic, strong) NSData *file;
-@property (nonatomic) int64_t nextDTS;
-@end
 
 @implementation SCIFTrack
 

@@ -486,11 +486,21 @@ static void encodeOutput(void *outputCallbackRefCon,
     }
 
     // Drain whatever is still buffered.
+    //
+    // **The first empty ask is not the end.** With frame threading dav1d arms its drain on the first
+    // get_picture that finds no input and performs it on the next, so breaking at the first EAGAIN
+    // left the frames still in flight undelivered -- measured in the YouTube converter on a 5,326
+    // frame clip, which lost exactly its last frame until it asked twice.
     if (!failed) {
+        BOOL armed = NO;
         for (;;) {
             Dav1dPicture pic;
             memset(&pic, 0, sizeof(pic));
-            if (dav1d_get_picture(ctx, &pic) < 0) break;
+            int r = dav1d_get_picture(ctx, &pic);
+            if (r < 0) {
+                if (r == DAV1D_ERR(EAGAIN) && !armed) { armed = YES; continue; }
+                break;
+            }
             handle(&pic);
             dav1d_picture_unref(&pic);
             if (failed) break;

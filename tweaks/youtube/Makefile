@@ -53,6 +53,13 @@ endif
 # cannot be given a "next" -- there is no supported way into its transport bar -- and a
 # list of saved videos you cannot move through is a file opener. The player is built on
 # AVPlayerLayer instead, which is AVFoundation, already linked for the downloads.
-$(TWEAK_NAME)_FRAMEWORKS = UIKit Foundation CoreGraphics QuartzCore AVFoundation MediaPlayer CoreMedia Photos Network AVKit UserNotifications
+$(TWEAK_NAME)_FRAMEWORKS = UIKit Foundation CoreGraphics QuartzCore AVFoundation MediaPlayer CoreMedia Photos Network AVKit UserNotifications VideoToolbox CoreVideo
+
+# dav1d, the AV1 decoder, for the optional conversion of 1440p/4K to HEVC. The same vendored static
+# library Instagram links (built from VideoLAN's source by this repository's own CI -- see
+# vendor/dav1d/README.md); nothing is fetched. Both packages build as arm64, so the arm64 slice is
+# the one linked. It is only *called* when somebody turns the conversion on.
+$(TWEAK_NAME)_CFLAGS += -I$(ROOT)/vendor/dav1d/include
+$(TWEAK_NAME)_LDFLAGS += $(ROOT)/vendor/dav1d/lib/libdav1d-arm64.a
 
 include $(ROOT)/shared/tweak.mk

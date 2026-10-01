@@ -114,6 +114,10 @@
                        detail:SCILocalized(@"set_offer_4k_note")
                        symbol:@"4k.tv"
                       prefKey:SCIPrefOffer4K],
+            [SCIRow switchRow:SCILocalized(@"set_convert_av1")
+                       detail:SCILocalized(@"set_convert_av1_note")
+                       symbol:@"wand.and.rays"
+                      prefKey:SCIPrefConvertAV1],
             [SCIRow switchRow:SCILocalized(@"set_auto_photos")
                        detail:SCILocalized(@"set_auto_photos_note")
                        symbol:@"photo.on.rectangle"

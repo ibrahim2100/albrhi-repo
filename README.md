@@ -11,9 +11,9 @@
 [![Rootless](https://img.shields.io/badge/rootless-supported-success.svg)](#-compatibility)
 [![roothide](https://img.shields.io/badge/roothide-supported-success.svg)](#-compatibility)
 
-[![Albrhi](https://img.shields.io/badge/Albrhi-1.85.0-blueviolet.svg)](suite/CHANGELOG.md)
-[![Instagram](https://img.shields.io/badge/Instagram-4.4.0-orange.svg)](tweaks/instagram/CHANGELOG.md)
-[![YouTube](https://img.shields.io/badge/YouTube-1.35.0-red.svg)](tweaks/youtube/CHANGELOG.md)
+[![Albrhi](https://img.shields.io/badge/Albrhi-1.86.0-blueviolet.svg)](suite/CHANGELOG.md)
+[![Instagram](https://img.shields.io/badge/Instagram-4.4.1-orange.svg)](tweaks/instagram/CHANGELOG.md)
+[![YouTube](https://img.shields.io/badge/YouTube-1.36.0-red.svg)](tweaks/youtube/CHANGELOG.md)
 [![X](https://img.shields.io/badge/X-0.19.1-black.svg)](tweaks/twitter/CHANGELOG.md)
 [![TikTok](https://img.shields.io/badge/TikTok-0.20.3-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
 [![YT Music](https://img.shields.io/badge/YT%20Music-0.9.3-FF0000.svg)](tweaks/ytmusic/CHANGELOG.md)
@@ -139,8 +139,8 @@ Developed by **Ibrahim Ismail AL-Rahn** ([@ibrahim2100](https://github.com/ibrah
 
 | Tweak | Patches | Version | In `com.albrhi` | What it does |
 |---|---|---|:-:|---|
-| **[Instagram](#-albrhi-for-instagram)** | Instagram | 4.4.0 | ✅ | downloads, AV1 reels transcoded on the device, a quieter feed, watching stories without a receipt, unsent messages kept and marked |
-| **[YouTube](#-albrhi-for-youtube)** | YouTube | 1.35.0 | ✅ | downloads that survive app updates, their own Download Centre tab, no ads, SponsorBlock, background playback |
+| **[Instagram](#-albrhi-for-instagram)** | Instagram | 4.4.1 | ✅ | downloads, AV1 reels transcoded on the device, a quieter feed, watching stories without a receipt, unsent messages kept and marked |
+| **[YouTube](#-albrhi-for-youtube)** | YouTube | 1.36.0 | ✅ | downloads that survive app updates, their own Download Centre tab, no ads, SponsorBlock, background playback |
 | **[X](#-albrhi-for-x)** | X / Twitter | 0.19.1 | ✅ | media downloads with a button you can place yourself, and fifteen-plus switches for what X does |
 | **[TikTok](#-albrhi-for-tiktok)** | TikTok | 0.20.3 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |
 | **[YouTube Music](#-albrhi-for-youtube-music)** | YouTube Music | 0.9.3 | ✅ | synced lyrics, saving tracks, no ads, background playback |
@@ -243,7 +243,10 @@ re-encoding**.
 - **What it offers:** H.264 up to **1080p**, and AAC. 1440p and 4K come from YouTube only as AV1 (and
   VP9), which most iPhones cannot play — so they appear only behind a switch (**Offer 1440p and 4K**,
   off by default), are saved untouched as an `.mp4`, and say what they need: VLC, Infuse, a Mac, or an
-  iPhone 15 Pro and later. They are never sent to Photos.
+  iPhone 15 Pro and later. A second, optional switch (**Convert AV1 to HEVC while saving**) decodes
+  the AV1 in software and re-encodes it, so an older iPhone plays the file — in Photos too. It takes minutes
+  and the app has to stay open; if it cannot finish, the AV1 file is saved as it is. An AV1 file is never
+  sent to Photos.
 - **The remux is our own**, because AVFoundation was measured reading these fragmented files with every
   timestamp doubled (a 19-second clip reporting 37.9). The boxes are read directly and the frames are
   written with their own timestamps. Checked on a 19 s clip, a 3:33 song and a 10:35 1080p60 film.

@@ -7,7 +7,7 @@
 #import "Diagnostics/SCIYTDiagnostics.h"
 #import "Features/Display/SCIYTDimmer.h"
 
-NSString *SCIVersionString = @"v1.35.0";  // AlbrhiYT
+NSString *SCIVersionString = @"v1.36.0";  // AlbrhiYT
 
 ///
 /// Capture, so the diagnostics page has something true to report.
@@ -107,6 +107,7 @@ NSString *SCIVersionString = @"v1.35.0";  // AlbrhiYT
         SCIPrefShortsButton: @YES,
         SCIPrefAutoPhotos: @NO,
         SCIPrefOffer4K: @NO,
+        SCIPrefConvertAV1: @NO,
 
         // Saving from YouTube's own download button, on -- and holding the picture, off.
         // 1.26.0 moves one to the other rather than adding a second way in: the hold was

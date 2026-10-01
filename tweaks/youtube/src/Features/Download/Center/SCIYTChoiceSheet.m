@@ -2,6 +2,7 @@
 #import "../../../Tweak.h"
 #import "../../../SCILog.h"
 #import "../../../Localization/SCILocalize.h"
+#import "../../../Prefs.h"
 #import <Photos/Photos.h>
 
 /// YouTube's red, which is also this tweak's accent everywhere else.
@@ -227,7 +228,7 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
                                      variant.bandwidth / 1000000.0];
     }
     if ([variant.codecs.lowercaseString containsString:@"av01"]) {
-        NSString *hint = SCILocalized(@"dl_av1_hint");
+        NSString *hint = SCILocalized(SCIPrefEnabled(SCIPrefConvertAV1) ? @"dl_av1_convert_hint" : @"dl_av1_hint");
         cell.detailTextLabel.text = cell.detailTextLabel.text.length
             ? [NSString stringWithFormat:@"%@ · %@", cell.detailTextLabel.text, hint] : hint;
         cell.detailTextLabel.numberOfLines = 0;
