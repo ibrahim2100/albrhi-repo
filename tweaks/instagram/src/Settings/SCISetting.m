@@ -1,4 +1,5 @@
 #import "SCISetting.h"
+#import "../Localization/SCILocalize.h"
 
 @interface SCISetting ()
 
@@ -195,6 +196,39 @@
     setting.icon = icon;
     setting.navViewController = viewController;
     
+    return setting;
+}
+
+
+// MARK: - + checklistCellWithTitle
+
++ (instancetype)checklistCellWithTitle:(NSString *)title
+                                  icon:(nullable SCISymbol *)icon
+                                 items:(NSArray<SCISetting *> *)items
+{
+    return [self checklistCellWithTitle:title icon:icon sections:@[@{ @"header": @"", @"rows": items }]];
+}
+
++ (instancetype)checklistCellWithTitle:(NSString *)title
+                                  icon:(nullable SCISymbol *)icon
+                              sections:(NSArray *)sections
+{
+    SCISetting *setting = [self navigationCellWithTitle:title subtitle:@"" icon:icon navSections:sections];
+
+    // Counted from the preferences themselves at draw time, over whatever switches the screen
+    // holds. A row with no switch (a stepper, a menu) is simply not counted.
+    setting.subtitleBlock = ^NSString *{
+        NSInteger on = 0, total = 0;
+        for (NSDictionary *section in sections) {
+            for (SCISetting *row in section[@"rows"]) {
+                if (row.type != SCITableCellSwitch || !row.defaultsKey.length) continue;
+                total++;
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:row.defaultsKey]) on++;
+            }
+        }
+        return [NSString stringWithFormat:SCILocalized(@"checklist_count"), (long)on, (long)total];
+    };
+
     return setting;
 }
 

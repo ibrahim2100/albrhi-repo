@@ -20,15 +20,7 @@
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_reels_unmute_t") subtitle:SCILocalized(@"p_reels_unmute_s") defaultsKey:@"disable_auto_unmuting_reels" requiresRestart:YES],
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_reels_autonext_t") subtitle:SCILocalized(@"p_reels_autonext_s") defaultsKey:@"reels_auto_next"],
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_reels_autonextbtn_t") subtitle:SCILocalized(@"p_reels_autonextbtn_s") defaultsKey:@"reels_autoscroll_button"],
-                    [SCISetting switchCellWithTitle:SCILocalized(@"p_reels_date_t") subtitle:SCILocalized(@"p_reels_date_s") defaultsKey:@"reels_show_date"],
-                    [SCISetting switchCellWithTitle:SCILocalized(@"p_reels_refresh_t") subtitle:SCILocalized(@"p_reels_refresh_s") defaultsKey:@"refresh_reel_confirm"]
-                ]
-            },
-            @{
-                @"header": SCILocalized(@"p_hdr_hiding"),
-                @"rows": @[
-                    [SCISetting switchCellWithTitle:SCILocalized(@"p_reels_header_t") subtitle:SCILocalized(@"p_reels_header_s") defaultsKey:@"hide_reels_header"],
-                    [SCISetting switchCellWithTitle:SCILocalized(@"p_reels_blend_t") subtitle:SCILocalized(@"p_reels_blend_s") defaultsKey:@"hide_reels_blend"]
+                    [SCISetting switchCellWithTitle:SCILocalized(@"p_reels_date_t") subtitle:SCILocalized(@"p_reels_date_s") defaultsKey:@"reels_show_date"]
                 ]
             }
         ];

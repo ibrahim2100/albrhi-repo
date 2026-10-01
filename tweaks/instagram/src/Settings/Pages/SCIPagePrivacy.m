@@ -3,7 +3,8 @@
 
 ///
 /// Privacy: everything that changes what Instagram tells other people about you,
-/// gathered in one place instead of scattered across Stories, Messages and General.
+/// gathered in one place instead of scattered across Stories, Messages and General. Grouped by
+/// where the telling happens -- stories, messages, search -- rather than as one list of six.
 ///
 
 @interface SCIPagePrivacy : NSObject
@@ -18,10 +19,15 @@
                                              sections:^NSArray *{
         return @[
             @{
-                @"header": SCILocalized(@"p_hdr_priv_visibility"),
+                @"header": SCILocalized(@"p_hdr_priv_stories"),
                 @"rows": @[
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_sm_seen_t") subtitle:SCILocalized(@"p_sm_seen_s") defaultsKey:@"no_seen_receipt"],
-                    [SCISetting switchCellWithTitle:SCILocalized(@"story_seen_button_title") subtitle:SCILocalized(@"story_seen_button_sub") defaultsKey:@"story_seen_button"],
+                    [SCISetting switchCellWithTitle:SCILocalized(@"story_seen_button_title") subtitle:SCILocalized(@"story_seen_button_sub") defaultsKey:@"story_seen_button"]
+                ]
+            },
+            @{
+                @"header": SCILocalized(@"p_hdr_priv_messages"),
+                @"rows": @[
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_sm_markseen_t") subtitle:SCILocalized(@"p_sm_markseen_s") defaultsKey:@"remove_lastseen"],
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_sm_typing_t") subtitle:SCILocalized(@"p_sm_typing_s") defaultsKey:@"disable_typing_status"],
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_sm_online_t") subtitle:SCILocalized(@"p_sm_online_s") defaultsKey:@"hide_online_status"],

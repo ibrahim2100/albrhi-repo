@@ -11,8 +11,8 @@
 [![Rootless](https://img.shields.io/badge/rootless-supported-success.svg)](#-compatibility)
 [![roothide](https://img.shields.io/badge/roothide-supported-success.svg)](#-compatibility)
 
-[![Albrhi](https://img.shields.io/badge/Albrhi-1.87.0-blueviolet.svg)](suite/CHANGELOG.md)
-[![Instagram](https://img.shields.io/badge/Instagram-4.4.1-orange.svg)](tweaks/instagram/CHANGELOG.md)
+[![Albrhi](https://img.shields.io/badge/Albrhi-1.88.0-blueviolet.svg)](suite/CHANGELOG.md)
+[![Instagram](https://img.shields.io/badge/Instagram-4.5.0-orange.svg)](tweaks/instagram/CHANGELOG.md)
 [![YouTube](https://img.shields.io/badge/YouTube-1.37.0-red.svg)](tweaks/youtube/CHANGELOG.md)
 [![X](https://img.shields.io/badge/X-0.19.1-black.svg)](tweaks/twitter/CHANGELOG.md)
 [![TikTok](https://img.shields.io/badge/TikTok-0.20.3-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
@@ -139,7 +139,7 @@ Developed by **Ibrahim Ismail AL-Rahn** ([@ibrahim2100](https://github.com/ibrah
 
 | Tweak | Patches | Version | In `com.albrhi` | What it does |
 |---|---|---|:-:|---|
-| **[Instagram](#-albrhi-for-instagram)** | Instagram | 4.4.1 | ✅ | downloads, AV1 reels transcoded on the device, a quieter feed, watching stories without a receipt, unsent messages kept and marked |
+| **[Instagram](#-albrhi-for-instagram)** | Instagram | 4.5.0 | ✅ | downloads, AV1 reels transcoded on the device, a quieter feed, watching stories without a receipt, unsent messages kept and marked |
 | **[YouTube](#-albrhi-for-youtube)** | YouTube | 1.37.0 | ✅ | downloads that survive app updates, their own Download Centre tab, no ads, SponsorBlock, background playback |
 | **[X](#-albrhi-for-x)** | X / Twitter | 0.19.1 | ✅ | media downloads with a button you can place yourself, and fifteen-plus switches for what X does |
 | **[TikTok](#-albrhi-for-tiktok)** | TikTok | 0.20.3 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |
@@ -194,7 +194,7 @@ published releases from offering it, so their package names are named in `WITHHE
 - **Watch stories with no seen receipt.** The eye button still marks one as seen when you want it to.
 - **Unsent messages stay.** When the other person takes a message back, it stays in the chat and gets
   a **red trash badge**, so you can tell which ones were taken back. *Confirmed on Instagram 410.*
-  A **deleted-messages log** (Settings › Stories & messages) keeps what each one said, who sent it and when — it survives the refresh that clears them from the chat.
+  A **deleted-messages log** (Settings › Messages) keeps what each one said, who sent it and when — it survives the refresh that clears them from the chat.
 - Hide your **"Active now"** status (experimental) · hide the typing indicator · save DM photos and
   videos, even view-once, with per-message mark-as-seen · full last-active time as a real date ·
   hide the voice and video call buttons · replay visual messages · disable screenshot detection.

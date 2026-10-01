@@ -156,8 +156,11 @@
     }];
 
     // --- Developer contact (order 500) ---
+    // Connect, credits, the update check and the source: one row, one screen. They were four
+    // sections and eleven rows at the bottom of the page, none of them something anyone looks at
+    // twice -- and two of them (the developer, the source) opened the same repository.
     [SCISettingsRegistry registerRootSectionWithOrder:500 builder:^NSArray *{
-        return @[@{
+        NSArray *connect = @[@{
             @"header": SCILocalized(@"section_connect"),
             @"rows": @[
                 [SCISetting linkCellWithTitle:SCILocalized(@"social_instagram_title")
@@ -175,11 +178,7 @@
             ],
             @"footer": SCILocalized(@"social_open_sub")
         }];
-    }];
-
-    // --- Credits (order 600) ---
-    [SCISettingsRegistry registerRootSectionWithOrder:600 builder:^NSArray *{
-        return @[@{
+        NSArray *credits = @[@{
             @"header": SCILocalized(@"credits_title"),
             @"rows": @[
                 [SCISetting linkCellWithTitle:SCILocalized(@"developer_title")
@@ -205,7 +204,17 @@
             @"footer": [NSString stringWithFormat:@"Albrhi %@ · BETA  ·  by Ibrahim Ismail AL-Rahn\nBased on SCInsta by SoCuul — GPLv3\n\nInstagram v%@",
                         SCIVersionString, [SCIUtils IGVersionString]]
         }];
+        return @[@{
+            @"header": @"",
+            @"rows": @[
+                [SCISetting navigationCellWithTitle:SCILocalized(@"about_row_title")
+                                           subtitle:SCILocalized(@"about_row_sub")
+                                               icon:[SCISymbol symbolWithName:@"info.circle.fill" color:[SCIUtils SCIColor_Primary] size:20.0]
+                                        navSections:[connect arrayByAddingObjectsFromArray:credits]]
+            ]
+        }];
     }];
+
 }
 
 @end

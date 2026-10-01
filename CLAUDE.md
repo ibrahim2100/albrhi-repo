@@ -813,7 +813,7 @@ instances taught; here are the facts.
   `-refreshControlDidEndFinishLoadingAnimation:`; the duplicate-pull guard expires after ten seconds so a sheet that never presented cannot block refreshing for good.
   Unconfirmed whether that selector is ever called by something other than the user's pull (the inbox's `refreshControl:didReleaseWithRefreshControlState:` is an empty
   stub in 410) — the report counts which spelling fired and how many asks. **Not built:** hiding the reels *seen* mark (`/api/v1/clips/write_seen_state` still goes out).
-- **The deleted-messages log** (4.4.0, `SCIUnsentLog`, screen `SCIUnsentLogViewController` under Stories & messages) writes a row per held unsend — what was said, sender, sent and
+- **The deleted-messages log** (4.4.0, `SCIUnsentLog`, screen `SCIUnsentLogViewController` under Messages) writes a row per held unsend — what was said, sender, sent and
   deleted time — to one bounded JSON file (600 rows, 768 KB) in Application Support. **The unsend arrives as a key with no text**, so text comes from remembering every message
   that passes through the same stream: `IGDirectMessageUpdate`'s `_insertMessages` and `_replaceMessages_messages`, read by ivar inside `SCIDefuseMessageUpdate` (memory only,
   2,500 messages, never written). Two shapes are understood because the stream's element class was **not** known from the binary: a typed UI message (`IGDirectText`: `-text`,
@@ -1210,8 +1210,8 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.4.1** · YouTube **1.37.0** · X **0.19.1** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
-Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.87.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.37.0** · X **0.19.1** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
+Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.88.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

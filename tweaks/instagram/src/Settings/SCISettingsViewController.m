@@ -60,6 +60,13 @@ static char rowStaticRef[] = "row";
     return [self initWithTitle:[SCITweakSettings title] sections:[SCITweakSettings sections] reduceMargin:YES];
 }
 
+/// Redrawn on every appearance, so a checklist row counts what is on *now*: its screen opens above
+/// this one, a switch is changed there, and coming back has to show it.
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    [self.tableView reloadData];
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
 
@@ -336,9 +343,10 @@ static char rowStaticRef[] = "row";
     
     cellContentConfig.text = row.title;
     
-    // Subtitle
-    if (row.subtitle.length) {
-        cellContentConfig.secondaryText = row.subtitle;
+    // Subtitle -- from the block when the row has one (a checklist's count), otherwise the string.
+    NSString *subtitle = row.subtitleBlock ? row.subtitleBlock() : row.subtitle;
+    if (subtitle.length) {
+        cellContentConfig.secondaryText = subtitle;
         cellContentConfig.textToSecondaryTextVerticalPadding = 4.5;
     }
     
