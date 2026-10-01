@@ -1,4 +1,5 @@
 #import "../Model/SCITWPageRegistry.h"
+#import "../Model/SCITWChecklistRow.h"
 #import "Prefs.h"
 #import "Localization/SCILocalize.h"
 
@@ -19,9 +20,9 @@
                                     note:SCILocalized(@"page_albrhi_note")
                                   symbol:@"arrow.down.circle.fill"
                                     tint:[UIColor systemBlueColor]
-                                 builder:^NSArray<SCITWSection *> *(__unused UIViewController *host) {
+                                 builder:^NSArray<SCITWSection *> *(UIViewController *host) {
         return @[
-            [SCITWSection titled:SCILocalized(@"section_albrhi")
+            [SCITWSection titled:SCILocalized(@"section_albrhi_save")
                           footer:nil
                             rows:@[
                 [SCITWRow switchRow:SCILocalized(@"albrhi_save_button")
@@ -46,21 +47,32 @@
                              symbol:@"person.crop.circle.fill"
                                tint:[UIColor systemTealColor]
                             prefKey:SCIPrefSaveAvatar],
-                [SCITWRow switchRow:SCILocalized(@"albrhi_confirm_repost")
+            ]],
+            [SCITWSection titled:SCILocalized(@"section_albrhi_confirm")
+                          footer:nil
+                            rows:@[
+                [SCITWRow checklistRow:SCILocalized(@"albrhi_confirm_row")
+                                symbol:@"checkmark.shield.fill"
+                                  tint:[UIColor systemGreenColor]
+                                 items:@[
+                    [SCITWRow switchRow:SCILocalized(@"albrhi_confirm_repost")
                                note:SCILocalized(@"albrhi_confirm_repost_note")
                              symbol:@"arrow.2.squarepath"
                                tint:[UIColor systemGreenColor]
                             prefKey:SCIPrefConfirmRepost],
-                [SCITWRow switchRow:SCILocalized(@"set_confirm_like")
+                    [SCITWRow switchRow:SCILocalized(@"set_confirm_like")
                                note:SCILocalized(@"set_confirm_like_note")
                              symbol:@"heart.fill"
                                tint:[UIColor systemPinkColor]
                             prefKey:SCIPrefConfirmLike],
-                [SCITWRow switchRow:SCILocalized(@"set_confirm_follow")
+                    [SCITWRow switchRow:SCILocalized(@"set_confirm_follow")
                                note:SCILocalized(@"set_confirm_follow_note")
                              symbol:@"person.badge.plus"
                                tint:[UIColor systemGreenColor]
                             prefKey:SCIPrefConfirmFollow],
+                                 ]
+                                footer:SCILocalized(@"albrhi_confirm_note")
+                                  host:host],
             ]],
         ];
     }];

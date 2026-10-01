@@ -3,7 +3,7 @@
 #import "Localization/SCILocalize.h"
 
 ///
-/// Things the timeline puts between the posts.
+/// Clean up: what the timeline puts between the posts, and the bookmark button under one.
 ///
 /// Every row here *removes* something that works, which is why they are together under one
 /// heading and every one of them ships off: taking a module away is a choice, and choosing
@@ -45,6 +45,11 @@
                              symbol:@"play.square.stack"
                                tint:[UIColor systemOrangeColor]
                             prefKey:SCIPrefHideTrendVideos],
+                [SCITWRow switchRow:SCILocalized(@"set_hide_bookmark")
+                               note:SCILocalized(@"section_posts_note")
+                             symbol:@"bookmark"
+                               tint:[UIColor systemOrangeColor]
+                            prefKey:SCIPrefHideBookmark],
             ]],
         ];
     }];

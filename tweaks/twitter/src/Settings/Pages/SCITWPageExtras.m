@@ -29,7 +29,21 @@
         rtl.cautious = YES;
 
         return @[
-            [SCITWSection titled:SCILocalized(@"section_extras")
+            [SCITWSection titled:SCILocalized(@"section_extras_posts")
+                          footer:nil
+                            rows:@[
+                [SCITWRow switchRow:SCILocalized(@"set_tweet_to_image")
+                               note:SCILocalized(@"set_tweet_to_image_note")
+                             symbol:@"camera.viewfinder"
+                               tint:[UIColor systemPinkColor]
+                            prefKey:SCIPrefTweetToImage],
+                [SCITWRow switchRow:SCILocalized(@"set_full_frame")
+                               note:SCILocalized(@"set_full_frame_note")
+                             symbol:@"rectangle.expand.vertical"
+                               tint:[UIColor systemTealColor]
+                            prefKey:SCIPrefFullFrameImages],
+            ]],
+            [SCITWSection titled:SCILocalized(@"section_extras_other")
                           footer:nil
                             rows:@[
                 [SCITWRow switchRow:SCILocalized(@"set_undo_post")
