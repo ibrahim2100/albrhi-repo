@@ -55,6 +55,10 @@ static void SCIBuildTables(void) {
         @"sponsorblock_markers_note": @"Marks each segment on the bar in its SponsorBlock colour, so you can see what is coming.",
 
         @"sb_categories": @"What to skip",
+        @"sb_categories_row": @"Categories to skip",
+        @"sb_categories_note": @"Each one is a kind of segment people mark in a video. Only the ones switched on are skipped.",
+        @"hide_topbar_row": @"Buttons in the top bar",
+        @"checklist_count": @"%lu of %lu on",
         @"sb_sponsor": @"Paid sponsor",
         @"sb_sponsor_note": @"A plug the creator was paid for.",
         @"sb_selfpromo": @"Self-promotion",
@@ -483,6 +487,10 @@ static void SCIBuildTables(void) {
         @"sponsorblock_markers_note": @"يعلّم كل مقطع على الشريط بلون سبونسر بلوك الخاص به، فترى ما هو قادم.",
 
         @"sb_categories": @"ما الذي يُتخطّى",
+        @"sb_categories_row": @"الفئات المُتخطّاة",
+        @"sb_categories_note": @"كل فئة نوع من المقاطع التي يعلّمها الناس في الفيديو. يُتخطّى ما فعّلتَه فقط.",
+        @"hide_topbar_row": @"أزرار الشريط العلوي",
+        @"checklist_count": @"%lu من %lu مفعّل",
         @"sb_sponsor": @"إعلان مدفوع",
         @"sb_sponsor_note": @"ترويج تلقّى صاحب القناة مقابلًا عليه.",
         @"sb_selfpromo": @"ترويج ذاتي",

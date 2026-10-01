@@ -3,6 +3,10 @@
 **Tested on YouTube 21.32.4.** Nothing is pinned to a version number: every class the
 tweak touches is looked up at runtime and skipped if it is not there.
 
+## v1.38.0
+
+**فئات SponsorBlock الثماني صارت صفاً واحداً («٣ من ٨ مفعّل») ينفتح على القائمة، وأزرار الشريط العلوي الأربعة كذلك.** كل مفتاح في مكانه وبنفس اسمه المحفوظ، فلا تتأثر نسخة احتياطية ولا إعداد سابق؛ تغيّر موضع الصف فقط، وصفحتا SponsorBlock والواجهة أقصر.
+
 ## v1.37.0
 
 **قائمة الجودة، وإعادة ترتيب الإعدادات كلها.**

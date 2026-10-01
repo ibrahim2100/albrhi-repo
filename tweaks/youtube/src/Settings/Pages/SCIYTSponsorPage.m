@@ -1,4 +1,5 @@
 #import "../SCIYTSettingsRegistry.h"
+#import "../SCIYTChecklistRow.h"
 #import "../../Prefs.h"
 #import "../../Localization/SCILocalize.h"
 
@@ -18,7 +19,7 @@
                                         title:SCILocalized(@"page_sponsor")
                                        detail:SCILocalized(@"page_sponsor_note")
                                        symbol:@"forward.end.fill"
-                                      builder:^NSArray<SCISection *> *(__unused SCIYTSettingsHostController *host) {
+                                      builder:^NSArray<SCISection *> *(SCIYTSettingsHostController *host) {
         SCISection *sponsor = [[SCISection alloc] init];
         sponsor.title = SCILocalized(@"section_sponsorblock");
         sponsor.rows = @[
@@ -38,7 +39,7 @@
 
         SCISection *categories = [[SCISection alloc] init];
         categories.title = SCILocalized(@"sb_categories");
-        categories.rows = @[
+        NSArray<SCIRow *> *items = @[
             [SCIRow switchRow:SCILocalized(@"sb_sponsor")
                        detail:SCILocalized(@"sb_sponsor_note")
                        symbol:@"dollarsign.circle.fill"
@@ -71,6 +72,13 @@
                        detail:SCILocalized(@"sb_music_offtopic_note")
                        symbol:@"music.note"
                       prefKey:SCIPrefSBMusicOffTopic],
+        ];
+        categories.rows = @[
+            [SCIRow checklistRow:SCILocalized(@"sb_categories_row")
+                          symbol:@"checklist"
+                           items:items
+                          footer:SCILocalized(@"sb_categories_note")
+                            host:host],
         ];
         // Where the data comes from, its licence, and what does and does not leave the
         // phone. The attribution is a condition of CC BY-NC-SA; the privacy sentence is

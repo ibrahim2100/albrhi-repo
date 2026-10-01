@@ -1,4 +1,5 @@
 #import "../SCIYTSettingsRegistry.h"
+#import "../SCIYTChecklistRow.h"
 #import "../../Prefs.h"
 #import "../../Localization/SCILocalize.h"
 #import "../SCIYTTabBarController.h"
@@ -23,7 +24,7 @@
                                         title:SCILocalized(@"page_clean")
                                        detail:SCILocalized(@"page_clean_note")
                                        symbol:@"hand.raised.fill"
-                                      builder:^NSArray<SCISection *> *(__unused SCIYTSettingsHostController *host) {
+                                      builder:^NSArray<SCISection *> *(SCIYTSettingsHostController *host) {
         SCISection *ads = [[SCISection alloc] init];
         ads.title = SCILocalized(@"section_ads");
         ads.rows = @[
@@ -72,8 +73,7 @@
 
         SCISection *bar = [[SCISection alloc] init];
         bar.title = SCILocalized(@"section_hide_topbar");
-        bar.footer = SCILocalized(@"section_hide_topbar_note");
-        bar.rows = @[
+        NSArray<SCIRow *> *barItems = @[
             [SCIRow switchRow:SCILocalized(@"hide_search_button")
                        detail:nil
                        symbol:@"magnifyingglass"
@@ -90,6 +90,13 @@
                        detail:nil
                        symbol:@"tv.badge.wifi"
                       prefKey:SCIPrefHideCastButton],
+        ];
+        bar.rows = @[
+            [SCIRow checklistRow:SCILocalized(@"hide_topbar_row")
+                          symbol:@"rectangle.topthird.inset.filled"
+                           items:barItems
+                          footer:SCILocalized(@"section_hide_topbar_note")
+                            host:host],
         ];
 
         SCISection *elsewhere = [[SCISection alloc] init];
