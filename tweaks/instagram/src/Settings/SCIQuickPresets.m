@@ -371,6 +371,7 @@
         @[@"like_confirm_reels",       @"p_cf_likereels_t"],
         @[@"post_comment_confirm",     @"p_cf_comment_t"],
         @[@"refresh_reel_confirm",     @"p_reels_refresh_t"],
+        @[@"refresh_chats_confirm",    @"p_cf_refreshchats_t"],
         @[@"call_confirm",             @"p_cf_call_t"],
         @[@"shh_mode_confirm",         @"p_cf_shh_t"],
         @[@"sticker_interact_confirm", @"p_cf_sticker_t"],

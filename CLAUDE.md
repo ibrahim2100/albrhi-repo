@@ -807,7 +807,12 @@ instances taught; here are the facts.
   _messageServerId, _messageClientContext }`). It is **marked** (4.2.2): a red trash badge placed from
   `IGDirectMessageCell -configureWithViewModel:ringViewSpecFactory:launcherSet:` (the reuse-safe bind point) by joining the held
   key's `_messageServerId` with the drawn cell's `viewModel.messageMetadata.key.serverId`. InstaPlus's six selectors do not exist in
-  410; Regram 6.3 was read for architecture only. **Not built:** a full log of deleted messages (needs text/sender/time saved before
+  410; Regram 6.3 was read for architecture only. **A refresh removes them** (a pull-to-refresh reloads from the server), so 4.3.0 *asks first* — always while any are
+  held, otherwise only with the `refresh_chats_confirm` switch — by hooking `IGDirectInboxViewController`'s `-_pullToRefreshIfPossible` (410) **and** `-pullToRefreshIfPossible`
+  (newer; the warning had never fired on 410 because it was hooked on the wrong spelling), replaying the selector on confirm and ending the pull on cancel through
+  `-refreshControlDidEndFinishLoadingAnimation:`; the duplicate-pull guard expires after ten seconds so a sheet that never presented cannot block refreshing for good.
+  Unconfirmed whether that selector is ever called by something other than the user's pull (the inbox's `refreshControl:didReleaseWithRefreshControlState:` is an empty
+  stub in 410) — the report counts which spelling fired and how many asks. **Not built:** a full log of deleted messages (needs text/sender/time saved before
   deletion) and hiding the reels *seen* mark (`/api/v1/clips/write_seen_state` still goes out).
 - **Reels auto-advance** forces every gate a build has, each behind `class_getInstanceMethod`: `-isAutoAdvanceEnabled` and
   `-autoAdvanceToNextItem` on both, `-shouldForceEnableAutoScroll` on the Swift `IGSundialAutoScroll` in 439 only, `-autoScrollState`
@@ -1180,8 +1185,8 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.2.2** · YouTube **1.34.0** · X **0.19.1** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
-Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.82.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.3.0** · YouTube **1.34.0** · X **0.19.1** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
+Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.83.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

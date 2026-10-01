@@ -30,7 +30,8 @@
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_cf_shh_t") subtitle:SCILocalized(@"p_cf_shh_s") defaultsKey:@"shh_mode_confirm"],
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_cf_comment_t") subtitle:SCILocalized(@"p_cf_comment_s") defaultsKey:@"post_comment_confirm"],
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_cf_theme_t") subtitle:SCILocalized(@"p_cf_theme_s") defaultsKey:@"change_direct_theme_confirm"],
-                    [SCISetting switchCellWithTitle:SCILocalized(@"p_cf_sticker_t") subtitle:SCILocalized(@"p_cf_sticker_s") defaultsKey:@"sticker_interact_confirm"]
+                    [SCISetting switchCellWithTitle:SCILocalized(@"p_cf_sticker_t") subtitle:SCILocalized(@"p_cf_sticker_s") defaultsKey:@"sticker_interact_confirm"],
+                    [SCISetting switchCellWithTitle:SCILocalized(@"p_cf_refreshchats_t") subtitle:SCILocalized(@"p_cf_refreshchats_s") defaultsKey:@"refresh_chats_confirm"]
                 ]
             }
         ];

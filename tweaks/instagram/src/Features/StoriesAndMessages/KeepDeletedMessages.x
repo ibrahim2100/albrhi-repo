@@ -404,47 +404,135 @@ static void SCIDefuseThreadUpdates(id updates, NSInteger depth) {
 
 %end
 
-// MARK: - Warning before a refresh throws them away
+// MARK: - Asking before a refresh throws them away
 
 // A pull-to-refresh reloads threads from the server, and anything kept only on this
-// device goes with it. That was written in the setting's description and then left to
-// happen silently, which is the worst of both: the user is told once, in settings,
-// and never at the moment it matters.
+// device goes with it. That was first written in the setting's description, then as a toast
+// *after* the refresh had already happened -- which tells somebody what they lost at the one
+// moment they can no longer do anything about it.
 //
-// Regram guards the same moment — it has a reload alert and a
-// -clearAllUnsentMessagesAfterRefresh — and that is what makes its version of this
-// feature feel deliberate rather than fragile.
+// It is a question before the refresh now. Two cases ask:
 //
-// The selector exists on the newer build only, so the older one refreshes as it
-// always has. A warning on one build and not the other is not ideal; a warning
-// nowhere is worse.
-%hook IGDirectInboxViewController
+//   * messages are being kept and some are held (SCIHeldUnsendCount() > 0) -- always, in
+//     words that say how many would go, because this is the refresh that costs something;
+//   * the plain switch "confirm chats refresh" is on -- for anyone who just does not want the
+//     inbox reloading under a stray pull, the same shape as the reels one.
+//
+// Regram guards the same moment -- it has a reload alert and a
+// -clearAllUnsentMessagesAfterRefresh -- which is what makes its version of this feature feel
+// deliberate rather than fragile.
+//
+// **The two builds spell the selector differently** (`-_pullToRefreshIfPossible` on 410,
+// `-pullToRefreshIfPossible` on the newer one), and a hook on the wrong spelling is a hook that
+// never fires -- which is why the warning did not appear on 410 at all for a release. Both are
+// hooked; each build has one of them.
+//
+// **The answer is a replay, not `%orig` captured in a block**: confirming sets a flag naming
+// this object and sends the same selector again, and the hook lets a flagged call through. A
+// second pull while the question is up is dropped rather than queued -- two sheets for one
+// refresh is the dialog arriving twice. **If the question cannot be put up the refresh goes
+// ahead**: "ask me first" must never turn into "refreshing is broken".
+//
+// Cancelling has to *end the pull*, or the spinner stays on the inbox for good: the
+// refresh control is told it finished, through the inbox's own
+// -refreshControlDidEndFinishLoadingAnimation: (v24@0:8@16 on 410) and the `_refreshControl`
+// ivar, both read from the class metadata and both checked before use.
+//
+// Counted: asked, confirmed, cancelled, dropped as a duplicate, and which spelling fired --
+// so if somebody says the sheet never appears, the report says whether the pull reached us.
 
-// A plain function rather than a %new method: sending a message to the hooked class
-// would need an @interface for it, since Logos only forward-declares what it hooks —
-// the rule this project already wrote down after the same mistake.
-static void SCIWarnAboutRefresh(void) {
-    if (!SCIWantsToKeepUnsent() || SCIHeldUnsendCount() == 0) return;
+static __weak id sRefreshPassThrough = nil;
+static BOOL sRefreshAsking = NO;
+static CFAbsoluteTime sRefreshAskedAt = 0;
 
-    [SCIUtils showToastForDuration:2.4
-                             title:SCILocalized(@"keep_unsent_refresh_warning")];
-
-    // Cleared here rather than left to drift: after this refresh they are gone from
-    // the chat, so continuing to count them would make the next warning a lie.
-    SCIClearHeldUnsends();
+static BOOL SCIWantsRefreshQuestion(NSInteger *held) {
+    NSInteger count = SCIWantsToKeepUnsent() ? SCIHeldUnsendCount() : 0;
+    if (held) *held = count;
+    return count > 0 || [SCIUtils getBoolPref:@"refresh_chats_confirm"];
 }
+
+static void SCIEndInboxRefresh(id inbox) {
+    Ivar field = class_getInstanceVariable(object_getClass(inbox), "_refreshControl");
+    id control = field ? object_getIvar(inbox, field) : nil;
+    SEL done = sel_registerName("refreshControlDidEndFinishLoadingAnimation:");
+    if (control && [inbox respondsToSelector:done]) {
+        ((void (*)(id, SEL, id))objc_msgSend)(inbox, done, control);
+    }
+}
+
+/// YES when this call was consumed (a question is up, or one is already); NO when the original
+/// should run now.
+static BOOL SCIAskBeforeRefresh(id inbox, SEL selector) {
+    if (sRefreshPassThrough == inbox) {
+        sRefreshPassThrough = nil;
+        return NO;
+    }
+
+    NSInteger held = 0;
+    if (!SCIWantsRefreshQuestion(&held)) return NO;
+
+    // A question that was put up and never answered must not block refreshing for good: the
+    // sheet is presented with a bounded number of retries, and one that never gets presented
+    // would leave this flag set with nothing on screen to clear it. Ten seconds is long enough
+    // that a second pull during a real question is a duplicate and short enough that a lost
+    // one costs a pull, not the feature.
+    if (sRefreshAsking && CFAbsoluteTimeGetCurrent() - sRefreshAskedAt < 10) {
+        [SCIDiagnostics privacyCount:@"Inbox refresh · second pull dropped while asking"];
+        return YES;
+    }
+
+    sRefreshAsking = YES;
+    sRefreshAskedAt = CFAbsoluteTimeGetCurrent();
+    [SCIDiagnostics privacyCount:held > 0 ? @"Inbox refresh · asked (messages held)"
+                                          : @"Inbox refresh · asked"];
+
+    NSString *title = held > 0
+        ? [NSString stringWithFormat:SCILocalized(@"confirm_refresh_chats_unsent"), (long)held]
+        : SCILocalized(@"confirm_refresh_chats");
+
+    __weak id weakInbox = inbox;
+    [SCIUtils showConfirmation:^{
+        sRefreshAsking = NO;
+        id target = weakInbox;
+        if (!target) return;
+
+        [SCIDiagnostics privacyCount:@"Inbox refresh · confirmed"];
+
+        // They are about to be gone from the chat, so counting them any longer would make the
+        // next question a lie.
+        if (held > 0) SCIClearHeldUnsends();
+
+        sRefreshPassThrough = target;
+        ((void (*)(id, SEL))objc_msgSend)(target, selector);
+        sRefreshPassThrough = nil;
+    }
+                 cancelHandler:^{
+        sRefreshAsking = NO;
+        id target = weakInbox;
+        if (!target) return;
+
+        [SCIDiagnostics privacyCount:@"Inbox refresh · cancelled"];
+        SCIEndInboxRefresh(target);
+    }
+                         title:title];
+
+    return YES;
+}
+
+%hook IGDirectInboxViewController
 
 // The newer build.
 - (void)pullToRefreshIfPossible {
-    SCIWarnAboutRefresh();
+    [SCIDiagnostics privacyCount:@"Inbox refresh · pull reached -pullToRefreshIfPossible"];
+    if (SCIAskBeforeRefresh(self, _cmd)) return;
 
     %orig;
 }
 
-// The older build spells it with a leading underscore, which is why the warning never
-// appeared there — the hook was attached to a name that build does not have.
+// The older build.
 - (void)_pullToRefreshIfPossible {
-    SCIWarnAboutRefresh();
+    [SCIDiagnostics privacyCount:@"Inbox refresh · pull reached -_pullToRefreshIfPossible"];
+    if (SCIAskBeforeRefresh(self, _cmd)) return;
 
     %orig;
 }
