@@ -11,10 +11,10 @@
 [![Rootless](https://img.shields.io/badge/rootless-supported-success.svg)](#-compatibility)
 [![roothide](https://img.shields.io/badge/roothide-supported-success.svg)](#-compatibility)
 
-[![Albrhi](https://img.shields.io/badge/Albrhi-1.90.0-blueviolet.svg)](suite/CHANGELOG.md)
+[![Albrhi](https://img.shields.io/badge/Albrhi-1.91.0-blueviolet.svg)](suite/CHANGELOG.md)
 [![Instagram](https://img.shields.io/badge/Instagram-4.5.0-orange.svg)](tweaks/instagram/CHANGELOG.md)
 [![YouTube](https://img.shields.io/badge/YouTube-1.38.0-red.svg)](tweaks/youtube/CHANGELOG.md)
-[![X](https://img.shields.io/badge/X-0.20.0-black.svg)](tweaks/twitter/CHANGELOG.md)
+[![X](https://img.shields.io/badge/X-0.21.0-black.svg)](tweaks/twitter/CHANGELOG.md)
 [![TikTok](https://img.shields.io/badge/TikTok-0.20.3-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
 [![YT Music](https://img.shields.io/badge/YT%20Music-0.9.3-FF0000.svg)](tweaks/ytmusic/CHANGELOG.md)
 [![Spotify](https://img.shields.io/badge/Spotify-0.2.5-1DB954.svg)](tweaks/spotify/CHANGELOG.md)
@@ -141,7 +141,7 @@ Developed by **Ibrahim Ismail AL-Rahn** ([@ibrahim2100](https://github.com/ibrah
 |---|---|---|:-:|---|
 | **[Instagram](#-albrhi-for-instagram)** | Instagram | 4.5.0 | ✅ | downloads, AV1 reels transcoded on the device, a quieter feed, watching stories without a receipt, unsent messages kept and marked |
 | **[YouTube](#-albrhi-for-youtube)** | YouTube | 1.38.0 | ✅ | downloads that survive app updates, their own Download Centre tab, no ads, SponsorBlock, background playback |
-| **[X](#-albrhi-for-x)** | X / Twitter | 0.20.0 | ✅ | media downloads with a button you can place yourself, and fifteen-plus switches for what X does |
+| **[X](#-albrhi-for-x)** | X / Twitter | 0.21.0 | ✅ | media downloads with a button you can place yourself, and fifteen-plus switches for what X does |
 | **[TikTok](#-albrhi-for-tiktok)** | TikTok | 0.20.3 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |
 | **[YouTube Music](#-albrhi-for-youtube-music)** | YouTube Music | 0.9.3 | ✅ | synced lyrics, saving tracks, no ads, background playback |
 | **[Panel](#-albrhi-panel)** | Settings | 0.9.38 | ✅ | the Albrhi page: a switch per app, the licence, a guide, backup |
@@ -722,6 +722,7 @@ Issues and pull requests are welcome.
 - **[NextUp 3](https://github.com/Yves000/NextUp3)** by **Yves** (GPLv3) — Albrhi NextUp is a port of it; the design and nearly all of the implementation are his.
 - **[watched](https://github.com/34306/watched)** by **34306** (MIT) — the Apple Watch pairing core.
 - **[LightMessaging](https://github.com/rpetrich/libhooker)** by Ryan Petrich and **[libSandy](https://github.com/opa334/libSandy)** by opa334 — the messaging and sandbox profile NextUp needs.
+- **[NeoFreeBird](https://github.com/orionblur/NeoFreeBird)** by **orionblur** (GPLv3, a BHTwitter fork written against X 12.31) — Albrhi for X carries over its timeline section filter, the typing-indicator and screenshot-detection approach, the quote/repost and whole-number counts, and a set of interface switches and feature-switch keys; its premium unlock, age-verification bypass, web login and posting, account-location lookup and Tenor GIF swap are deliberately not taken (see the X changelog).
 - **[BHTikTok](https://github.com/BandarHL/BHTikTok)** by BandarHL and the fork by [al3raQe](https://github.com/al3raQe/BHTikTok), and **BHTwitter** — read for *where* an app is hookable, **never for code**; two compiled TikTok tweaks were read the same cautious way.
 - **[JGProgressHUD](https://github.com/JonasGessner/JGProgressHUD)** by Jonas Gessner (MIT) · **[dav1d](https://code.videolan.org/videolan/dav1d)** by VideoLAN (the AV1 decoder) · **[FLEXing](https://github.com/SoCuul/FLEXing)** (runtime debugging).
 - **Ibrahim Ismail AL-Rahn** — the Albrhi rebuild, bilingual layer, download and transcode engine, licence layer, and design.

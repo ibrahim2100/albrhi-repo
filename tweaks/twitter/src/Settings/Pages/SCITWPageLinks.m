@@ -46,6 +46,20 @@
                                tint:[UIColor systemPurpleColor]
                             prefKey:SCIPrefAppLock],
             ]],
+            [SCITWSection titled:SCILocalized(@"section_chat")
+                          footer:SCILocalized(@"section_chat_note")
+                            rows:@[
+                [SCITWRow switchRow:SCILocalized(@"set_hide_typing")
+                               note:SCILocalized(@"set_hide_typing_note")
+                             symbol:@"ellipsis.bubble"
+                               tint:[UIColor systemIndigoColor]
+                            prefKey:SCIPrefHideTyping],
+                [SCITWRow switchRow:SCILocalized(@"set_block_screenshot")
+                               note:SCILocalized(@"set_block_screenshot_note")
+                             symbol:@"camera.viewfinder"
+                               tint:[UIColor systemRedColor]
+                            prefKey:SCIPrefBlockScreenshotDetect],
+            ]],
         ];
     }];
 }

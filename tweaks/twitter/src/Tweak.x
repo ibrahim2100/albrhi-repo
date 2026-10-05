@@ -18,8 +18,11 @@
 #import "Features/Extras/SCITWExtras.h"
 #import "Features/Profile/SCITWProfileCopy.h"
 #import "Features/Lock/SCITWAppLock.h"
+#import "Features/Chat/SCITWChat.h"
+#import "Features/Counts/SCITWCounts.h"
+#import "Features/Interface/SCITWInterface.h"
 
-NSString *SCIVersionString = @"v0.20.0";  // AlbrhiTW
+NSString *SCIVersionString = @"v0.21.0";  // AlbrhiTW
 
 %ctor {
     // Defaults registered rather than assumed: reading a key that was never written
@@ -117,6 +120,9 @@ NSString *SCIVersionString = @"v0.20.0";  // AlbrhiTW
     SCITWInstallActionRow();
     SCITWInstallExtras();
     SCITWInstallProfileCopy();
+    SCITWInstallChat();
+    SCITWInstallCounts();
+    SCITWInstallInterface();
 
     // Last, and after everything else has attached: it puts a cover over the app, and a
     // failure here should not be able to stop a hook that was going to install after it.

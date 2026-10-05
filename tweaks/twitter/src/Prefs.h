@@ -117,11 +117,23 @@
 /// Face ID or a passcode before X will show anything.
 #define SCIPrefAppLock           @"app_lock"
 
+// MARK: - What a conversation tells the other side
+
+/// Drops the typing heartbeat on X's chat socket. Read once at launch: off means no hook.
+#define SCIPrefHideTyping            @"hide_typing_indicator"
+/// Refuses the screenshot and screen-recording notifications. Read once at launch.
+#define SCIPrefBlockScreenshotDetect @"block_screenshot_detection"
+
 // MARK: - Timeline clutter
 
 #define SCIPrefHideWhoToFollow   @"hide_who_to_follow"
 #define SCIPrefHideTopics        @"hide_topics"
 #define SCIPrefHideTrendVideos   @"hide_trend_videos"
+
+/// The "message" rows X puts into a timeline -- premium and verification offers are the
+/// ones people mean, and the same row type carries X's own notices, so this is a switch
+/// and not a default.
+#define SCIPrefHidePremiumOffer  @"hide_premium_offer_rows"
 
 // MARK: - The row of buttons under a post
 
@@ -129,6 +141,27 @@
 // `view_counts_public_visibility_enabled` instead, so the count is never drawn rather
 // than drawn and covered over.
 #define SCIPrefHideBookmark      @"hide_bookmark_button"
+
+// MARK: - Counts
+
+/// The quote and repost numbers, in the title of "View post interactions".
+#define SCIPrefShowQuotes        @"show_quote_numbers"
+/// Those two as whole numbers rather than "12.4K".
+#define SCIPrefUnroundedQuotes   @"show_unrounded_quote_numbers"
+/// Followers, following and posts on a profile as whole numbers.
+#define SCIPrefUnroundedCounts   @"show_unrounded_counts"
+
+// MARK: - Interface -- each read once at launch to attach, and again at every call
+
+#define SCIPrefHideCompose       @"hide_compose_button"
+#define SCIPrefKeepTabBar        @"keep_tab_bar_visible"
+#define SCIPrefTabLabels         @"restore_tab_labels"
+#define SCIPrefScrollIndicator   @"show_scroll_indicator"
+#define SCIPrefHighQualityImages @"load_highest_quality_images"
+#define SCIPrefHideBlueBadge     @"hide_paid_badge"
+#define SCIPrefNoDocking         @"disable_video_docking"
+#define SCIPrefHideFollowOnPosts @"hide_follow_on_posts"
+#define SCIPrefHideTrends        @"hide_explore_trends"
 
 /// A long press on share renders the post as an image.
 #define SCIPrefTweetToImage      @"tweet_to_image"

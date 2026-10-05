@@ -73,6 +73,16 @@ typedef NS_ENUM(NSInteger, SCITWOverride) {
               answer:(BOOL *)answer;
 
 /// Everything seen so far, most asked first.
+/// The answer a *typed* getter should give, or nil to leave X's own.
+///
+/// `-integerForKey:`, `-doubleForKey:` and `-numberForKey:` are asked about keys that are not
+/// booleans at all (a timeout in seconds, a duration threshold), and a feature that needs
+/// one -- "do not refresh after the app was in the background", "no auto-advance" -- has no
+/// bool to flip. The same two maps answer, hand-set first, but nothing is *recorded* here:
+/// the recorder is the list of questions X asks as yes or no, and a typed read of a
+/// feature's own key would only double every count.
++ (nullable NSNumber *)numberOverrideForKey:(NSString *)key;
+
 + (NSArray<SCITWSwitchRecord *> *)records;
 
 /// How many questions have been asked in total, across every key.

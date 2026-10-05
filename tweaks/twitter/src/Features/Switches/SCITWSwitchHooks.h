@@ -13,3 +13,6 @@
 ///
 /// Called once, from the constructor, after the panel switch has been consulted.
 void SCITWInstallSwitchHooks(void);
+
+/// Which of the typed-getter groups and the wrapper attached, and which did not and why.
+NSString *SCITWSwitchHooksReport(void);

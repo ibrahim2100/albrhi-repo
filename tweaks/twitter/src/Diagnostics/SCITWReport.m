@@ -3,6 +3,7 @@
 #import "Prefs.h"
 #import "Features/Switches/SCITWSwitches.h"
 #import "Features/Switches/SCITWFeatures.h"
+#import "Features/Switches/SCITWSwitchHooks.h"
 #import "Features/Media/SCITWImmersiveButton.h"
 #import "Features/Ads/SCITWPromotedFilter.h"
 #import "Features/Confirm/SCITWRepostConfirm.h"
@@ -16,6 +17,9 @@
 #import "Features/Extras/SCITWExtras.h"
 #import "Features/Profile/SCITWProfileCopy.h"
 #import "Features/Lock/SCITWAppLock.h"
+#import "Features/Chat/SCITWChat.h"
+#import "Features/Counts/SCITWCounts.h"
+#import "Features/Interface/SCITWInterface.h"
 
 NSString *SCITWReportText(void) {
     NSMutableString *text = [NSMutableString string];
@@ -49,11 +53,15 @@ NSString *SCITWReportText(void) {
     [text appendFormat:@"%@\n", SCITWTabEntriesReport()];
     [text appendFormat:@"%@\n", SCITWSpacesBarReport()];
     [text appendFormat:@"%@\n", SCITWLinksReport()];
+    [text appendFormat:@"%@\n", SCITWSwitchHooksReport()];
     [text appendFormat:@"%@\n", SCITWTimelineFilterReport()];
     [text appendFormat:@"%@\n", SCITWActionRowReport()];
     [text appendFormat:@"%@\n", SCITWExtrasReport()];
     [text appendFormat:@"%@\n", SCITWProfileCopyReport()];
     [text appendFormat:@"%@\n", SCITWAppLockReport()];
+    [text appendFormat:@"%@\n", SCITWChatReport()];
+    [text appendFormat:@"%@\n", SCITWCountsReport()];
+    [text appendFormat:@"%@\n", SCITWInterfaceReport()];
 
     NSArray<SCITWSwitchRecord *> *records = [SCITWSwitches records];
     [text appendFormat:@"switches seen: %lu over %lu questions\n\n",

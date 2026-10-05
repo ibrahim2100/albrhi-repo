@@ -86,6 +86,15 @@ static const NSUInteger SCITWMaxKeys = 4000;
     return decided;
 }
 
++ (NSNumber *)numberOverrideForKey:(NSString *)key {
+    if (![key isKindOfClass:[NSString class]] || !key.length) return nil;
+
+    pthread_mutex_lock(&_lock);
+    NSNumber *override = _overrides[key] ?: _featureOverrides[key];
+    pthread_mutex_unlock(&_lock);
+    return override;
+}
+
 + (NSArray<SCITWSwitchRecord *> *)records {
     pthread_mutex_lock(&_lock);
     NSArray *snapshot = [_records allValues];

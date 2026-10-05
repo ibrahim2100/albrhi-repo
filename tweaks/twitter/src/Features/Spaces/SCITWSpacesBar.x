@@ -14,6 +14,8 @@
 static BOOL sciModernPresent = NO, sciLegacyPresent = NO;
 static NSUInteger sciModernHeld = 0, sciLegacyHeld = 0;
 static NSUInteger sciModernAsked = 0, sciLegacyAsked = 0;
+static BOOL sciGatePresent = NO;
+static NSUInteger sciGateAsked = 0, sciGateRefused = 0;
 
 static BOOL sciSpacesOn(void) { return [SCITWFeatures isOnIdentifier:@"spaces"]; }
 
@@ -29,6 +31,36 @@ static BOOL sciSpacesOn(void) { return [SCITWFeatures isOnIdentifier:@"spaces"];
         return;
     }
     sciModernHeld++;
+}
+
+%end
+
+%end
+
+
+///
+/// The gate both home timelines share.
+///
+/// **A third way in, found by reading what a tweak written against X 12.31 does.** NeoFreeBird
+/// hides this bar by answering `T1FleetLineHeaderController -_t1_shouldShowFleetLine` ("the bar
+/// is still the repurposed Fleets line; both home timeline implementations share this
+/// visibility gate, re-evaluated on every content or settings update"). The method is in 12.20
+/// too (`B16@0:8`), so it is a question X already asks and an answer is not an invention.
+/// Withholding `-_t1_initializeFleets` stays where it works; this covers a build where the bar
+/// is re-evaluated through the gate instead, and the counters say which of the two did the work.
+///
+%group SpacesBarGate
+
+%hook T1FleetLineHeaderController
+
+- (BOOL)_t1_shouldShowFleetLine {
+    sciGateAsked++;
+    BOOL show = %orig;
+    if (sciSpacesOn()) {
+        if (show) sciGateRefused++;
+        show = NO;
+    }
+    return show;
 }
 
 %end
@@ -66,8 +98,8 @@ static BOOL SCITWDeclaresFleets(NSString *name) {
 }
 
 NSString *SCITWSpacesBarReport(void) {
-    if (!sciModernPresent && !sciLegacyPresent) {
-        return @"spaces bar: neither home timeline class declares _t1_initializeFleets";
+    if (!sciModernPresent && !sciLegacyPresent && !sciGatePresent) {
+        return @"spaces bar: no home timeline class declares _t1_initializeFleets and the fleet-line gate is absent";
     }
 
     NSMutableArray<NSString *> *parts = [NSMutableArray array];
@@ -78,6 +110,10 @@ NSString *SCITWSpacesBarReport(void) {
     if (sciLegacyPresent) {
         [parts addObject:[NSString stringWithFormat:@"T1 asked %lu, held %lu",
                           (unsigned long)sciLegacyAsked, (unsigned long)sciLegacyHeld]];
+    }
+    if (sciGatePresent) {
+        [parts addObject:[NSString stringWithFormat:@"gate asked %lu, refused %lu",
+                          (unsigned long)sciGateAsked, (unsigned long)sciGateRefused]];
     }
     if (!sciSpacesOn()) [parts addObject:@"feature off"];
 
@@ -96,5 +132,13 @@ void SCITWInstallSpacesBar(void) {
         %init(SpacesBarLegacy);
     }
 
-    SCILogV(@"spaces bar: modern %d, legacy %d", sciModernPresent, sciLegacyPresent);
+    Class fleetLine = NSClassFromString(@"T1FleetLineHeaderController");
+    Method gate = fleetLine ? class_getInstanceMethod(fleetLine, NSSelectorFromString(@"_t1_shouldShowFleetLine")) : NULL;
+    const char *gateEncoding = gate ? method_getTypeEncoding(gate) : NULL;
+    sciGatePresent = gateEncoding && strcmp(gateEncoding, "B16@0:8") == 0;
+    if (sciGatePresent) {
+        %init(SpacesBarGate);
+    }
+
+    SCILogV(@"spaces bar: modern %d, legacy %d, gate %d", sciModernPresent, sciLegacyPresent, sciGatePresent);
 }

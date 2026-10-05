@@ -43,6 +43,25 @@
                                tint:[UIColor systemTealColor]
                             prefKey:SCIPrefFullFrameImages],
             ]],
+            [SCITWSection titled:SCILocalized(@"section_extras_counts")
+                          footer:nil
+                            rows:@[
+                [SCITWRow switchRow:SCILocalized(@"set_show_quotes")
+                               note:SCILocalized(@"set_show_quotes_note")
+                             symbol:@"quote.bubble.fill"
+                               tint:[UIColor systemBlueColor]
+                            prefKey:SCIPrefShowQuotes],
+                [SCITWRow switchRow:SCILocalized(@"set_unrounded_quotes")
+                               note:nil
+                             symbol:@"number"
+                               tint:[UIColor systemIndigoColor]
+                            prefKey:SCIPrefUnroundedQuotes],
+                [SCITWRow switchRow:SCILocalized(@"set_unrounded_counts")
+                               note:SCILocalized(@"set_unrounded_counts_note")
+                             symbol:@"person.2.fill"
+                               tint:[UIColor systemTealColor]
+                            prefKey:SCIPrefUnroundedCounts],
+            ]],
             [SCITWSection titled:SCILocalized(@"section_extras_other")
                           footer:nil
                             rows:@[

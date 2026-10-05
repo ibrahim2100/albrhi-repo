@@ -1,6 +1,6 @@
 Package: com.albrhi.twitter
 Name: Albrhi for Twitter (rootless)
-Version: 0.20.0
+Version: 0.21.0
 Architecture: iphoneos-arm64
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
  .
@@ -23,7 +23,7 @@ Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Ar
  list is whatever your copy of X actually looked up on your phone.
  .
  ▍READY-MADE FEATURES
- Seventeen switches in plain language: hide ads, hide the Promote button, hide Grok, stop
+ Twenty-seven switches in plain language: hide ads, hide the Promote button, hide Grok, stop
  X translating by itself, hide Premium ads, send less about you, clean up the interface,
  hide view counts, hide Spaces, stop GIFs playing alone, pinch to zoom in the timeline,
  more gestures, more tabs, keep your likes private, open faster, and more. Each one sets a
@@ -49,7 +49,9 @@ Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Ar
  .
  The switch layer was found from the published work of BandarHL (BHTwitter) and
  TWIGalaxy, whose choice of where to hook this app is credited. No code is taken from
- either; everything here is written for this project.
+ either. The timeline section filter, the typing-indicator and screenshot switches, the
+ number displays and the interface switches follow NeoFreeBird by orionblur, a GPLv3
+ BHTwitter fork written against newer X builds, carried over under the same licence.
  .
  Developed by Ibrahim Ismail AL-Rahn. Open source under the GNU GPL v3.
 Homepage: https://github.com/ibrahim2100/albrhi-repo

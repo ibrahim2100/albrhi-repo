@@ -69,6 +69,12 @@ static SCITWFeature *Feature(NSString *identifier,
                 @"home_timeline_first_position_ad_prevention_enabled": @YES,
                 @"home_timeline_deduping_remove_ads_with_changed_adjacent_posts": @YES,
                 @"home_timeline_client_deduping_skip_adjacent_to_ads": @YES,
+                // The placements NeoFreeBird turns off on X 12.31 that this table did not name;
+                // every one is a string in 12.20's T1Twitter.
+                @"ssp_ads_profile": @NO,
+                @"ssp_ads_immersive": @NO,
+                @"ssp_ads_tweet_details": @NO,
+                @"ssp_ads_spotlight_client_only_integration_preload": @NO,
             }),
 
             // Seven keys, each asked 7,734 times -- the same count, which is what a set of
@@ -82,6 +88,20 @@ static SCITWFeature *Feature(NSString *identifier,
                 @"ios_tweet_promote_button_optimistic_label_enabled": @NO,
                 @"ios_tweet_promote_button_self_serve_boost_label_enabled": @NO,
                 @"ios_tweet_promote_button_social_context_label_enabled": @NO,
+                // One switch per *placement* -- the root switch above does not govern them, which
+                // is why the button survived in the places NeoFreeBird lists (timeline, composer,
+                // overflow menu, both focal toolbars, analytics, the sent-post toast).
+                @"ios_tweet_promote_button_timeline_enabled": @NO,
+                @"ios_tweet_promote_button_in_tweet_composer_enabled": @NO,
+                @"ios_tweet_promote_button_in_overflow_menu_enabled": @NO,
+                @"ios_tweet_promote_button_in_focal_top_toolbar_enabled": @NO,
+                @"ios_tweet_promote_button_in_focal_bottom_toolbar_enabled": @NO,
+                @"ios_tweet_promote_button_in_focal_top_analytics_enabled": @NO,
+                @"ios_tweet_promote_button_in_post_analytics_enabled": @NO,
+                @"ios_tweet_promote_button_boost_again_in_top_toolbar_enabled": @NO,
+                @"ios_tweet_promote_button_sent_tweet_toast_enabled": @NO,
+                @"ios_tweet_promote_button_third_party_boost_enabled": @NO,
+                @"thirdparty_boost_author_view_button_enabled": @NO,
             }),
 
             Feature(@"grok", @"f_grok", @"f_grok_note", NO,
@@ -100,6 +120,35 @@ static SCITWFeature *Feature(NSString *identifier,
                 @"dash_items_download_grok_enabled": @NO,
                 @"unified_cards_grok_card_transform_enabled": @NO,
                 @"ios_button_layout_fix_use_grok_annotations": @NO,
+                // Creation: the composer button, the Imagine menus and calls to action, Edit
+                // with Grok on photo posts and the player's create-your-own button.
+                @"grok_ask_grok_button_under_post_focal_enabled": @NO,
+                @"grok_edit_with_grok_button_under_post_focal_enabled": @NO,
+                @"grok_edit_with_grok_button_under_post_preview_enabled": @NO,
+                @"ios_composer_grok_button_enabled": @NO,
+                @"grok_imagine_composer_enabled": @NO,
+                @"grok_composer_imagine_is_enabled": @NO,
+                @"grok_composer_attachment_imagine_menu_is_enabled": @NO,
+                @"grok_timeline_preview_imagine_menu_is_enabled": @NO,
+                @"grok_timeline_video_imagine_menu_is_enabled": @NO,
+                @"grok_timeline_slideshow_imagine_menu_is_enabled": @NO,
+                @"grok_ios_edit_photo_post_button_enabled": @NO,
+                @"grok_ios_imagine_cta_focal_enabled": @NO,
+                @"grok_ios_imagine_cta_reply_enabled": @NO,
+                @"grok_ios_imagine_cta_timeline_enabled": @NO,
+                @"grok_ios_imagine_cta_profile_enabled": @NO,
+                @"grok_immersive_create_own_button_enabled": @NO,
+                // The profile header's summary button.
+                @"grok_ios_profile_summary_enabled": @NO,
+                // Added in X 12.28 and later, so not in 12.20 (asked of nothing there): taken
+                // from NeoFreeBird, which is written against 12.31. Inert where they do not
+                // exist, and the switch list says which keys a build actually asks about.
+                @"grok_ios_grok_bot_upsells_enabled": @NO,
+                @"grok_ios_grok_bot_sidebar_enabled": @NO,
+                @"grok_ios_grok_bot_home_header_enabled": @NO,
+                @"grok_ios_grok_bot_home_hero_enabled": @NO,
+                @"grok_ios_grok_bot_preset_enabled": @NO,
+                @"grok_ios_grok_bot_tab_icon_enabled": @NO,
             }),
 
             // The single most asked key on the whole device: 32,844 times. Kept out of the
@@ -125,6 +174,93 @@ static SCITWFeature *Feature(NSString *identifier,
                 @"ios_subscription_journey_foreground_event_enabled": @NO,
                 @"subscriptions_gifting_polling_after_purchase_enabled": @NO,
                 @"creator_subscriptions_polling_after_purchase_enabled": @NO,
+                // Not every upsell gates on being a non-subscriber, so each surface is named.
+                @"ios_profile_analytics_upsell_enabled": @NO,
+                @"ios_profile_analytics_upsell_possible_enabled": @NO,
+                @"ios_profile_upgrade_upsell_enabled": @NO,
+                @"ios_profile_upgrade_upsell_swapper_enabled": @NO,
+                @"ios_profile_visitor_upsell_enabled": @NO,
+                @"subscriptions_upsells_get_verified_profile": @NO,
+                @"subscriptions_upsells_reply_boost_enabled": @NO,
+                @"subscriptions_upsells_reply_boost_popup_enabled": @NO,
+                @"subscriptions_upsells_post_analytics_enabled": @NO,
+                @"longform_notetweets_composer_upsell_enabled": @NO,
+                @"longform_notetweets_composer_auto_upsell_enabled": @NO,
+                @"subscriptions_cta_on_replies_enabled": @NO,
+                @"super_follow_upsell_sticky_button_enabled": @NO,
+                @"subscriptions_new_paywall_enabled": @NO,
+                @"subscriptions_gifting_premium_enabled": @NO,
+                @"subscriptions_gifting_premium_intro_copy_enabled": @NO,
+                @"ios_notifications_blue_verified_introductory_offer_visible": @NO,
+            }),
+
+            //
+            // From NeoFreeBird (orionblur, GPLv3), written against X 12.31 -- each key below was
+            // checked as a real string in X 12.20's binaries before it was written here, except
+            // the ones marked as newer.
+            //
+
+            // The photo grid X replaced with a swipeable carousel. The avatar-avoidance key is
+            // also listed under "clean up the interface"; both want the same answer.
+            Feature(@"carousel", @"f_carousel", @"f_carousel_note", NO,
+                    @"rectangle.grid.1x2.fill", [UIColor systemTealColor], @{
+                @"ios_ui_multi_media_carousel_enabled": @NO,
+                @"ios_ui_quote_tweet_multi_media_carousel_enabled": @NO,
+                @"ios_ui_multi_media_carousel_avatar_avoidance_enabled": @NO,
+            }),
+
+            // `hasNonDefaultValueForKey:` is hooked beside the typed getters for exactly this
+            // pair: the captions setup only consults the value when the switch reports a
+            // non-default one.
+            Feature(@"captions", @"f_captions", @"f_captions_note", NO,
+                    @"captions.bubble.fill", [UIColor systemGrayColor], @{
+                @"ios_tav_default_closed_captions_enabled": @NO,
+                @"ios_audio_transcription_subtitles_vod_enabled": @NO,
+            }),
+
+            // A number, not a yes or no: a negative threshold stops the vertical video player
+            // moving to the next clip by itself, and removes the row from its own settings sheet.
+            Feature(@"noadvance", @"f_noadvance", @"f_noadvance_note", NO,
+                    @"stop.circle.fill", [UIColor systemRedColor], @{
+                @"immersive_video_auto_advance_duration_threshold": @(-1),
+            }),
+
+            // Ten years, in seconds: the timeline is not refreshed behind your back because the
+            // app was in the background. The second key keeps the tab you were on.
+            Feature(@"norefresh", @"f_norefresh", @"f_norefresh_note", NO,
+                    @"arrow.counterclockwise.circle.fill", [UIColor systemBlueColor], @{
+                @"home_timeline_foreground_refresh_min_background_seconds": @(315360000.0),
+                @"home_timeline_non_sticky_tab_on_new_session_enabled": @NO,
+            }),
+
+            Feature(@"profiletabs", @"f_profiletabs", @"f_profiletabs_note", NO,
+                    @"person.crop.rectangle.stack.fill", [UIColor systemIndigoColor], @{
+                @"articles_timeline_profile_tab_enabled": @NO,
+                @"highlights_tweets_tab_ui_enabled": @NO,
+            }),
+
+            Feature(@"replycontext", @"f_replycontext", @"f_replycontext_note", NO,
+                    @"text.bubble.fill", [UIColor systemBlueColor], @{
+                @"ios_tweet_detail_conversation_context_removal_enabled": @NO,
+            }),
+
+            // Not in 12.20 -- a newer key, from NeoFreeBird.
+            Feature(@"downvote", @"f_downvote", @"f_downvote_note", NO,
+                    @"hand.thumbsdown.fill", [UIColor systemOrangeColor], @{
+                @"conversational_replies_ios_downvote_enabled": @NO,
+            }),
+
+            // Likes and follows make the timeline fetch fresh suggestions and splice them in;
+            // this is the switch X ships for turning that off.
+            Feature(@"blending", @"f_blending", @"f_blending_note", NO,
+                    @"person.crop.circle.badge.xmark", [UIColor systemOrangeColor], @{
+                @"wtf_device_follow_nudge_turn_off_reactive_blending_enabled": @YES,
+            }),
+
+            // The `&t=` that rides along on a copied link names the session it came from.
+            Feature(@"sharetoken", @"f_sharetoken", @"f_sharetoken_note", NO,
+                    @"link.badge.plus", [UIColor systemGreenColor], @{
+                @"rehire_share_update_url_enabled": @NO,
             }),
 
             // Scribe is X's own name for its event pipeline, and the keys say what each

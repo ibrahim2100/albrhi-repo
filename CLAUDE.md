@@ -92,13 +92,16 @@ inside one package, three stand apart.
   obligation, not a courtesy: it stays in-app, in the README, in the package metadata and in source
   headers. Never remove it.
 - **GPL and MIT code that is carried over**: NextUp 3 by Yves (GPLv3), EeveeSpotify's ad blockers
-  (GPLv3), YTMusicUltimate and YTMEnhanced (GPLv3), `watched` by 34306 (MIT, notice shipped inside
+  (GPLv3), NeoFreeBird by orionblur (GPLv3 — a BHTwitter fork, so the *same* licence as BHTwitter's
+  original ideas but a licence that lets code be carried: X's section filter, typing/screenshot
+  switches, counts and interface switches), YTMusicUltimate and YTMEnhanced (GPLv3), `watched` by 34306 (MIT, notice shipped inside
   the package), YTKACE's ad gates (MIT) and Mark02's YTPlaybackFix approach (MIT). Every ported file
   is kept diffable against upstream with each edit written where it is, attribution is in `control`,
   the changelog and the panel page's footer, and `tweaks/nextup/CHANGELOG.md` lists every change
   rather than letting the port read as original work.
 - **Unlicensed references are read for architecture only, and nothing is copied**: BHTikTok and the
-  al3raQe fork, NA9 For TikTok, VibeTok, BHTwitter, TWIGalaxy, `carsurf`, RyukGram, Regram, InstaPlus,
+  al3raQe fork, NA9 For TikTok, VibeTok, BHTwitter (the original — NeoFreeBird is a different, GPLv3 case),
+  TWIGalaxy, `carsurf`, RyukGram, Regram, InstaPlus,
   and Legizmo (a paid tweak — its licence and DRM components were deliberately not examined).
 - **A reference tweak's selectors are a map of *its* build, never a manifest of ours.** NA9's list
   was written against an older TikTok (`downloadHDVideo`, `canDownload`, `isPreventDownload` are not
@@ -282,7 +285,7 @@ it reads as checked and clean.** If you add a rule, prove it fails by reintroduc
 
 **Host tests** run pure logic on the build machine against the macOS SDK: `bash tweaks/ytmusic/tests/host/run.sh`
 (LRC parser, matching pipeline, caches, romaniser, extractors — 29 tests in about a second) and
-`bash tweaks/youtube/tests/host/run.sh` (the transport), `bash tweaks/instagram/tests/host/run.sh` (the deleted-messages log). A hook needs a device; a parser does not, and several of
+`bash tweaks/youtube/tests/host/run.sh` (the transport), `bash tweaks/instagram/tests/host/run.sh` (the deleted-messages log) and `bash tweaks/twitter/tests/host/run.sh` (X's timeline section filter — the code is copied out of the `.x` by marker, so what passes is what ships). A hook needs a device; a parser does not, and several of
 this project's most expensive bugs lived in exactly that layer. Open: the DASH ladder, the TikTok quality ranking
 and the version comparison are pure functions with no tests yet.
 
@@ -946,6 +949,17 @@ there costs colours, never the video).
   the bottom bar's `…AppNavigationTabEntry` objects declare `-isExcludedFromTabBar` and `-isTabViewSideBarOnly` (`B16@0:8`), forced together
   (the second is the iPad half). Communities and Profile in the bar are confirmed on a device (0.16.0); Spaces removal is at `-setTabViews:`.
 - The settings are a **registry** of sections registered in `+load` from their own files (§4.5), reached by a two-finger hold on X's own window.
+- **NeoFreeBird (0.21.0)** is the first reference for X that is **both current (written against 12.31) and carriable (GPLv3)**; our own IPA is 12.20, so every class,
+  selector and key it names was checked against 12.20's metadata first (`tools/objc-classes.py` over `Twitter`, `T1Twitter`, `XAppLibraries`, `TwitterSPMMigration`;
+  keys by searching the binaries for `key\0`). What differed from ours and was fixed: the switch layer answered only `-boolForKey:` (typed getters and the
+  `TFSInstrumentedFeatureSwitches` wrapper are hooked now, each group only when the class answers *every* selector with the 12.20 encoding), and the timeline filter hid
+  cells (a gap, and not reached on the collection-view path 12.28 introduced) where NeoFreeBird filters the **section data** in `TFNItemsDataViewController`
+  (`setSections:restoreScrollPosition:` and `updateSections:reconfigureItemIdentifiers:withRowAnimation:completion:` are the two doors it hooks; ours also covers five more).
+  Spaces gained a third path, `T1FleetLineHeaderController -_t1_shouldShowFleetLine`. **Not taken, on purpose:** the premium unlock (`TFNTwitterAccount -isSubscribedTo:` →
+  YES for tiers 0/7/8 and `subscriptions_gating_bypass` — §2 Money), the age-verification bypass (the owner's call, not a default), web login/reply/posting and the account-location
+  lookup (they harvest `auth_token`/`ct0` and send GraphQL the app never sent), and Tenor GIFs (a shared API key and a third party reading searches). **DM video/voice download**
+  needs `DMConversation`/`ChatConversation` classes that are not in 12.20, so it cannot be checked here and is not written. What was taken needs a device: the typing frame shape is
+  NeoFreeBird's measurement on a newer X (the report counts frames seen and dropped), and nothing in 0.21.0 has run on a phone.
 
 ### 5.4 TikTok (`tweaks/tiktok`)
 
@@ -1210,8 +1224,8 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.38.0** · X **0.20.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
-Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.90.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.38.0** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
+Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.91.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

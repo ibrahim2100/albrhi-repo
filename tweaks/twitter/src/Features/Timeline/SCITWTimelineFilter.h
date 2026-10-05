@@ -2,7 +2,8 @@
 //  SCITWTimelineFilter.h
 //  Albrhi for X
 //
-//  Suggestions, topics and trend videos, refused where the timeline builds its cells.
+//  Suggestions, topics, trend videos, promoted rows and offers, removed from the section data
+//  before the timeline turns them into cells (and hidden as cells where that is all there is).
 //
 //  **One hook covers all of them, and that is the point.** `TFNItemsDataViewController` is
 //  the controller behind every list X draws, and `-tableViewCellForItem:atIndexPath:` hands

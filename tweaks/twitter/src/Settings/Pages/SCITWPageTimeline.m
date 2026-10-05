@@ -45,6 +45,11 @@
                              symbol:@"play.square.stack"
                                tint:[UIColor systemOrangeColor]
                             prefKey:SCIPrefHideTrendVideos],
+                [SCITWRow switchRow:SCILocalized(@"set_hide_premium_offer")
+                               note:SCILocalized(@"set_hide_premium_offer_note")
+                             symbol:@"creditcard"
+                               tint:[UIColor systemOrangeColor]
+                            prefKey:SCIPrefHidePremiumOffer],
                 [SCITWRow switchRow:SCILocalized(@"set_hide_bookmark")
                                note:SCILocalized(@"section_posts_note")
                              symbol:@"bookmark"
