@@ -48,6 +48,47 @@ static NSString *SCIPoError(id error) {
     return line;
 }
 
+/// An error as a person debugging would want it, bounded: every userInfo key with a short value
+/// (strings and numbers in full up to 60 characters, anything else as its class), and the
+/// underlying errors down three levels. Never a token or a URL query -- values are cut, and
+/// URLs are reduced to host and path.
+static NSString *SCIPoValue(id value) {
+    if ([value isKindOfClass:[NSString class]]) {
+        NSString *s = value;
+        return s.length > 60 ? [[s substringToIndex:60] stringByAppendingString:@"…"] : s;
+    }
+    if ([value isKindOfClass:[NSNumber class]]) return [value description];
+    if ([value isKindOfClass:[NSURL class]]) return [NSString stringWithFormat:@"%@%@", [(NSURL *)value host] ?: @"", [(NSURL *)value path] ?: @""];
+    if ([value isKindOfClass:[NSError class]]) return [NSString stringWithFormat:@"%@ %ld", [(NSError *)value domain], (long)[(NSError *)value code]];
+    return value ? NSStringFromClass([value class]) : @"nil";
+}
+
+static NSString *SCIPoErrorFull(id error, int depth) {
+    if (![error isKindOfClass:[NSError class]]) return SCIPoShape(error);
+    NSError *e = error;
+
+    NSMutableArray<NSString *> *info = [NSMutableArray array];
+    for (id key in [e.userInfo.allKeys sortedArrayUsingComparator:^NSComparisonResult(id a, id b) {
+        return [[a description] compare:[b description]];
+    }]) {
+        if ([key isEqual:NSUnderlyingErrorKey]) continue;
+        [info addObject:[NSString stringWithFormat:@"%@=%@", key, SCIPoValue(e.userInfo[key])]];
+    }
+
+    NSString *line = [NSString stringWithFormat:@"%@ %ld [%@]", e.domain, (long)e.code, [info componentsJoinedByString:@"; "]];
+    NSError *underlying = e.userInfo[NSUnderlyingErrorKey];
+    if (depth < 3 && [underlying isKindOfClass:[NSError class]]) {
+        line = [line stringByAppendingFormat:@" ← %@", SCIPoErrorFull(underlying, depth + 1)];
+    }
+    return line;
+}
+
+void SCIYTPoProbeRecordPlayerError(id error) {
+    if (!sNotes) return;
+    SCIPoCount(@"player error seen");
+    SCIPoNote([@"player error: " stringByAppendingString:SCIPoErrorFull(error, 0)]);
+}
+
 static BOOL SCIPoHook(NSString *className, NSString *selectorName, const char *encoding,
                       IMP replacement, IMP *original, BOOL classMethod) {
     NSString *label = [NSString stringWithFormat:@"%@%@ %@", classMethod ? @"+" : @"-", className, selectorName];
@@ -72,6 +113,17 @@ static BOOL SCIPoHook(NSString *className, NSString *selectorName, const char *e
 static IMP sMintImmediate = NULL, sMintManager = NULL, sStreamStatus = NULL, sPoMinted = NULL;
 static IMP sHandleChallenge = NULL, sEndState = NULL;
 static IMP sFlagMedia = NULL, sFlagInjection = NULL, sFlagCabr = NULL, sFlagOutside = NULL;
+static IMP sFailWith = NULL, sQoeError = NULL, sChunkError = NULL, sOnesieChunks = NULL, sOnesieDone = NULL;
+static IMP sNonFatal = NULL, sReloadResp = NULL, sDebugInfo = NULL;
+
+/// The loader's own account of why, when it has one: `-QOEDebugDetails` is a getter the SABR
+/// loader keeps for exactly this. Cut and never a URL.
+static NSString *SCIPoDetails(id loader) {
+    SEL selector = NSSelectorFromString(@"QOEDebugDetails");
+    if (![loader respondsToSelector:selector]) return @"(no details getter)";
+    id details = ((id (*)(id, SEL))objc_msgSend)(loader, selector);
+    return SCIPoValue(details);
+}
 
 static void SCIPoInstall(void) {
     static BOOL once = NO;
@@ -137,6 +189,70 @@ static void SCIPoInstall(void) {
         SCIPoCount([NSString stringWithFormat:@"attestation end state %d", state]);
         if (sEndState) ((void (*)(id, SEL, int))sEndState)(me, @selector(logExecutionEndState:), state);
     }), &sEndState, NO);
+
+    // The SABR loader: where the stream stops. These carry real NSErrors -- and the loader's own
+    // note of why -- which the player-level error ("Something went wrong") does not. The one
+    // that takes a C++ struct by value (`-failWithError:fallbackConfig:`) is deliberately not
+    // hooked: its layout is not read from anything, and the object-only sibling is.
+    SCIPoHook(@"MLPlatypusABRLoader", @"failWithError:", "v24@0:8@16", imp_implementationWithBlock(^(id me, id error) {
+        SCIPoCount(@"sabr loader: failWithError");
+        SCIPoNote([NSString stringWithFormat:@"sabr failWithError: %@ · details: %@", SCIPoErrorFull(error, 0), SCIPoDetails(me)]);
+        if (sFailWith) ((void (*)(id, SEL, id))sFailWith)(me, @selector(failWithError:), error);
+    }), &sFailWith, NO);
+
+    SCIPoHook(@"MLPlatypusABRLoader", @"onQoeError:fallbackConfig:", "v32@0:8r^v16r^{FallbackConfig=iBBB}24",
+              imp_implementationWithBlock(^(id me, const void *qoe, const void *fallback) {
+        SCIPoCount(@"sabr loader: onQoeError");
+        SCIPoNote([NSString stringWithFormat:@"sabr onQoeError — details: %@", SCIPoDetails(me)]);
+        if (sQoeError) ((void (*)(id, SEL, const void *, const void *))sQoeError)(me, NSSelectorFromString(@"onQoeError:fallbackConfig:"), qoe, fallback);
+    }), &sQoeError, NO);
+
+    SCIPoHook(@"MLPlatypusABRLoader", @"onChunk:completeWithError:", "v32@0:8@16@24", imp_implementationWithBlock(^(id me, id chunk, id error) {
+        if (error) {
+            SCIPoCount(@"sabr loader: chunk completed WITH ERROR");
+            SCIPoNote([@"sabr chunk error: " stringByAppendingString:SCIPoErrorFull(error, 0)]);
+        } else {
+            SCIPoCount(@"sabr loader: chunk completed ok");
+        }
+        if (sChunkError) ((void (*)(id, SEL, id, id))sChunkError)(me, NSSelectorFromString(@"onChunk:completeWithError:"), chunk, error);
+    }), &sChunkError, NO);
+
+    SCIPoHook(@"MLPlatypusABRLoader", @"onesieDataLoader:didCompleteChunks:withError:", "v40@0:8@16@24@32",
+              imp_implementationWithBlock(^(id me, id loader, id chunks, id error) {
+        if (error) {
+            SCIPoCount(@"onesie data loader: chunks completed WITH ERROR");
+            SCIPoNote([@"onesie chunks error: " stringByAppendingString:SCIPoErrorFull(error, 0)]);
+        }
+        if (sOnesieChunks) ((void (*)(id, SEL, id, id, id))sOnesieChunks)(me, NSSelectorFromString(@"onesieDataLoader:didCompleteChunks:withError:"), loader, chunks, error);
+    }), &sOnesieChunks, NO);
+
+    SCIPoHook(@"MLPlatypusABRLoader", @"onesieDataLoader:didCompleteWithError:", "v32@0:8@16@24",
+              imp_implementationWithBlock(^(id me, id loader, id error) {
+        if (error) {
+            SCIPoCount(@"onesie data loader: completed WITH ERROR");
+            SCIPoNote([@"onesie loader error: " stringByAppendingString:SCIPoErrorFull(error, 0)]);
+        }
+        if (sOnesieDone) ((void (*)(id, SEL, id, id))sOnesieDone)(me, NSSelectorFromString(@"onesieDataLoader:didCompleteWithError:"), loader, error);
+    }), &sOnesieDone, NO);
+
+    SCIPoHook(@"MLPlatypusABRLoader", @"recordNonFatalQOEErrorWithCode:details:", "v32@0:8@16@24",
+              imp_implementationWithBlock(^(id me, id code, id details) {
+        SCIPoCount(@"sabr loader: non-fatal QoE error");
+        SCIPoNote([NSString stringWithFormat:@"non-fatal QoE error: code %@ · %@", SCIPoValue(code), SCIPoValue(details)]);
+        if (sNonFatal) ((void (*)(id, SEL, id, id))sNonFatal)(me, NSSelectorFromString(@"recordNonFatalQOEErrorWithCode:details:"), code, details);
+    }), &sNonFatal, NO);
+
+    // The server asking the client to start the player over (a stale playback context, a new
+    // token wanted). Counted only: its payload is a C++ message.
+    SCIPoHook(@"MLPlatypusABRLoader", @"didParseReloadPlayerResponse:", "v24@0:8r^v16", imp_implementationWithBlock(^(id me, const void *response) {
+        SCIPoCount(@"sabr: server asked to RELOAD the player");
+        if (sReloadResp) ((void (*)(id, SEL, const void *))sReloadResp)(me, @selector(didParseReloadPlayerResponse:), response);
+    }), &sReloadResp, NO);
+
+    SCIPoHook(@"MLPlatypusABRLoader", @"didReceivePlaybackDebugInfo:", "v24@0:8r^v16", imp_implementationWithBlock(^(id me, const void *info) {
+        SCIPoCount(@"sabr: playback debug info received");
+        if (sDebugInfo) ((void (*)(id, SEL, const void *))sDebugInfo)(me, @selector(didReceivePlaybackDebugInfo:), info);
+    }), &sDebugInfo, NO);
 
     // The app's own switches for the whole path, as it reads them. Recorded as answered, never
     // changed here: whether a flag is worth overriding is a decision for after this is read.

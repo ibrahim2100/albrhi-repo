@@ -41,6 +41,7 @@
 #import "../../SCIYTLaunchGuard.h"
 #import "../../Diagnostics/SCIYTDiagnostics.h"
 #import "../Download/Center/SCIYTWatch.h"
+#import "SCIYTPoProbe.h"
 
 ///
 /// "An error occurred, tap to retry" -- YouTube's own playback error, which the owner reported as
@@ -214,13 +215,14 @@ typedef void (*SCIYTOriginalHandleError)(id, SEL, id);
 /// The app's own error is on screen: offer the one thing that still works. Never from a
 /// retry in flight -- a second error while a reload is underway is the first one's echo.
 static void SCIYTOfferWatch(id overlay) {
-    if (![overlay isKindOfClass:[UIViewController class]]) return;
-
+    // Whatever is missing is handed on as missing, not returned from here: the offer counts
+    // every reason it was not made, and a return above it is a reason nobody can read.
+    UIViewController *controller = [overlay isKindOfClass:[UIViewController class]] ? overlay : nil;
     id pvc = SCIYTObjectGetter(overlay, @"parentViewController");
     NSString *videoID = SCIYTObjectGetter(pvc, @"currentVideoID");
-    if (![videoID isKindOfClass:[NSString class]] || !videoID.length) return;
+    if (![videoID isKindOfClass:[NSString class]]) videoID = nil;
 
-    [SCIYTWatch offerAfterFailureFrom:(UIViewController *)overlay videoID:videoID];
+    [SCIYTWatch offerAfterFailureFrom:controller videoID:videoID];
 }
 
 static void SCIYTRecover(id overlay, id pvc, NSString *videoID, double saved, id error, SEL selector, SCIYTOriginalHandleError original) {
@@ -363,6 +365,7 @@ static void SCIYTInstallPlaybackFix(void) {
         SCIYTOriginalHandleError original = (SCIYTOriginalHandleError)sOriginalHandleError;
 
         NSError *failure = [error isKindOfClass:[NSError class]] ? error : nil;
+        SCIYTPoProbeRecordPlayerError(error);
         [SCIYTDiagnostics countPlaybackFix:failure
             ? [NSString stringWithFormat:@"error seen: %@ %ld", failure.domain, (long)failure.code]
             : @"error seen: not an NSError"];

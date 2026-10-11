@@ -9,6 +9,19 @@
 #import "../../../Diagnostics/SCIYTDiagnostics.h"
 
 static NSUInteger sciOffered = 0, sciAccepted = 0, sciStarted = 0, sciPlayed = 0, sciFailed = 0, sciReused = 0;
+static NSUInteger sciAsked = 0, sciNoPresenter = 0, sciSwitchOff = 0, sciRateLimited = 0, sciNoWindow = 0, sciAlertUp = 0;
+
+/// The app's key window's root, found without the overlay that reported the error: that overlay
+/// is a child of the player, and `-view.window` on it can be nil at the moment an error is drawn.
+static UIViewController *SCIYTAppRoot(void) {
+    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+        if (![scene isKindOfClass:[UIWindowScene class]]) continue;
+        for (UIWindow *window in [(UIWindowScene *)scene windows]) {
+            if (window.isKeyWindow && window.rootViewController) return window.rootViewController;
+        }
+    }
+    return nil;
+}
 static NSString *sciLastFailure = nil;
 
 static UIViewController *SCIYTTop(UIViewController *controller) {
@@ -223,8 +236,11 @@ static NSMutableSet<SCIYTWatchSession *> *sSessions = nil;
 // MARK: - After a failure
 
 + (void)offerAfterFailureFrom:(UIViewController *)presenter videoID:(NSString *)videoID {
-    if (!presenter || !videoID.length) return;
-    if (!SCIPrefEnabled(SCIPrefOfferWatch) || SCIYTStoodDown()) return;
+    // Every way out is counted, because "0 offered" says nothing about *which* check stopped it
+    // -- and the first report from a phone that failed said exactly that.
+    sciAsked++;
+    if (!presenter || !videoID.length) { sciNoPresenter++; return; }
+    if (!SCIPrefEnabled(SCIPrefOfferWatch) || SCIYTStoodDown()) { sciSwitchOff++; return; }
 
     // Once per video a minute: the error screen is reached more than once for one failure
     // (a reload, a retry, the app's own second attempt), and a dialog that reappears on top of
@@ -232,20 +248,20 @@ static NSMutableSet<SCIYTWatchSession *> *sSessions = nil;
     static NSMutableDictionary<NSString *, NSDate *> *asked = nil;
     if (!asked) asked = [NSMutableDictionary dictionary];
     NSDate *last = asked[videoID];
-    if (last && [[NSDate date] timeIntervalSinceDate:last] < 60) return;
+    if (last && [[NSDate date] timeIntervalSinceDate:last] < 60) { sciRateLimited++; return; }
     asked[videoID] = [NSDate date];
 
     // The window's own root, not the overlay that reported the error: the overlay is a child of
     // the player and a dialog is presented from whatever is on top of the whole app.
-    __weak UIViewController *weakPresenter = presenter.view.window.rootViewController ?: presenter;
+    __weak UIViewController *weakPresenter = SCIYTAppRoot() ?: presenter.view.window.rootViewController ?: presenter;
     NSString *title = [SCIYTDiagnostics titleForVideoID:videoID];
 
     // The next turn, not this one: the app's own error is being drawn right now, and a dialog
     // presented from inside that call is presented over a screen that is still being built.
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         UIViewController *host = weakPresenter;
-        if (!host || !host.view.window) return;
-        if (host.presentedViewController && [host.presentedViewController isKindOfClass:[UIAlertController class]]) return;
+        if (!host || !host.view.window) { sciNoWindow++; return; }
+        if (host.presentedViewController && [host.presentedViewController isKindOfClass:[UIAlertController class]]) { sciAlertUp++; return; }
 
         sciOffered++;
         UIAlertController *offer = [UIAlertController alertControllerWithTitle:SCILocalized(@"watch_offer_title")
@@ -265,7 +281,9 @@ static NSMutableSet<SCIYTWatchSession *> *sSessions = nil;
 
 + (NSString *)report {
     NSString *line = [NSString stringWithFormat:
-        @"watch here: %lu offered · %lu accepted · %lu fetched · %lu already saved · %lu played · %lu failed",
+        @"watch here: %lu asked (%lu no player/video id · %lu switch off · %lu rate-limited · %lu no window · %lu dialog already up) · %lu offered · %lu accepted · %lu fetched · %lu already saved · %lu played · %lu failed",
+        (unsigned long)sciAsked, (unsigned long)sciNoPresenter, (unsigned long)sciSwitchOff,
+        (unsigned long)sciRateLimited, (unsigned long)sciNoWindow, (unsigned long)sciAlertUp,
         (unsigned long)sciOffered, (unsigned long)sciAccepted, (unsigned long)sciStarted,
         (unsigned long)sciReused, (unsigned long)sciPlayed, (unsigned long)sciFailed];
     return sciLastFailure.length ? [line stringByAppendingFormat:@" · last failure: %@", sciLastFailure] : line;

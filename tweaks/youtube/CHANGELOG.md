@@ -3,6 +3,22 @@
 **Tested on YouTube 21.32.4.** Nothing is pinned to a version number: every class the
 tweak touches is looked up at runtime and skipped if it is not there.
 
+## v1.39.2
+
+**أول تقرير من الجوال (21.33.6) غيّر الفرضية، فالمسبار صار يسأل السؤال الصحيح.** المقاس:
+
+- **الرموز تُصنع** — `iosguard mint ×12` و`manager mint ×12`، بحجمين (٣٠ بايتاً و١٥٨)، وتحدّي iOSGuard رجع **بلا خطأ**. فالتحقق الأصلي يعمل على الجهاز.
+- **طبقة الوسائط لم تسمع حالة حماية البث ولا تسلّمت رمزاً** (`onStreamProtectionStatus:` و`onPoTokenMinted:` مربوطان ولم يُستدعيا). فالسبب ليس على الأرجح «ATTESTATION_REQUIRED» كما وُصف لعملاء آخرين.
+- **الخطأ:** `com.google.ios.youtube.ErrorDomain.playback 0` ×٥، ومحاولاتنا (إعادة المشغّل «غير متاحة» على هذه النسخة فلا يُرسل إلا حدث إعادة المحاولة) لا تُغيّر شيئاً.
+- فئة أعلام PO token (`YTHotConfig…`) **غير موجودة في 21.33.6** (موجودة في 21.34.3).
+
+لذلك يلتقط المسبار الآن ما يحدث عند **تحميل مقاطع البث** نفسه:
+
+- `MLPlatypusABRLoader`: `failWithError:` (مع `QOEDebugDetails`، سبب الفشل بكلام الحامل نفسه)، `onQoeError:`, `onChunk:completeWithError:`, `onesieDataLoader:…withError:`, `recordNonFatalQOEErrorWithCode:details:`، وعدّ «السيرفر طلب إعادة تحميل المشغّل» (`didParseReloadPlayerResponse:`).
+- **خطأ المشغّل الأصلي كاملاً:** النطاق والرمز والوصف ومفاتيح `userInfo` وسلسلة الأخطاء الداخلية (`YTMediaErrorSABRErrorActionKey` يُرى هناك إن وُجد).
+
+**وإصلاح لما لاحظته في التقرير:** سطر «watch here» قال `0 offered` دون أن يقول لماذا؛ كل سبب لعدم العرض يُعدّ الآن (لا مشغّل/معرّف فيديو، مفتاح مطفأ، حدّ الدقيقة، لا نافذة، حوار قائم)، والنافذة تُؤخذ من نافذة التطبيق الحاضرة لا من واجهة المشغّل.
+
 ## v1.39.1
 
 **مسبار لإثبات المصدر (PO token): قياس ما يفعله يوتيوب فعلاً حين يقف الفيديو.** «شاهد هنا» حلّ التفافي؛ الجذر يحتاج قياساً. بحثاً عن الآلية وُجد أنها موصوفة لعملاء آخرين: بث SABR يحمل `STREAM_PROTECTION_STATUS` ينتقل من `ATTESTATION_PENDING` إلى `ATTESTATION_REQUIRED` (عند موضع محتوى ثابت، قرابة ٤٥ ثانية في الحالة الموثّقة) فيتوقف السيرفر عن إرسال الوسائط ويرفع المشغّل خطأً عاماً. وتطبيق iOS يصنع هذا الرمز بنفسه: `IGDManager` (حارس iOS: آلة JavaScript أصلية) و`YTProofOfOriginTokenManager` و`MLABRPolicy` — كلها موجودة في ملف 21.34.3 الذي عندنا (قُرئت بـ`objc-classes.py`).

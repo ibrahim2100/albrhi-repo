@@ -910,9 +910,13 @@ instances taught; here are the facts.
   JavaScript VM: `mintPOTokenImmediately:`, `runChallenge:`, with `IGDAppAttest` over `DCAppAttestService`), `YTProofOfOriginTokenManager`
   (`mintWithVideoID:`), `YTIOSGuardSnapshotControllerImpl`/`YTAttestationChallengeProvider` (the challenge, its error and `logExecutionEndState:`), and in the media layer
   `MLABRPolicy` (`_proofOfOriginToken`, `onPoTokenMinted:`, **`onStreamProtectionStatus:`**), all behind hot-config flags on `YTHotConfigIosPlayerClientSharedConfigImpl`
-  (`enablePoTokenManagerMedia`, `…Injection`, `iosSpsEnablePoTokenCabr`). **What is not known is why the token fails on this phone**: a re-signed/TrollStore app and a jailbroken
-  device are both things a native attestation can see, and an old build may simply be bucketed out — the three have different answers and none is measured. 1.39.1's `SCIYTPoProbe`
-  (read-only; lengths and counts, never a token) puts the measurement in the report: minted or nil, status heard, challenge error, the app's own flags. **Nothing here forges that
+  (`enablePoTokenManagerMedia`, `…Injection`, `iosSpsEnablePoTokenCabr`). **The first measurement from the phone (report, 1.39.1, 21.33.6) did not
+  confirm it**: the iosguard challenge answered with no error, **12 tokens were minted** (two sizes, 30 and 158 bytes — a short placeholder and a full one is a reading, not a fact),
+  the media layer **never heard a stream-protection status and was never handed a token** (`onStreamProtectionStatus:`/`onPoTokenMinted:` attached, never called), the player error is
+  `com.google.ios.youtube.ErrorDomain.playback 0` ×5, `YTHotConfigIosPlayerClientSharedConfigImpl` is **absent in 21.33.6** (present in 21.34.3), and our own "reload" is unavailable
+  there (only the retry event is sent, which does nothing). So the failure is probably *not* the attestation path described for other clients; 1.39.2's probe moves down to where
+  the stream stops — `MLPlatypusABRLoader` (`failWithError:` + `QOEDebugDetails`, `onChunk:completeWithError:`, `didParseReloadPlayerResponse:`) and the player error in full with its
+  `userInfo`. `SCIYTPoProbe` is read-only; lengths and counts, never a token. **Nothing here forges that
   proof** (the `app_attest_*` line, §2) — and a *jailbreak-hiding* answer to the attestation would be the same lie told to a server, so it is not built on a guess either.
   "Watch here" (`SCIYTWatch`) fetches the video as a save does and opens the Centre's player when it is whole: a wait, not streaming, kept in the Centre; offered from
   `handleError:` (`SCIYTPlaybackFix.m`) at the three places the app's own error is shown (never while a retry is in flight) and as a fourth segment in the download sheet.
@@ -1241,8 +1245,8 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.39.1** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
-Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.92.1**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.39.2** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
+Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.92.2**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

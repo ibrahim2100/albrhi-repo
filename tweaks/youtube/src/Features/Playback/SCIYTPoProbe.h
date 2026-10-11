@@ -29,3 +29,8 @@
 #import <Foundation/Foundation.h>
 
 NSString *SCIYTPoProbeReport(void);
+
+/// The player's own error, in full: domain, code, description, the `userInfo` keys with short
+/// values, and the underlying chain. Called from the overlay's `-handleError:`, where the app
+/// has just been handed the error it is about to show.
+void SCIYTPoProbeRecordPlayerError(id error);
