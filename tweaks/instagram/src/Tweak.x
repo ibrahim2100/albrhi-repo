@@ -21,7 +21,7 @@
 ///////////////////////////////////////////////////////////
 
 // * Tweak version *
-NSString *SCIVersionString = @"v4.5.0";  // Albrhi
+NSString *SCIVersionString = @"v4.6.0";  // Albrhi
 
 // Variables that work across features
 
@@ -119,7 +119,10 @@ NSString *SCIVersionString = @"v4.5.0";  // Albrhi
         @"reels_autoscroll_button": @(NO),
         // Reels never show when they were posted. Off by default: it adds something
         // Instagram does not draw, and that should be asked for.
-        @"reels_show_date": @(NO)
+        @"reels_show_date": @(NO),
+        // Off: takes the sharer's id (igsh) and campaign tags out of Instagram links you copy or
+        // share. Harmless to the link, but it changes what leaves the app, so it is asked for.
+        @"strip_link_tracking": @(NO)
     };
     [[NSUserDefaults standardUserDefaults] registerDefaults:sciDefaults];
 

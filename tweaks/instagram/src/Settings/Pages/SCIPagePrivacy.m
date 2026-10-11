@@ -39,6 +39,12 @@
                 @"rows": @[
                     [SCISetting switchCellWithTitle:SCILocalized(@"p_general_norecent_t") subtitle:SCILocalized(@"p_general_norecent_s") defaultsKey:@"no_recent_searches"]
                 ]
+            },
+            @{
+                @"header": SCILocalized(@"p_hdr_priv_links"),
+                @"rows": @[
+                    [SCISetting switchCellWithTitle:SCILocalized(@"p_links_strip_t") subtitle:SCILocalized(@"p_links_strip_s") defaultsKey:@"strip_link_tracking"]
+                ]
             }
         ];
     }];

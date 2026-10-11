@@ -1,5 +1,6 @@
 #import "../SCISettingsRegistry.h"
 #import "../TweakSettings.h"
+#import "../../Features/General/SCICacheCleaner.h"
 #import "../../Downloader/Queue/SCIDownloadCenterViewController.h"
 
 ///
@@ -83,6 +84,15 @@
                     [SCISetting switchCellWithTitle:SCILocalized(@"dw_save_to_camera_title") subtitle:SCILocalized(@"dw_save_to_camera_sub") defaultsKey:@"dw_save_to_camera"],
                     [SCISetting switchCellWithTitle:SCILocalized(@"custom_album_title") subtitle:SCILocalized(@"custom_album_sub") defaultsKey:@"custom_album"],
                     queue
+                ]
+            },
+            @{
+                @"header": SCILocalized(@"p_hdr_storage"),
+                @"rows": @[
+                    [SCISetting buttonCellWithTitle:SCILocalized(@"cache_title")
+                                           subtitle:SCILocalized(@"cache_sub")
+                                               icon:[SCISymbol symbolWithName:@"trash"]
+                                             action:^{ [SCICacheCleaner presentCleanFlow]; }]
                 ]
             }
         ];

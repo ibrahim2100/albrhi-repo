@@ -33,3 +33,15 @@ clang -fobjc-arc -Wall -Wno-objc-root-class -I"$OUT" -I"$ROOT" -framework Founda
 # The test writes the real file under Application Support and removes it again; on a clean machine
 # that is a no-op, on this one it would clobber nothing because it is the app's folder, not ours.
 "$OUT/test" | grep -v '^COUNT\|^PATH'
+
+# The link cleaner is plain Foundation: compiled on its own, from the real source.
+mkdir -p "$OUT/Features/General"
+cp ../../src/Features/General/SCILinkTracking.[hm] "$OUT/Features/General/"
+clang -fobjc-arc -Wall -I"$OUT" -framework Foundation \
+    "$OUT/Features/General/SCILinkTracking.m" Test_LinkTracking.m -o "$OUT/test-links"
+
+cp ../../src/Features/General/SCICacheRules.[hm] "$OUT/Features/General/"
+clang -fobjc-arc -Wall -I"$OUT" -framework Foundation \
+    "$OUT/Features/General/SCICacheRules.m" Test_CacheRules.m -o "$OUT/test-cache"
+"$OUT/test-cache"
+"$OUT/test-links"

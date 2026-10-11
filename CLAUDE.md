@@ -854,6 +854,15 @@ instances taught; here are the facts.
   `-autoAdvanceToNextItem` on both, `-shouldForceEnableAutoScroll` on the Swift `IGSundialAutoScroll` in 439 only, `-autoScrollState`
   in 410 only. Hidden for a long time because the old hook forced the 410-only getter and left the shared gate alone — established by
   counting selectors in the real binaries, which is why both IPAs are kept.
+- **Measured against the decrypted 410.1.0 binary (4.6.0)** — `com.burbn.instagram_410.1.0_decrypted.ipa` is in iCloud Drive › Downloads (35,954 classes; `objc-classes.py --dump` 14 s):
+  `tools/objc-diff.py --check` over this tweak found 8 hooks on selectors no class in the chain declares and 34 on classes 410 lacks. **Most are intentional per-version signatures** with a sibling that covers 410
+  (`_applyThreadUpdates:` has three; ad hiding goes through `parsedObjectFromResponse:`, present in 410). Two were real and are fixed: **"disable view-once limitations" attached nowhere on 410**
+  (`IGDirectVisualMessage` has no `-viewMode`; the value is `IGDirectPublishedMessageVisualMediaInfo -viewMode`, `q16@0:8`) and **the DM recipient recent-search storage has another initialiser in 410**
+  (`initWithDiskManager:directRepo:userMap:currentUser:launcherSet:`). Both are installed behind a check that the class declares exactly that selector; **neither has run on a device.** A parser lesson: a
+  Logos declaration wrapped over ten lines is one selector, not its first line (the first version of the check cried wolf eleven times on exactly that).
+- **Link tracking (4.6.0)** — `strip_link_tracking`, off: `igsh`/`igshid`/`utm_*`/`fbclid`/`ig_rid` removed from Instagram's own addresses at the two doors a link leaves through
+  (`UIPasteboard setURL:/setString:`, `UIActivityViewController`), so no Instagram class is involved. **Clean cache** keeps `albrhi-*` and every `<UUID>.<ext>` in Caches, because that folder also holds the
+  download history and the finished downloads (found by reading where `SCIDownloadQueue` writes before writing the cleaner). 16 + 14 host tests.
 - **Removed in 3.1.4** (broken or redundant): liquid glass, teen icons, doom-scrolling limits, per-surface download toggles,
   long-press tuning, quality picker. Keep-deleted-messages came back as `keep_unsent_messages`. Do not reintroduce without a reason.
 - **Known upstream crash, not ours:** on roothide Bootstrap, Instagram 442+ crashes when the profile picture is changed. Cut in half
@@ -1262,8 +1271,8 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.40.4** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
-Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.93.4**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.6.0** · YouTube **1.40.4** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
+Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.94.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
@@ -1271,6 +1280,13 @@ Instagram unsent-message keeping and its badge (410), story-seen hiding (439), s
 YouTube, YT Music, Spotify); Watch pairing and the update hold (watchOS 26.6 refused). **Not confirmed:** Spaces removal at `-setTabViews:` separately; TikTok's
 comment-media Save row and photo-as-clip on every video type; YouTube's playback-error recovery's reload budget in the wild; the 1.34.0 fallback path to the playlist for
 a login-gated video.
+
+**Instagram features whose 410 selectors are confirmed but whose mechanics are not read** (a reference tweak names them; the 410 binary has them; nobody here has decompiled what they do, so none is built): stop
+infinite Reels (`IGSundialTemplateMediaCompositionContainerView -sundialVideoPlaybackViewDidStartPlaying:`), stories not auto-advancing (`advanceToNextItemWithNavigationAction:` on five classes — the argument that
+tells a timer from a tap is unknown), mark-seen-locally with exclusions (`IGStorySeenState -setForceSeenIds:`, `IGStoryViewSessionSeenStateManager -hasSeenMediaId:forReelPK:`), save a post without the collection
+picker (`IGFeedItemUFICellConfigurableDelegateImpl -feedItemUFICellDidTapSaveButton:`), Story-viewer search, Following as the default feed (`IGMainFeedDataController`, `IGMainFeedViewModel -isSecondaryFeed`).
+**The next step is a decompiler pass over those functions in the 410 binary**: plain Ghidra headless with `Decompiler Switch Analysis` and `Decompiler Parameter ID` off (REA's CLI cannot switch them off); on a
+243 MB binary it was started and stopped by the owner before it finished, so the time it takes is unknown. `tools/doctor.sh` prints the installed and the newest REA, to review it now and then.
 
 **Open work** (owner's priorities, highest first): (1) **confirm the deleted-messages log on a device** (which message shape the stream carries decides whether text is captured) and extend it to the MSYS delete path;
 (2) **create the R2 bucket for the licence backup and deploy the Worker** (§6.2 — the cron is written and tested, not deployed, and without the bucket it only protects against a handler's mistake); (3) hiding the reels **seen** mark; (4) **publishing Spotify** — its own
