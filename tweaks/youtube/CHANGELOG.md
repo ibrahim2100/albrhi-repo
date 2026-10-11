@@ -3,6 +3,15 @@
 **Tested on YouTube 21.32.4.** Nothing is pinned to a version number: every class the
 tweak touches is looked up at runtime and skipped if it is not there.
 
+## v1.39.3
+
+**تقرير فيديو فاشل ثانٍ أعطى السبب القريب: «sbdl_failed» ليس كلمة شبكة.** الخطأ الداخلي كان `com.google.ios.hamplayer 2101` ونصه `sbdl_failed|lyr=…|dcd=…|…`، وصيغة هذا النص موجودة في الملف: `sbdl` اختصار التطبيق لـ`AVSampleBufferDisplayLayer` (`alwaysEnqueueDecodedSamplesToAvsbdl`). وفي التقرير نفسه: **٣٦ مقطعاً اكتمل بلا خطأ** ولم يفشل شيء في حامل SABR ولا رمز PO ولا حالة حماية. أي أن **الشبكة والإثبات سليمان، والتوقف عند طبقة العرض**: إطار لا تستطيع فك ترميزه أو عرضه.
+
+- **المسبار يسأل الآن عن ذلك:** يلتقط إشعار فشل فك الترميز الموثّق (`AVSampleBufferDisplayLayerFailedToDecodeNotification`) مع الـNSError (حالة VideoToolbox/CoreMedia)، ويلفّ `-enqueueSampleBuffer:` ليتذكّر *شكل* ما يُسلَّم للطبقة (الترميز لعيّنة مضغوطة، وصيغة البكسل والحجم لعيّنة مفكوكة) مع عدّادها، فيقول سطر الفشل «آخر ما أُرسل: …». لا يخزّن بكسلات ولا يغيّر شيئاً، ويعمل مرة لكل إطار بقراءات أعداد صحيحة.
+- نص `HAMErrorDetails` كان يُقطع عند ٦٠ حرفاً فضاع منه ما بعد «vw»؛ صار كاملاً إلى ٤٢٠.
+
+**للمقارنة بين فيديو يشتغل وآخر لا يشتغل:** أغلق يوتيوب، شغّل الفيديو السليم، انسخ التقرير؛ ثم أغلقه وشغّل الفاشل وانسخ التقرير. قسم «frames handed to the display layer» وسطر «display layer failed» هما المقارنة.
+
 ## v1.39.2
 
 **أول تقرير من الجوال (21.33.6) غيّر الفرضية، فالمسبار صار يسأل السؤال الصحيح.** المقاس:

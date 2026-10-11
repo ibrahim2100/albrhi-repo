@@ -2,6 +2,9 @@
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import <substrate.h>
+#import <AVFoundation/AVFoundation.h>
+#import <CoreMedia/CoreMedia.h>
+#import <CoreVideo/CoreVideo.h>
 #import "SCIYTPoProbe.h"
 #import "../../SCILog.h"
 #import "../../SCIYTLaunchGuard.h"
@@ -12,7 +15,7 @@ static NSMutableArray<NSString *> *sHooks = nil;      // what attached and what 
 static NSMutableDictionary<NSString *, NSString *> *sFlags = nil;   // flag -> last answer
 
 static const NSUInteger kMaxNotes = 24;
-static const NSUInteger kMaxNoteLength = 220;
+static const NSUInteger kMaxNoteLength = 700;
 
 static void SCIPoCount(NSString *key) {
     @synchronized (sCounts) { sCounts[key] = @(sCounts[key].unsignedIntegerValue + 1); }
@@ -52,16 +55,18 @@ static NSString *SCIPoError(id error) {
 /// (strings and numbers in full up to 60 characters, anything else as its class), and the
 /// underlying errors down three levels. Never a token or a URL query -- values are cut, and
 /// URLs are reduced to host and path.
-static NSString *SCIPoValue(id value) {
+static NSString *SCIPoValueLimit(id value, NSUInteger limit) {
     if ([value isKindOfClass:[NSString class]]) {
         NSString *s = value;
-        return s.length > 60 ? [[s substringToIndex:60] stringByAppendingString:@"…"] : s;
+        return s.length > limit ? [[s substringToIndex:limit] stringByAppendingString:@"…"] : s;
     }
     if ([value isKindOfClass:[NSNumber class]]) return [value description];
     if ([value isKindOfClass:[NSURL class]]) return [NSString stringWithFormat:@"%@%@", [(NSURL *)value host] ?: @"", [(NSURL *)value path] ?: @""];
     if ([value isKindOfClass:[NSError class]]) return [NSString stringWithFormat:@"%@ %ld", [(NSError *)value domain], (long)[(NSError *)value code]];
     return value ? NSStringFromClass([value class]) : @"nil";
 }
+
+static NSString *SCIPoValue(id value) { return SCIPoValueLimit(value, 60); }
 
 static NSString *SCIPoErrorFull(id error, int depth) {
     if (![error isKindOfClass:[NSError class]]) return SCIPoShape(error);
@@ -72,7 +77,10 @@ static NSString *SCIPoErrorFull(id error, int depth) {
         return [[a description] compare:[b description]];
     }]) {
         if ([key isEqual:NSUnderlyingErrorKey]) continue;
-        [info addObject:[NSString stringWithFormat:@"%@=%@", key, SCIPoValue(e.userInfo[key])]];
+        // The hamplayer's own account of itself is one long `name|k=v|k=v` string, and cutting it
+        // at 60 characters is how the first report lost everything after "vw". Whole, to a ceiling.
+        NSUInteger limit = [key isEqual:@"HAMErrorDetails"] ? 420 : 60;
+        [info addObject:[NSString stringWithFormat:@"%@=%@", key, SCIPoValueLimit(e.userInfo[key], limit)]];
     }
 
     NSString *line = [NSString stringWithFormat:@"%@ %ld [%@]", e.domain, (long)e.code, [info componentsJoinedByString:@"; "]];
@@ -108,6 +116,114 @@ static BOOL SCIPoHook(NSString *className, NSString *selectorName, const char *e
     MSHookMessageEx(classMethod ? object_getClass(cls) : cls, selector, replacement, original);
     [sHooks addObject:[label stringByAppendingString:@" — attached"]];
     return YES;
+}
+
+// MARK: - What reaches the screen
+
+///
+/// **"sbdl_failed" is not a network word.** The first report of a failing video named the
+/// hamplayer's own error, `com.google.ios.hamplayer 2101`, with a details string whose format is
+/// in the binary: `sbdl_failed|lyr=%d|dcd=%d|rls=%d|plr=%d|itm=%d|vws=%d|seq=%d|vcs=%d|hdnl=%d|
+/// lpc=%d|tlm=%d|svs=%d|fg=%d|cpns=%@`. `sbdl` is the app's own abbreviation for
+/// `AVSampleBufferDisplayLayer` (`alwaysEnqueueDecodedSamplesToAvsbdl`,
+/// `hamplayerPrepareVideoDecoderForAvsbdl`), and the same report showed the stream itself fine:
+/// thirty-six chunks completed without an error and the SABR loader failed nothing. So the stop is
+/// at the *display layer* -- a frame it cannot decode or show -- and the useful questions are
+/// what was being handed to it and what it said when it refused.
+///
+/// Two read-only observations answer them. The layer posts a documented notification when it
+/// fails to decode, with the NSError (a VideoToolbox/CoreMedia status). And `-enqueueSampleBuffer:`
+/// is wrapped to remember the *shape* of what goes in -- the codec of a compressed sample or the
+/// pixel format and size of a decoded one -- counted by kind and kept for the last one, so the
+/// failure line can say "the last thing enqueued was …". The wrapper runs once per frame and does
+/// a handful of integer reads; it stores no pixels and no timestamps.
+typedef struct { uint32_t subtype; uint32_t pixelFormat; int32_t width; int32_t height; uint32_t decoded; } SCIPoFrame;
+static SCIPoFrame sLastFrame;
+static uint32_t sSlotType[8];
+static uint32_t sSlotDecoded[8];
+static uint64_t sSlotCount[8];
+static uint64_t sFramesEnqueued = 0;
+static IMP sEnqueue = NULL;
+
+static NSString *SCIPoFourCC(uint32_t code) {
+    char text[5] = { (char)(code >> 24), (char)(code >> 16), (char)(code >> 8), (char)code, 0 };
+    for (int i = 0; i < 4; i++) if (text[i] < 32 || text[i] > 126) return [NSString stringWithFormat:@"0x%08x", code];
+    return [NSString stringWithUTF8String:text];
+}
+
+static NSString *SCIPoFrameString(SCIPoFrame f) {
+    if (!f.subtype && !f.pixelFormat) return @"none yet";
+    return f.decoded
+        ? [NSString stringWithFormat:@"decoded pixels %@ %dx%d", SCIPoFourCC(f.pixelFormat), f.width, f.height]
+        : [NSString stringWithFormat:@"compressed %@ %dx%d", SCIPoFourCC(f.subtype), f.width, f.height];
+}
+
+static void SCIPoSawFrame(CMSampleBufferRef buffer) {
+    if (!buffer) return;
+    SCIPoFrame frame = {0};
+
+    CVImageBufferRef image = CMSampleBufferGetImageBuffer(buffer);
+    if (image) {
+        frame.decoded = 1;
+        frame.pixelFormat = (uint32_t)CVPixelBufferGetPixelFormatType(image);
+        frame.width = (int32_t)CVPixelBufferGetWidth(image);
+        frame.height = (int32_t)CVPixelBufferGetHeight(image);
+        frame.subtype = frame.pixelFormat;
+    } else {
+        CMFormatDescriptionRef description = CMSampleBufferGetFormatDescription(buffer);
+        if (description) {
+            frame.subtype = (uint32_t)CMFormatDescriptionGetMediaSubType(description);
+            CMVideoDimensions size = CMVideoFormatDescriptionGetDimensions(description);
+            frame.width = size.width;
+            frame.height = size.height;
+        }
+    }
+
+    sLastFrame = frame;
+    __atomic_add_fetch(&sFramesEnqueued, 1, __ATOMIC_RELAXED);
+
+    for (int i = 0; i < 8; i++) {
+        uint32_t existing = __atomic_load_n(&sSlotType[i], __ATOMIC_RELAXED);
+        if (existing == 0) {
+            uint32_t expected = 0;
+            if (!__atomic_compare_exchange_n(&sSlotType[i], &expected, frame.subtype, 0, __ATOMIC_RELAXED, __ATOMIC_RELAXED) &&
+                expected != frame.subtype) continue;
+            sSlotDecoded[i] = frame.decoded;
+            existing = frame.subtype;
+        }
+        if (existing == frame.subtype) {
+            __atomic_add_fetch(&sSlotCount[i], 1, __ATOMIC_RELAXED);
+            return;
+        }
+    }
+}
+
+static void SCIPoInstallDisplayProbe(void) {
+    Class layer = NSClassFromString(@"AVSampleBufferDisplayLayer");
+    SEL selector = NSSelectorFromString(@"enqueueSampleBuffer:");
+    Method method = layer ? class_getInstanceMethod(layer, selector) : NULL;
+    const char *encoding = method ? method_getTypeEncoding(method) : NULL;
+
+    if (encoding && strncmp(encoding, "v24@0:8^{opaqueCMSampleBuffer=}16", 33) == 0) {
+        MSHookMessageEx(layer, selector, imp_implementationWithBlock(^(id me, CMSampleBufferRef buffer) {
+            SCIPoSawFrame(buffer);
+            if (sEnqueue) ((void (*)(id, SEL, CMSampleBufferRef))sEnqueue)(me, @selector(enqueueSampleBuffer:), buffer);
+        }), &sEnqueue);
+        [sHooks addObject:@"-AVSampleBufferDisplayLayer enqueueSampleBuffer: — attached"];
+    } else {
+        [sHooks addObject:[NSString stringWithFormat:@"-AVSampleBufferDisplayLayer enqueueSampleBuffer: — not hooked (encoding %s)", encoding ?: "?"]];
+    }
+
+    // Documented: posted when the layer fails to decode what it was given.
+    [[NSNotificationCenter defaultCenter]
+        addObserverForName:AVSampleBufferDisplayLayerFailedToDecodeNotification object:nil queue:nil
+                usingBlock:^(NSNotification *note) {
+        SCIPoCount(@"display layer: FAILED TO DECODE");
+        id error = note.userInfo[AVSampleBufferDisplayLayerFailedToDecodeNotificationErrorKey];
+        SCIPoNote([NSString stringWithFormat:@"display layer failed to decode: %@ · last enqueued: %@ · %llu enqueued",
+                   SCIPoErrorFull(error, 0), SCIPoFrameString(sLastFrame), (unsigned long long)sFramesEnqueued]);
+    }];
+    [sHooks addObject:@"observing AVSampleBufferDisplayLayerFailedToDecodeNotification"];
 }
 
 static IMP sMintImmediate = NULL, sMintManager = NULL, sStreamStatus = NULL, sPoMinted = NULL;
@@ -189,6 +305,8 @@ static void SCIPoInstall(void) {
         SCIPoCount([NSString stringWithFormat:@"attestation end state %d", state]);
         if (sEndState) ((void (*)(id, SEL, int))sEndState)(me, @selector(logExecutionEndState:), state);
     }), &sEndState, NO);
+
+    SCIPoInstallDisplayProbe();
 
     // The SABR loader: where the stream stops. These carry real NSErrors -- and the loader's own
     // note of why -- which the player-level error ("Something went wrong") does not. The one
@@ -281,6 +399,15 @@ NSString *SCIYTPoProbeReport(void) {
         for (NSString *key in [sCounts.allKeys sortedArrayUsingSelector:@selector(compare:)]) {
             [out appendFormat:@"  %@ ×%@\n", key, sCounts[key]];
         }
+    }
+    if (sFramesEnqueued) {
+        NSMutableArray<NSString *> *kinds = [NSMutableArray array];
+        for (int i = 0; i < 8; i++) {
+            if (!sSlotType[i]) continue;
+            [kinds addObject:[NSString stringWithFormat:@"%@%@ ×%llu", sSlotDecoded[i] ? @"decoded " : @"", SCIPoFourCC(sSlotType[i]), (unsigned long long)sSlotCount[i]]];
+        }
+        [out appendFormat:@"  frames handed to the display layer: %llu — %@ — last: %@\n",
+         (unsigned long long)sFramesEnqueued, [kinds componentsJoinedByString:@", "], SCIPoFrameString(sLastFrame)];
     }
     @synchronized (sFlags) {
         for (NSString *key in [sFlags.allKeys sortedArrayUsingSelector:@selector(compare:)]) {
