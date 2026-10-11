@@ -901,31 +901,24 @@ instances taught; here are the facts.
   `-didTapButton:`, and a button becomes the download button at `-setOfflineStatus:offlineability:`, not at construction. **Hold-to-save is gone** (removed in 1.37.0: 1.26.0 had already moved downloading onto YouTube's button after hold-to-speed-up started downloading, and a switch that
   only re-enabled a gesture the project had retreated from was clutter — see §4.2).
 
-- **YouTube's own player stops on iOS 16 / 21.33.6, and "Watch here" (1.39.0) is a workaround, not the fix.** 21.33.6 is the last build iOS 16 runs (Aug 2026; one blog
-  source). On it a regular video plays a second or two and stops with "Something went wrong" **on the stock app: no tweak, signed in or out, no DNS/VPN, an official IPA
-  installed outside the App Store** — while Shorts and this tweak's downloads (the `VISIONOS` client) work every time and an occasional video plays whole. **The mechanism is
-  documented for other clients**: a SABR stream carries `STREAM_PROTECTION_STATUS`, `ATTESTATION_PENDING` then `ATTESTATION_REQUIRED` at a fixed *content* position, after which the
-  server stops sending media and the player raises a generic error (shy1132/VacuumTube#189; yt-dlp's PO Token Guide: iOS needs a PO token, minted by "iOSGuard", bound to the video id).
-  **The iOS app does mint it itself**, and every piece is in the 21.34.3 binary (read with `tools/objc-classes.py`, MinimumOSVersion 17.0): `IGDManager` (a native "iosguard"
-  JavaScript VM: `mintPOTokenImmediately:`, `runChallenge:`, with `IGDAppAttest` over `DCAppAttestService`), `YTProofOfOriginTokenManager`
-  (`mintWithVideoID:`), `YTIOSGuardSnapshotControllerImpl`/`YTAttestationChallengeProvider` (the challenge, its error and `logExecutionEndState:`), and in the media layer
-  `MLABRPolicy` (`_proofOfOriginToken`, `onPoTokenMinted:`, **`onStreamProtectionStatus:`**), all behind hot-config flags on `YTHotConfigIosPlayerClientSharedConfigImpl`
-  (`enablePoTokenManagerMedia`, `…Injection`, `iosSpsEnablePoTokenCabr`). **The first measurement from the phone (report, 1.39.1, 21.33.6) did not
-  confirm it**: the iosguard challenge answered with no error, **12 tokens were minted** (two sizes, 30 and 158 bytes — a short placeholder and a full one is a reading, not a fact),
-  the media layer **never heard a stream-protection status and was never handed a token** (`onStreamProtectionStatus:`/`onPoTokenMinted:` attached, never called), the player error is
-  `com.google.ios.youtube.ErrorDomain.playback 0` ×5, `YTHotConfigIosPlayerClientSharedConfigImpl` is **absent in 21.33.6** (present in 21.34.3), and our own "reload" is unavailable
-  there (only the retry event is sent, which does nothing). The second report (1.39.2, failing video) settled the layer: the player error chain is `playback 0` ← `MLPlayerError 2` ← **`com.google.ios.hamplayer 2101`**
-  whose details string is `sbdl_failed|lyr=…|dcd=…|…` — the format is in the binary, and `sbdl` is the app's abbreviation for **`AVSampleBufferDisplayLayer`**
-  (`alwaysEnqueueDecodedSamplesToAvsbdl`) — while **36 chunks completed without an error** and the SABR loader failed nothing. **So the network and the attestation are fine and the
-  stop is at the display layer**; the PO-token theory above was wrong for this phone and is kept only because it is what a search finds. 1.39.3 observes the layer's documented
-  failure notification and wraps `-enqueueSampleBuffer:` to remember the shape of what it is handed (codec of a compressed sample, pixel format and size of a decoded one); the
-  owner is to send a working and a failing report to compare. (The failing test video was a square 1080×1080 H.264 still-image music video at ~75 kbps — a *guess* that the content
-  matters, not a finding.) Earlier, 1.39.2's probe moved down to where the stream stops — `MLPlatypusABRLoader` (`failWithError:` + `QOEDebugDetails`, `onChunk:completeWithError:`, `didParseReloadPlayerResponse:`) and the player error in full with its
-  `userInfo`. `SCIYTPoProbe` is read-only; lengths and counts, never a token. **Nothing here forges that
-  proof** (the `app_attest_*` line, §2) — and a *jailbreak-hiding* answer to the attestation would be the same lie told to a server, so it is not built on a guess either.
-  "Watch here" (`SCIYTWatch`) fetches the video as a save does and opens the Centre's player when it is whole: a wait, not streaming, kept in the Centre; offered from
-  `handleError:` (`SCIYTPlaybackFix.m`) at the three places the app's own error is shown (never while a retry is in flight) and as a fourth segment in the download sheet.
-  **Neither has run on a device.** YouTubeLegacy (MIT) spoofs the client version to 20.21.6 for builds below 20.24.4 — a different range from 21.33.6, and not taken.
+- **YouTube's own player stops on iOS 16 / 21.33.6 — cause found (1.40.0): the player is handed VP9 and the phone cannot decode it.** 21.33.6 is the last build iOS 16 runs
+  (Aug 2026; one blog source). A regular video played a second or two and stopped with "Something went wrong" **on the stock app: no tweak, signed in or out, no DNS/VPN, an
+  official IPA installed outside the App Store**; Shorts and this tweak's downloads (the `VISIONOS` client) were fine. **The first theory — a missing proof-of-origin token
+  (`STREAM_PROTECTION_STATUS` → `ATTESTATION_REQUIRED`, documented for other clients) — was wrong for this phone and cost three releases of probe**: the iosguard challenge answered
+  with no error, 11–13 tokens were minted, the media layer never heard a protection status, 36–41 chunks completed without error. What the probes then measured, three reports:
+  the player error chain is `playback 0` ← `MLPlayerError 2` ← `com.google.ios.hamplayer 2101` with details `sbdl_failed|…` (**`sbdl` = `AVSampleBufferDisplayLayer`**, read from the
+  format string and `alwaysEnqueueDecodedSamplesToAvsbdl` in the binary); the layer's own notification says `AVFoundationErrorDomain -11839` "Cannot Decode — the decoder required for
+  this media is busy" ← `NSOSStatusErrorDomain -12913` (`kVTVideoDecoderNotAvailableNowErr`), ×50; the last thing enqueued was **`vp09` (VP9)**; the failing videos offer **three
+  formats per resolution** (itags 134/243/396 = H.264/VP9/AV1) while the video that played offers **six, H.264 only**, and plays `avc1` with no failure. The app **declares** VP9
+  (`YTVSMediaCapabilities`: three entries, `codec#2 efficient`, `#4 10bit efficient`, `#8 10bit` — the last is software AV1 because `populateSwAv1MediaCapabilities` is YES; which
+  number is which codec is *inferred*, not read) as playable; this phone cannot show it. **Fix: `SCIYTCodecFilter`** removes VP9/AV1 *video* entries from
+  `YTIPlayerResponse -streamingData` → `adaptiveFormatsArray` once per response, only when an H.264 video remains (a 4K-only video is left whole), audio untouched; it costs 1440p
+  and 4K, so it is a switch ("Compatibility: H.264 only") that **turns itself on the first time the display layer fails on `vp09`/`av01`** (`auto_h264`, default on) and says so. The
+  filter is at the *list*, not the screen and not the declaration: filtering the ObjC capabilities getter was rejected because the SABR request may use the C++ copy, and hooking
+  `VTIsHardwareDecodeSupported` because the self-contained build has no `MSHookFunction`. **Not run on a device.** `SCIYTPoProbe` (read-only; lengths, counts and codec shapes, never a
+  token) stays as the diagnostic: its `frames handed to the display layer` line is how the next report says whether `vp09` is gone. "Watch here" (`SCIYTWatch`, 1.39.0) fetches the video
+  as a save does and plays it in the Centre — a wait, kept in the Centre — and remains for anything the filter does not cover.
+  YouTubeLegacy (MIT) spoofs the client version to 20.21.6 for builds below 20.24.4: a different range, a different fault, not taken.
 
 **The Download Centre** is a **tab**, built as a pivot renderer YouTube draws itself (real label, selected state, width) — never a circle
 painted over the bar; its icon is painted on afterwards because the `iconType` enum is unreadable. **History** (`FEhistory` browse id the app
@@ -1250,8 +1243,8 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.39.4** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
-Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.92.4**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.40.0** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
+Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.93.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

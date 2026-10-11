@@ -1,0 +1,151 @@
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+#import <objc/runtime.h>
+#import <objc/message.h>
+#import <substrate.h>
+#import "SCIYTCodecFilter.h"
+#import "../../SCILog.h"
+#import "../../Prefs.h"
+#import "../../SCIYTLaunchGuard.h"
+#import "../../Localization/SCILocalize.h"
+#import "shared/src/SCIKVC.h"
+
+static NSString *sHookState = @"not installed";
+static NSUInteger sResponses = 0, sFilteredResponses = 0, sSkippedNoAvc = 0;
+static NSUInteger sRemoved = 0, sKept = 0;
+static NSMutableDictionary<NSString *, NSNumber *> *sRemovedByCodec = nil;
+static NSString *sAutoNote = nil;
+static BOOL sAutoAlertShown = NO;
+static IMP sOriginalStreamingData = NULL;
+static char kSCIFiltered;
+
+static NSString *SCICodecOf(NSString *mime) {
+    NSString *lower = mime.lowercaseString;
+    if (![lower hasPrefix:@"video/"]) return nil;
+    if ([lower containsString:@"av01"] || [lower containsString:@"av1"]) return @"AV1";
+    if ([lower containsString:@"vp09"] || [lower containsString:@"vp9"]) return @"VP9";
+    return nil;
+}
+
+/// Removes the VP9 and AV1 video entries from `adaptiveFormatsArray`, in place, when an H.264
+/// video entry is left. A video offered *only* as VP9/AV1 (some 4K) is left whole: no picture is
+/// worse than a picture that may fail.
+static void SCIYTFilterStreamingData(id streamingData) {
+    if (!streamingData || objc_getAssociatedObject(streamingData, &kSCIFiltered)) return;
+    sResponses++;
+
+    @synchronized (streamingData) {
+        id list = SCISafeValueForKey(streamingData, @"adaptiveFormatsArray");
+        if (![list isKindOfClass:[NSMutableArray class]]) return;
+        NSMutableArray *formats = list;
+
+        NSMutableIndexSet *drop = [NSMutableIndexSet indexSet];
+        NSUInteger avc = 0;
+        NSMutableDictionary<NSString *, NSNumber *> *dropped = [NSMutableDictionary dictionary];
+
+        for (NSUInteger i = 0; i < formats.count; i++) {
+            NSString *mime = SCISafeValueForKey(formats[i], @"mimeType");
+            if (![mime isKindOfClass:[NSString class]]) continue;
+
+            NSString *codec = SCICodecOf(mime);
+            if (codec) {
+                [drop addIndex:i];
+                dropped[codec] = @(dropped[codec].unsignedIntegerValue + 1);
+            } else if ([mime.lowercaseString hasPrefix:@"video/"] && [mime.lowercaseString containsString:@"avc1"]) {
+                avc++;
+            }
+        }
+
+        if (!drop.count) { objc_setAssociatedObject(streamingData, &kSCIFiltered, @YES, OBJC_ASSOCIATION_RETAIN); return; }
+        if (!avc) { sSkippedNoAvc++; objc_setAssociatedObject(streamingData, &kSCIFiltered, @YES, OBJC_ASSOCIATION_RETAIN); return; }
+
+        [formats removeObjectsAtIndexes:drop];
+        objc_setAssociatedObject(streamingData, &kSCIFiltered, @YES, OBJC_ASSOCIATION_RETAIN);
+
+        sFilteredResponses++;
+        sRemoved += drop.count;
+        sKept += avc;
+        if (!sRemovedByCodec) sRemovedByCodec = [NSMutableDictionary dictionary];
+        for (NSString *codec in dropped) {
+            sRemovedByCodec[codec] = @(sRemovedByCodec[codec].unsignedIntegerValue + dropped[codec].unsignedIntegerValue);
+        }
+    }
+}
+
+static void SCIYTInstallCodecFilter(void) {
+    Class cls = objc_getClass("YTIPlayerResponse");
+    if (!cls) { sHookState = @"YTIPlayerResponse not in this build"; return; }
+
+    SEL selector = NSSelectorFromString(@"streamingData");
+    // A generated model: the getter is resolved on first use, so ask before looking.
+    (void)[cls instancesRespondToSelector:selector];
+
+    Method method = class_getInstanceMethod(cls, selector);
+    if (!method) { sHookState = @"-streamingData not on this build"; return; }
+
+    const char *encoding = method_getTypeEncoding(method);
+    if (!encoding || strcmp(encoding, "@16@0:8") != 0) {
+        sHookState = [NSString stringWithFormat:@"-streamingData encoding %s, expected @16@0:8", encoding ?: "?"];
+        return;
+    }
+
+    MSHookMessageEx(cls, selector, imp_implementationWithBlock(^id(id me) {
+        id data = sOriginalStreamingData ? ((id (*)(id, SEL))sOriginalStreamingData)(me, selector) : nil;
+        if (data && SCIPrefEnabled(SCIPrefH264Only) && !SCIYTStoodDown()) SCIYTFilterStreamingData(data);
+        return data;
+    }), &sOriginalStreamingData);
+    sHookState = @"attached to YTIPlayerResponse -streamingData";
+}
+
+// MARK: - Turning itself on
+
+static UIViewController *SCIYTRoot(void) {
+    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+        if (![scene isKindOfClass:[UIWindowScene class]]) continue;
+        for (UIWindow *window in [(UIWindowScene *)scene windows]) {
+            if (window.isKeyWindow && window.rootViewController) {
+                UIViewController *top = window.rootViewController;
+                while (top.presentedViewController && !top.presentedViewController.isBeingDismissed) top = top.presentedViewController;
+                return top;
+            }
+        }
+    }
+    return nil;
+}
+
+void SCIYTCodecFilterDecodeFailed(uint32_t subtype) {
+    // 'vp09' and 'av01'. Anything else failing to decode is not what this is for.
+    BOOL vp9 = subtype == 0x76703039, av1 = subtype == 0x61763031;
+    if (!vp9 && !av1) return;
+    if (SCIPrefEnabled(SCIPrefH264Only) || !SCIPrefEnabled(SCIPrefAutoH264)) return;
+
+    [[NSUserDefaults standardUserDefaults] setBool:YES forKey:SCIPrefH264Only];
+    sAutoNote = [NSString stringWithFormat:@"switched on by itself: the display layer failed on %@ samples", vp9 ? @"VP9" : @"AV1"];
+
+    if (sAutoAlertShown) return;
+    sAutoAlertShown = YES;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIViewController *top = SCIYTRoot();
+        if (!top) return;
+        UIAlertController *note = [UIAlertController alertControllerWithTitle:SCILocalized(@"h264_auto_title")
+                                                                      message:SCILocalized(@"h264_auto_message")
+                                                               preferredStyle:UIAlertControllerStyleAlert];
+        [note addAction:[UIAlertAction actionWithTitle:SCILocalized(@"ok") style:UIAlertActionStyleDefault handler:nil]];
+        [top presentViewController:note animated:YES completion:nil];
+    });
+}
+
+NSString *SCIYTCodecFilterReport(void) {
+    NSMutableString *out = [NSMutableString stringWithFormat:@"h264-only filter: %@ · hook: %@",
+                            SCIPrefEnabled(SCIPrefH264Only) ? @"ON" : @"off", sHookState];
+    [out appendFormat:@"\n  %lu response(s) filtered of %lu seen · %lu format(s) removed (%@) · %lu H.264 video(s) kept · %lu left whole (no H.264 video in them)",
+     (unsigned long)sFilteredResponses, (unsigned long)sResponses, (unsigned long)sRemoved,
+     sRemovedByCodec.count ? [[sRemovedByCodec.allKeys sortedArrayUsingSelector:@selector(compare:)] componentsJoinedByString:@"/"] : @"none",
+     (unsigned long)sKept, (unsigned long)sSkippedNoAvc];
+    if (sAutoNote) [out appendFormat:@"\n  %@", sAutoNote];
+    return out;
+}
+
+__attribute__((constructor)) static void SCIYTCodecFilterRegister(void) {
+    SCIYTWhenActive(^{ SCIYTInstallCodecFilter(); });
+}

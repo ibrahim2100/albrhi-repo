@@ -17,6 +17,12 @@
 /// After YouTube's own player has failed, offers to fetch the video the way a save does and play
 /// it in Albrhi's player. Asked once per video a minute, and only when the app's error is shown.
 #define SCIPrefOfferWatch        @"offer_watch_on_error"
+/// Removes VP9 and AV1 video from the stream list the player is handed, so a phone that cannot
+/// decode them (the measured case: iOS 16, `-12913` "decoder busy") is only offered H.264.
+/// Costs 1440p and 4K. See Features/Playback/SCIYTCodecFilter.h.
+#define SCIPrefH264Only          @"h264_only"
+/// Turns the one above on by itself the first time the display layer fails on VP9 or AV1.
+#define SCIPrefAutoH264          @"auto_h264"
 #define SCIPrefHidePaidPromo    @"hide_paid_promotion"
 /// Unlocks native, system Picture-in-Picture -- forces the one property that gates it by
 /// account plan rather than by the video itself. Read from `MLVideo`, the same class

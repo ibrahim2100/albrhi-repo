@@ -9,6 +9,7 @@
 #import "../../SCILog.h"
 #import "../../SCIYTLaunchGuard.h"
 #import "shared/src/SCIKVC.h"
+#import "SCIYTCodecFilter.h"
 
 static NSMutableDictionary<NSString *, NSNumber *> *sCounts = nil;
 static NSMutableArray<NSString *> *sNotes = nil;      // distinct, bounded
@@ -223,6 +224,9 @@ static void SCIPoInstallDisplayProbe(void) {
         id error = note.userInfo[AVSampleBufferDisplayLayerFailedToDecodeNotificationErrorKey];
         SCIPoNote([NSString stringWithFormat:@"display layer failed to decode: %@ · last enqueued: %@ · %llu enqueued",
                    SCIPoErrorFull(error, 0), SCIPoFrameString(sLastFrame), (unsigned long long)sFramesEnqueued]);
+        // The measurement that found the cause is also what acts on it: a failure on VP9 or AV1
+        // switches the H.264-only filter on (once, and it says so).
+        if (!sLastFrame.decoded) SCIYTCodecFilterDecodeFailed(sLastFrame.subtype);
     }];
     [sHooks addObject:@"observing AVSampleBufferDisplayLayerFailedToDecodeNotification"];
 }
