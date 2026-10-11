@@ -134,14 +134,6 @@ static void SCIAskForCap(SCIYTSettingsHostController *host, NSString *key) {
                        detail:SCILocalized(@"fix_playback_errors_note")
                        symbol:@"arrow.clockwise.circle.fill"
                       prefKey:SCIPrefFixPlaybackErrors],
-            [SCIRow switchRow:SCILocalized(@"h264_only")
-                       detail:SCILocalized(@"h264_only_note")
-                       symbol:@"film.stack.fill"
-                      prefKey:SCIPrefH264Only],
-            [SCIRow switchRow:SCILocalized(@"auto_h264")
-                       detail:SCILocalized(@"auto_h264_note")
-                       symbol:@"wand.and.stars"
-                      prefKey:SCIPrefAutoH264],
             [SCIRow switchRow:SCILocalized(@"offer_watch_on_error")
                        detail:SCILocalized(@"offer_watch_on_error_note")
                        symbol:@"play.rectangle.on.rectangle.fill"

@@ -11,8 +11,8 @@
 #import "SCIYTPoProbe.h"
 #import "../../SCILog.h"
 #import "../../SCIYTLaunchGuard.h"
+#import "../../Localization/SCILocalize.h"
 #import "shared/src/SCIKVC.h"
-#import "SCIYTCodecFilter.h"
 
 static NSMutableDictionary<NSString *, NSNumber *> *sCounts = nil;
 static NSMutableArray<NSString *> *sNotes = nil;      // distinct, bounded
@@ -94,6 +94,45 @@ static NSString *SCIPoErrorFull(id error, int depth) {
         line = [line stringByAppendingFormat:@" ← %@", SCIPoErrorFull(underlying, depth + 1)];
     }
     return line;
+}
+
+///
+/// **A stuck decoder is a fact about the phone, not about the video.** On the one phone this was
+/// measured on, VP9 playback failed with `NSOSStatusErrorDomain -12913` ("decoder busy") and
+/// automatic quality never worked, while a manual choice did; **after restarting the phone the
+/// same videos played normally in automatic mode, VP9 included.** (An earlier release removed VP9
+/// from the list on that diagnosis; that broke automatic mode, because the server picks the format
+/// itself and the player then had no idea what it was sent. It is gone.) So when the display layer
+/// reports -12913, the only thing said is the thing that was measured to work -- once per launch.
+/// n=1: a restart is the cure for that phone, not a promise for every phone.
+///
+static void SCIYTNoticeDecoderBusy(id error) {
+    BOOL busy = NO;
+    for (NSError *e = [error isKindOfClass:[NSError class]] ? error : nil; e; e = e.userInfo[NSUnderlyingErrorKey]) {
+        if (e.code == -12913 && [e.domain isEqualToString:NSOSStatusErrorDomain]) { busy = YES; break; }
+    }
+    if (!busy) return;
+
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            UIViewController *top = nil;
+            for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+                if (![scene isKindOfClass:[UIWindowScene class]]) continue;
+                for (UIWindow *window in [(UIWindowScene *)scene windows]) {
+                    if (window.isKeyWindow && window.rootViewController) top = window.rootViewController;
+                }
+            }
+            while (top.presentedViewController && !top.presentedViewController.isBeingDismissed) top = top.presentedViewController;
+            if (!top) return;
+
+            UIAlertController *note = [UIAlertController alertControllerWithTitle:SCILocalized(@"decoder_busy_title")
+                                                                          message:SCILocalized(@"decoder_busy_message")
+                                                                   preferredStyle:UIAlertControllerStyleAlert];
+            [note addAction:[UIAlertAction actionWithTitle:SCILocalized(@"ok") style:UIAlertActionStyleDefault handler:nil]];
+            [top presentViewController:note animated:YES completion:nil];
+        });
+    });
 }
 
 void SCIYTPoProbeRecordPlayerError(id error) {
@@ -227,9 +266,7 @@ static void SCIPoInstallDisplayProbe(void) {
         id error = note.userInfo[AVSampleBufferDisplayLayerFailedToDecodeNotificationErrorKey];
         SCIPoNote([NSString stringWithFormat:@"display layer failed to decode: %@ · last enqueued: %@ · %llu enqueued",
                    SCIPoErrorFull(error, 0), SCIPoFrameString(sLastFrame), (unsigned long long)sFramesEnqueued]);
-        // The measurement that found the cause is also what acts on it: a failure on VP9 or AV1
-        // switches the H.264-only filter on (once, and it says so).
-        if (!sLastFrame.decoded) SCIYTCodecFilterDecodeFailed(sLastFrame.subtype);
+        SCIYTNoticeDecoderBusy(error);
     }];
     [sHooks addObject:@"observing AVSampleBufferDisplayLayerFailedToDecodeNotification"];
 }
@@ -290,12 +327,6 @@ static void SCIPoInstallCapabilityProbe(void) {
     SCIPoHook(@"YTColdConfig", @"iosPlayerClientSharedConfigPopulateSwAv1MediaCapabilities", "B16@0:8", imp_implementationWithBlock(^BOOL(id me) {
         BOOL value = sSwAv1 ? ((BOOL (*)(id, SEL))sSwAv1)(me, NSSelectorFromString(@"iosPlayerClientSharedConfigPopulateSwAv1MediaCapabilities")) : NO;
         @synchronized (sFlags) { sFlags[@"populateSwAv1MediaCapabilities"] = value ? @"YES" : @"NO"; }
-        // In H.264-only mode the declaration stops adding software AV1: a claim this phone is
-        // better off not making. Only the claim is narrowed; nothing is added to it.
-        if (value && [[NSUserDefaults standardUserDefaults] boolForKey:@"h264_only"]) {
-            @synchronized (sFlags) { sFlags[@"populateSwAv1MediaCapabilities"] = @"YES (answered NO: H.264-only mode)"; }
-            return NO;
-        }
         return value;
     }), &sSwAv1, NO);
     sCapsAttached = YES;
