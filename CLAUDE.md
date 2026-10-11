@@ -102,7 +102,8 @@ inside one package, three stand apart.
 - **Unlicensed references are read for architecture only, and nothing is copied**: BHTikTok and the
   al3raQe fork, NA9 For TikTok, VibeTok, BHTwitter (the original — NeoFreeBird is a different, GPLv3 case),
   TWIGalaxy, `carsurf`, RyukGram, Regram, InstaPlus,
-  and Legizmo (a paid tweak — its licence and DRM components were deliberately not examined).
+  Legizmo (a paid tweak — its licence and DRM components were deliberately not examined), and **Rocket for Instagram 4.23.1** (closed source, obfuscated, with a paid store: read for its public feature list and the
+  selector names it carries in the clear; store and entitlement code not examined; call recording not proposed — `docs/investigations/rocket-feature-map.md`).
 - **A reference tweak's selectors are a map of *its* build, never a manifest of ours.** NA9's list
   was written against an older TikTok (`downloadHDVideo`, `canDownload`, `isPreventDownload` are not
   in 46.4.0); InstaPlus hooks six selectors that do not exist in Instagram 410, even as strings;
@@ -304,6 +305,9 @@ said "29 tests in about a second" — a test nobody runs in CI is a test that ro
 |---|---|
 | `check.py` · `check-repo.py` | the rules above · the repository-wide ones |
 | `objc-classes.py` | a class's real method list, **declared property types**, ivars, class methods and **type encodings** out of a Mach-O's ObjC metadata; `--find-method` / `--find-ivar` answer "who answers this selector / owns this field" |
+| `objc-diff.py` | **what changed between two builds, among the classes a tweak names** (`<old> <new> --tweak tweaks/x`), and `--check <build> --tweak tweaks/x` for one build: every `%hook` on a class the build lacks or on a selector nothing in the class chain declares (rule 4.2, automated; chain read through chained-fixup **binds**, so `UIView` is a name and not `?`; generated protobuf getters are reported as unknowable, not as missing). Fed by `objc-classes.py <binary> --dump` (YouTube 21.34.3: 33,263 classes in 17 s). 9 self-tests on two compiled dylibs |
+| `ref-leads.py` | **the app-side selectors a reference tweak names** (Apple's SDK vocabulary and the reference's own selectors subtracted; `--tweak` splits off what our sources already name; licence/store selectors listed apart as *not examined*). Rocket: 1,376 raw → 106 leads, 13 already ours. A lead is unverified until the app's own binary is asked |
+| `doctor.sh` | readiness: Theos, SDK, GNU make, ldid, dpkg, roothide Theos, Xcode, node, `gh`, the hook, and (optional) Java and Ghidra — each with the fix. Read-only. The shape is REA's `rea doctor` |
 | `make-suite.sh` · `merge-control.py` | merge the staged trees into `com.albrhi`; refuse a tree that does not match the scheme; **keep the fields Theos computed and override only your own** (replacing `DEBIAN/control` wholesale once threw away what Theos had written) |
 | `make-repo.sh` · `fetch-published-debs.sh` | build the APT index **from the published releases**; `WITHHELD_PACKAGES`; guard against two packages sharing name+version+architecture; label rootful/rootless/roothide |
 | `make-depiction.py` · `release-notes.py` | Sileo depiction + HTML fallback and GitHub release bodies, **generated from the changelog** so they cannot go stale |
@@ -313,6 +317,13 @@ said "29 tests in about a second" — a test nobody runs in CI is a test that ro
 | `run-host-tests.sh` | every host test, by glob (§3.5) |
 | `deb-edit.py` · `deb-edit.html` | edit `.deb` metadata (`label` appends `(rootless)`/`(roothide)`/`(rootful)`; `normalize` converts an xz control archive to gzip — the browser tool carries a hand-written DEFLATE because `DecompressionStream` is iOS 16.4+) |
 | `make-logo.py` · `make-app-icon.py` · `repo-index.html` | repo icon in pure Python, app icon, the source's landing page (built from the live index) |
+
+**REA (`morluto/rea`, npm `rea-agents` 6.4.0, MIT) is installed on the owner's Mac as an aid, not a dependency** (nothing in the build or CI uses it): `npm install --global --ignore-scripts`, registered in
+Claude Code as an MCP server by `rea setup --client claude_code` (backup `~/.claude.json.rea.backup`; tools appear after a restart), Ghidra 12.1.4 and JDK 21 from Homebrew. **Measured, not assumed:**
+its ObjC metadata matches `objc-classes.py` on classes (adds protocols, categories, implementation addresses; **no type encodings**) and **refuses a binary whose metadata exceeds 64 MiB (YouTube 21.34.3)**;
+its decompiler works through Ghidra and names ObjC methods `Class::selector:` (with the colon; `rea search --kind procedures` lists them) — **the one capability we lacked, not yet used on a real app**: the
+one attempt, YouTube's 225 MB binary, was cancelled after 11 minutes (the whole binary is analysed before the first answer; a persistent MCP session is the right way to ask several questions of it).
+Do not claim it answered something until it has. `rea setup` writes configuration files: ask first.
 
 Packages are published as `package_version_architecture.deb`, not under the uploaded filename — a converted
 package keeps its original name and two flavours once collided on one path. Converting rootless into roothide
