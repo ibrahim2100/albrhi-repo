@@ -22,12 +22,23 @@ IOS_FW="$SDK/System/iOSSupport/System/Library/Frameworks"
 OUT=".theos/host-tests"
 mkdir -p "$OUT"
 
+# The direct route's format choice, copied out of SCIYTDirect.m by marker -- not retyped -- so what
+# passes is what ships. Everything between the two markers is pure: dictionaries in, variants out.
+python3 - "$OUT" <<'PY'
+import sys
+src = open('src/Features/Download/SCIYTDirect.m').read()
+a = src.index('// host-test:begin direct')
+b = src.index('// host-test:end direct')
+assert a < b
+open(sys.argv[1] + '/direct_region.inc', 'w').write(src[a:b])
+PY
+
 xcrun clang \
   -fobjc-arc -Wall \
   -Wno-deprecated-declarations -Wno-unguarded-availability-new \
   -target arm64-apple-ios16.0-macabi -isysroot "$SDK" \
   -iframework "$IOS_FW" -F "$IOS_FW" \
-  -I src -I src/Features/Download -I tests/host \
+  -I src -I src/Features/Download -I tests/host -I "$OUT" \
   -DALBRHI_HOST_TESTS=1 \
   -framework Foundation -framework UIKit -framework AVFoundation -framework CoreMedia \
   src/Features/Download/SCIYTTransport.m \

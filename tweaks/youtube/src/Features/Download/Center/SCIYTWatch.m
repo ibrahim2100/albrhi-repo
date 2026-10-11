@@ -7,6 +7,7 @@
 #import "../../../SCIYTLaunchGuard.h"
 #import "../../../Localization/SCILocalize.h"
 #import "../../../Diagnostics/SCIYTDiagnostics.h"
+#import "../../../UI/SCIYTWindow.h"
 
 static NSUInteger sciOffered = 0, sciAccepted = 0, sciStarted = 0, sciPlayed = 0, sciFailed = 0, sciReused = 0;
 static NSUInteger sciAsked = 0, sciNoPresenter = 0, sciSwitchOff = 0, sciRateLimited = 0, sciNoWindow = 0, sciAlertUp = 0;
@@ -14,13 +15,7 @@ static NSUInteger sciAsked = 0, sciNoPresenter = 0, sciSwitchOff = 0, sciRateLim
 /// The app's key window's root, found without the overlay that reported the error: that overlay
 /// is a child of the player, and `-view.window` on it can be nil at the moment an error is drawn.
 static UIViewController *SCIYTAppRoot(void) {
-    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
-        if (![scene isKindOfClass:[UIWindowScene class]]) continue;
-        for (UIWindow *window in [(UIWindowScene *)scene windows]) {
-            if (window.isKeyWindow && window.rootViewController) return window.rootViewController;
-        }
-    }
-    return nil;
+    return SCIYTRootViewController();
 }
 static NSString *sciLastFailure = nil;
 

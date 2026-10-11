@@ -104,6 +104,7 @@ static NSDictionary *SCIDirectContext(NSString *visitor) {
     }] resume];
 }
 
+// host-test:begin direct
 // MARK: - Choosing formats
 
 static NSString *SCIDirectCodec(NSDictionary *format) {
@@ -153,6 +154,43 @@ static long long SCIDirectNumber(id value) {
     *audio = bestAudio;
 }
 
+/// The qualities offered for a set of H.264 (and, when switched on, AV1) video formats and one
+/// audio format: **one entry per height, the highest bitrate of each** (which is the 60 fps copy
+/// where there is one), tallest first. Pure -- no request, no preference -- so the order and the
+/// de-duplication can be run on this Mac against `tests/host/Test_Direct.m`.
++ (NSArray<SCIHLSVariant *> *)ladderForVideos:(NSMutableArray<NSDictionary *> *)videos
+                                        audio:(NSDictionary *)audio
+                                      videoID:(NSString *)videoID {
+    [videos sortUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) {
+        long long ha = SCIDirectNumber(a[@"height"]), hb = SCIDirectNumber(b[@"height"]);
+        if (ha != hb) return ha > hb ? NSOrderedAscending : NSOrderedDescending;
+        return SCIDirectNumber(a[@"bitrate"]) > SCIDirectNumber(b[@"bitrate"]) ? NSOrderedAscending : NSOrderedDescending;
+    }];
+
+    NSMutableArray<SCIHLSVariant *> *variants = [NSMutableArray array];
+    NSMutableSet<NSNumber *> *heights = [NSMutableSet set];
+    for (NSDictionary *format in videos) {
+        NSNumber *height = @(SCIDirectNumber(format[@"height"]));
+        if ([heights containsObject:height]) continue;
+        [heights addObject:height];
+
+        SCIHLSVariant *variant = [[SCIHLSVariant alloc] init];
+        variant.height = height.integerValue;
+        variant.width = (NSInteger)SCIDirectNumber(format[@"width"]);
+        variant.codecs = [NSString stringWithFormat:@"%@,%@", SCIDirectCodec(format), SCIDirectCodec(audio)];
+        variant.bandwidth = SCIDirectNumber(format[@"bitrate"]) + SCIDirectNumber(audio[@"bitrate"]);
+        variant.directVideoURL = format[@"url"];
+        variant.directVideoBytes = SCIDirectNumber(format[@"contentLength"]);
+        variant.directAudioURL = audio[@"url"];
+        variant.directAudioBytes = SCIDirectNumber(audio[@"contentLength"]);
+        variant.directVideoID = videoID;
+        [variants addObject:variant];
+    }
+
+    return variants;
+}
+// host-test:end direct
+
 // MARK: - Asking
 
 + (void)variantsForVideo:(NSString *)videoID
@@ -190,33 +228,7 @@ static long long SCIDirectNumber(id value) {
                 @"direct (%@): 4K switch on, %lu AV1 formats served", videoID, (unsigned long)av1.count]];
         }
 
-        // One entry per height, the highest bitrate of each (which is the 60 fps copy where
-        // there is one), tallest first.
-        [videos sortUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) {
-            long long ha = SCIDirectNumber(a[@"height"]), hb = SCIDirectNumber(b[@"height"]);
-            if (ha != hb) return ha > hb ? NSOrderedAscending : NSOrderedDescending;
-            return SCIDirectNumber(a[@"bitrate"]) > SCIDirectNumber(b[@"bitrate"]) ? NSOrderedAscending : NSOrderedDescending;
-        }];
-
-        NSMutableArray<SCIHLSVariant *> *variants = [NSMutableArray array];
-        NSMutableSet<NSNumber *> *heights = [NSMutableSet set];
-        for (NSDictionary *format in videos) {
-            NSNumber *height = @(SCIDirectNumber(format[@"height"]));
-            if ([heights containsObject:height]) continue;
-            [heights addObject:height];
-
-            SCIHLSVariant *variant = [[SCIHLSVariant alloc] init];
-            variant.height = height.integerValue;
-            variant.width = (NSInteger)SCIDirectNumber(format[@"width"]);
-            variant.codecs = [NSString stringWithFormat:@"%@,%@", SCIDirectCodec(format), SCIDirectCodec(audio)];
-            variant.bandwidth = SCIDirectNumber(format[@"bitrate"]) + SCIDirectNumber(audio[@"bitrate"]);
-            variant.directVideoURL = format[@"url"];
-            variant.directVideoBytes = SCIDirectNumber(format[@"contentLength"]);
-            variant.directAudioURL = audio[@"url"];
-            variant.directAudioBytes = SCIDirectNumber(audio[@"contentLength"]);
-            variant.directVideoID = videoID;
-            [variants addObject:variant];
-        }
+        NSMutableArray<SCIHLSVariant *> *variants = [[self ladderForVideos:videos audio:audio videoID:videoID] mutableCopy];
 
         [SCIYTDiagnostics recordStreamAttempt:[NSString stringWithFormat:
             @"direct (%@): %lu qualities, best %ldp, audio %.1f MB", videoID, (unsigned long)variants.count,

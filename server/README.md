@@ -56,6 +56,9 @@ one — every response is either a licence that device is already entitled to, o
 | `POST /admin/decline` | `{dev}` — drops a request |
 | `POST /admin/revoke` | `{dev}` — the device stops within seven days |
 | `POST /admin/codes` | `{count, days, window, tier}` — mints codes, returns them once |
+| `GET /admin/export` | every record, as one JSON file (the same body the daily backup stores) |
+| `GET /admin/backup-status` | when the last daily backup ran, where it went (`r2` or `kv`), how big, or why it failed |
+| `POST /admin/backup` | takes a backup now |
 
 **Codes are returned once and stored as hashes.** The server cannot show a code again after
 minting, which is deliberate: a store of live codes is a store worth stealing.
@@ -64,3 +67,32 @@ minting, which is deliberate: a store of live codes is a store worth stealing.
 
 The offline path still works. A key issued by `tools/licence.py` on the Mac verifies on the device
 with no server involved at all — which is the way back in if this Worker is ever unreachable.
+
+## The backup
+
+Every licence, code, trial and shop lives in one KV namespace, so a copy has to exist somewhere else.
+A cron trigger (`wrangler.toml`) runs once a day at 02:23 UTC and keeps the last thirty days.
+
+**Where it goes depends on one step that is yours:**
+
+```bash
+npx wrangler r2 bucket create albrhi-backup
+# then uncomment the [[r2_buckets]] block in wrangler.toml and:
+npx wrangler deploy
+```
+
+With the bucket bound, copies are `backup/YYYY-MM-DD.json` in R2 — outside the namespace, which is
+what protects against the namespace being deleted. **Without it they go to KV** (`backup:YYYY-MM-DD`,
+35-day expiry), which only protects against a mistake in a handler. `GET /admin/backup-status` says
+which one is in use (`store: "r2"` or `"kv"`) and `bound` says whether the bucket is attached;
+**a failed backup is recorded there as `ok: false`**, not only in a log.
+
+**Putting it back.** A backup is the raw records. `tools/backup-to-kv-bulk.py` turns one into the file
+`wrangler kv bulk put` takes:
+
+```bash
+python3 tools/backup-to-kv-bulk.py backup-2026-10-11.json > bulk.json
+npx wrangler kv bulk put bulk.json --namespace-id <the id in wrangler.toml>
+```
+
+`node --test server/test/` runs the backup against an in-memory KV that paginates like the real one.

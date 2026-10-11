@@ -34,6 +34,7 @@ SOURCES=(
   src/Translation/*.m
   src/Translation/Providers/*.m
   src/Utils/*.m
+  ../../shared/src/SCIKVC.m
   tests/host/*.m
 )
 
@@ -42,7 +43,7 @@ xcrun clang \
   -Wno-deprecated-declarations -Wno-unguarded-availability-new \
   -target arm64-apple-ios16.0-macabi -isysroot "$SDK" \
   -iframework "$IOS_FW" -F "$IOS_FW" \
-  -I "$THEOS/include" -I "$THEOS/vendor/include" -I src -I tests/host \
+  -I "$THEOS/include" -I "$THEOS/vendor/include" -I src -I tests/host -I ../.. \
   -D THEOS_PACKAGE_INSTALL_PREFIX='""' -DDEBUG -DYTMU_HOST_TESTS=1 \
   -framework UIKit -framework Foundation -framework QuartzCore \
   -framework MediaPlayer -framework NaturalLanguage -framework CoreGraphics \
@@ -69,6 +70,15 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundleVersion</key><string>1</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>LSUIElement</key><true/>
+  <key>UIApplicationSceneManifest</key><dict>
+    <key>UIApplicationSupportsMultipleScenes</key><false/>
+    <key>UISceneConfigurations</key><dict>
+      <key>UIWindowSceneSessionRoleApplication</key><array><dict>
+        <key>UISceneConfigurationName</key><string>Default</string>
+        <key>UISceneDelegateClassName</key><string>YTMUTestSceneDelegate</string>
+      </dict></array>
+    </dict>
+  </dict>
 </dict></plist>
 PLIST
 

@@ -323,6 +323,7 @@ static long long SCITTMeasureByRange(NSURL *url, NSString **outKind) {
 /// 2 answered as video, 1 would not say, 0 answered as audio. Audio never wins on size, no
 /// matter how much larger it is, and a link whose server refuses `HEAD` still outranks it
 /// because refusing to answer is not evidence of being the wrong thing.
+// host-test:begin kindrank
 static NSInteger SCITTKindRank(NSString *kind, NSURL *url) {
     NSString *extension = url.pathExtension.lowercaseString;
 
@@ -334,6 +335,8 @@ static NSInteger SCITTKindRank(NSString *kind, NSURL *url) {
 
     return 1;
 }
+
+// host-test:end kindrank
 
 /// The last measurement, for the settings screen.
 static NSString *sciMeasured = nil;
@@ -373,9 +376,12 @@ NSString *SCITTMeasuredReport(void) {
 /// **That is the third time size answered the wrong question here** — first audio, then the
 /// watermark, now the codec. Bytes compare two encodings of the same thing; they say nothing
 /// about which thing, or which encoder.
+// host-test:begin demoted
 static BOOL SCITTOriginIsDemoted(NSString *origin) {
     return [origin isEqualToString:@"downloadURL"] || [origin isEqualToString:@"h264DownloadURL"];
 }
+
+// host-test:end demoted
 
 + (NSArray<NSURL *> *)orderByMeasuredSize:(NSArray<NSURL *> *)links
                                  origins:(NSArray<NSString *> *)origins {

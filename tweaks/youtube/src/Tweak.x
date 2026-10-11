@@ -7,7 +7,7 @@
 #import "Diagnostics/SCIYTDiagnostics.h"
 #import "Features/Display/SCIYTDimmer.h"
 
-NSString *SCIVersionString = @"v1.40.3";  // AlbrhiYT
+NSString *SCIVersionString = @"v1.40.4";  // AlbrhiYT
 
 ///
 /// Capture, so the diagnostics page has something true to report.

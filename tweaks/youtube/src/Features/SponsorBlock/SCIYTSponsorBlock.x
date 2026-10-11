@@ -9,6 +9,7 @@
 #import "../../Diagnostics/SCIYTDiagnostics.h"
 #import <objc/runtime.h>
 #import <objc/message.h>
+#import "../../UI/SCIYTWindow.h"
 
 ///
 /// Skip the sponsored parts.
@@ -147,14 +148,7 @@ static __weak SCISponsorNotice *sciVisibleNotice = nil;
 + (void)showCategory:(NSString *)category undo:(void (^)(void))undo {
     if (!SCIPrefEnabled(SCIPrefSBNotice)) return;
 
-    UIWindow *host = nil;
-    for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
-        if (![scene isKindOfClass:[UIWindowScene class]]) continue;
-        for (UIWindow *window in ((UIWindowScene *)scene).windows) {
-            if (window.isKeyWindow) { host = window; break; }
-        }
-        if (host) break;
-    }
+    UIWindow *host = SCIYTKeyWindow();
     if (!host) return;
 
     [sciVisibleNotice removeFromSuperview];

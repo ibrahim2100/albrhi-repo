@@ -9,6 +9,7 @@
 #import "../../Localization/SCILocalize.h"
 #import "../../Diagnostics/SCIYTDiagnostics.h"
 #import "../../YouTubeHeaders.h"
+#import "../../UI/SCIYTWindow.h"
 
 ///
 /// A save button in Shorts, in the column with like, comment and share.
@@ -224,18 +225,7 @@ static UIView *SCIFindActionBar(UIView *overlay) {
         videoID = ((YTReelModel *)model).videoId;
     }
 
-    UIWindow *window = nil;
-    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
-        if (![scene isKindOfClass:[UIWindowScene class]]) continue;
-        for (UIWindow *candidate in ((UIWindowScene *)scene).windows) {
-            if (candidate.isKeyWindow) { window = candidate; break; }
-        }
-        if (window) break;
-    }
-    if (!window) return;
-
-    UIViewController *top = window.rootViewController;
-    while (top.presentedViewController) top = top.presentedViewController;
+    UIViewController *top = SCIYTTopViewController();
     if (!top) return;
 
     SCILogV(@"shorts: save %@ (announced was %@)", videoID, [SCIYTDiagnostics activeVideoID]);

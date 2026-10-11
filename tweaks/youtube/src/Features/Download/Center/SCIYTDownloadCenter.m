@@ -4,22 +4,17 @@
 #import "SCIYTLibrary.h"
 #import "../../../SCILog.h"
 #import "../../../Localization/SCILocalize.h"
+#import "../../../UI/SCIYTWindow.h"
 
 @implementation SCIYTDownloadCenter
 
 + (void)present {
-    UIWindow *window = nil;
-    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
-        if (![scene isKindOfClass:[UIWindowScene class]]) continue;
-        for (UIWindow *candidate in ((UIWindowScene *)scene).windows) {
-            if (candidate.isKeyWindow) { window = candidate; break; }
-        }
-        if (window) break;
+    UIViewController *top = SCIYTTopViewController();
+    if (!top) {
+        // No key window yet: the first one there is, as this lookup always allowed.
+        top = [UIApplication sharedApplication].windows.firstObject.rootViewController;
+        while (top.presentedViewController) top = top.presentedViewController;
     }
-    if (!window) window = [UIApplication sharedApplication].windows.firstObject;
-
-    UIViewController *top = window.rootViewController;
-    while (top.presentedViewController) top = top.presentedViewController;
     if (!top) return;
 
     // Wrapped, the way the settings panel is. A screen of ours failing to build must be

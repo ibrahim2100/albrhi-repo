@@ -182,6 +182,23 @@ const clean = (text) =>
 
 const now = () => Math.floor(Date.now() / 1000);
 
+//
+// **Every key under a prefix, not the first thousand.** `KV.list()` returns at most 1,000 keys and
+// a `cursor` for the rest; the four callers below each read the first page only, so past a thousand
+// licences the panel's counts, the shop list and -- worst -- the backup would silently stop at the
+// first page. A backup that is quietly incomplete is worse than none: it is believed.
+//
+async function listAll(env, prefix) {
+  const keys = [];
+  let cursor;
+  do {
+    const page = await env.DB.list({ prefix, cursor });
+    keys.push(...page.keys);
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+  return keys;
+}
+
 /// Every key in KV, in one place.
 ///
 /// Prefixes rather than separate namespaces: one binding, and `list({ prefix })` is what the
@@ -516,7 +533,7 @@ async function adminState(env) {
   // call to say is that there is nothing there.
   //
   const gather = async (prefix) => {
-    const { keys } = await env.DB.list({ prefix });
+    const keys = await listAll(env, prefix);
     const rows = await Promise.all(keys.map(async (k) => {
       const value = await env.DB.get(k.name, 'json');
       return value ? { key: k.name.slice(prefix.length), ...value } : null;
@@ -547,9 +564,11 @@ async function adminState(env) {
 // Nothing secret is added by this route that /admin/state did not already return; the codes are
 // hashes there and hashes here.
 //
-async function adminExport(env) {
+// The records themselves, shared by the export route and the daily backup so the two cannot
+// drift into describing different things.
+async function exportAll(env) {
   const gather = async (prefix) => {
-    const { keys } = await env.DB.list({ prefix });
+    const keys = await listAll(env, prefix);
     const rows = await Promise.all(keys.map(async (k) => {
       const value = await env.DB.get(k.name, 'json');
       return value ? { key: k.name, value } : null;
@@ -562,7 +581,7 @@ async function adminExport(env) {
     gather('sdev:'),   // a shop's activated devices; the prefix K.storeDevice writes
   ]);
 
-  return json({
+  return {
     ok: true,
     at: now(),
     format: 1,
@@ -571,7 +590,74 @@ async function adminExport(env) {
       trials: trials.length, stores: stores.length, storeDevices: rest.length,
     },
     records: [...licences, ...requests, ...codes, ...trials, ...stores, ...rest],
-  });
+  };
+}
+
+async function adminExport(env) {
+  return json(await exportAll(env));
+}
+
+//
+// **The daily copy.** The export above is a button somebody has to press; the largest unmitigated
+// risk in this project was that nothing pressed it. A cron trigger (wrangler.toml) runs this once a
+// day and keeps the last thirty.
+//
+// Two destinations, and which one is used is a fact about the deployment, said in the status:
+//
+//   * **R2** when a bucket is bound as `BACKUP` -- a copy outside the KV namespace, which is what
+//     protects against the namespace itself being deleted or the account being locked out of KV.
+//     Setup is in README.md; it is not bound by default because creating the bucket is the owner's
+//     step, and a binding to a bucket that does not exist fails the whole deploy.
+//   * **KV** otherwise, under `backup:<date>` with a 35-day expiry. Honestly weaker -- same
+//     account, same namespace -- and it protects only against a mistake in a handler, not against
+//     losing the namespace. The status says `store: "kv"` so nobody mistakes one for the other.
+//
+// `backup:` is none of the prefixes `exportAll` gathers, so a backup never contains backups.
+//
+const BACKUP_KEEP_DAYS = 30;
+
+async function runBackup(env) {
+  const started = now();
+  const day = new Date(started * 1000).toISOString().slice(0, 10);
+  let status;
+
+  try {
+    const body = JSON.stringify(await exportAll(env));
+    let store;
+
+    if (env.BACKUP) {
+      await env.BACKUP.put(`backup/${day}.json`, body, { httpMetadata: { contentType: 'application/json' } });
+      store = 'r2';
+
+      // Older than the window goes; list pages are followed for the same reason as above.
+      const cutoff = started - BACKUP_KEEP_DAYS * 86400;
+      let cursor;
+      do {
+        const page = await env.BACKUP.list({ prefix: 'backup/', cursor });
+        for (const object of page.objects) {
+          if (Math.floor(new Date(object.uploaded).getTime() / 1000) < cutoff) await env.BACKUP.delete(object.key);
+        }
+        cursor = page.truncated ? page.cursor : undefined;
+      } while (cursor);
+    } else {
+      await env.DB.put(`backup:${day}`, body, { expirationTtl: 35 * 86400 });
+      store = 'kv';
+    }
+
+    status = { ok: true, at: started, day, store, bytes: body.length };
+  } catch (error) {
+    // Recorded, not thrown: a failed backup that only exists in a log nobody reads is how the
+    // last one went unnoticed. The status is what the panel shows.
+    status = { ok: false, at: started, day, error: String(error && error.message || error).slice(0, 200) };
+  }
+
+  await env.DB.put('backupstatus', JSON.stringify(status));
+  return status;
+}
+
+async function adminBackupStatus(env) {
+  const status = await env.DB.get('backupstatus', 'json');
+  return json({ ok: true, status: status || null, bound: Boolean(env.BACKUP) });
 }
 
 async function adminApprove(request, env) {
@@ -757,7 +843,7 @@ async function adminDelete(request, env) {
 // hand: a counter that is incremented is a counter that drifts.
 //
 async function adminStores(request, env) {
-  const { keys } = await env.DB.list({ prefix: 'store:' });
+  const keys = await listAll(env, 'store:');
 
   const stores = [];
   for (const key of keys) {
@@ -767,7 +853,7 @@ async function adminStores(request, env) {
 
     // Devices are listed rather than counted in the record: KV's list is the only count that
     // cannot disagree with what is actually stored.
-    const seen = await env.DB.list({ prefix: `sdev:${id}:` });
+    const seen = { keys: await listAll(env, `sdev:${id}:`) };
 
     let recent = 0;
     const week = now() - 7 * 86400;
@@ -860,6 +946,10 @@ async function adminCodes(request, env) {
 // ── Entry ─────────────────────────────────────────────────────────────────────────────
 
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runBackup(env));
+  },
+
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '') || '/';
@@ -913,6 +1003,8 @@ export default {
         if (path === '/admin/store')   return adminStore(request, env);
         if (path === '/admin/delete')  return adminDelete(request, env);
         if (path === '/admin/export')  return adminExport(env);
+        if (path === '/admin/backup')  return json({ ok: true, status: await runBackup(env) });
+        if (path === '/admin/backup-status') return adminBackupStatus(env);
       }
 
       return json({ error: 'no such route' }, 404);

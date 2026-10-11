@@ -5,6 +5,7 @@
 #import "../SCILog.h"
 #import "../Localization/SCILocalize.h"
 #import "../Diagnostics/SCIYTDiagnostics.h"
+#import "SCIYTWindow.h"
 
 @implementation SCIYTSettingsController
 
@@ -129,20 +130,7 @@
 // MARK: - Presentation
 
 + (UIViewController *)topMostController {
-    UIWindow *key = nil;
-    for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
-        if (![scene isKindOfClass:[UIWindowScene class]]) continue;
-        for (UIWindow *window in ((UIWindowScene *)scene).windows) {
-            if (window.isKeyWindow) { key = window; break; }
-        }
-        if (key) break;
-    }
-
-    UIViewController *controller = key.rootViewController;
-    while (controller.presentedViewController) {
-        controller = controller.presentedViewController;
-    }
-    return controller;
+    return SCIYTTopViewController();
 }
 
 + (void)present {

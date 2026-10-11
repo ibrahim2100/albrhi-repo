@@ -4,6 +4,22 @@
 #import "YTMUTestKit.h"
 #import "YTMUTestSettings.h"
 
+// Newer UIKit refuses to launch an app that has not adopted the scene life cycle ("UIScene life
+// cycle is required for apps built with this SDK"). A scene with an empty window is all it asks for;
+// the suite still runs from the application delegate, as before.
+@interface YTMUTestSceneDelegate : UIResponder <UIWindowSceneDelegate>
+@property (nonatomic, strong) UIWindow *window;
+@end
+
+@implementation YTMUTestSceneDelegate
+- (void)scene:(UIScene *)scene willConnectToSession:(UISceneSession *)session options:(UISceneConnectionOptions *)options {
+    if (![scene isKindOfClass:[UIWindowScene class]]) return;
+    self.window = [[UIWindow alloc] initWithWindowScene:(UIWindowScene *)scene];
+    self.window.rootViewController = [[UIViewController alloc] init];
+    [self.window makeKeyAndVisible];
+}
+@end
+
 @interface YTMUTestAppDelegate : UIResponder <UIApplicationDelegate>
 @end
 
@@ -16,6 +32,13 @@
     // is still executing.
     [self performSelector:@selector(runSuite) withObject:nil afterDelay:0];
     return YES;
+}
+
+- (UISceneConfiguration *)application:(UIApplication *)application
+    configurationForConnectingSceneSession:(UISceneSession *)session options:(UISceneConnectionOptions *)options {
+    UISceneConfiguration *configuration = [[UISceneConfiguration alloc] initWithName:@"Default" sessionRole:session.role];
+    configuration.delegateClass = [YTMUTestSceneDelegate class];
+    return configuration;
 }
 
 - (void)runSuite {

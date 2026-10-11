@@ -19,5 +19,18 @@ compatibility_date = "2026-09-01"
 binding = "DB"
 id = "3537d89b14e842bf932bfd02bb4fa145"
 
+# **The daily backup** (src/worker.js, runBackup): every record, once a day, the last thirty kept.
+# Without the bucket below it goes to KV, which protects against a mistake in a handler and not
+# against losing the namespace -- the status route says which one is in use.
+[triggers]
+crons = ["23 2 * * *"]
+
+# Create the bucket first (`npx wrangler r2 bucket create albrhi-backup`), then uncomment. A binding
+# to a bucket that does not exist fails the whole deploy, which is why it is not on by default.
+#
+# [[r2_buckets]]
+# binding = "BACKUP"
+# bucket_name = "albrhi-backup"
+
 [observability]
 enabled = true

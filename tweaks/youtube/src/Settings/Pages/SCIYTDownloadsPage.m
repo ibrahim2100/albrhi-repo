@@ -3,6 +3,7 @@
 #import "../../Localization/SCILocalize.h"
 #import "../../Features/Download/Center/SCIYTDownloadCenter.h"
 #import "../../Features/Download/SCIYTDownload.h"
+#import "../../UI/SCIYTWindow.h"
 
 ///
 /// Downloads.
@@ -54,13 +55,7 @@
                                               style:UIAlertActionStyleCancel
                                             handler:nil]];
 
-    UIWindow *key = nil;
-    for (UIWindow *window in [UIApplication sharedApplication].windows) {
-        if (window.isKeyWindow) { key = window; break; }
-    }
-
-    UIViewController *top = key.rootViewController;
-    while (top.presentedViewController) top = top.presentedViewController;
+    UIViewController *top = SCIYTTopViewController();
 
     // An iPad refuses an action sheet with no anchor, and this screen is reachable there.
     sheet.popoverPresentationController.sourceView = top.view;

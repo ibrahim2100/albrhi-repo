@@ -13,6 +13,7 @@
 #import "../../SCIYTLaunchGuard.h"
 #import "../../Localization/SCILocalize.h"
 #import "shared/src/SCIKVC.h"
+#import "../../UI/SCIYTWindow.h"
 
 static NSMutableDictionary<NSString *, NSNumber *> *sCounts = nil;
 static NSMutableArray<NSString *> *sNotes = nil;      // distinct, bounded
@@ -116,14 +117,7 @@ static void SCIYTNoticeDecoderBusy(id error) {
     static dispatch_once_t once;
     dispatch_once(&once, ^{
         dispatch_async(dispatch_get_main_queue(), ^{
-            UIViewController *top = nil;
-            for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
-                if (![scene isKindOfClass:[UIWindowScene class]]) continue;
-                for (UIWindow *window in [(UIWindowScene *)scene windows]) {
-                    if (window.isKeyWindow && window.rootViewController) top = window.rootViewController;
-                }
-            }
-            while (top.presentedViewController && !top.presentedViewController.isBeingDismissed) top = top.presentedViewController;
+            UIViewController *top = SCIYTTopViewController();
             if (!top) return;
 
             UIAlertController *note = [UIAlertController alertControllerWithTitle:SCILocalized(@"decoder_busy_title")

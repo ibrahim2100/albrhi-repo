@@ -4,6 +4,7 @@
 #import "../SCILog.h"
 #import "../Localization/SCILocalize.h"
 #import "../Features/Download/Center/SCIYTIcon.h"
+#import "SCIYTWindow.h"
 
 /// Which version last said hello. A string rather than a flag, so a later release can show
 /// this again for something worth mentioning without anyone having to invent a second key.
@@ -34,14 +35,7 @@ static NSString *const kSCIWelcomeShown = @"welcome_shown_version";
 }
 
 + (void)present {
-    UIWindow *window = nil;
-    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
-        if (![scene isKindOfClass:[UIWindowScene class]]) continue;
-        for (UIWindow *candidate in ((UIWindowScene *)scene).windows) {
-            if (candidate.isKeyWindow) { window = candidate; break; }
-        }
-        if (window) break;
-    }
+    UIWindow *window = SCIYTKeyWindow();
     if (!window) return;
 
     UIViewController *top = window.rootViewController;

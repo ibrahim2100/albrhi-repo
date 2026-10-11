@@ -74,6 +74,36 @@ on:
                 default: false
 
 jobs:
+    # The pure logic of each tweak, run on a Mac against the macOS SDK (tools/run-host-tests.sh).
+    #
+    # **Report-only for now, and that is stated rather than hidden.** These harnesses were written
+    # and run on a developer machine and have never run on a CI image; a difference in Xcode or SDK
+    # there would otherwise block a release for a reason unrelated to the code. It is a separate job
+    # with no `needs` link, so a red mark here is seen on the run and never withholds a publish.
+    # Once it has been green on a few runs, make `build` depend on it.
+    host-tests:
+        name: Host tests (pure logic)
+        runs-on: macos-latest
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            # The YouTube Music harness compiles against Theos's headers.
+            - name: Theos
+              uses: actions/checkout@v4
+              with:
+                  repository: theos/theos
+                  ref: master
+                  submodules: recursive
+                  path: ${{ github.workspace }}/theos
+
+            - name: Run the host tests
+              env:
+                  THEOS: ${{ github.workspace }}/theos
+              run: bash tools/run-host-tests.sh
+
     build:
         name: Build, release and publish
         runs-on: macos-latest

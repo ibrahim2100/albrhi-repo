@@ -23,6 +23,7 @@ NSString *SCIPanelInstalledSuiteVersion(void) {
     return [SCIPanelScan installedSuiteVersion];
 }
 
+// host-test:begin newest
 // dpkg-scanpackages -m publishes several versions of one package on purpose, so the source
 // legitimately lists 1.57.0 above 1.58.10. Taking the first match would report an update as a
 // downgrade; the highest is the only answer that means anything.
@@ -47,6 +48,8 @@ static NSString *SCINewestVersionIn(NSString *text) {
 
     return best;
 }
+
+// host-test:end newest
 
 void SCIPanelCheckForUpdate(void (^completion)(NSString *latest, NSString *installed, BOOL newer)) {
     NSString *installed = SCIPanelInstalledSuiteVersion();

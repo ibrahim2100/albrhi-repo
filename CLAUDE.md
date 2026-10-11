@@ -243,7 +243,7 @@ third is a device. That is what the Diagnostics pages are for — and why host t
 
 `python3 tools/check.py` runs in CI before Theos, so a typo fails in seconds, not after a five-minute compile.
 Run from the root it re-executes once per `tweaks/*` directory (a failing tweak is named, the others still run).
-**Twenty-four rules, each from something that actually broke:**
+**Twenty-six rules, each from something that actually broke** (plus the repository-wide ones, below):
 
 1. duplicate `@interface` — compared per **translation unit** (transitive quoted-import closure), not per file
 2. brace balance and `%hook`/`%group`/`%subclass`…`%end` pairing — one **scanner** that knows comments, strings and
@@ -273,7 +273,13 @@ Run from the root it re-executes once per `tweaks/*` directory (a failing tweak 
 23. **`-valueForKey:` on somebody else's object** — use `SCISafeValueForKey`/`BoolForKey`/`NumberForKey` from
     `shared/src/SCIKVC.h`
 24. a `PSTitleValueCell` that sets a `value` and has no getter (a title-only cell of that kind is an ordinary row)
+25. a second copy of the "find the key window" walk in a tweak that already has `SCI<..>KeyWindow(void)` (YouTube wrote it ten times, each a little different, and a fix to one reached none of the others); a deliberate different question says `sci-allow-keywindow` on its line
+26. a `SCIPref…` macro that nothing reads — a switch that does nothing is a screen that lies (found by deleting `h264_only`, which had a macro, a default and a row and no reader once the filter was gone)
 
+**Repository-wide checks** (`tools/check-repo.py`, run first by `check.py`) are the rules that were paragraphs: no `+N` in anything **staged** (a local build's `+N` sits in the tree and is none of its business; CI checks the tree);
+a changelog's newest entry equals the `control` version, for every tweak and the suite; README badges, the README table and *Known state* equal the `control` version; **the suite is bumped whenever a tweak in it
+is** (local only: compares with `HEAD`, which CI's shallow clone does not have); `.no-suite` and `buildsuite.yml`'s `!tweaks/<name>/**` agree; every workflow that publishes takes `albrhi-pages`; and a step id named
+in an `if:` exists. Each was proved by reintroducing its bug. They found nothing in the tree when first run — the value is the next push, not the last one.
 **A check that cries wolf gets ignored.** Rules are fixed in the rule, never in the code being checked, and **the
 other tweaks are the oracle**: they build under `-Werror`, so any finding in them is by definition a false
 positive. When a rule fires on imported code that builds clean, suspect the rule. Rule 16 once reported
@@ -286,21 +292,25 @@ it reads as checked and clean.** If you add a rule, prove it fails by reintroduc
 **Host tests** run pure logic on the build machine against the macOS SDK: `bash tweaks/ytmusic/tests/host/run.sh`
 (LRC parser, matching pipeline, caches, romaniser, extractors — 29 tests in about a second) and
 `bash tweaks/youtube/tests/host/run.sh` (the transport), `bash tweaks/instagram/tests/host/run.sh` (the deleted-messages log) and `bash tweaks/twitter/tests/host/run.sh` (X's timeline section filter — the code is copied out of the `.x` by marker, so what passes is what ships). A hook needs a device; a parser does not, and several of
-this project's most expensive bugs lived in exactly that layer. Open: the DASH ladder, the TikTok quality ranking
-and the version comparison are pure functions with no tests yet.
+this project's most expensive bugs lived in exactly that layer. `bash tools/run-host-tests.sh` runs every `tweaks/*/tests/host/run.sh` (found by glob) and the licence server's Node tests. Added since: the direct route's format choice and quality ladder (`SCIYTDirect`,
+the pure part was moved into `+ladderForVideos:audio:videoID:` so it could be copied out by `// host-test:begin` marker), the panel's "newest version in `Packages`", and TikTok's kind rank and demoted origins.
+**Not covered, stated:** TikTok's comparator that orders measured links (it sits inside a method that makes network requests), `SCIYTFragments` (needs a fragmented MP4 fixture), and everything about what the apps
+actually serve, which only a device says. **The YouTube Music harness had been failing** (no include path for `shared/`, `SCIKVC.m` not compiled, and newer UIKit refusing an app with no scene) while this file
+said "29 tests in about a second" — a test nobody runs in CI is a test that rots; the three are fixed and it passes again.
 
 ### 3.6 Tools
 
 | tool | what it is for |
 |---|---|
-| `check.py` | the rules above |
+| `check.py` · `check-repo.py` | the rules above · the repository-wide ones |
 | `objc-classes.py` | a class's real method list, **declared property types**, ivars, class methods and **type encodings** out of a Mach-O's ObjC metadata; `--find-method` / `--find-ivar` answer "who answers this selector / owns this field" |
 | `make-suite.sh` · `merge-control.py` | merge the staged trees into `com.albrhi`; refuse a tree that does not match the scheme; **keep the fields Theos computed and override only your own** (replacing `DEBIAN/control` wholesale once threw away what Theos had written) |
 | `make-repo.sh` · `fetch-published-debs.sh` | build the APT index **from the published releases**; `WITHHELD_PACKAGES`; guard against two packages sharing name+version+architecture; label rootful/rootless/roothide |
 | `make-depiction.py` · `release-notes.py` | Sileo depiction + HTML fallback and GitHub release bodies, **generated from the changelog** so they cannot go stale |
 | `build-local.sh` · `build-dylibs.sh` · `build-app.sh` · `build-dav1d.sh` | local suite, standalone dylibs, the admin app, the AV1 decoder |
 | `inject-dylib.py` · `ipa-inject.html` | put a dylib into an IPA; entitlements are read with `ldid -e` **before** anything is modified and handed back with `ldid -S<file>` (re-signing with `-S` alone erases them — TikTok carries twenty) |
-| `licence.py` · `licence-panel.html` · `build-store.sh` | issue and revoke licences, keep the ledger, build a one-shop copy (§6) |
+| `licence.py` · `licence-panel.html` · `build-store.sh` · `backup-to-kv-bulk.py` | issue and revoke licences, keep the ledger, build a one-shop copy (§6) · turn a licence-server backup into a `wrangler kv bulk put` file |
+| `run-host-tests.sh` | every host test, by glob (§3.5) |
 | `deb-edit.py` · `deb-edit.html` | edit `.deb` metadata (`label` appends `(rootless)`/`(roothide)`/`(rootful)`; `normalize` converts an xz control archive to gzip — the browser tool carries a hand-written DEFLATE because `DecompressionStream` is iOS 16.4+) |
 | `make-logo.py` · `make-app-icon.py` · `repo-index.html` | repo icon in pure Python, app icon, the source's landing page (built from the live index) |
 
@@ -318,6 +328,8 @@ result installs cleanly and fails on the device. Build both flavours from source
 | `buildwatch.yml` | Watch | yes — `watch-v*` |
 | `buildtweak.yml` · `buildyoutube.yml` · `buildtwitter.yml` · `buildtiktok.yml` · `buildpanel.yml` | one tweak each | **manual build only, write nothing** |
 | `build-dav1d.yml` | the AV1 decoder Instagram links | on demand |
+
+`buildsuite.yml` also carries a **`host-tests` job** (`tools/run-host-tests.sh` on a macOS runner) that is **report-only on purpose**: these harnesses had never run on a CI image, so it has no `needs` link and a red mark there shows on the run without withholding a publish. Make `build` depend on it once it has been green for a few runs. **CI time is compiling** (measured on one run: about 7 of 8 minutes; Theos setup 12 s), so caching Theos was not worth adding.
 
 There is no Spotify workflow. **Three workflows publish and all take the `albrhi-pages` concurrency group** — the
 one thing stopping two runs writing `gh-pages` at once.
@@ -901,24 +913,14 @@ instances taught; here are the facts.
   `-didTapButton:`, and a button becomes the download button at `-setOfflineStatus:offlineability:`, not at construction. **Hold-to-save is gone** (removed in 1.37.0: 1.26.0 had already moved downloading onto YouTube's button after hold-to-speed-up started downloading, and a switch that
   only re-enabled a gesture the project had retreated from was clutter — see §4.2).
 
-- **YouTube's own player stopped on iOS 16 / 21.33.6 — a stuck system decoder, cured by restarting the phone (n=1); the H.264-only filter built on a wrong diagnosis was removed in 1.40.3.**
-  21.33.6 is the last build iOS 16 runs. A regular video played a second or two and stopped with "Something went wrong" **on the stock app: no tweak, signed in or out, no DNS/VPN, an
-  official IPA installed outside the App Store**; Shorts and this tweak's downloads (the `VISIONOS` client) were fine. What the probes measured: the player error chain is `playback 0` ←
-  `MLPlayerError 2` ← `com.google.ios.hamplayer 2101` with details `sbdl_failed|…` (**`sbdl` = `AVSampleBufferDisplayLayer`**); the layer's notification says
-  `AVFoundationErrorDomain -11839` "the decoder required for this media is busy" ← `NSOSStatusErrorDomain -12913` (`kVTVideoDecoderNotAvailableNowErr`), ×50, with `vp09` the last thing
-  enqueued; failing videos offer three formats per resolution (H.264/VP9/AV1), the one that played only H.264. **Two diagnoses were wrong, and each cost releases.** (1) A missing
-  proof-of-origin token (`STREAM_PROTECTION_STATUS`): the challenge answered, tokens were minted, chunks completed (three releases of probe). (2) **"This phone cannot decode VP9"**
-  (1.40.0–1.40.2, a switch "H.264 only" that filtered the stream list, then tried to reduce the loader's format constraint to one format, then turned itself on after the first failure):
-  `VTIsHardwareDecodeSupported(vp09)` answered **yes** on this iPhone 13 Pro/iOS 16.1 the whole time, and **after the owner restarted the phone (jailbreak off, on) the same videos played in
-  automatic mode, VP9 included, with the filter off — and broke again, measurably, with it on.** The filter made it worse: **in automatic mode the server chooses the format itself**
-  (`MLPlatypusABRLoader._serverDrivenSelectableFormats`) from everything it has, the client's list is not a restriction on it, and a server choice the player no longer knew produced
-  `sabr.invalidformat` ×41,984 and ×3,983 and a video stuck at 0:00; a manual quality worked only because it leaves the client one format. And `auto_h264` wrote the switch into the
-  preferences for good, so it outlived the fault that justified it. **What is and is not known:** a restart cleared it on one phone; **why it began** (two days before the report, after a
-  tweak update that touched nothing in playback; the stock app without the tweak failed too) and **whether it comes back** are not known — the jailbreak being on at the time is a
-  candidate, not a finding. What remains: the probe (read-only; its `frames handed to the display layer` line says what codec was enqueued), the device line in the report (model, iOS,
-  VideoToolbox's answers), "Watch here" (`SCIYTWatch`, 1.39.0: fetches the video as a save does and plays it in the Centre) offered when the app's error is shown, and one alert per launch
-  when the display layer reports `-12913`: restart the phone. The lesson belongs in §4: **a switch that rewrites what the app is offered, to cure a fault whose cause is a guess about
-  the device, is a second fault; and a setting that turns itself on outlives the thing it answered.**
+- **YouTube's own player stopped on iOS 16 / 21.33.6 — a stuck system decoder, cured by restarting the phone (n=1).** On the stock app, no tweak, regular videos played a second or two and
+  stopped ("Something went wrong"); Shorts and this tweak's downloads were fine. The display layer reported `-12913` ("decoder busy") on `vp09` samples. **Two diagnoses were wrong and each shipped:**
+  a missing proof-of-origin token (three releases of probe), and "this phone cannot decode VP9" — an "H.264 only" filter (1.40.0–1.40.2) that made *automatic* mode worse, because the server
+  chooses the format itself and the client's list does not restrict it, and a switch that turned itself on and outlived the fault. VideoToolbox answered *yes* for VP9 on that phone throughout.
+  After a restart, automatic mode played 100% with the filter off. 1.40.3 removed the filter; what remains is the read-only probe, the device line in the report, "Watch here" when the app's
+  error is shown, and one alert per launch on `-12913`: restart the phone. **Not known:** why it began, or whether it returns. The full evidence and the order it arrived in:
+  [`docs/investigations/youtube-ios16-playback.md`](docs/investigations/youtube-ios16-playback.md). **The lesson:** a switch that rewrites what the app is offered, to cure a fault whose
+  cause is a guess about the device, is a second fault; and a setting that turns itself on outlives the thing it answered.
 
 **The Download Centre** is a **tab**, built as a pivot renderer YouTube draws itself (real label, selected state, width) — never a circle
 painted over the bar; its icon is painted on afterwards because the `iconType` enum is unreadable. **History** (`FEhistory` browse id the app
@@ -1184,6 +1186,12 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
 - **KV `list()` lags a delete by about a minute and returns keys with no value**: spreading the `null` made a row of nothing whose approve button posted `dev:
   undefined`. The server drops entries whose value is gone; the panel removes a row it has already acted on rather than re-asking a lagging index; a button re-enables in
   a `finally` and says why it failed. Knowing a store is eventually consistent is not handling every shape the inconsistency arrives in.
+- **The backup is a cron in the Worker** (`runBackup`, 02:23 UTC, the last thirty kept) writing `exportAll` — the same records `/admin/export` returns — to **R2 when a bucket is bound as `BACKUP`, to KV
+  otherwise**, and the status says which: a KV copy protects against a mistake in a handler and *not* against losing the namespace, so **it is not a backup of the thing most worth backing up until the owner
+  creates the bucket** (`wrangler r2 bucket create albrhi-backup`, then uncomment the binding — it is off by default because a binding to a bucket that does not exist fails the whole deploy). A failure is written to
+  `backupstatus` as `ok: false`, not only logged. **Found while writing it:** four callers read `KV.list()` once, which returns at most 1,000 keys — past a thousand licences the panel's counts, the shop list
+  and the export would have stopped at the first page, silently; `listAll` follows the cursor, and the test fails if it does not (an in-memory KV that pages at three). `tools/backup-to-kv-bulk.py` turns a backup
+  back into a `wrangler kv bulk put` file and refuses one whose declared counts disagree with what it holds. **Not deployed or run against the real KV from this machine** — that is `wrangler deploy`, the owner's step.
 - **File the record before handing the user to another app**: the plans card sends the request to the server *then* opens WhatsApp — somebody who never sends the message
   still leaves a request in the panel, and that person meant to pay. The message opens whether or not the request landed.
 
@@ -1229,8 +1237,8 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
   notification **naming the person, once per licence per day**, WhatsApp with the message already written (four editable templates, chosen by the licence's own state),
   copy on anything anybody would transcribe, per-licence history (the server keeps the last ten changes), which tweak/version each device runs, summary cards that open the list
   they counted with the filter pinned, **undo not a second confirmation** (a real five-second delay; leaving the screen sends it), a swipe never performing its first
-  action on a full swipe, a cached answer offered with its age (in Caches, not a backed-up directory), an `/admin/export` backup handed to the share sheet (**nothing here
-  has a second copy** — every licence, code and trial lives in one KV namespace with no export or history; an automatic backup is open work, §7), and a widget that is a second
+  action on a full swipe, a cached answer offered with its age (in Caches, not a backed-up directory), an `/admin/export` backup handed to the share sheet (**before the server's own daily backup, nothing here
+  had a second copy** — every licence, code and trial lives in one KV namespace; see the backup paragraph in §6.2), and a widget that is a second
   binary **never given the token** (it reads three numbers the app writes; a failure to build it is printed, not fatal). The web panel stays and is not the specification.
 - **Searching a phone number is searching digits or not at all**: Arabic-Indic numerals folded, everything but digits dropped, last nine compared (`+966 50 000 0000`
   finds `0500000000`), and the digit path only runs when the query really is a number; `name` and `contact` stay separate fields. A search that found nothing and a list
@@ -1243,8 +1251,8 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.40.3** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
-Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.93.3**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.40.4** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
+Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.93.4**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
@@ -1254,8 +1262,8 @@ comment-media Save row and photo-as-clip on every video type; YouTube's playback
 a login-gated video.
 
 **Open work** (owner's priorities, highest first): (1) **confirm the deleted-messages log on a device** (which message shape the stream carries decides whether text is captured) and extend it to the MSYS delete path;
-(2) **an automatic backup of the licence KV** (the largest unmitigated risk in the project); (3) hiding the reels **seen** mark; (4) **publishing Spotify** — its own
-workflow shaped like `buildnextup.yml`, or into the suite; (5) host tests for `SCIYTFragments`, the DASH ladder, TikTok's ranking and version comparison; (6) the **WhatsApp
+(2) **create the R2 bucket for the licence backup and deploy the Worker** (§6.2 — the cron is written and tested, not deployed, and without the bucket it only protects against a handler's mistake); (3) hiding the reels **seen** mark; (4) **publishing Spotify** — its own
+workflow shaped like `buildnextup.yml`, or into the suite; (5) host tests for `SCIYTFragments` and TikTok's comparator (§3.5 says why they are not there); (6) the **WhatsApp
 tweak** — postponed, Watusi 3's architecture already read; (7) CarPlay rebuilt from scratch in its own repository; settings profiles; crash isolation that disables a faulting
 feature rather than the whole tweak.
 

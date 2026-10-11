@@ -184,47 +184,6 @@
 + (void)recordActionBar:(NSString *)state;
 + (NSString *)actionBarState;
 
-/// Walks the live view hierarchy and writes down what is actually on screen.
-///
-/// **Every placement question in this tweak has been answered twice: once from a class dump and
-/// once, correctly, from the device.** A dump says what exists in the binary; it does not say
-/// what the app builds, and this project has now shipped three features aimed at classes that
-/// were never constructed on the phone in front of it. Instagram has had this page's equivalent
-/// for a year and it is what ended the guessing there.
-///
-/// Run it with a video open. It records the classes under the player -- anything whose name
-/// carries Action, Slim, Metadata, ELM or Button -- with each one's frame, capped so the report
-/// stays readable.
-+ (void)scanWatchPage;
-+ (NSString *)watchScanState;
-
-/// Asks for a scan the next time a player is on screen.
-///
-/// **Running it from the settings screen scanned the settings screen.** A full-screen presentation
-/// takes the presenting hierarchy out of the window once the transition finishes, so the watch page
-/// was not there to be looked at: the first report back listed a navigation bar's buttons and
-/// nothing else, which is an accurate scan of the wrong screen. The request is remembered instead,
-/// and the scan runs from the player's own overlay -- a moment when what is being asked about is
-/// certainly on screen.
-/// Scans the tree `view` belongs to, from its topmost ancestor down.
-///
-/// **Not the key window, and that distinction is the whole of two failed scans.** Our settings
-/// screen is presented full screen, which takes YouTube's hierarchy out of the window — so a scan
-/// of the window described the settings table, twice, accurately. A view that is off the window
-/// still has its own root, and that root is the watch page.
-+ (void)scanFromView:(UIView *)view;
-
-+ (void)requestWatchScan;
-+ (BOOL)watchScanRequested;
-
-/// The real method list of one class, read from the runtime on the device.
-///
-/// **This is `tools/objc-classes.py`, run where it matters.** That tool reads a binary somebody
-/// downloaded; this reads the build in front of the person reporting. Three features in this
-/// tweak have now been written against selectors confirmed in one YouTube build and absent from
-/// another, and each cost a release to discover -- `-createActionViewsFromSupportedRenderers:`
-/// is confirmed in 21.34.3 and the class on 21.30.5 was never asked whether it answers it.
-+ (NSString *)methodsOfClassNamed:(NSString *)name;
 + (NSString *)overlayButtonState;
 
 /// What the last tap on that button actually tried to save. Its own slot: the line above is
@@ -325,4 +284,49 @@
 
 + (UIViewController *)viewController;
 
+@end
+
+// The watch-page scan lives in SCIYTDiagnostics+WatchScan.m, as a category of its own.
+@interface SCIYTDiagnostics (WatchScan)
+/// Walks the live view hierarchy and writes down what is actually on screen.
+///
+/// **Every placement question in this tweak has been answered twice: once from a class dump and
+/// once, correctly, from the device.** A dump says what exists in the binary; it does not say
+/// what the app builds, and this project has now shipped three features aimed at classes that
+/// were never constructed on the phone in front of it. Instagram has had this page's equivalent
+/// for a year and it is what ended the guessing there.
+///
+/// Run it with a video open. It records the classes under the player -- anything whose name
+/// carries Action, Slim, Metadata, ELM or Button -- with each one's frame, capped so the report
+/// stays readable.
++ (void)scanWatchPage;
++ (NSString *)watchScanState;
+
+/// Asks for a scan the next time a player is on screen.
+///
+/// **Running it from the settings screen scanned the settings screen.** A full-screen presentation
+/// takes the presenting hierarchy out of the window once the transition finishes, so the watch page
+/// was not there to be looked at: the first report back listed a navigation bar's buttons and
+/// nothing else, which is an accurate scan of the wrong screen. The request is remembered instead,
+/// and the scan runs from the player's own overlay -- a moment when what is being asked about is
+/// certainly on screen.
+/// Scans the tree `view` belongs to, from its topmost ancestor down.
+///
+/// **Not the key window, and that distinction is the whole of two failed scans.** Our settings
+/// screen is presented full screen, which takes YouTube's hierarchy out of the window — so a scan
+/// of the window described the settings table, twice, accurately. A view that is off the window
+/// still has its own root, and that root is the watch page.
++ (void)scanFromView:(UIView *)view;
+
++ (void)requestWatchScan;
++ (BOOL)watchScanRequested;
+
+/// The real method list of one class, read from the runtime on the device.
+///
+/// **This is `tools/objc-classes.py`, run where it matters.** That tool reads a binary somebody
+/// downloaded; this reads the build in front of the person reporting. Three features in this
+/// tweak have now been written against selectors confirmed in one YouTube build and absent from
+/// another, and each cost a release to discover -- `-createActionViewsFromSupportedRenderers:`
+/// is confirmed in 21.34.3 and the class on 21.30.5 was never asked whether it answers it.
++ (NSString *)methodsOfClassNamed:(NSString *)name;
 @end

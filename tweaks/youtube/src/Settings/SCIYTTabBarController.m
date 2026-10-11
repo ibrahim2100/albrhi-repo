@@ -2,6 +2,7 @@
 #import "../Features/Tabs/SCIYTTabBar.h"
 #import "../Features/Tabs/SCIYTHistoryTab.h"
 #import "../Localization/SCILocalize.h"
+#import "../UI/SCIYTWindow.h"
 
 @interface SCIYTTabBarController ()
 @property (nonatomic, strong) NSMutableArray<NSString *> *active;
@@ -262,14 +263,8 @@ moveRowAtIndexPath:(NSIndexPath *)from
 #pragma mark - Presenting
 
 + (void)present {
-    UIWindow *key = nil;
-    for (UIWindow *window in [UIApplication sharedApplication].windows) {
-        if (window.isKeyWindow) { key = window; break; }
-    }
-    if (!key) return;
-
-    UIViewController *top = key.rootViewController;
-    while (top.presentedViewController) top = top.presentedViewController;
+    UIViewController *top = SCIYTTopViewController();
+    if (!top) return;
 
     SCIYTTabBarController *controller = [[SCIYTTabBarController alloc] init];
     UINavigationController *navigation =
