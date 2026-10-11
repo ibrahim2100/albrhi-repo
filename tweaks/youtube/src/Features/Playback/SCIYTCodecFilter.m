@@ -17,6 +17,10 @@ static NSMutableDictionary<NSString *, NSNumber *> *sRemovedByCodec = nil;
 static NSString *sAutoNote = nil;
 static BOOL sAutoAlertShown = NO;
 static IMP sOriginalStreamingData = NULL;
+static IMP sOriginalSetConstraint = NULL;
+static NSString *sConstraintHookState = @"not installed";
+static NSUInteger sConstraintsWrapped = 0, sReductions = 0, sReductionsNoAvc = 0;
+static NSMutableArray<NSString *> *sConstraintNotes = nil;
 static char kSCIFiltered;
 
 static NSString *SCICodecOf(NSString *mime) {
@@ -97,6 +101,109 @@ static void SCIYTInstallCodecFilter(void) {
     sHookState = @"attached to YTIPlayerResponse -streamingData";
 }
 
+// MARK: - Choosing one format, the way a manual quality choice does
+
+///
+/// **Filtering the list was not enough, and what the owner did by hand showed why.** With the
+/// list filtered (1.40.0) the failing video stopped at 0:00 and, after a long wait, played sound
+/// with no picture; the report showed **41,984** non-fatal `sabr.invalidformat` errors --
+/// `init_metadata_badid_formatid_243_…`, `…248…`, `…244…`, `…247…`, all VP9 itags the player no
+/// longer knew. The server still chose VP9: in automatic mode it picks the format *itself*
+/// (`_serverDrivenSelectableFormats`) from everything it has, and the client's list is not a
+/// restriction on it. Then the owner chose **1080p by hand, and the video played normally** --
+/// a manual choice leaves the client with exactly one format, and the server serves that one.
+///
+/// So the automatic mode is made to do the same thing: the loader's *video* format constraint is
+/// handed to the player as it is, except that its `-filterFormats:` -- whatever it decides -- is
+/// followed by "and of those, only the best H.264 one". It is done by giving that one constraint
+/// object a subclass of its own class (so everything else it answers is unchanged and
+/// `-isKindOfClass:` still holds), rather than by hooking all six constraint classes, because
+/// constraints are applied in a chain and a reduction in the middle of it could be dropped by a
+/// later cap and leave nothing at all -- the loader holds *one* constraint, and this is applied to it.
+///
+/// The price is adaptivity: one format, as with a manual choice. Lower it by hand on a slow line.
+static NSString *SCIYTMimeOfFormat(id format) {
+    id stream = SCISafeValueForKey(format, @"formatStream");
+    id mime = SCISafeValueForKey(stream, @"mimeType");
+    return [mime isKindOfClass:[NSString class]] ? mime : nil;
+}
+
+static NSArray *SCIYTBestH264(NSArray *formats) {
+    if (![formats isKindOfClass:[NSArray class]] || formats.count < 2) return formats;
+    if (!SCISafeBoolForKey(formats.firstObject, @"isVideo")) return formats;
+
+    id best = nil;
+    NSInteger bestHeight = -1, bestBitrate = -1;
+    for (id format in formats) {
+        NSString *mime = SCIYTMimeOfFormat(format).lowercaseString;
+        if (![mime hasPrefix:@"video/"] || ![mime containsString:@"avc1"]) continue;
+
+        NSInteger height = SCISafeNumberForKey(format, @"height").integerValue;
+        NSInteger bitrate = SCISafeNumberForKey(format, @"bitrate").integerValue;
+        if (height > bestHeight || (height == bestHeight && bitrate > bestBitrate)) {
+            best = format; bestHeight = height; bestBitrate = bitrate;
+        }
+    }
+
+    if (!best) { sReductionsNoAvc++; return formats; }
+
+    sReductions++;
+    if (!sConstraintNotes) sConstraintNotes = [NSMutableArray array];
+    NSString *note = [NSString stringWithFormat:@"reduced %lu → 1: itag %@ %@p (%@)", (unsigned long)formats.count,
+                      SCISafeNumberForKey(best, @"itag") ?: @"?", @(bestHeight), SCIYTMimeOfFormat(best)];
+    if (sConstraintNotes.count < 6 && ![sConstraintNotes containsObject:note]) [sConstraintNotes addObject:note];
+    return @[best];
+}
+
+/// The original class's constraint with the reduction added; one subclass per original class.
+static Class SCIYTReducingSubclass(Class original) {
+    NSString *name = [@"SCIYTH264_" stringByAppendingString:NSStringFromClass(original)];
+    Class existing = NSClassFromString(name);
+    if (existing) return existing;
+
+    SEL selector = @selector(filterFormats:);
+    IMP base = class_getMethodImplementation(original, selector);
+    Class subclass = objc_allocateClassPair(original, name.UTF8String, 0);
+    if (!subclass || !base) return Nil;
+
+    class_addMethod(subclass, selector, imp_implementationWithBlock(^id(id me, NSArray *formats) {
+        id filtered = ((id (*)(id, SEL, id))base)(me, selector, formats);
+        return SCIPrefEnabled(SCIPrefH264Only) ? SCIYTBestH264(filtered) : filtered;
+    }), "@24@0:8@16");
+    objc_registerClassPair(subclass);
+    return subclass;
+}
+
+static void SCIYTInstallConstraintHook(void) {
+    Class loader = objc_getClass("MLPlatypusABRLoader");
+    SEL selector = NSSelectorFromString(@"setVideoFormatConstraint:");
+    Method method = loader ? class_getInstanceMethod(loader, selector) : NULL;
+    const char *encoding = method ? method_getTypeEncoding(method) : NULL;
+
+    if (!encoding || strcmp(encoding, "v24@0:8@16") != 0) {
+        sConstraintHookState = loader ? [NSString stringWithFormat:@"-setVideoFormatConstraint: encoding %s", encoding ?: "missing"]
+                                      : @"MLPlatypusABRLoader not in this build";
+        return;
+    }
+
+    MSHookMessageEx(loader, selector, imp_implementationWithBlock(^(id me, id constraint) {
+        if (constraint && SCIPrefEnabled(SCIPrefH264Only) && !SCIYTStoodDown()) {
+            Class cls = object_getClass(constraint);
+            BOOL already = [NSStringFromClass(cls) hasPrefix:@"SCIYTH264_"];
+            BOOL answers = [constraint respondsToSelector:@selector(filterFormats:)];
+            // A constraint that switches the track off is not a choice of format.
+            BOOL disables = SCISafeBoolForKey(constraint, @"disableTrack");
+
+            if (!already && answers && !disables) {
+                Class subclass = SCIYTReducingSubclass(cls);
+                if (subclass) { object_setClass(constraint, subclass); sConstraintsWrapped++; }
+            }
+        }
+        if (sOriginalSetConstraint) ((void (*)(id, SEL, id))sOriginalSetConstraint)(me, selector, constraint);
+    }), &sOriginalSetConstraint);
+    sConstraintHookState = @"attached to MLPlatypusABRLoader -setVideoFormatConstraint:";
+}
+
 // MARK: - Turning itself on
 
 static UIViewController *SCIYTRoot(void) {
@@ -142,10 +249,13 @@ NSString *SCIYTCodecFilterReport(void) {
      (unsigned long)sFilteredResponses, (unsigned long)sResponses, (unsigned long)sRemoved,
      sRemovedByCodec.count ? [[sRemovedByCodec.allKeys sortedArrayUsingSelector:@selector(compare:)] componentsJoinedByString:@"/"] : @"none",
      (unsigned long)sKept, (unsigned long)sSkippedNoAvc];
+    [out appendFormat:@"\n  one-format choice: %@ · %lu constraint(s) wrapped · %lu reduction(s) · %lu with no H.264 to pick",
+     sConstraintHookState, (unsigned long)sConstraintsWrapped, (unsigned long)sReductions, (unsigned long)sReductionsNoAvc];
+    for (NSString *note in sConstraintNotes) [out appendFormat:@"\n    · %@", note];
     if (sAutoNote) [out appendFormat:@"\n  %@", sAutoNote];
     return out;
 }
 
 __attribute__((constructor)) static void SCIYTCodecFilterRegister(void) {
-    SCIYTWhenActive(^{ SCIYTInstallCodecFilter(); });
+    SCIYTWhenActive(^{ SCIYTInstallCodecFilter(); SCIYTInstallConstraintHook(); });
 }

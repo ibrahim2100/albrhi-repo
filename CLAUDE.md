@@ -911,7 +911,13 @@ instances taught; here are the facts.
   this media is busy" ← `NSOSStatusErrorDomain -12913` (`kVTVideoDecoderNotAvailableNowErr`), ×50; the last thing enqueued was **`vp09` (VP9)**; the failing videos offer **three
   formats per resolution** (itags 134/243/396 = H.264/VP9/AV1) while the video that played offers **six, H.264 only**, and plays `avc1` with no failure. The app **declares** VP9
   (`YTVSMediaCapabilities`: three entries, `codec#2 efficient`, `#4 10bit efficient`, `#8 10bit` — the last is software AV1 because `populateSwAv1MediaCapabilities` is YES; which
-  number is which codec is *inferred*, not read) as playable; this phone cannot show it. **Fix: `SCIYTCodecFilter`** removes VP9/AV1 *video* entries from
+  number is which codec is *inferred*, not read) as playable; this phone cannot show it. **1.40.0's fix — list filtering alone — was not enough, and the owner's own hand showed why**: the video stuck at 0:00 and after a long wait played
+  audio with no picture, with **41,984** non-fatal `sabr.invalidformat` errors (`init_metadata_badid_formatid_243/248/244/247` — VP9 itags the player no longer knew): **in automatic mode the
+  server picks the format itself** (`MLPlatypusABRLoader._serverDrivenSelectableFormats`) from everything it has and the client's list does not restrict it; then the owner **chose 1080p by hand
+  and it played** — a manual choice leaves the client exactly one format and the server serves that. 1.40.1 therefore also gives the loader's video format constraint (`-setVideoFormatConstraint:`)
+  a runtime subclass of its own class whose `-filterFormats:` is followed by "the one best `avc1` video"; applied to the single constraint the loader holds, not to the six constraint classes,
+  because constraints chain and a reduction mid-chain can be emptied by a later cap. Price: one format, no automatic downshift, as with a manual choice. **Not run on a device.** The original
+  mechanism, `SCIYTCodecFilter`, removes VP9/AV1 *video* entries from
   `YTIPlayerResponse -streamingData` → `adaptiveFormatsArray` once per response, only when an H.264 video remains (a 4K-only video is left whole), audio untouched; it costs 1440p
   and 4K, so it is a switch ("Compatibility: H.264 only") that **turns itself on the first time the display layer fails on `vp09`/`av01`** (`auto_h264`, default on) and says so. The
   filter is at the *list*, not the screen and not the declaration: filtering the ObjC capabilities getter was rejected because the SABR request may use the C++ copy, and hooking
@@ -1243,8 +1249,8 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.40.0** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
-Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.93.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.40.1** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
+Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.93.1**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
