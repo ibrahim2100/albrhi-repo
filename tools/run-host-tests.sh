@@ -32,7 +32,7 @@ done
 if command -v node >/dev/null 2>&1 && [[ -d server/test ]]; then
   count=$((count + 1))
   echo "=== server tests ==="
-  if ! node --test server/test/; then failed+=("server"); fi
+  if ! (cd server && node --test test/*.test.mjs); then failed+=("server"); fi
   echo
 fi
 

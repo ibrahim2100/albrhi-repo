@@ -329,7 +329,7 @@ result installs cleanly and fails on the device. Build both flavours from source
 | `buildtweak.yml` · `buildyoutube.yml` · `buildtwitter.yml` · `buildtiktok.yml` · `buildpanel.yml` | one tweak each | **manual build only, write nothing** |
 | `build-dav1d.yml` | the AV1 decoder Instagram links | on demand |
 
-`buildsuite.yml` also carries a **`host-tests` job** (`tools/run-host-tests.sh` on a macOS runner) that is **report-only on purpose**: these harnesses had never run on a CI image, so it has no `needs` link and a red mark there shows on the run without withholding a publish. Make `build` depend on it once it has been green for a few runs. **CI time is compiling** (measured on one run: about 7 of 8 minutes; Theos setup 12 s), so caching Theos was not worth adding.
+`buildsuite.yml` also carries a **`host-tests` job** (`tools/run-host-tests.sh` on a macOS runner) that is **report-only on purpose**: these harnesses had never run on a CI image, so it has no `needs` link and a red mark there shows on the run without withholding a publish. Make `build` depend on it once it has been green for a few runs. **First run on CI (suite 1.93.4): all six Mac suites passed (instagram, panel, tiktok, twitter, youtube 11, ytmusic 29), and the licence server's Node test failed** — the runner's Node is older and does not take `node --test <directory>`; it is now `server/package.json` (`"type": "module"`) and a glob. **CI time is compiling** (measured on one run: about 7 of 8 minutes; Theos setup 12 s), so caching Theos was not worth adding.
 
 There is no Spotify workflow. **Three workflows publish and all take the `albrhi-pages` concurrency group** — the
 one thing stopping two runs writing `gh-pages` at once.

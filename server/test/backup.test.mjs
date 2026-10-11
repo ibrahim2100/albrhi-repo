@@ -1,6 +1,6 @@
 // The daily backup, run against an in-memory KV that paginates the way the real one does (a list call
 // returns a page and a cursor), so the thing the backup exists to guard against -- a silent stop at
-// the first page -- is what is tested. Run with:   node --test server/test/
+// the first page -- is what is tested. Run with:   cd server && npm test
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import worker from '../src/worker.js';

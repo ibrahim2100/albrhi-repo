@@ -95,4 +95,4 @@ python3 tools/backup-to-kv-bulk.py backup-2026-10-11.json > bulk.json
 npx wrangler kv bulk put bulk.json --namespace-id <the id in wrangler.toml>
 ```
 
-`node --test server/test/` runs the backup against an in-memory KV that paginates like the real one.
+`npm test` (or `node --test test/*.test.mjs`) in `server/` runs the backup against an in-memory KV that paginates like the real one.
