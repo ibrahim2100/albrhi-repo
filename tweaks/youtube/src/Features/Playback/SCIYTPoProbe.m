@@ -5,6 +5,9 @@
 #import <AVFoundation/AVFoundation.h>
 #import <CoreMedia/CoreMedia.h>
 #import <CoreVideo/CoreVideo.h>
+#import <VideoToolbox/VideoToolbox.h>
+#import <sys/sysctl.h>
+#import <UIKit/UIKit.h>
 #import "SCIYTPoProbe.h"
 #import "../../SCILog.h"
 #import "../../SCIYTLaunchGuard.h"
@@ -287,6 +290,12 @@ static void SCIPoInstallCapabilityProbe(void) {
     SCIPoHook(@"YTColdConfig", @"iosPlayerClientSharedConfigPopulateSwAv1MediaCapabilities", "B16@0:8", imp_implementationWithBlock(^BOOL(id me) {
         BOOL value = sSwAv1 ? ((BOOL (*)(id, SEL))sSwAv1)(me, NSSelectorFromString(@"iosPlayerClientSharedConfigPopulateSwAv1MediaCapabilities")) : NO;
         @synchronized (sFlags) { sFlags[@"populateSwAv1MediaCapabilities"] = value ? @"YES" : @"NO"; }
+        // In H.264-only mode the declaration stops adding software AV1: a claim this phone is
+        // better off not making. Only the claim is narrowed; nothing is added to it.
+        if (value && [[NSUserDefaults standardUserDefaults] boolForKey:@"h264_only"]) {
+            @synchronized (sFlags) { sFlags[@"populateSwAv1MediaCapabilities"] = @"YES (answered NO: H.264-only mode)"; }
+            return NO;
+        }
         return value;
     }), &sSwAv1, NO);
     sCapsAttached = YES;
@@ -458,8 +467,30 @@ static void SCIPoInstall(void) {
     }
 }
 
+/// The phone itself, which no report had said: the model and the system, and what VideoToolbox
+/// answers when *asked* whether each codec decodes in hardware. A pure query -- nothing is
+/// registered, created or decoded. It is the other half of "the app declared VP9": what the
+/// declaration claims, next to what the system says about the same codec.
+static NSString *SCIPoDeviceLine(void) {
+    char machine[64] = {0};
+    size_t size = sizeof(machine);
+    sysctlbyname("hw.machine", machine, &size, NULL, 0);
+
+    struct { const char *name; CMVideoCodecType codec; } codecs[] = {
+        { "h264", kCMVideoCodecType_H264 }, { "hevc", kCMVideoCodecType_HEVC },
+        { "vp9", kCMVideoCodecType_VP9 },   { "av1", kCMVideoCodecType_AV1 },
+    };
+    NSMutableArray<NSString *> *answers = [NSMutableArray array];
+    for (size_t i = 0; i < sizeof(codecs) / sizeof(codecs[0]); i++) {
+        [answers addObject:[NSString stringWithFormat:@"%s %@", codecs[i].name,
+                            VTIsHardwareDecodeSupported(codecs[i].codec) ? @"yes" : @"no"]];
+    }
+    return [NSString stringWithFormat:@"device: %s · iOS %@ · VideoToolbox hardware decode: %@",
+            machine, [UIDevice currentDevice].systemVersion, [answers componentsJoinedByString:@", "]];
+}
+
 NSString *SCIYTPoProbeReport(void) {
-    NSMutableString *out = [NSMutableString stringWithString:@"po-token probe (read-only; lengths and counts, never a token):\n"];
+    NSMutableString *out = [NSMutableString stringWithFormat:@"po-token probe (read-only; lengths and counts, never a token):\n  %@\n", SCIPoDeviceLine()];
 
     @synchronized (sCounts) {
         if (!sCounts.count) [out appendString:@"  nothing seen yet — play a video that fails, then read this again\n"];
