@@ -28,6 +28,14 @@ for script in tweaks/*/tests/host/run.sh; do
   echo
 done
 
+# The class-dump diff tool's self-test: two tiny dylibs, one method removed, one re-typed, one added.
+if [[ -x "$(command -v xcrun)" ]]; then
+  count=$((count + 1))
+  echo "=== tools: objc-diff self-test ==="
+  if ! python3 tools/objc-diff.py --selftest; then failed+=("objc-diff"); fi
+  echo
+fi
+
 # The licence server's own tests (Node, an in-memory KV that paginates like the real one).
 if command -v node >/dev/null 2>&1 && [[ -d server/test ]]; then
   count=$((count + 1))

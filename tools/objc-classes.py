@@ -31,8 +31,14 @@ lists every class declaring an ivar of that name -- the reverse question, for wh
 known from a string dump and the class that owns it is not. `--find-method <selector>` does the
 same for a method, instance or class, which is how a protocol's real implementers are found: a
 selector in `__objc_methname` says somebody sends it, and only this says who answers it.
+
+    python3 tools/objc-classes.py <binary> --dump <out.json>
+
+writes **every** class -- superclass, instance and class methods with their type encodings, ivars,
+properties -- as JSON. That file is the input of `tools/objc-diff.py`, which answers "what changed
+between two builds of the app, among the classes this tweak actually uses".
 """
-import struct, sys
+import json, struct, sys
 
 if len(sys.argv) < 3:
     sys.exit(__doc__)
@@ -40,7 +46,12 @@ if len(sys.argv) < 3:
 path = sys.argv[1]
 find_ivar = None
 find_method = None
-if sys.argv[2] in ('--find-ivar', '--find-method'):
+dump_path = None
+if sys.argv[2] == '--dump':
+    if len(sys.argv) < 4: sys.exit(__doc__)
+    dump_path = sys.argv[3]
+    want = set()
+elif sys.argv[2] in ('--find-ivar', '--find-method'):
     if len(sys.argv) < 4: sys.exit(__doc__)
     if sys.argv[2] == '--find-ivar': find_ivar = sys.argv[3]
     else: find_method = sys.argv[3]
@@ -54,9 +65,12 @@ ncmds, = struct.unpack('<I', hdr[16:20])
 
 segs = []          # (vmaddr, vmsize, fileoff)
 sections = {}      # (seg,sect) -> (addr, size)
+chained = None     # (dataoff, datasize) of LC_DYLD_CHAINED_FIXUPS
 off = 32
 for _ in range(ncmds):
     cmd, size = struct.unpack('<II', hdr[off:off+8])
+    if cmd == 0x80000034:
+        chained = struct.unpack('<II', hdr[off+8:off+16])
     if cmd == 0x19:
         segname = hdr[off+8:off+24].rstrip(b'\0').decode()
         vmaddr, vmsize, fileoff, filesize = struct.unpack('<QQQQ', hdr[off+24:off+56])
@@ -77,6 +91,57 @@ def unchain(v):
     # unslid runtime address and the high bits are the fixup's own metadata, so every
     # pointer read out of __DATA/__DATA_CONST has to be masked before it means anything.
     return v & MASK
+
+# **An external superclass is not a pointer, it is a bind.** `superclass: ?` was the answer for every
+# class whose parent lives in another image (UIView, UIViewController, NSObject ...) because the
+# quadword holds an *import ordinal*, not an address -- and the chain of ancestors is the one thing
+# that says whether a `%hook` on `-didMoveToWindow` is hooking a method the class declares or one it
+# inherits from UIKit. LC_DYLD_CHAINED_FIXUPS carries the import table; the pointer format says where
+# in the quadword the ordinal sits.
+_imports = None
+_ptr_format = None
+def _load_imports():
+    global _imports, _ptr_format
+    _imports = {}
+    if not chained: return
+    f.seek(chained[0]); blob = f.read(chained[1])
+    if len(blob) < 28: return
+    _, starts_off, imports_off, symbols_off, count, fmt, _ = struct.unpack('<7I', blob[:28])
+    # pointer_format of the first segment that has fixups: starts_in_image -> seg_info_offset[] -> starts_in_segment
+    seg_count, = struct.unpack('<I', blob[starts_off:starts_off+4])
+    for i in range(seg_count):
+        so, = struct.unpack('<I', blob[starts_off+4+i*4:starts_off+8+i*4])
+        if so:
+            _ptr_format, = struct.unpack('<H', blob[starts_off+so+6:starts_off+so+8])
+            break
+    for ordinal in range(count):
+        if fmt == 1:    # DYLD_CHAINED_IMPORT: lib_ordinal:8, weak:1, name_offset:23
+            v, = struct.unpack('<I', blob[imports_off+ordinal*4:imports_off+ordinal*4+4])
+            name_off = v >> 9
+        elif fmt == 2:  # IMPORT_ADDEND: + int32 addend
+            v, = struct.unpack('<I', blob[imports_off+ordinal*8:imports_off+ordinal*8+4])
+            name_off = v >> 9
+        else:           # IMPORT_ADDEND64: 64-bit entry, name_offset in bits 32..63
+            v, = struct.unpack('<Q', blob[imports_off+ordinal*16:imports_off+ordinal*16+8])
+            name_off = v >> 32
+        end = blob.index(b'\0', symbols_off + name_off)
+        _imports[ordinal] = blob[symbols_off+name_off:end].decode('ascii', 'ignore')
+
+def bind_name(raw):
+    """The imported symbol a raw chained-fixup quadword binds to, or None if it is not a bind."""
+    global _imports
+    if _imports is None: _load_imports()
+    if _ptr_format in (2, 6):                      # DYLD_CHAINED_PTR_64 / _64_OFFSET
+        if not (raw >> 63) & 1: return None
+        ordinal = raw & 0xFFFFFF
+    elif _ptr_format in (1, 9, 12):                # arm64e variants
+        if not (raw >> 62) & 1: return None
+        auth = (raw >> 63) & 1
+        ordinal = raw & (0xFFFFFF if _ptr_format == 12 else 0xFFFF)
+        if not auth and _ptr_format != 12: ordinal = raw & 0xFFFF
+    else:
+        return None
+    return _imports.get(ordinal)
 
 def foff(vm):
     vm = unchain(vm)
@@ -185,6 +250,7 @@ addr, size = sections[('__DATA', '__objc_classlist')] if ('__DATA','__objc_class
     else sections[('__DATA_CONST', '__objc_classlist')]
 blob = read(addr, size)
 found = {}
+dumped = {}
 for i in range(size // 8):
     cls_vm, = struct.unpack('<Q', blob[i*8:(i+1)*8])
     cls_vm = unchain(cls_vm)
@@ -200,9 +266,13 @@ for i in range(size // 8):
     name = cstr(name_vm)
     # The superclass pointer is the second quadword of the class object, and it answers the one
     # question a method list cannot: whether several surfaces share a base worth hooking once.
-    super_vm = unchain(struct.unpack('<Q', c[8:16])[0])
+    super_raw = struct.unpack('<Q', c[8:16])[0]
+    super_vm = unchain(super_raw)
     super_name = None
-    if super_vm:
+    bound = bind_name(super_raw)
+    if bound:
+        super_name = bound[len('_OBJC_CLASS_$_'):] if bound.startswith('_OBJC_CLASS_$_') else bound
+    elif super_vm:
         sc = read(super_vm, 40)
         if sc:
             sdata = unchain(struct.unpack('<Q', sc[32:40])[0]) & ~7
@@ -211,6 +281,21 @@ for i in range(size // 8):
                 super_name = cstr(unchain(struct.unpack('<Q', sro[24:32])[0]))
 
     ivars_vm = unchain(struct.unpack('<Q', ro[48:56])[0])
+    if dump_path:
+        meta_vm = unchain(struct.unpack('<Q', c[0:8])[0])
+        cms = []
+        if meta_vm:
+            _, mro = class_ro(meta_vm)
+            if mro:
+                cms = methods(unchain(struct.unpack('<Q', mro[32:40])[0]))
+        dumped[name] = {
+            'super': super_name,
+            'methods': dict(methods(unchain(struct.unpack('<Q', ro[32:40])[0]))),
+            'class_methods': dict(cms),
+            'ivars': ivars(ivars_vm),
+            'properties': properties(unchain(struct.unpack('<Q', ro[64:72])[0])),
+        }
+        continue
     if find_method:
         for sel, types in methods(unchain(struct.unpack('<Q', ro[32:40])[0])):
             if sel == find_method: print('-[%s %s]  %s' % (name, sel, types))
@@ -239,6 +324,12 @@ for i in range(size // 8):
                 class_methods = sorted(set(methods(unchain(struct.unpack('<Q', mro[32:40])[0]))))
         found[name] = (sorted(set(methods(methods_vm))), sorted(set(properties(props_vm))),
                        super_name, class_methods, ivars(ivars_vm))
+
+if dump_path:
+    with open(dump_path, 'w') as out:
+        json.dump({'binary': path, 'classes': dumped}, out, sort_keys=True)
+    print('%d classes -> %s' % (len(dumped), dump_path))
+    sys.exit(0)
 
 if find_ivar or find_method:
     sys.exit(0)
