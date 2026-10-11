@@ -106,6 +106,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.93.2",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **يوتيوب 1.40.2 — التقرير يقول موديل الهاتف ونسخة iOS وجواب VideoToolbox عن كل ترميز (ليُعرف إن كان VP9 مدعوماً أصلاً على هذا الجهاز)، ووضع H.264 فقط لا يصرّح بـAV1…",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.93.1",
           "useBoldText": true
         },
@@ -131,20 +145,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.92.4",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **يوتيوب 1.39.4 — مقارنة الفيديو السليم بالفاشل: السليم ٦ صيغ H.264 فقط والفاشل ٢٠ صيغة (ثلاث لكل دقة).",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.93.1"
+          "text": "1.93.2"
         },
         {
           "class": "DepictionTableTextView",
