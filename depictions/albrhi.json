@@ -106,6 +106,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.92.3",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **يوتيوب 1.39.3 — التقرير الثاني للفيديو الفاشل بيّن أن الشبكة والإثبات سليمان (٣٦ مقطعاً بلا خطأ) وأن الخطأ من طبقة العرض (`sbdl_failed` =…",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.92.2",
           "useBoldText": true
         },
@@ -131,20 +145,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.92.0",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **يوتيوب 1.39.0 — «شاهد هنا»: حين يفشل مشغّل يوتيوب الأصلي (ثانية ثم Something went wrong على iOS 16 / 21.33.6) تُعرض المشاهدة في مشغّل البرهي بنفس مسار التنزيل الذي ما…",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.92.2"
+          "text": "1.92.3"
         },
         {
           "class": "DepictionTableTextView",
