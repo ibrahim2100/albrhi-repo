@@ -215,7 +215,7 @@ def hook_blocks(root):
             # `b:(id)b {`) is one selector, not its first line: joined until the opening brace.
             if current and re.match(r'\s*[-+]\s*\(', line) and '{' not in line:
                 joined, j = line, i
-                while j < len(lines) and '{' not in joined and j - i < 8:
+                while j < len(lines) and '{' not in joined and j - i < 40:
                     joined += ' ' + lines[j].strip()
                     j += 1
                 if '{' in joined:
