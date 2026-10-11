@@ -7,6 +7,7 @@
 #import "../Prefs.h"
 #import "../Localization/SCILocalize.h"
 #import "../Features/Download/SCIYTDownload.h"
+#import "../Features/Download/Center/SCIYTWatch.h"
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import "../Features/Tabs/SCIYTTabBar.h"
@@ -1345,7 +1346,7 @@ static NSMutableArray<NSString *> *sciStreamAttempts = nil;
 
     [out appendFormat:@"%@\n  %@\n\n", SCILocalized(@"diag_ad_gates"), [self adGateState]];
 
-    [out appendFormat:@"%@\n  %@\n\n", SCILocalized(@"diag_playback_fix"), [self playbackFixState]];
+    [out appendFormat:@"%@\n  %@\n  %@\n\n", SCILocalized(@"diag_playback_fix"), [self playbackFixState], [SCIYTWatch report]];
 
     // Above the streams section on purpose: it says what was asked of the streaming protocol,
     // and the section below says what came back. Read the other way round they are two

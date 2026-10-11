@@ -7,7 +7,7 @@
 #import "Diagnostics/SCIYTDiagnostics.h"
 #import "Features/Display/SCIYTDimmer.h"
 
-NSString *SCIVersionString = @"v1.38.0";  // AlbrhiYT
+NSString *SCIVersionString = @"v1.39.0";  // AlbrhiYT
 
 ///
 /// Capture, so the diagnostics page has something true to report.
@@ -90,6 +90,7 @@ NSString *SCIVersionString = @"v1.38.0";  // AlbrhiYT
         SCIPrefHideAds: @YES,
         SCIPrefBackgroundPlay: @YES,
         SCIPrefFixPlaybackErrors: @YES,
+        SCIPrefOfferWatch: @YES,
         SCIPrefHidePaidPromo: @NO,
 
         // Both pure upside with nothing to weigh against: real PIP is a system window

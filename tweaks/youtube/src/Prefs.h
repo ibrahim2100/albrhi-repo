@@ -14,6 +14,9 @@
 /// Recovers "an error occurred" playback errors by reloading the player -- on by default, and
 /// capped at two attempts per video so a video that genuinely cannot play is not reloaded forever.
 #define SCIPrefFixPlaybackErrors @"fix_playback_errors"
+/// After YouTube's own player has failed, offers to fetch the video the way a save does and play
+/// it in Albrhi's player. Asked once per video a minute, and only when the app's error is shown.
+#define SCIPrefOfferWatch        @"offer_watch_on_error"
 #define SCIPrefHidePaidPromo    @"hide_paid_promotion"
 /// Unlocks native, system Picture-in-Picture -- forces the one property that gates it by
 /// account plan rather than by the video itself. Read from `MLVideo`, the same class

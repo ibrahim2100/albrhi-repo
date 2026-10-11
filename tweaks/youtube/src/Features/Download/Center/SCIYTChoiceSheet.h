@@ -37,6 +37,16 @@ NS_ASSUME_NONNULL_BEGIN
             videoID:(nullable NSString *)videoID
              chosen:(void (^)(SCIHLSVariant *variant, SCIYTJobKind kind))chosen;
 
+/// The same, with a fourth choice: watch it here. `watch` is called with the quality tapped
+/// (never an AV1 one -- an iPhone on iOS 16 cannot decode it) and the sheet has already closed.
+/// A nil `watch` leaves the sheet exactly as it was.
++ (void)presentFrom:(UIViewController *)presenter
+           variants:(NSArray<SCIHLSVariant *> *)variants
+              title:(nullable NSString *)title
+            videoID:(nullable NSString *)videoID
+             chosen:(void (^)(SCIHLSVariant *variant, SCIYTJobKind kind))chosen
+              watch:(nullable void (^)(SCIHLSVariant *variant))watch;
+
 @end
 
 NS_ASSUME_NONNULL_END

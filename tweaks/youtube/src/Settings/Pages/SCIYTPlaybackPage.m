@@ -134,6 +134,10 @@ static void SCIAskForCap(SCIYTSettingsHostController *host, NSString *key) {
                        detail:SCILocalized(@"fix_playback_errors_note")
                        symbol:@"arrow.clockwise.circle.fill"
                       prefKey:SCIPrefFixPlaybackErrors],
+            [SCIRow switchRow:SCILocalized(@"offer_watch_on_error")
+                       detail:SCILocalized(@"offer_watch_on_error_note")
+                       symbol:@"play.rectangle.on.rectangle.fill"
+                      prefKey:SCIPrefOfferWatch],
             [SCIRow switchRow:SCILocalized(@"native_pip")
                        detail:SCILocalized(@"native_pip_note")
                        symbol:@"pip.fill"

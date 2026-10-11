@@ -8,6 +8,7 @@
 #import "SCIYTDirect.h"
 #import "Center/SCIYTLibrary.h"
 #import "Center/SCIYTChoiceSheet.h"
+#import "Center/SCIYTWatch.h"
 #import "Center/SCIYTDownloadCenter.h"
 #import <AVFoundation/AVFoundation.h>
 #import <Photos/Photos.h>
@@ -744,6 +745,10 @@ static NSString *sciRequestedVideoID = nil;
         // now, so the app is handed straight back -- watching something while a
         // video saves is the ordinary case, not an edge one.
         [self showMessage:SCILocalized(@"dl_started") from:presenter];
+    }
+    watch:^(SCIHLSVariant *variant) {
+        // Fetched as a save is, and opened in the Centre's player when whole -- see SCIYTWatch.
+        [SCIYTWatch watchVariant:variant title:title videoID:askedID from:presenter];
     }];
 }
 

@@ -23,7 +23,8 @@
 typedef NS_ENUM(NSInteger, SCISheetSection) {
     SCISheetSectionVideo = 0,
     SCISheetSectionAudio,
-    SCISheetSectionThumbnail
+    SCISheetSectionThumbnail,
+    SCISheetSectionWatch
 };
 
 @interface SCIYTChoiceSheet () <UITableViewDataSource, UITableViewDelegate>
@@ -33,6 +34,11 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
 @property (nonatomic, copy) NSString *videoTitle;
 @property (nonatomic, copy) NSString *videoID;
 @property (nonatomic, copy) void (^chosen)(SCIHLSVariant *, SCIYTJobKind);
+@property (nonatomic, copy) void (^watch)(SCIHLSVariant *);
+/// The section each segment stands for, in the order the segments are drawn. The thumbnail and
+/// watch segments exist only when there is something to build them from, so a segment's index
+/// is not its section -- and treating it as one is how the third segment becomes the wrong one.
+@property (nonatomic, copy) NSArray<NSNumber *> *segmentSections;
 @property (nonatomic) SCIYTJobKind kind;
 @property (nonatomic) SCISheetSection section;
 @property (nonatomic) BOOL savingThumbnail;
@@ -47,6 +53,15 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
               title:(NSString *)title
             videoID:(NSString *)videoID
              chosen:(void (^)(SCIHLSVariant *, SCIYTJobKind))chosen {
+    [self presentFrom:presenter variants:variants title:title videoID:videoID chosen:chosen watch:nil];
+}
+
++ (void)presentFrom:(UIViewController *)presenter
+           variants:(NSArray<SCIHLSVariant *> *)variants
+              title:(NSString *)title
+            videoID:(NSString *)videoID
+             chosen:(void (^)(SCIHLSVariant *, SCIYTJobKind))chosen
+              watch:(void (^)(SCIHLSVariant *))watch {
 
     if (!presenter || !variants.count) return;
 
@@ -55,6 +70,7 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
     sheet.videoTitle = title;
     sheet.videoID = videoID;
     sheet.chosen = chosen;
+    sheet.watch = watch;
     sheet.kind = SCIYTJobKindVideo;
     sheet.section = SCISheetSectionVideo;
     [sheet buildGroups];
@@ -111,7 +127,11 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
 }
 
 - (SCIHLSVariant *)variantAtIndexPath:(NSIndexPath *)indexPath {
-    NSArray *variants = self.groups[(NSUInteger)indexPath.section][@"variants"];
+    // Watch lists the ordinary qualities only -- one section, the last group -- so its section
+    // index is not the groups' index.
+    NSDictionary *group = (self.section == SCISheetSectionWatch) ? self.groups.lastObject
+                                                                 : self.groups[(NSUInteger)indexPath.section];
+    NSArray *variants = group[@"variants"];
     return variants[(NSUInteger)indexPath.row];
 }
 
@@ -136,8 +156,20 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
         SCILocalized(@"dl_kind_video"),
         SCILocalized(@"dl_kind_audio")
     ] mutableCopy];
+    NSMutableArray<NSNumber *> *kinds = [@[@(SCISheetSectionVideo), @(SCISheetSectionAudio)] mutableCopy];
 
-    if (self.videoID.length) [sections addObject:SCILocalized(@"dl_kind_thumb")];
+    if (self.videoID.length) {
+        [sections addObject:SCILocalized(@"dl_kind_thumb")];
+        [kinds addObject:@(SCISheetSectionThumbnail)];
+    }
+
+    // Watching needs a standard (non-AV1) quality to fetch and somebody to hand it to.
+    SCIHLSVariant *ordinary = [self.groups.lastObject[@"variants"] firstObject];
+    if (self.watch && ordinary && ![ordinary.codecs.lowercaseString containsString:@"av01"]) {
+        [sections addObject:SCILocalized(@"watch_tab")];
+        [kinds addObject:@(SCISheetSectionWatch)];
+    }
+    self.segmentSections = kinds;
 
     self.picker = [[UISegmentedControl alloc] initWithItems:sections];
     self.picker.selectedSegmentIndex = 0;
@@ -195,7 +227,10 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
 }
 
 - (void)kindChanged {
-    self.section = (SCISheetSection)self.picker.selectedSegmentIndex;
+    NSInteger index = self.picker.selectedSegmentIndex;
+    self.section = (index >= 0 && (NSUInteger)index < self.segmentSections.count)
+        ? (SCISheetSection)self.segmentSections[(NSUInteger)index].integerValue
+        : SCISheetSectionVideo;
 
     // kind still answers the two-way question the callback is typed on. A thumbnail never
     // reaches that callback at all, so it leaves kind alone rather than inventing a value
@@ -214,12 +249,14 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
     return (self.section == SCISheetSectionVideo) ? (NSInteger)self.groups.count : 1;
+    // (Watch is a single section: the ordinary qualities.)
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     // Sound has no sizes to choose between: there is one soundtrack, and offering seven
     // identical rows of it would be a menu pretending to be a decision. A thumbnail has
     // one picture, for the same reason.
+    if (self.section == SCISheetSectionWatch) return (NSInteger)[self.groups.lastObject[@"variants"] count];
     if (self.section != SCISheetSectionVideo) return 1;
     return (NSInteger)[self.groups[(NSUInteger)section][@"variants"] count];
 }
@@ -228,12 +265,14 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
     switch (self.section) {
         case SCISheetSectionAudio:     return SCILocalized(@"dl_sound_header");
         case SCISheetSectionThumbnail: return SCILocalized(@"dl_thumb_header");
+        case SCISheetSectionWatch:     return SCILocalized(@"watch_header");
         case SCISheetSectionVideo:     break;
     }
     return self.groups[(NSUInteger)section][@"title"];
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
+    if (self.section == SCISheetSectionWatch) return SCILocalized(@"watch_footer");
     return self.section == SCISheetSectionVideo ? self.groups[(NSUInteger)section][@"footer"] : nil;
 }
 
@@ -270,7 +309,7 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
 
     SCIHLSVariant *variant = [self variantAtIndexPath:indexPath];
     cell.textLabel.text = [variant label];
-    cell.imageView.image = [UIImage systemImageNamed:@"film"];
+    cell.imageView.image = [UIImage systemImageNamed:(self.section == SCISheetSectionWatch ? @"play.rectangle.fill" : @"film")];
     cell.imageView.tintColor = SCIAccent();
 
     // How big it will be: exact when the direct route knows the byte counts YouTube declared,
@@ -293,6 +332,15 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
 
     if (self.section == SCISheetSectionThumbnail) {
         [self saveThumbnail];
+        return;
+    }
+
+    if (self.section == SCISheetSectionWatch) {
+        SCIHLSVariant *picked = [self variantAtIndexPath:indexPath];
+        void (^watch)(SCIHLSVariant *) = self.watch;
+        [self dismissViewControllerAnimated:YES completion:^{
+            if (watch) watch(picked);
+        }];
         return;
     }
 

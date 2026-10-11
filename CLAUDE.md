@@ -901,6 +901,17 @@ instances taught; here are the facts.
   `-didTapButton:`, and a button becomes the download button at `-setOfflineStatus:offlineability:`, not at construction. **Hold-to-save is gone** (removed in 1.37.0: 1.26.0 had already moved downloading onto YouTube's button after hold-to-speed-up started downloading, and a switch that
   only re-enabled a gesture the project had retreated from was clutter — see §4.2).
 
+- **Watch here (1.39.0) exists because YouTube's own player stopped working on iOS 16.** 21.33.6 is the last build iOS 16 runs (Aug 2026, one blog source);
+  on it a regular video plays a second or two and stops with "Something went wrong" **on the stock app, no tweak, signed in or out, no DNS/VPN**, while Shorts
+  and this tweak's downloads (a different client, `VISIONOS`) work every time and an occasional video plays whole. That is the shape of a server wanting proof of origin
+  (PoToken / App Attest — PoomSmart's YouTubeLegacy README documents the 2025–26 server changes for older clients and notes Premium is relaxed), **but it is inferred from
+  the pattern, not measured**: the error's domain and code are in the report's playback-fix tally and nobody has sent it yet. The installed app is an official IPA *not
+  from the App Store*, which may by itself fail the attestation. **Nothing here forges that proof** (the `app_attest_*` line, §2); `SCIYTWatch` fetches the video as a save
+  does and opens the Centre's player when it is whole — a wait, not streaming, and it is kept in the Centre. Offered from `handleError:` (`SCIYTPlaybackFix.m`) at the three
+  places the app's own error is shown (never while a retry is in flight) and as a fourth "Watch" segment in the download sheet; **not run on a device**. If the report shows a
+  different cause, this is still a working way to watch, not a fix. YouTubeLegacy (MIT) spoofs the client version to 20.21.6 for older builds — that is a *different* build
+  range from 21.33.6 and was **not** taken: its source spoofs nothing in `Compatibility.x` and the technique is unverified for this version.
+
 **The Download Centre** is a **tab**, built as a pivot renderer YouTube draws itself (real label, selected state, width) — never a circle
 painted over the bar; its icon is painted on afterwards because the `iconType` enum is unreadable. **History** (`FEhistory` browse id the app
 already resolves) and the Centre are rows in the tab-bar arranger (Settings › Interface › Tab bar: drag to reorder, drag across to switch a
@@ -1224,8 +1235,8 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.38.0** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
-Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.91.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.39.0** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
+Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.92.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

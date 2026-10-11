@@ -40,6 +40,7 @@
 #import "../../Prefs.h"
 #import "../../SCIYTLaunchGuard.h"
 #import "../../Diagnostics/SCIYTDiagnostics.h"
+#import "../Download/Center/SCIYTWatch.h"
 
 ///
 /// "An error occurred, tap to retry" -- YouTube's own playback error, which the owner reported as
@@ -210,6 +211,18 @@ static BOOL SCIYTSpendReload(NSString *videoID) {
 
 typedef void (*SCIYTOriginalHandleError)(id, SEL, id);
 
+/// The app's own error is on screen: offer the one thing that still works. Never from a
+/// retry in flight -- a second error while a reload is underway is the first one's echo.
+static void SCIYTOfferWatch(id overlay) {
+    if (![overlay isKindOfClass:[UIViewController class]]) return;
+
+    id pvc = SCIYTObjectGetter(overlay, @"parentViewController");
+    NSString *videoID = SCIYTObjectGetter(pvc, @"currentVideoID");
+    if (![videoID isKindOfClass:[NSString class]] || !videoID.length) return;
+
+    [SCIYTWatch offerAfterFailureFrom:(UIViewController *)overlay videoID:videoID];
+}
+
 static void SCIYTRecover(id overlay, id pvc, NSString *videoID, double saved, id error, SEL selector, SCIYTOriginalHandleError original) {
     __weak id weakOverlay = overlay;
     __weak id weakPlayer = pvc;
@@ -281,6 +294,7 @@ static void SCIYTRecover(id overlay, id pvc, NSString *videoID, double saved, id
                 [SCIYTDiagnostics countPlaybackFix:@"gave up — the app's own error shown"];
                 id strongOverlay = weakOverlay;
                 if (strongOverlay && original) original(strongOverlay, selector, error);
+                if (strongOverlay) SCIYTOfferWatch(strongOverlay);
             });
         });
     });
@@ -358,6 +372,7 @@ static void SCIYTInstallPlaybackFix(void) {
 
         if (!ours || !SCIYTFixEnabled() || sInFlight) {
             if (original) original(me, selector, error);
+            if (!sInFlight) SCIYTOfferWatch(me);
             return;
         }
 
@@ -374,6 +389,7 @@ static void SCIYTInstallPlaybackFix(void) {
         if (!SCIYTHasReloadBudget(videoID)) {
             [SCIYTDiagnostics countPlaybackFix:@"reload budget spent — the app's own error shown"];
             if (original) original(me, selector, error);
+            SCIYTOfferWatch(me);
             return;
         }
 
