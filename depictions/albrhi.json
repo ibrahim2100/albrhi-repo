@@ -106,6 +106,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.92.2",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **يوتيوب 1.39.2 — أول تقرير من الجوال بيّن أن رموز إثبات المصدر تُصنع والتحدّي ينجح، فالمسبار يلتقط الآن أخطاء تحميل البث نفسها (`failWithError:` وتفاصيل الحامل)، وخطأ…",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.92.1",
           "useBoldText": true
         },
@@ -131,20 +145,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.91.0",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **X 0.21.0 — مراجعة NeoFreeBird: دعم النسخ الأحدث (طبقة المفاتيح تجيب الأرقام وتغطي الغلاف، والخط الزمني يزيل العناصر بدل إخفاء الخلايا، ومسار ثالث لإخفاء Spaces)،…",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.92.1"
+          "text": "1.92.2"
         },
         {
           "class": "DepictionTableTextView",
