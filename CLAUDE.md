@@ -901,16 +901,22 @@ instances taught; here are the facts.
   `-didTapButton:`, and a button becomes the download button at `-setOfflineStatus:offlineability:`, not at construction. **Hold-to-save is gone** (removed in 1.37.0: 1.26.0 had already moved downloading onto YouTube's button after hold-to-speed-up started downloading, and a switch that
   only re-enabled a gesture the project had retreated from was clutter — see §4.2).
 
-- **Watch here (1.39.0) exists because YouTube's own player stopped working on iOS 16.** 21.33.6 is the last build iOS 16 runs (Aug 2026, one blog source);
-  on it a regular video plays a second or two and stops with "Something went wrong" **on the stock app, no tweak, signed in or out, no DNS/VPN**, while Shorts
-  and this tweak's downloads (a different client, `VISIONOS`) work every time and an occasional video plays whole. That is the shape of a server wanting proof of origin
-  (PoToken / App Attest — PoomSmart's YouTubeLegacy README documents the 2025–26 server changes for older clients and notes Premium is relaxed), **but it is inferred from
-  the pattern, not measured**: the error's domain and code are in the report's playback-fix tally and nobody has sent it yet. The installed app is an official IPA *not
-  from the App Store*, which may by itself fail the attestation. **Nothing here forges that proof** (the `app_attest_*` line, §2); `SCIYTWatch` fetches the video as a save
-  does and opens the Centre's player when it is whole — a wait, not streaming, and it is kept in the Centre. Offered from `handleError:` (`SCIYTPlaybackFix.m`) at the three
-  places the app's own error is shown (never while a retry is in flight) and as a fourth "Watch" segment in the download sheet; **not run on a device**. If the report shows a
-  different cause, this is still a working way to watch, not a fix. YouTubeLegacy (MIT) spoofs the client version to 20.21.6 for older builds — that is a *different* build
-  range from 21.33.6 and was **not** taken: its source spoofs nothing in `Compatibility.x` and the technique is unverified for this version.
+- **YouTube's own player stops on iOS 16 / 21.33.6, and "Watch here" (1.39.0) is a workaround, not the fix.** 21.33.6 is the last build iOS 16 runs (Aug 2026; one blog
+  source). On it a regular video plays a second or two and stops with "Something went wrong" **on the stock app: no tweak, signed in or out, no DNS/VPN, an official IPA
+  installed outside the App Store** — while Shorts and this tweak's downloads (the `VISIONOS` client) work every time and an occasional video plays whole. **The mechanism is
+  documented for other clients**: a SABR stream carries `STREAM_PROTECTION_STATUS`, `ATTESTATION_PENDING` then `ATTESTATION_REQUIRED` at a fixed *content* position, after which the
+  server stops sending media and the player raises a generic error (shy1132/VacuumTube#189; yt-dlp's PO Token Guide: iOS needs a PO token, minted by "iOSGuard", bound to the video id).
+  **The iOS app does mint it itself**, and every piece is in the 21.34.3 binary (read with `tools/objc-classes.py`, MinimumOSVersion 17.0): `IGDManager` (a native "iosguard"
+  JavaScript VM: `mintPOTokenImmediately:`, `runChallenge:`, with `IGDAppAttest` over `DCAppAttestService`), `YTProofOfOriginTokenManager`
+  (`mintWithVideoID:`), `YTIOSGuardSnapshotControllerImpl`/`YTAttestationChallengeProvider` (the challenge, its error and `logExecutionEndState:`), and in the media layer
+  `MLABRPolicy` (`_proofOfOriginToken`, `onPoTokenMinted:`, **`onStreamProtectionStatus:`**), all behind hot-config flags on `YTHotConfigIosPlayerClientSharedConfigImpl`
+  (`enablePoTokenManagerMedia`, `…Injection`, `iosSpsEnablePoTokenCabr`). **What is not known is why the token fails on this phone**: a re-signed/TrollStore app and a jailbroken
+  device are both things a native attestation can see, and an old build may simply be bucketed out — the three have different answers and none is measured. 1.39.1's `SCIYTPoProbe`
+  (read-only; lengths and counts, never a token) puts the measurement in the report: minted or nil, status heard, challenge error, the app's own flags. **Nothing here forges that
+  proof** (the `app_attest_*` line, §2) — and a *jailbreak-hiding* answer to the attestation would be the same lie told to a server, so it is not built on a guess either.
+  "Watch here" (`SCIYTWatch`) fetches the video as a save does and opens the Centre's player when it is whole: a wait, not streaming, kept in the Centre; offered from
+  `handleError:` (`SCIYTPlaybackFix.m`) at the three places the app's own error is shown (never while a retry is in flight) and as a fourth segment in the download sheet.
+  **Neither has run on a device.** YouTubeLegacy (MIT) spoofs the client version to 20.21.6 for builds below 20.24.4 — a different range from 21.33.6, and not taken.
 
 **The Download Centre** is a **tab**, built as a pivot renderer YouTube draws itself (real label, selected state, width) — never a circle
 painted over the bar; its icon is painted on afterwards because the `iconType` enum is unreadable. **History** (`FEhistory` browse id the app
@@ -1235,8 +1241,8 @@ Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.39.0** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
-Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.92.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.5.0** · YouTube **1.39.1** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
+Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.92.1**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
