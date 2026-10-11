@@ -27,6 +27,13 @@ if os.path.isdir(TWEAKS_DIR):
 
     script = os.path.abspath(__file__)
     failed = []
+
+    # Rules about the repository rather than one tweak: versions, changelogs, workflows.
+    print('=== repository ===', flush=True)
+    repo_result = subprocess.run([sys.executable, os.path.join(os.path.dirname(script), 'check-repo.py')])
+    if repo_result.returncode:
+        failed.append('repository')
+    print()
     for name in tweaks:
         # flush=True, or the header sits in this process's buffer while the child
         # writes straight to the terminal and every heading lands after its output.
@@ -1246,6 +1253,44 @@ if os.path.isdir(_debian_dir):
             report('layout/DEBIAN/%s is mode %s in git — Theos refuses to package a '
                    'maintainer script that is not executable (git update-index '
                    '--chmod=+x)' % (_name, _mode))
+
+# 25. A second copy of the "find the key window" walk in a tweak that has a helper for it.
+#
+#     YouTube wrote that walk out ten times -- scenes in some, the legacy `-windows` in others, one
+#     skipping a controller being dismissed -- and a fix to one reached none of the rest. Once a tweak
+#     defines `SCI<..>KeyWindow(void)`, `.isKeyWindow` belongs in that one file; a deliberate
+#     different question (the *largest* window, say) says so on its own line with
+#     `sci-allow-keywindow`. A tweak without the helper is not asked to have one.
+_helper_files = [p for p in SRC if re.search(r'^\s*UIWindow\s*\*\s*SCI\w*KeyWindow\s*\(\s*void\s*\)\s*\{',
+                                              open(p, encoding='utf-8').read(), re.M)]
+if _helper_files:
+    for path in SRC:
+        if path in _helper_files:
+            continue
+        for _n, _line in enumerate(open(path, encoding='utf-8'), 1):
+            if '.isKeyWindow' in _line.split('//')[0] and 'sci-allow-keywindow' not in _line:
+                report('%s:%d walks the windows for the key one, and this tweak has %s — use it (or '
+                       'say why not with sci-allow-keywindow on the line): %s'
+                       % (path, _n, os.path.basename(_helper_files[0]), _line.strip()))
+
+# 26. A preference key that is defined and never read.
+#
+#     Deleting YouTube's `h264_only` showed the shape: a `SCIPref...` macro (and its registered default,
+#     and a settings row) that no code consults is a switch that does nothing -- a screen that lies,
+#     which CLAUDE.md names as worse than a missing one. A macro counts as used when its name appears in
+#     any other line of the tweak's sources or headers (a row, a default, a read).
+_text_all = {p: open(p, encoding='utf-8').read() for p in SRC + HDR}
+for _hp in HDR:
+    for _m in re.finditer(r'^#define\s+(SCIPref\w+)\s+@"', _text_all[_hp], re.M):
+        _name = _m.group(1)
+        _uses = 0
+        for _p, _t in _text_all.items():
+            for _l in _t.splitlines():
+                if re.search(r'\b%s\b' % _name, _l) and not re.match(r'\s*#define\s+%s\b' % _name, _l):
+                    _uses += 1
+        if _uses == 0:
+            report('%s defines %s and nothing in this tweak reads it — a switch that does nothing is a '
+                   'screen that lies (delete the macro, its default and its row together)' % (_hp, _name))
 
 print('keys: %d EN / %d AR   orphans: %d' % (len(en_keys), len(ar_keys), len(en_keys - used)))
 print('version: %s' % control_version)
