@@ -206,7 +206,20 @@ def hook_blocks(root):
             continue
         rel = os.path.relpath(path, root)
         current, methods, is_new = None, [], False
-        for line in open(path, encoding='utf-8', errors='replace'):
+        lines = open(path, encoding='utf-8', errors='replace').read().split('\n')
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            i += 1
+            # A method declaration wrapped over several lines (`- (id)initWithA:(id)a` newline
+            # `b:(id)b {`) is one selector, not its first line: joined until the opening brace.
+            if current and re.match(r'\s*[-+]\s*\(', line) and '{' not in line:
+                joined, j = line, i
+                while j < len(lines) and '{' not in joined and j - i < 8:
+                    joined += ' ' + lines[j].strip()
+                    j += 1
+                if '{' in joined:
+                    line, i = joined, j
             m = re.match(r'\s*%hook\s+(\w+)', line)
             if m:
                 current, methods, is_new = m.group(1), [], False

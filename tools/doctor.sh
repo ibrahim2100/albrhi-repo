@@ -63,12 +63,34 @@ have gh && gh auth status >/dev/null 2>&1 && row ok "gh (signed in)" "$(gh api u
   || row optional "pre-commit hook" "not installed in this clone" "bash tools/install-hooks.sh"
 
 # ── reverse-engineering aids (none is needed to build) ───────────────────────────────────────
-have java && java -version >/dev/null 2>&1 && row ok "Java (Ghidra)" "$(java -version 2>&1 | head -1)" \
-  || row optional "Java (Ghidra)" "no runtime" "brew install openjdk@21"
-if [[ -n "${GHIDRA_INSTALL_DIR:-}" && -d "$GHIDRA_INSTALL_DIR" ]]; then
-  row ok "Ghidra" "$GHIDRA_INSTALL_DIR"
+JAVA_BIN="$(command -v java 2>/dev/null)"; [[ -x /opt/homebrew/opt/openjdk@21/bin/java ]] && JAVA_BIN=/opt/homebrew/opt/openjdk@21/bin/java
+if [[ -n "$JAVA_BIN" ]] && "$JAVA_BIN" -version >/dev/null 2>&1; then
+  row ok "Java (Ghidra)" "$("$JAVA_BIN" -version 2>&1 | head -1)"
 else
-  row optional "Ghidra" "GHIDRA_INSTALL_DIR not set" "brew install ghidra; export GHIDRA_INSTALL_DIR=\$(brew --prefix ghidra)/libexec"
+  row optional "Java (Ghidra)" "no runtime" "brew install openjdk@21"
+fi
+GHIDRA_DIR="${GHIDRA_INSTALL_DIR:-}"; [[ -z "$GHIDRA_DIR" && -d /opt/homebrew/opt/ghidra/libexec ]] && GHIDRA_DIR=/opt/homebrew/opt/ghidra/libexec
+if [[ -n "$GHIDRA_DIR" && -d "$GHIDRA_DIR" ]]; then
+  row ok "Ghidra" "$GHIDRA_DIR"
+else
+  row optional "Ghidra" "not installed" "brew install ghidra; export GHIDRA_INSTALL_DIR=\$(brew --prefix ghidra)/libexec"
+fi
+
+# ── the reverse-engineering aid, and whether it has moved on ────────────────────────────────
+# REA (github.com/morluto/rea) changes quickly. Look at it now and then: this prints the installed and
+# the newest published version, and does nothing else. `npm install --global rea-agents@<new>
+# --ignore-scripts`, then `rea setup --client claude_code --dry-run` to read what it would rewrite
+# before approving anything.
+if have rea; then
+  installed="$(rea --version 2>/dev/null | head -1)"
+  latest="$(npm view rea-agents version 2>/dev/null | head -1)"
+  if [[ -n "$latest" && "$installed" != "$latest" ]]; then
+    row optional "REA ($installed)" "newest published is $latest" "npm install --global rea-agents@$latest --ignore-scripts"
+  else
+    row ok "REA" "${installed:-?} (newest: ${latest:-unknown})"
+  fi
+else
+  row optional "REA" "not installed" "npm install --global rea-agents --ignore-scripts"
 fi
 
 echo
