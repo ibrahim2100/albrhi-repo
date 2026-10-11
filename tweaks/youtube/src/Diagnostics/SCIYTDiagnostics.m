@@ -1467,20 +1467,34 @@ static NSMutableArray<NSString *> *sciStreamAttempts = nil;
 
         // Twelve is more than enough to see the shape of the ladder, and keeps the
         // page inside what a person will actually read.
-        NSUInteger shown = MIN(list.count, (NSUInteger)12);
+        NSUInteger shown = MIN(list.count, (NSUInteger)24);
         for (NSUInteger i = 0; i < shown; i++) {
             id stream = list[i];
 
-            id itag = [self value:@"itag" from:stream];
+            // The scalars (itag, size, frame rate, bitrate) come back nil through the object-only
+            // reader -- which is why every line of the first reports said `[?] … ?x? ?fps ?bps`
+            // and a list of twenty formats could not say which of them were VP9 or AV1. They are
+            // read as numbers, from the nested `YTIFormatStream` where the stream itself has none.
+            id formatStream = [self value:@"formatStream" from:stream];
+            id itag = SCISafeNumberForKey(stream, @"itag") ?: SCISafeNumberForKey(formatStream, @"itag");
             NSString *mime = [self string:[self value:@"MIMEType" from:stream]
                                             ?: [self value:@"mimeType" from:stream]];
             NSString *quality = [self string:[self value:@"qualityLabel" from:stream]
                                                ?: [self value:@"quality" from:stream]];
-            id width = [self value:@"width" from:stream];
-            id height = [self value:@"height" from:stream];
-            id fps = [self value:@"fps" from:stream] ?: [self value:@"frameRate" from:stream]
-                     ?: [self value:@"videoFrameRate" from:stream];
-            id bitrate = [self value:@"bitrate" from:stream] ?: [self value:@"averageBitrate" from:stream];
+            if (!mime.length) mime = [self string:[self value:@"mimeType" from:formatStream]];
+            id width = SCISafeNumberForKey(stream, @"width") ?: SCISafeNumberForKey(formatStream, @"width");
+            id height = SCISafeNumberForKey(stream, @"height") ?: SCISafeNumberForKey(formatStream, @"height");
+            id fps = SCISafeNumberForKey(stream, @"FPS") ?: SCISafeNumberForKey(formatStream, @"fps");
+            id bitrate = SCISafeNumberForKey(stream, @"bitrate") ?: SCISafeNumberForKey(formatStream, @"bitrate");
+            if (!quality.length) quality = [self string:[self value:@"qualityLabel" from:formatStream]];
+
+            // `video/mp4; codecs="avc1.640020"` is the part that matters, kept short.
+            NSString *codec = mime;
+            NSRange codecs = [mime rangeOfString:@"codecs=\""];
+            if (codecs.location != NSNotFound) {
+                codec = [[mime substringFromIndex:NSMaxRange(codecs)] stringByReplacingOccurrencesOfString:@"\"" withString:@""];
+            }
+            if (codec.length) mime = codec;
 
             // The decisive question, and the reason the whole page exists: is there a
             // fetchable link per format, or does playback go through the piecewise

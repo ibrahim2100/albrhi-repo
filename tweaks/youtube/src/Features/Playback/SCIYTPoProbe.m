@@ -8,6 +8,7 @@
 #import "SCIYTPoProbe.h"
 #import "../../SCILog.h"
 #import "../../SCIYTLaunchGuard.h"
+#import "shared/src/SCIKVC.h"
 
 static NSMutableDictionary<NSString *, NSNumber *> *sCounts = nil;
 static NSMutableArray<NSString *> *sNotes = nil;      // distinct, bounded
@@ -226,6 +227,67 @@ static void SCIPoInstallDisplayProbe(void) {
     [sHooks addObject:@"observing AVSampleBufferDisplayLayerFailedToDecodeNotification"];
 }
 
+// MARK: - What this phone tells YouTube it can play
+
+///
+/// **The server picks the codec from a declaration the app makes.** `MLMediaCapabilitiesProviderImpl`
+/// hands the SABR request a `YTVSMediaCapabilities` -- a list of video formats the device claims
+/// to handle, each with a codec, the largest size and rate, 10-bit and "efficient" flags -- and
+/// the stream that arrives is chosen from it. The failing video offered **twenty** formats and the
+/// working one **six, all H.264**; if the declaration says this phone can play a codec it cannot
+/// show, the server will send exactly that to exactly the videos that have it, and the display
+/// layer will fail a second or two in. Whether the declaration says so is a question this answers
+/// by reading it: one line per entry, the codec as the number the proto stores, no guessing at
+/// names.
+static BOOL sCapsAttached = NO;
+static IMP sCapsGetter = NULL, sCapsLoaded = NULL, sSwAv1 = NULL;
+static NSString *sSwAv1Answer = nil;
+
+static void SCIPoDescribeCaps(id caps) {
+    if (!caps) return;
+    id entries = SCISafeValueForKey(caps, @"videoFormatCapabilitiesArray");
+    if (![entries isKindOfClass:[NSArray class]]) return;
+
+    NSMutableArray<NSString *> *lines = [NSMutableArray array];
+    for (id entry in (NSArray *)entries) {
+        NSNumber *codec = SCISafeNumberForKey(entry, @"videoCodec");
+        NSNumber *w = SCISafeNumberForKey(entry, @"maxWidth"), *h = SCISafeNumberForKey(entry, @"maxHeight");
+        NSNumber *fps = SCISafeNumberForKey(entry, @"maxFramerate");
+        NSNumber *tenBit = SCISafeNumberForKey(entry, @"is10BitSupported");
+        NSNumber *efficient = SCISafeNumberForKey(entry, @"efficient");
+        [lines addObject:[NSString stringWithFormat:@"codec#%@ ≤%@x%@ %@fps%@%@", codec ?: @"?", w ?: @"?", h ?: @"?", fps ?: @"?",
+                          tenBit.boolValue ? @" 10bit" : @"", efficient.boolValue ? @" efficient" : @""]];
+    }
+    NSNumber *hdr = SCISafeNumberForKey(caps, @"hdrModeBitmask");
+    SCIPoCount(@"media capabilities declared");
+    SCIPoNote([NSString stringWithFormat:@"declared to the server (%lu entries; hdr mask %@): %@",
+               (unsigned long)lines.count, hdr ?: @"?", [lines componentsJoinedByString:@" | "]]);
+}
+
+static void SCIPoInstallCapabilityProbe(void) {
+    SCIPoHook(@"MLMediaCapabilitiesProviderImpl", @"objcMediaCapabilities", "@16@0:8", imp_implementationWithBlock(^id(id me) {
+        id caps = sCapsGetter ? ((id (*)(id, SEL))sCapsGetter)(me, @selector(objcMediaCapabilities)) : nil;
+        SCIPoDescribeCaps(caps);
+        return caps;
+    }), &sCapsGetter, NO);
+
+    SCIPoHook(@"MLMediaCapabilitiesProviderImpl", @"objcMediaCapabilitiesIfLoaded", "@16@0:8", imp_implementationWithBlock(^id(id me) {
+        id caps = sCapsLoaded ? ((id (*)(id, SEL))sCapsLoaded)(me, @selector(objcMediaCapabilitiesIfLoaded)) : nil;
+        SCIPoDescribeCaps(caps);
+        return caps;
+    }), &sCapsLoaded, NO);
+
+    // The server-driven switch that adds *software* AV1 (the app carries its own dav1d) to that
+    // declaration. Recorded as answered; whether to override it is a decision for after the
+    // declaration above is read.
+    SCIPoHook(@"YTColdConfig", @"iosPlayerClientSharedConfigPopulateSwAv1MediaCapabilities", "B16@0:8", imp_implementationWithBlock(^BOOL(id me) {
+        BOOL value = sSwAv1 ? ((BOOL (*)(id, SEL))sSwAv1)(me, NSSelectorFromString(@"iosPlayerClientSharedConfigPopulateSwAv1MediaCapabilities")) : NO;
+        @synchronized (sFlags) { sFlags[@"populateSwAv1MediaCapabilities"] = value ? @"YES" : @"NO"; }
+        return value;
+    }), &sSwAv1, NO);
+    sCapsAttached = YES;
+}
+
 static IMP sMintImmediate = NULL, sMintManager = NULL, sStreamStatus = NULL, sPoMinted = NULL;
 static IMP sHandleChallenge = NULL, sEndState = NULL;
 static IMP sFlagMedia = NULL, sFlagInjection = NULL, sFlagCabr = NULL, sFlagOutside = NULL;
@@ -307,6 +369,7 @@ static void SCIPoInstall(void) {
     }), &sEndState, NO);
 
     SCIPoInstallDisplayProbe();
+    SCIPoInstallCapabilityProbe();
 
     // The SABR loader: where the stream stops. These carry real NSErrors -- and the loader's own
     // note of why -- which the player-level error ("Something went wrong") does not. The one
