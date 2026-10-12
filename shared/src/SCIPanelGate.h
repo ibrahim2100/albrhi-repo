@@ -55,27 +55,7 @@ extern "C" {
 BOOL SCIPanelMasterEnabled(void);
 
 
-/// The short name this process's tweak is known by in a licence's `app:` scope, or nil.
-NSString *SCIPanelProductForThisApp(void);
-
-/// Whether Albrhi Panel is installed on this device — read from its preference file rather than
-/// from a write that may have been redirected into this app's own container.
-BOOL SCIPanelIsInstalled(void);
-
-/// Forgets the gate's cached answer.
-///
-/// The gate is asked once and remembered, which is right for a jailbreak — the switch and the
-/// licence are set in the panel before the app opens. In a standalone or injected build the app is
-/// opened first, unlicensed, and freezing that answer meant a licence entered afterwards changed
-/// nothing until the app was killed. Call this whenever a licence is entered or removed.
-void SCIPanelGateInvalidate(void);
-
 BOOL SCIPanelAllowsThisApp(void);
-
-/// Whether this process was allowed when it started — which decides whether a licence entered now
-/// needs the app reopened. Hooks a `%ctor` did not install cannot appear retroactively; hooks that
-/// are already in place start deciding differently the moment the gate is invalidated.
-BOOL SCIPanelGateWasAllowedAtLaunch(void);
 
 /// How that answer was arrived at, for a diagnostics page.
 ///
@@ -112,13 +92,6 @@ BOOL SCIPanelReadBool(NSString *key, BOOL fallback);
 /// As above, for a preference that is not a plain on/off choice -- CarPlay's preferred
 /// microphone is a string ("iphone", "car" or "automatic"), not a boolean.
 NSString *SCIPanelReadString(NSString *key, NSString *fallback);
-
-/// The same, for a number.
-///
-/// A `double` rather than an integer because the two things read this way are a duration in days
-/// and a Unix timestamp, and a timestamp does not fit an `int` on every architecture this builds
-/// for. Absent, or stored as something that is not a number, reads as `fallback`.
-double SCIPanelReadNumber(NSString *key, double fallback);
 
 #ifdef __cplusplus
 }

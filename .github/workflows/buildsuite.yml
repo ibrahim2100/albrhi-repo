@@ -305,8 +305,8 @@ jobs:
               # would race this one for gh-pages, and that race has already served an index a
               # version behind a release; and this job compiles every one of these tweaks
               # anyway, so a tweak that will not build already fails this run. Spotify, YouTube
-              # Music, NextUp and Watch are not in the list: the first two have no settings
-              # screen to enter a licence in, and the last two are separate packages already.
+              # Music, NextUp and Watch are not in the list: the first two are not offered on
+              # their own, and the last two are separate packages already.
               run: |
                 cd main
                 mkdir -p apps
@@ -393,12 +393,14 @@ jobs:
                     exit 1
                   fi
 
-                  # And the licence has to be inside it. A standalone build used to answer the
-                  # gate with an unconditional yes -- there was no panel to say no from -- so a
-                  # dylib without this symbol is one that would run unlicensed, which is the one
-                  # failure nobody would report.
-                  if ! nm "$DYLIB" | grep -q 'SCILicenseAllowsProduct'; then
-                    echo "::error::$TWEAK has no licence check compiled in"
+                  # And no licence code may be inside it: the licence layer was removed (see
+                  # CLAUDE.md section 6). This step used to demand the opposite -- the symbol
+                  # present, because a standalone build once answered the gate with an
+                  # unconditional yes -- and is inverted rather than deleted, so a stale object
+                  # or a reintroduced gate fails here and not on somebody's phone.
+                  if nm "$DYLIB" | grep -q 'SCILicense'; then
+                    echo "::error::$TWEAK still has licence code compiled in"
+                    nm "$DYLIB" | grep 'SCILicense' | head -5
                     exit 1
                   fi
 
@@ -410,7 +412,7 @@ jobs:
                 done
 
                 ls -la apps/
-                echo "Standalone: no Substrate library, no Substrate symbols, licence compiled in."
+                echo "Standalone: no Substrate library, no Substrate symbols, no licence code."
 
             - name: Upload both debs
               uses: actions/upload-artifact@v4
@@ -557,30 +559,6 @@ jobs:
                 # the risk that hosting an IPA would.
                 mkdir -p pages/inject
                 cp main/tools/ipa-inject.html pages/inject/index.html
-
-                # The revocation list the licence layer reads, at most once every six hours.
-                #
-                # Copied from the branch on every run rather than generated: it is a file a human
-                # edits when a key has to be withdrawn, and anything generated here would
-                # overwrite that edit on the next release. An empty list is the normal state.
-                mkdir -p pages/licence
-                cp main/licence/revoked.json pages/licence/revoked.json
-
-                # And the short-code list the same way -- hashes, never codes, so publishing it
-                # is free.
-                #
-                # Both files are the *offline* fallback now: with a licence server configured the
-                # device asks that instead, and these are what it falls back to when no server is
-                # set. Kept for exactly that reason -- a scheme that only works when a Worker is
-                # reachable has no way back in when it is not.
-                cp main/licence/codes.json pages/licence/codes.json
-
-                # The licence panel, beside the list it manages. Static: it does nothing at all
-                # until a signing key is loaded into it by hand, and the key never leaves the
-                # browser -- so hosting it publicly costs nothing, the same reasoning the deb
-                # editor above already ships under.
-                mkdir -p pages/licence-panel
-                cp main/tools/licence-panel.html pages/licence-panel/index.html
 
                 # Regenerated every run so the version and changelog shown on the
                 # package page always match what was actually built. The generator

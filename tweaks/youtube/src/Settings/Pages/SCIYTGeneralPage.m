@@ -3,7 +3,6 @@
 #import "../../SCILog.h"
 #import "../../Localization/SCILocalize.h"
 #import "../../Diagnostics/SCIYTDiagnostics.h"
-#import "shared/src/SCILicenseUI.h"
 #import "../../Tweak.h"
 
 ///
@@ -65,22 +64,6 @@ static void SCIOpenDiagnostics(SCIYTSettingsHostController *host) {
                                        detail:SCILocalized(@"page_general_note")
                                        symbol:@"gearshape.fill"
                                       builder:^NSArray<SCISection *> *(SCIYTSettingsHostController *host) {
-        SCISection *general = [[SCISection alloc] init];
-        general.title = SCILocalized(@"section_general");
-        general.rows = @[
-            // **The licence, inside the app.**
-            //
-            // Albrhi Panel's licence page exists only where PreferenceLoader does. A tweak
-            // installed on its own -- and above all one injected into an IPA on a phone with no
-            // jailbreak -- has no panel, no Settings row, and until this had no way to enter a
-            // key at all. That is what let a self-contained build ship ungated: there was nowhere
-            // to say no from.
-            [SCIRow disclosureRow:SCILocalized(@"licence_row")
-                           detail:SCILocalized(@"licence_row_note")
-                           symbol:@"key.fill"
-                           action:^{ [SCILicenseUI presentFrom:host]; }],
-        ];
-
         SCISection *tools = [[SCISection alloc] init];
         tools.title = SCILocalized(@"section_tools");
         tools.footer = SCILocalized(@"section_tools_note");
@@ -139,7 +122,7 @@ static void SCIOpenDiagnostics(SCIYTSettingsHostController *host) {
         about.footer = [NSString stringWithFormat:@"%@\n\n%@",
                         SCILocalized(@"about_footer"), SCILocalized(@"panel_subtitle")];
 
-        return @[general, tools, about];
+        return @[tools, about];
     }];
 }
 

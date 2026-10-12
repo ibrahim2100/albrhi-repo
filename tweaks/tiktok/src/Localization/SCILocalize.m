@@ -47,8 +47,6 @@ static void SCIBuildTables(void) {
         @"section_protection": @"Protection",
         @"section_advanced": @"Advanced",
 
-        @"licence_row": @"Licence",
-        @"licence_row_note": @"Enter a key or a code, and see what this device is licensed for.",
         @"row_report": @"Status report",
         @"row_report_note": @"Every number behind every feature, and one tap to copy the lot.",
         @"report_title": @"Status report",
@@ -184,8 +182,6 @@ static void SCIBuildTables(void) {
         @"section_protection": @"الحماية",
         @"section_advanced": @"متقدّم",
 
-        @"licence_row": @"الترخيص",
-        @"licence_row_note": @"أدخل مفتاحاً أو كوداً، واعرف ما يغطّيه ترخيص هذا الجهاز.",
         @"row_report": @"تقرير الحالة",
         @"row_report_note": @"كل رقم خلف كل ميزة، ونسخها كلها بلمسة.",
         @"report_title": @"تقرير الحالة",

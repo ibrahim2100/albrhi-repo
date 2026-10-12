@@ -46,18 +46,6 @@
                     kSCIRowColor: SCIAccent(),
                 },
                 @{
-                    // The licence, in the app rather than in a panel. This tweak can be
-                    // installed on its own and injected into an IPA, where there is no Settings
-                    // bundle and no panel at all -- and until this row there was no way to enter
-                    // a key from inside it.
-                    kSCIRowKind: kSCIKindLink,
-                    kSCIRowDestination: kSCIDestinationLicence,
-                    kSCIRowTitle: SCILocalized(@"licence_row"),
-                    kSCIRowNote: SCILocalized(@"licence_row_note"),
-                    kSCIRowIcon: @"key.fill",
-                    kSCIRowColor: SCIAccent(),
-                },
-                @{
                     kSCIRowKind: kSCIKindLink,
                     kSCIRowDestination: kSCIDestinationReport,
                     kSCIRowTitle: SCILocalized(@"row_report"),

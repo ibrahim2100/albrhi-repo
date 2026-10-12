@@ -21,7 +21,7 @@ each other. Three rules keep it honest:
 
 Contents: **1** what this is · **2** the lines this project draws · **3** repository mechanics
 (build, check, CI, publishing) · **4** engineering rules that apply everywhere · **5** per-app
-knowledge · **6** licensing · **7** known state and open work.
+knowledge · **6** licensing (removed — what stayed behind) · **7** known state and open work.
 
 ---
 
@@ -37,7 +37,7 @@ inside one package, three stand apart.
 | `tweaks/twitter` | `com.albrhi.twitter` | X / Twitter — tested on **12.15** | in `com.albrhi`; standalone dylib |
 | `tweaks/tiktok` | `com.albrhi.tiktok` | TikTok — tested on **46.4.0** | in `com.albrhi`; standalone dylib |
 | `tweaks/ytmusic` | `com.albrhi.ytmusic` | YouTube Music | in `com.albrhi` only |
-| `tweaks/panel` | `com.albrhi.panel` | the Settings app — switches, licence, guide | in `com.albrhi` only |
+| `tweaks/panel` | `com.albrhi.panel` | the Settings app — switches, guide, backup | in `com.albrhi` only |
 | `suite/` | **`com.albrhi`** | the five app tweaks and the panel | **the package people install** |
 | `tweaks/spotify` | `com.albrhi.spotify` | Spotify — **Swift and Orion, the only one** | built by hand; **not published** (no workflow) |
 | `tweaks/nextup` | `com.albrhi.nextup` | SpringBoard + five media apps — what plays next | own package, `nextup-v*` releases — **a GPLv3 port** |
@@ -79,6 +79,11 @@ inside one package, three stand apart.
   `.locket.roothide`, `.carplay`, `.carplay.roothide` — are named in **`WITHHELD_PACKAGES`**.
   Withholding is an explicit list and never an absence of action. And the suite's
   `Conflicts`/`Replaces` do **not** name them: it has no business deleting a package it never carried.
+- **The licence layer** (keys, a free week, short codes, a Cloudflare Worker, an admin app) was removed
+  in suite 1.95.0 at the owner's decision: **Albrhi is free.** `shared/src/SCILicense*`, the panel's Licence
+  and plans pages, every tweak's licence row, `server/`, `app/`, `licence/` and their tools are deleted from
+  the tree (git history has all of it). **The deployed Worker was not touched and is still answering for
+  installs older than 1.95.0** — §6 says what that means before anyone switches it off.
 - What they taught is kept where it applies below: the bypass-versus-payment line (§2), the `%ctor`
   gate and `SELFCONTAINED` lessons (§4), and CarPlay's display-mechanism notes (§5.9).
 
@@ -148,9 +153,10 @@ and is deliberately not called; keeping unsent messages never restores them *as 
 a tweak that leaves no trace of what it decided is deciding on your behalf without saying so, so the
 message is marked.
 
-**Wording.** "Free and open source" was removed from every description: the software needs a licence to
-run. **Dropping a word is not dropping an obligation** — GPLv3 is named where it applies, MIT for Watch,
-and every credit is exactly as before; the free trial is a feature, untouched. The Arabic name is
+**Wording.** "Free and open source" was removed from every description while the software needed a licence
+to run. **That reason is gone (1.95.0) and the words were not put back** — descriptions say what a tweak does;
+whether to say "free" again is the owner's call. **Dropping a word is not dropping an obligation** — GPLv3 is
+named where it applies, MIT for Watch, and every credit is exactly as before. The Arabic name is
 **البرهي**, never البرهان (a different word; eighteen strings once said it).
 
 ---
@@ -165,11 +171,8 @@ and `src/`. Nothing outside it knows which app it patches.
 ```
 tweaks/<app>/        a complete Theos project (control Version drives the release)
 suite/               com.albrhi — control, DEBIAN/preinst, CHANGELOG.md
-shared/              tweak.mk, SCIPanelGate, SCILicense, SCILicenseUI, SCIKVC, Prefs/ — what every tweak shares
-server/              the licence server (Cloudflare Worker, wrangler.toml)
-app/                 the owner's native admin app for that server (Theos, fake-signed for TrollStore) + widget/
-licence/             codes.json (hashes, never codes) and revoked.json, published beside the source
-docs/                LICENCE-KEYS.md — read before touching anything licence-shaped
+shared/              tweak.mk, SCIPanelGate, SCIKVC, SCIResponder, Prefs/ — what every tweak shares
+docs/                investigations/ — what was measured, in what order, and what turned out wrong
 tools/               checks, APT index, depictions, signing, injection, browser tools (§3.6)
 modules/ vendor/     third-party code (JGProgressHUD, dav1d, LightMessaging, libSandy, FLEXing)
 extra-debs/          drop a .deb here and the source publishes it
@@ -293,7 +296,7 @@ it reads as checked and clean.** If you add a rule, prove it fails by reintroduc
 **Host tests** run pure logic on the build machine against the macOS SDK: `bash tweaks/ytmusic/tests/host/run.sh`
 (LRC parser, matching pipeline, caches, romaniser, extractors — 29 tests in about a second) and
 `bash tweaks/youtube/tests/host/run.sh` (the transport), `bash tweaks/instagram/tests/host/run.sh` (the deleted-messages log) and `bash tweaks/twitter/tests/host/run.sh` (X's timeline section filter — the code is copied out of the `.x` by marker, so what passes is what ships). A hook needs a device; a parser does not, and several of
-this project's most expensive bugs lived in exactly that layer. `bash tools/run-host-tests.sh` runs every `tweaks/*/tests/host/run.sh` (found by glob) and the licence server's Node tests. Added since: the direct route's format choice and quality ladder (`SCIYTDirect`,
+this project's most expensive bugs lived in exactly that layer. `bash tools/run-host-tests.sh` runs every `tweaks/*/tests/host/run.sh` (found by glob) and the class-dump diff tool's self-test. Added since: the direct route's format choice and quality ladder (`SCIYTDirect`,
 the pure part was moved into `+ladderForVideos:audio:videoID:` so it could be copied out by `// host-test:begin` marker), the panel's "newest version in `Packages`", and TikTok's kind rank and demoted origins.
 **Not covered, stated:** TikTok's comparator that orders measured links (it sits inside a method that makes network requests), `SCIYTFragments` (needs a fragmented MP4 fixture), and everything about what the apps
 actually serve, which only a device says. **The YouTube Music harness had been failing** (no include path for `shared/`, `SCIKVC.m` not compiled, and newer UIKit refusing an app with no scene) while this file
@@ -311,12 +314,11 @@ said "29 tests in about a second" — a test nobody runs in CI is a test that ro
 | `make-suite.sh` · `merge-control.py` | merge the staged trees into `com.albrhi`; refuse a tree that does not match the scheme; **keep the fields Theos computed and override only your own** (replacing `DEBIAN/control` wholesale once threw away what Theos had written) |
 | `make-repo.sh` · `fetch-published-debs.sh` | build the APT index **from the published releases**; `WITHHELD_PACKAGES`; guard against two packages sharing name+version+architecture; label rootful/rootless/roothide |
 | `make-depiction.py` · `release-notes.py` | Sileo depiction + HTML fallback and GitHub release bodies, **generated from the changelog** so they cannot go stale |
-| `build-local.sh` · `build-dylibs.sh` · `build-app.sh` · `build-dav1d.sh` | local suite, standalone dylibs, the admin app, the AV1 decoder |
+| `build-local.sh` · `build-dylibs.sh` · `build-dav1d.sh` | local suite, standalone dylibs (their check **fails the build if a `SCILicense` symbol is inside** — the removal stays proved), the AV1 decoder |
 | `inject-dylib.py` · `ipa-inject.html` | put a dylib into an IPA; entitlements are read with `ldid -e` **before** anything is modified and handed back with `ldid -S<file>` (re-signing with `-S` alone erases them — TikTok carries twenty) |
-| `licence.py` · `licence-panel.html` · `build-store.sh` · `backup-to-kv-bulk.py` | issue and revoke licences, keep the ledger, build a one-shop copy (§6) · turn a licence-server backup into a `wrangler kv bulk put` file |
 | `run-host-tests.sh` | every host test, by glob (§3.5) |
 | `deb-edit.py` · `deb-edit.html` | edit `.deb` metadata (`label` appends `(rootless)`/`(roothide)`/`(rootful)`; `normalize` converts an xz control archive to gzip — the browser tool carries a hand-written DEFLATE because `DecompressionStream` is iOS 16.4+) |
-| `make-logo.py` · `make-app-icon.py` · `repo-index.html` | repo icon in pure Python, app icon, the source's landing page (built from the live index) |
+| `make-logo.py` · `repo-index.html` | repo icon in pure Python, the source's landing page (built from the live index) |
 
 **REA (`morluto/rea`, npm `rea-agents` 6.4.0, MIT) is installed on the owner's Mac as an aid, not a dependency** (nothing in the build or CI uses it): `npm install --global --ignore-scripts`, registered in
 Claude Code as an MCP server by `rea setup --client claude_code` (backup `~/.claude.json.rea.backup`; tools appear after a restart), Ghidra 12.1.4 and JDK 21 from Homebrew. **Measured, not assumed:**
@@ -340,7 +342,7 @@ result installs cleanly and fails on the device. Build both flavours from source
 | `buildtweak.yml` · `buildyoutube.yml` · `buildtwitter.yml` · `buildtiktok.yml` · `buildpanel.yml` | one tweak each | **manual build only, write nothing** |
 | `build-dav1d.yml` | the AV1 decoder Instagram links | on demand |
 
-`buildsuite.yml` also carries a **`host-tests` job** (`tools/run-host-tests.sh` on a macOS runner) that is **report-only on purpose**: these harnesses had never run on a CI image, so it has no `needs` link and a red mark there shows on the run without withholding a publish. Make `build` depend on it once it has been green for a few runs. **First run on CI (suite 1.93.4): all six Mac suites passed (instagram, panel, tiktok, twitter, youtube 11, ytmusic 29), and the licence server's Node test failed** — the runner's Node is older and does not take `node --test <directory>`; it is now `server/package.json` (`"type": "module"`) and a glob. **CI time is compiling** (measured on one run: about 7 of 8 minutes; Theos setup 12 s), so caching Theos was not worth adding.
+`buildsuite.yml` also carries a **`host-tests` job** (`tools/run-host-tests.sh` on a macOS runner) that is **report-only on purpose**: these harnesses had never run on a CI image, so it has no `needs` link and a red mark there shows on the run without withholding a publish. Make `build` depend on it once it has been green for a few runs. **First run on CI (suite 1.93.4): all six Mac suites passed (instagram, panel, tiktok, twitter, youtube 11, ytmusic 29),** (a licence-server Node test also ran there and needed a glob rather than a directory; the server is gone and so is that test). **CI time is compiling** (measured on one run: about 7 of 8 minutes; Theos setup 12 s), so caching Theos was not worth adding.
 
 There is no Spotify workflow. **Three workflows publish and all take the `albrhi-pages` concurrency group** — the
 one thing stopping two runs writing `gh-pages` at once.
@@ -396,7 +398,7 @@ one thing stopping two runs writing `gh-pages` at once.
 - **Re-signing, linking, flavour:** `otool -L` prints the file's own install name before its dependencies and every
   tweak installs under `/Library/MobileSubstrate/`, so a "no Substrate" check must skip **two** lines (`tail -n +3`)
   or a clean build reads as linked; a standalone dylib must be proved standalone (no Substrate dependency, no
-  undefined `MS*` symbol, and `SCILicenseAllowsProduct` compiled in) — `build-dylibs.sh` runs the same three checks
+  undefined `MS*` symbol, and **no `SCILicense` symbol** — inverted from "compiled in" when the layer was removed) — `build-dylibs.sh` runs the same three checks
   CI does.
 - **Store-copy builds:** `-D` with a quoted string survives make and the shell only as `'"$(VAR)"'`; and `strings`
   answers "no" about a three-character string (default minimum four) — search the bytes for `na9\0` instead.
@@ -751,15 +753,14 @@ Every line here comes from something that actually broke. They are grouped by th
   switch as the gate (Watch refused forever because the question had no answer), and the panel's `SCIPanelGroup*` keys collapse
   a multi-process filter to **one row**; `SCIPanelHidden` in a filter says "not Albrhi's page" (without it `SCIPanelScan` draws
   a row per process — "SpringBoard", "Music", "Spotify").
-- **`SCI_SELFCONTAINED` builds answer the gate differently**, and for the licence the first answer on a standalone build is
-  always "no": `SCIPanelAllowsThisApp()` is **cached, not frozen** (`dispatch_once` froze the unlicensed answer for the life of
-  the process); `SCIPanelGateInvalidate()` drops it wherever a licence is entered or removed, and
-  `SCIPanelGateWasAllowedAtLaunch()` keeps the first answer apart so the screen can say "reopen the app" only to those who need
-  it (a process refused at `%ctor` installed no hooks, and none can be installed later).
-- **Identity is a random value the panel provisions once**, derived from nothing about the phone: `MGCopyAnswer("SerialNumber")`
-  is entitlement-gated per process (Settings sees it, a sandboxed app does not — one phone computed two fingerprints and every
-  tweak stood down while the panel said `licensed`). On a jailbreak the panel owns it and a tweak must not provision its own
-  where one exists; a dylib in an IPA falls back to the app's own defaults, and the test is **a read after the write**.
+- **`SCI_SELFCONTAINED` builds answer the gate differently**: a standalone dylib injected into an IPA has no panel (a
+  jailbreak package), so its switch could never be turned on and the opt-in reading would refuse forever — every hook standing
+  down on every launch, which a real report of "nothing works, not even the welcome screen" turned out to be. It answers YES and
+  asks nothing. `SCIPanelAllowsThisApp()` is otherwise answered once and kept (a cross-process preference read on a layout or
+  playback path would show), so a changed switch takes effect when the app is next launched, which the panel says.
+- **A device identity read from the hardware is entitlement-gated per process** (`MGCopyAnswer("SerialNumber")`: Settings sees it,
+  a sandboxed app does not — one phone computed two fingerprints). It was learned building the licence layer; nothing here
+  reads such an identity any more, and a feature that wants one should expect the same.
 - **A page that ships in another package is missing whenever that package is not.** NextUp and Watch have their own preference
   bundle and Settings row (a Theos `SUBPROJECTS` bundle; a space-separated `TWEAK_NAME` builds two dylibs, not a bundle), with
   `src/Settings` pruned from the dylib's `find`. Nothing needed migrating because both already wrote into their own domains
@@ -1145,134 +1146,58 @@ read off the device before a hook was written. watchOS 26.6 is refused, 11.x wou
 Settings › Albrhi: a switch per patched app (opt-in), a master switch (default on), a guide **built from the device** (the same scan as the main page, so it cannot
 describe a tweak that is not there), settings backup/restore through the share sheet (a file beside the preferences would be destroyed by the event it exists for;
 what it holds is stated; a file that is not ours is refused whole), an update check **on a tap** (never on page load; takes the highest published version rather
-than the first listed; keeps "could not be reached" distinct from "up to date"), the licence page (§6). Detail pages exist for Spotify, NextUp and Watch
+than the first listed; keeps "could not be reached" distinct from "up to date"), the Albrhi page itself never behind any gate (there is none now). Detail pages exist for Spotify, NextUp and Watch
 (`tweaks/panel/src/{NextUp,Spotify,Watch}/`; NextUp and Watch also ship their own bundles). `SCIPanelScan` draws every row from whichever `Albrhi*.plist` filters sit beside
 a dylib on the device, so a new tweak needs no panel change.
 
 ---
 
-## 6. Licensing — what it is, and what it is honest about
+## 6. Licensing — removed in suite 1.95.0; what stayed behind, and what it taught
 
-Albrhi has a licence layer (Panel 0.9.25, **enforced since 0.9.27**). Everything is in `shared/src/SCILicense.{h,m}`, `shared/src/SCILicenseUI`, `server/`,
-`tools/licence.py`, `tools/licence-panel.html`, `docs/LICENCE-KEYS.md` and one page in the panel. **Read the doc before touching any of it.**
+Albrhi had a licence layer from Panel 0.9.25 (enforced from 0.9.27): ECDSA-signed device-bound keys, short codes, a free week,
+a seven-day token renewed from a Cloudflare Worker, store copies, and a native admin app on the owner's phone. **It was removed
+because the owner decided Albrhi should be free** — every tweak, the suite and the standalone dylibs, with nothing to enter, renew
+or check. Nothing else was meant to change, and **the way it was done is the point**: `SCIPanelAllowsThisApp()` — the one call every
+tweak already made before installing a hook — stayed, and now asks only the master switch and the per-app switch (and answers YES in
+a standalone build); so the only per-tweak edits were deleting a settings row and a localisation key. Build checks that demanded
+the licence symbol now fail on it.
 
-### 6.1 Principles
+**What stayed behind — read this before switching anything off:**
 
-- **The two-release gap was the design.** Introduce the layer, prove it end to end on a real device (issued, entered, accepted, refused again once the key was
-  removed), *then* turn it on — a gate introduced and enforced in one release stops every existing install before a key exists to fix them with. **The two
-  defaults point opposite ways on purpose:** the per-app switch reads absence as *off* (installing must not patch apps nobody asked about); the licence reads
-  absence as *on* (the question is whether the software may be used at all, and silence is not a licence).
-- **No check on the user's own device can be made unbreakable, and this one is not sold as such.** Whoever holds the phone holds the file. What it buys: most
-  people never crack anything, removing it is real work rather than one `if`, and — the part no client-side trick provides — **revocation**: a key that turns up
-  on a forum is named in a list and stops working wherever the file is reached. Building as though it bought certainty is how a layer breaks paying users while the
-  crack circulates anyway.
-- **A tweak standing down is indistinguishable from a broken install**, so the panel says why (switches reading ON while nothing happens is a screen lying). **The
-  panel itself is never behind the gate** (a Settings bundle does not ask), so nobody can be locked out of the screen that lets them back in; entering a licence is the
-  way back in, and disabling the check never can be. **A licence gate with a user-visible off switch is not a gate**: enforcement and the server address were both
-  preferences for a release (the panel ships to everybody, so every user had a control reading "turn licensing off"); both are unconditional now, stored values
-  *ignored* rather than read, no one grandfathered. A staging address is a build-time define.
-- **The gate is one line in `SCIPanelAllowsThisApp()`**, which every tweak already calls before installing a hook — no tweak changed. It answers YES whenever
-  enforcement is off. Under `SCI_SELFCONTAINED` it once answered YES unconditionally (correct about the *switch*, wrong about the *licence*): every self-contained build
-  was ungated. Caching and invalidation are in §4.6.
-- **ECDSA P-256, not Ed25519**: Ed25519 on iOS means CryptoKit (Swift-only) or a vendored library, and the one Swift tweak here cost three things Logos does not;
-  `Security.framework` verifies P-256 from plain Objective-C with no dependency. `kSecKeyAlgorithmECDSASignatureMessageX962SHA256` consumes exactly what
-  `openssl dgst -sha256 -sign` produces. **WebCrypto signs P1363 and `Security.framework` verifies DER, and getting the conversion wrong does not fail loudly** — it
-  mints well-formed keys every device refuses. Three signers exist (`licence.py`, the Worker, the browser panel) and agree byte for byte on sorted-key JSON and
-  P1363→DER; the panel page's *own script block* was extracted and run in node against the real Objective-C verifier, both directions and against `licence.py`, and the
-  page proves a freshly loaded key against the public half compiled into the tweak and refuses to issue when they differ. **The private key lives in `~/.albrhi/` and
-  never enters this repository** (not in a build, CI or a message; `.gitignore` is a second line of defence).
-- **Signature first, contents afterwards.** Three refusals need three sentences — expired, issued to another device, not a key — and `SCILicenseDescribeState` exists
-  because asking for the *stored* key's status after a rejection describes the wrong key.
-- **Only a 200 with real JSON counts as revoked**; a timeout, a 500 or a captive portal's login page must never withdraw a paying user's features. The check-in never
-  blocks and is never waited on. **A failed check is reported as "nothing was decided", never as a licence problem.** And **reporting a refusal is not acting on
-  it**: a 200 carrying `revoked` is unambiguously the server *deciding*, so the signed token is dropped at the next check (it once stayed valid for its remaining week).
-- **The grace period is one day** (`SCILicenseGraceSeconds`, the single place it lives) — short, and the owner's decision recorded rather than argued. A phone in
-  airplane mode for two days stops being licensed.
+- **The deployed Cloudflare Worker and its KV namespace are still running, untouched.** Installs older than 1.95.0 still enforce
+  and renew against it; switching it off strands each of them (after the one-day grace they stop) until they update. Whether and
+  when to switch it off is the owner's, and wants a last export kept first — **the KV namespace has no second copy** (the backup cron
+  written in this repo was never deployed). The admin app that can export is still on his phone (`~/Desktop/Albrhi-App/*.ipa`); its
+  source is in git history (`git log --diff-filter=D -- app/`).
+- **The signing private key in `~/.albrhi/` still matters for the same reason**, and `.gitignore` keeps ignoring it.
+- **`gh-pages` still serves `licence/revoked.json`, `licence/codes.json` and `/licence-panel/`** from earlier runs: the workflow no
+  longer writes them, but the branch keeps what is there. Old clients treat a missing or non-200 revocation list as "nothing
+  decided", so deleting them later is also safe; they were left because deleting is a decision and keeping costs nothing.
+- Old tokens and stored keys remain in preferences, unread.
 
-### 6.2 Server, renewal and cost
+**Lessons that outlive the layer**, kept because they are about any gate, server or store:
 
-- **A Cloudflare Worker in `server/`**: requests arrive on their own and the device renews a **seven-day** signed licence in the background (`exp`); the licence's
-  **term is `until`**, carried alongside so the screen shows the term (telling somebody who bought a year that it expires in seven days is a support message the code
-  wrote itself). **The server decides; it is never trusted**: a token that does not verify against the compiled public key or is not for this device is dropped, so a
-  hostile address earns a refusal and nothing else; https is required.
-- **The offline path is kept deliberately**: a key issued by `tools/licence.py` verifies with no network, and that is the way back in when the server is unreachable —
-  what makes "the server holds the only signing key" a decision rather than a single point of failure.
-- **KV writes are a budget** (Cloudflare's free allowance is 1,000 a day). The check-in used to run every six hours with its last-check time in `[NSUserDefaults
-  standardUserDefaults]` — *each app's own* domain — while the token it renews is in the shared one, so a phone with four patched apps asked sixteen times a day and
-  renewed one token sixteen times. The cadence now follows the **licence's own end date**: a day ordinarily, eight hours in the last three days and after it ends, the
-  thirty-minute last-chance rule untouched, taking whichever is shorter (a pure function of two numbers, twelve cases checked before any device). **The cost is stated:
-  a withdrawn licence dies within a day, the design promising only "within a week" at worst.** The check-in says which product asks and at what version, written at
-  most hourly per product, bounded to eight.
-- **KV `list()` lags a delete by about a minute and returns keys with no value**: spreading the `null` made a row of nothing whose approve button posted `dev:
-  undefined`. The server drops entries whose value is gone; the panel removes a row it has already acted on rather than re-asking a lagging index; a button re-enables in
-  a `finally` and says why it failed. Knowing a store is eventually consistent is not handling every shape the inconsistency arrives in.
-- **The backup is a cron in the Worker** (`runBackup`, 02:23 UTC, the last thirty kept) writing `exportAll` — the same records `/admin/export` returns — to **R2 when a bucket is bound as `BACKUP`, to KV
-  otherwise**, and the status says which: a KV copy protects against a mistake in a handler and *not* against losing the namespace, so **it is not a backup of the thing most worth backing up until the owner
-  creates the bucket** (`wrangler r2 bucket create albrhi-backup`, then uncomment the binding — it is off by default because a binding to a bucket that does not exist fails the whole deploy). A failure is written to
-  `backupstatus` as `ok: false`, not only logged. **Found while writing it:** four callers read `KV.list()` once, which returns at most 1,000 keys — past a thousand licences the panel's counts, the shop list
-  and the export would have stopped at the first page, silently; `listAll` follows the cursor, and the test fails if it does not (an in-memory KV that pages at three). `tools/backup-to-kv-bulk.py` turns a backup
-  back into a `wrangler kv bulk put` file and refuses one whose declared counts disagree with what it holds. **Not deployed or run against the real KV from this machine** — that is `wrangler deploy`, the owner's step.
-- **File the record before handing the user to another app**: the plans card sends the request to the server *then* opens WhatsApp — somebody who never sends the message
-  still leaves a request in the panel, and that person meant to pay. The message opens whether or not the request landed.
-
-### 6.3 Instruments, scopes, trial
-
-- **Three ways in, three different instruments.** A device-bound **key** is the strong one. A **request** (`ALBREQ1.…`) is the phone asking: unsigned on purpose (nothing
-  on a phone can sign it, nothing in it is worth forging; the trailing four characters are a *check* for a typo, never called a signature). A **short code**
-  (`ALB-4K7M-9QX2-P3RT`) is for selling without a conversation: too short to carry a signature, so the device hashes the normalised code and finds the hash in
-  `licence/codes.json` (**hashes, never codes**); redemption is the one moment this layer touches the network, once; **a code is not bound to a device until
-  redeemed**, so one code works for everybody who has it until its hash is removed (the trade for being typeable — keys remain the instrument for anything that
-  matters); **the clock starts at redemption**; typing is folded (no I, L, O or U: `O`→`0`, `I`/`L`→`1`, `U`→`V`; dashes, spaces, case, missing prefix) and device and
-  issuer agree byte for byte. One row decides by the string's shape and routes an unrecognised string down the path that can ask the server — which one a person holds
-  is a fact about how their licence was issued, not something to ask them.
-- **Scope is `tier`**: absent or `suite` means everything; `apps` is the shared code across the separate tweaks; `app:<name>` one tweak alone; `store:<id>` a shop's
-  copies. **The device answers an unrecognised scope as "everything"** (an old build meeting a newer server must not refuse a licence somebody paid for) while the
-  **server refuses an unknown value at the point of writing**. Any place that writes `tier` must offer every value the server accepts — a picker missing the app scopes
-  in the "issue by hand" card meant the licence a single-tweak buyer needs could not be minted. **Lifetime is `until = 0`**, not a scope (conflating them is how a
-  lifetime for one app becomes a lifetime for everything). Absent keeps, empty clears.
-- **The free week** is taken from the licence screen, once per device, marked by a KV record that is **never deleted** (the licence it creates expires and can be
-  replaced, so anything shorter-lived would make it once a *week*); it refuses a device that already holds a licence. **A trial is a convenience for honest people, not a
-  lock**: the device id is a random value written once, so wiping Albrhi's preferences earns a second trial, and there is no fix that does not reintroduce a real
-  device identifier (refused for privacy and because it is not readable from every process). Written at the function as well as here. Clearing the marker is a decision,
-  not a side effect. **Revoke and delete are different acts**: revoke keeps the record ("was it taken away or never issued" is answerable in six months); delete is for
-  a test or duplicate.
-- **Store copies** (`tools/build-store.sh`): one code, any number of devices, three months — a different product from the device-bound layer, by request (a shop's
-  customers should not each need a device code). The code is in a dylib the shop hands out so anyone holding it can read it; what it buys is that it works on *those*
-  builds and nowhere else (an ordinary Albrhi has no store id, so `store:<id>` matches nothing). **The shop's window lives on the server**: the code goes to `/v1/store`,
-  the server returns an ordinary signed token (`tier: store:<id>`), and renewal, grace and revocation run through the existing machinery; unlimited devices is the
-  server's rule (it counts them, showing both "ever activated" and "seen this week" — only the second answers "worth renewing"). The compiled date is a backstop for a copy
-  that can never reach a server, deliberately the second answer.
-- **Shipping three ways.** Instagram, YouTube, X and TikTok are built as individual `.deb`s and **standalone dylibs** alongside `com.albrhi`, which declares
-  `Conflicts`/`Replaces` on them so the same dylib is never injected twice; the licence is what made that possible (`shared/src/SCILicenseUI` — the panel's licence page in
-  UIKit — is presented from a row in each tweak's own settings). **One publisher still**: they are built by the suite's workflow and attached to its release, because a
-  fourth publisher would race the others for `gh-pages`. YouTube Music and the panel ship only inside the suite; Spotify is unpublished; NextUp and Watch are their own
-  packages.
-
-### 6.4 The admin side
-
-- **`app/` is the licence panel on the owner's own phone** (Theos, no Xcode project, fake-signed for TrollStore): the admin token in the **Keychain** (one string that can
-  revoke every licence sold), **Face ID** asked only after a minute away (a lock that fires on every switch gets turned off; the shield goes up *before* the load), the
-  address compiled in so it asks for the token alone, the token **injected** not typed. It is **native** now — five tabs (a sixth folds into "More"; Codes live under
-  Licences, Settings behind a gear), a requests badge posted by `SCINotify` (a page inside a navigation controller does not own the tab bar's item), background refresh and a
-  notification **naming the person, once per licence per day**, WhatsApp with the message already written (four editable templates, chosen by the licence's own state),
-  copy on anything anybody would transcribe, per-licence history (the server keeps the last ten changes), which tweak/version each device runs, summary cards that open the list
-  they counted with the filter pinned, **undo not a second confirmation** (a real five-second delay; leaving the screen sends it), a swipe never performing its first
-  action on a full swipe, a cached answer offered with its age (in Caches, not a backed-up directory), an `/admin/export` backup handed to the share sheet (**before the server's own daily backup, nothing here
-  had a second copy** — every licence, code and trial lives in one KV namespace; see the backup paragraph in §6.2), and a widget that is a second
-  binary **never given the token** (it reads three numbers the app writes; a failure to build it is printed, not fatal). The web panel stays and is not the specification.
-- **Searching a phone number is searching digits or not at all**: Arabic-Indic numerals folded, everything but digits dropped, last nine compared (`+966 50 000 0000`
-  finds `0500000000`), and the digit path only runs when the query really is a number; `name` and `contact` stay separate fields. A search that found nothing and a list
-  with nothing in it are different sentences. A dictionary of actions is a sheet in no particular order (`SCIChoice` in an array, the destructive one last); a licence
-  panel's tab selector is `section[data-page]` (the bare attribute also matched the tabs and hid the navigation); `prompt()` cannot offer a choice, so a control built on
-  one silently narrows the action; the approve call with no `days` once fell into the extend branch where a missing number is zero — **absent keeps**.
-- A page that is a bundle of cards one scroll long is a scroll rather than a click — the licence panel has tabs; the admin app asks "reopen" only of those who need it.
+- **Introduce a gate, prove it on a device, then enforce it** — one release that does both stops every existing install before
+  a key exists to fix them with. Removing one is the same shape in reverse: keep the call, change what answers it.
+- **Two defaults can point opposite ways on purpose**: the per-app switch reads absence as *off* (installing must not patch
+  apps nobody asked about); the master switch reads it as *on* (nobody has pulled the handle). Both still hold.
+- **A failed check is "nothing was decided", never a refusal**; only a 200 with real JSON counts as the server speaking.
+- **No client-side check is unbreakable and none should be sold as such.** What a check buys is friction and revocation.
+- **WebCrypto signs P1363 and `Security.framework` verifies DER**; the conversion does not fail loudly — it mints well-formed
+  tokens every device refuses. Three signers existed and were made to agree byte for byte.
+- **Workers KV**: `list()` returns at most 1,000 keys and a cursor (four callers read one page, silently, until a test that
+  pages at three failed them); a delete lags about a minute and the list can return keys with no value; a write budget of 1,000 a
+  day made a six-hour check-in sixteen writes a day for a phone with four patched apps.
+- **A panel or a screen that lets you back in must never be behind the gate it controls**, and a control reading "turn the
+  check off" is not a gate.
+- **A trial is a convenience for honest people**, not a lock: any random-id scheme gives a second trial on a preference wipe.
 
 ---
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.6.0** · YouTube **1.40.4** · X **0.21.0** · TikTok **0.20.3** · YouTube Music **0.9.3** ·
-Panel **0.9.38** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.94.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.7.0** · YouTube **1.41.0** · X **0.22.0** · TikTok **0.21.0** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.95.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
@@ -1289,7 +1214,7 @@ picker (`IGFeedItemUFICellConfigurableDelegateImpl -feedItemUFICellDidTapSaveBut
 243 MB binary it was started and stopped by the owner before it finished, so the time it takes is unknown. `tools/doctor.sh` prints the installed and the newest REA, to review it now and then.
 
 **Open work** (owner's priorities, highest first): (1) **confirm the deleted-messages log on a device** (which message shape the stream carries decides whether text is captured) and extend it to the MSYS delete path;
-(2) **create the R2 bucket for the licence backup and deploy the Worker** (§6.2 — the cron is written and tested, not deployed, and without the bucket it only protects against a handler's mistake); (3) hiding the reels **seen** mark; (4) **publishing Spotify** — its own
+(2) **decide when to switch the old licence Worker off, after a last export** (§6 — until then installs older than 1.95.0 depend on it); (3) hiding the reels **seen** mark; (4) **publishing Spotify** — its own
 workflow shaped like `buildnextup.yml`, or into the suite; (5) host tests for `SCIYTFragments` and TikTok's comparator (§3.5 says why they are not there); (6) the **WhatsApp
 tweak** — postponed, Watusi 3's architecture already read; (7) CarPlay rebuilt from scratch in its own repository; settings profiles; crash isolation that disables a faulting
 feature rather than the whole tweak.

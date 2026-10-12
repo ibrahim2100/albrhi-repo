@@ -11,14 +11,14 @@
 [![Rootless](https://img.shields.io/badge/rootless-supported-success.svg)](#-compatibility)
 [![roothide](https://img.shields.io/badge/roothide-supported-success.svg)](#-compatibility)
 
-[![Albrhi](https://img.shields.io/badge/Albrhi-1.94.0-blueviolet.svg)](suite/CHANGELOG.md)
-[![Instagram](https://img.shields.io/badge/Instagram-4.6.0-orange.svg)](tweaks/instagram/CHANGELOG.md)
-[![YouTube](https://img.shields.io/badge/YouTube-1.40.4-red.svg)](tweaks/youtube/CHANGELOG.md)
-[![X](https://img.shields.io/badge/X-0.21.0-black.svg)](tweaks/twitter/CHANGELOG.md)
-[![TikTok](https://img.shields.io/badge/TikTok-0.20.3-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
-[![YT Music](https://img.shields.io/badge/YT%20Music-0.9.3-FF0000.svg)](tweaks/ytmusic/CHANGELOG.md)
+[![Albrhi](https://img.shields.io/badge/Albrhi-1.95.0-blueviolet.svg)](suite/CHANGELOG.md)
+[![Instagram](https://img.shields.io/badge/Instagram-4.7.0-orange.svg)](tweaks/instagram/CHANGELOG.md)
+[![YouTube](https://img.shields.io/badge/YouTube-1.41.0-red.svg)](tweaks/youtube/CHANGELOG.md)
+[![X](https://img.shields.io/badge/X-0.22.0-black.svg)](tweaks/twitter/CHANGELOG.md)
+[![TikTok](https://img.shields.io/badge/TikTok-0.21.0-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
+[![YT Music](https://img.shields.io/badge/YT%20Music-0.10.0-FF0000.svg)](tweaks/ytmusic/CHANGELOG.md)
 [![Spotify](https://img.shields.io/badge/Spotify-0.2.5-1DB954.svg)](tweaks/spotify/CHANGELOG.md)
-[![Panel](https://img.shields.io/badge/Panel-0.9.38-8E8E93.svg)](tweaks/panel/CHANGELOG.md)
+[![Panel](https://img.shields.io/badge/Panel-0.10.0-8E8E93.svg)](tweaks/panel/CHANGELOG.md)
 [![NextUp](https://img.shields.io/badge/NextUp-0.3.1-FF375F.svg)](tweaks/nextup/CHANGELOG.md)
 [![Watch](https://img.shields.io/badge/Watch-0.6.1-FF375F.svg)](tweaks/watch/CHANGELOG.md)
 [![Based on](https://img.shields.io/badge/based%20on-SCInsta-lightblue.svg)](https://github.com/SoCuul/SCInsta)
@@ -40,7 +40,7 @@
 
 ## Contents
 
-[Install](#-install) · [Licence](#-licence) · [What is in here](#-what-is-in-here) ·
+[Install](#-install) · [Free](#-free) · [What is in here](#-what-is-in-here) ·
 [Instagram](#-albrhi-for-instagram) · [YouTube](#-albrhi-for-youtube) · [X](#-albrhi-for-x) ·
 [TikTok](#-albrhi-for-tiktok) · [YouTube Music](#-albrhi-for-youtube-music) ·
 [Spotify](#-albrhi-for-spotify) · [Panel](#-albrhi-panel) · [NextUp](#-albrhi-nextup) ·
@@ -77,7 +77,7 @@ its *paths*, not its control file — they are genuinely different builds, not o
 start **off**: installing Albrhi must never silently patch four apps nobody asked about. Turn one off
 again and the package stays installed with its settings intact; reopen that app for it to take effect.
 
-**4 · Activate.** See [Licence](#-licence) — there is a free week, taken from that same screen.
+**4 · That is all.** Nothing to activate: Albrhi is [free](#-free).
 
 <details>
 <summary><b>Other ways to install, and what is not served any more</b></summary>
@@ -98,31 +98,14 @@ cannot hold both; if you installed one before, installing the suite removes it f
 
 ---
 
-## 🔑 Licence
+## 🆓 Free
 
-Albrhi needs a licence to run. Open **Settings → Albrhi → Licence**:
+**Albrhi is free.** There is no licence, no key, no free week and no account; nothing is checked, and
+nothing about you or your phone is asked for or sent anywhere in order to run it. Every tweak and every
+setting is available from the first launch.
 
-| | |
-|---|---|
-| **A free week** | Taken from that screen, once per device, starting the moment you take it. |
-| **A key** | Bound to your device. Works with no network at all — the signature is checked on the phone. |
-| **A short code** | Like `ALB-4K7M-9QX2-P3RT`. Typed in, redeemed once, then bound to your device. |
-| **A request** | Makes a short message carrying your device, the term you want and your name; you send it, and the answer comes back as a key. |
-
-A licence renews itself quietly in the background (about once a day, and never in a way that can
-hold up a launch). A licence that has been **withdrawn stops working within a day**; a phone in
-airplane mode or behind a captive portal loses nothing, because a failed check means *nothing was
-decided*, never *not licensed*.
-
-- **The panel itself is never behind the licence**, so the screen that lets you back in is always
-  reachable.
-- **When a tweak stands down because of the licence, the panel says so** — switches that read ON while
-  nothing happens would be a screen lying to you.
-- **Nothing identifying is read from your phone.** The device id is a random value the panel writes
-  once; it is derived from nothing about you or the hardware.
-- No client-side check can be made unbreakable, and this one is not sold as one: what it buys is that
-  most people never crack anything, and that a leaked key can be revoked. The design and its honest
-  limits are written out in [docs/LICENCE-KEYS.md](docs/LICENCE-KEYS.md).
+Earlier versions did need a licence. Updating removes that requirement for good — there is nothing to
+enter and nothing to renew. An install that has not been updated yet keeps working as it did until it is.
 
 ---
 
@@ -139,12 +122,12 @@ Developed by **Ibrahim Ismail AL-Rahn** ([@ibrahim2100](https://github.com/ibrah
 
 | Tweak | Patches | Version | In `com.albrhi` | What it does |
 |---|---|---|:-:|---|
-| **[Instagram](#-albrhi-for-instagram)** | Instagram | 4.6.0 | ✅ | downloads, AV1 reels transcoded on the device, a quieter feed, watching stories without a receipt, unsent messages kept and marked |
-| **[YouTube](#-albrhi-for-youtube)** | YouTube | 1.40.4 | ✅ | downloads that survive app updates, their own Download Centre tab, no ads, SponsorBlock, background playback |
-| **[X](#-albrhi-for-x)** | X / Twitter | 0.21.0 | ✅ | media downloads with a button you can place yourself, and fifteen-plus switches for what X does |
-| **[TikTok](#-albrhi-for-tiktok)** | TikTok | 0.20.3 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |
-| **[YouTube Music](#-albrhi-for-youtube-music)** | YouTube Music | 0.9.3 | ✅ | synced lyrics, saving tracks, no ads, background playback |
-| **[Panel](#-albrhi-panel)** | Settings | 0.9.38 | ✅ | the Albrhi page: a switch per app, the licence, a guide, backup |
+| **[Instagram](#-albrhi-for-instagram)** | Instagram | 4.7.0 | ✅ | downloads, AV1 reels transcoded on the device, a quieter feed, watching stories without a receipt, unsent messages kept and marked |
+| **[YouTube](#-albrhi-for-youtube)** | YouTube | 1.41.0 | ✅ | downloads that survive app updates, their own Download Centre tab, no ads, SponsorBlock, background playback |
+| **[X](#-albrhi-for-x)** | X / Twitter | 0.22.0 | ✅ | media downloads with a button you can place yourself, and fifteen-plus switches for what X does |
+| **[TikTok](#-albrhi-for-tiktok)** | TikTok | 0.21.0 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |
+| **[YouTube Music](#-albrhi-for-youtube-music)** | YouTube Music | 0.10.0 | ✅ | synced lyrics, saving tracks, no ads, background playback |
+| **[Panel](#-albrhi-panel)** | Settings | 0.10.0 | ✅ | the Albrhi page: a switch per app, a guide, backup |
 | **[Spotify](#-albrhi-for-spotify)** | Spotify | 0.2.5 | — | no ads, no Premium popups, sponsored podcast segments skipped |
 | **[NextUp](#-albrhi-nextup)** | SpringBoard + five media apps | 0.3.1 | — | what plays next, on the Lock Screen — a GPLv3 port |
 | **[Watch](#-albrhi-watch)** | SpringBoard, Watch app | 0.6.1 | — | pair a newer watchOS than iOS expects, and hold watchOS 26 back — an MIT port |
@@ -152,7 +135,7 @@ Developed by **Ibrahim Ismail AL-Rahn** ([@ibrahim2100](https://github.com/ibrah
 Each is a self-contained Theos project under `tweaks/` with its own sources, package identity and
 version, and **they never meet at runtime**: an injection filter binds each dylib to one bundle id, so
 the YouTube tweak is never loaded into Instagram. What they share is the build plumbing — the checks,
-the build script, the licence layer and the APT index.
+the build script and the APT index.
 
 `com.albrhi` is built by `tools/make-suite.sh`, which picks up every `tweaks/*/control` automatically.
 A tweak stays out of it only by carrying a `.no-suite` marker — Spotify, NextUp and Watch do.
@@ -427,8 +410,6 @@ exists, and SwiftUI cannot be compiled against the pinned SDK at all.
 - **A switch per patched app**, opt-in, and a page for each tweak that has more to say than a switch.
 - **One master switch above all of them.** When an app update breaks something, it stands every Albrhi
   tweak down on the next launch **without changing a single setting below it**.
-- **The licence** — device, term, scope, where it came from, every app it is running in with its version
-  and when it was last seen. See [Licence](#-licence).
 - **A guide built from the device:** every tweak on *this* phone, what it does, the app version it was
   verified against and the version actually installed — built from the same scan as the main page, so it
   cannot describe a tweak that is not there.
@@ -539,8 +520,8 @@ An empty 128 KB library is enough, and the identical code injected differently d
 
 Instagram, YouTube, X and TikTok are also built as **standalone dylibs** (`Albrhi*.dylib`) attached to each
 release, for injecting into a decrypted IPA with LiveContainer, Sideloadly or cyan — or with
-`tools/ipa-inject.html` in a browser. Each carries **its own licence page** in its own settings, because a
-sideloaded build has no Settings panel to enter a key in. A dylib and the suite can never be injected
+`tools/ipa-inject.html` in a browser. A sideloaded build has no Settings panel, so
+it is simply on: it asks nothing and needs nothing entered. A dylib and the suite can never be injected
 twice: the suite declares `Conflicts`/`Replaces` on them.
 
 ---
@@ -588,11 +569,8 @@ A hook needs a device and there is no way around that. A parser does not.
 ```
 tweaks/<app>/     a complete tweak: Makefile, control, filter plist, src/, CHANGELOG.md
 suite/            com.albrhi — the combined package, and the preinst that clears the old ones
-shared/           Theos flags, build modes, the panel gate and the licence layer every tweak shares
-server/           the licence server (a Cloudflare Worker)
-app/              the owner's native admin app for that server (Theos, TrollStore)
-licence/          published code hashes and the revocation list
-docs/             LICENCE-KEYS.md — how keys are issued and what they do and do not promise
+shared/           Theos flags, build modes and the panel gate every tweak shares
+docs/             investigations — what was measured, in what order, and what turned out wrong
 tools/            source checks, APT index, depictions, signing, .deb editing, the browser tools
 modules/ vendor/  third-party code, shared
 extra-debs/       drop a .deb here and the source publishes it
@@ -608,12 +586,11 @@ Everything under `tools/` is meant to be run by hand as well as by CI.
 
 | | |
 |---|---|
-| **`check.py`** | **Twenty-four source checks**, run before Theos. Every rule comes from a build or a device that actually broke — unbalanced `%hook`/`%end`, a hooked class touching `self` without an `@interface`, a fragile `%orig`, a missing localisation key, a `%new` parameter carrying an attribute, and `-valueForKey:` probing (which runs the app's own code and cannot be made safe by `@catch`). Run from the root it re-runs itself once per tweak. |
+| **`check.py`** | **Twenty-six source checks**, run before Theos. Every rule comes from a build or a device that actually broke — unbalanced `%hook`/`%end`, a hooked class touching `self` without an `@interface`, a fragile `%orig`, a missing localisation key, a `%new` parameter carrying an attribute, and `-valueForKey:` probing (which runs the app's own code and cannot be made safe by `@catch`). Run from the root it re-runs itself once per tweak. |
 | **`objc-classes.py`** | Prints a class's real methods, **declared property types**, ivars and **type encodings** straight out of a Mach-O's ObjC metadata; `--find-method` / `--find-ivar` answer "who answers this selector / owns this field". A framework-wide selector dump says a name *exists*, never on which class — this project lost releases to that gap. |
 | **`make-suite.sh`** | Merges every tweak without `.no-suite` into `com.albrhi`, and refuses a staged tree that does not match the scheme it was asked for. |
 | **`make-repo.sh`** · **`fetch-published-debs.sh`** | Build the APT index **from the published releases** (so several workflows can rebuild one index safely), with an explicit `WITHHELD_PACKAGES` list — because building the index from releases means silence removes nothing. |
 | **`make-depiction.py`** | Sileo depiction and HTML fallback generated **from the changelog**, so they cannot go stale. |
-| **`licence.py`** · **`licence-panel.html`** · **`build-store.sh`** | Issue and revoke licences; build a one-shop copy. |
 | **`inject-dylib.py`** · **`ipa-inject.html`** | Put a dylib into an IPA, with entitlements read first and handed back. |
 | **`deb-edit.py`** · **`deb-edit.html`** | Edit `.deb` metadata from a terminal or browser (served at `…/deb-edit/`). |
 | **`build-local.sh`** · **`build-dylibs.sh`** · **`build-dav1d.sh`** | Local suite builds, the standalone dylibs, and the AV1 decoder. |
@@ -675,7 +652,7 @@ The accumulated reasoning — what broke, why, and what was learned — lives in
 
 **Done recently**
 - [x] **YouTube direct download route** — survives app updates; own fragmented-MP4 remux, no FFmpeg; confirmed on a device
-- [x] **A licence layer** — free week, keys, short codes, server renewal, revocation, an admin app
+- [x] **Licensing removed** — Albrhi is free; no key, no trial, no check
 - [x] **Six tweaks in one package**, and Spotify, NextUp and Watch as their own, each with its own settings row
 - [x] **Albrhi for YouTube Music** — lyrics, saving tracks, Downloads tab, no ads
 - [x] **Instagram:** story-seen hiding fixed on 439, unsent messages kept **and marked**
@@ -689,7 +666,6 @@ The accumulated reasoning — what broke, why, and what was learned — lives in
 - [ ] Hiding the reels **seen** mark (`write_seen_state` still goes out)
 - [ ] Take the host-test arrangement to the rest — the DASH ladder, the quality ranking and version comparison are pure functions
 - [ ] Spotify publishing from its own workflow
-- [ ] A backup of the licence store
 - [ ] **Albrhi CarPlay, rebuilt from scratch in its own repository**
 - [ ] Settings profiles · crash protection that disables a faulting feature rather than the whole tweak
 
@@ -725,7 +701,7 @@ Issues and pull requests are welcome.
 - **[NeoFreeBird](https://github.com/orionblur/NeoFreeBird)** by **orionblur** (GPLv3, a BHTwitter fork written against X 12.31) — Albrhi for X carries over its timeline section filter, the typing-indicator and screenshot-detection approach, the quote/repost and whole-number counts, and a set of interface switches and feature-switch keys; its premium unlock, age-verification bypass, web login and posting, account-location lookup and Tenor GIF swap are deliberately not taken (see the X changelog).
 - **[BHTikTok](https://github.com/BandarHL/BHTikTok)** by BandarHL and the fork by [al3raQe](https://github.com/al3raQe/BHTikTok), and **BHTwitter** — read for *where* an app is hookable, **never for code**; two compiled TikTok tweaks were read the same cautious way.
 - **[JGProgressHUD](https://github.com/JonasGessner/JGProgressHUD)** by Jonas Gessner (MIT) · **[dav1d](https://code.videolan.org/videolan/dav1d)** by VideoLAN (the AV1 decoder) · **[FLEXing](https://github.com/SoCuul/FLEXing)** (runtime debugging).
-- **Ibrahim Ismail AL-Rahn** — the Albrhi rebuild, bilingual layer, download and transcode engine, licence layer, and design.
+- **Ibrahim Ismail AL-Rahn** — the Albrhi rebuild, bilingual layer, download and transcode engine, and design.
 
 ---
 
@@ -743,7 +719,6 @@ Issues and pull requests are welcome.
 
 Albrhi is a derivative work of SCInsta, distributed under the **GNU General Public License v3.0**
 ([LICENSE](LICENSE)). The source stays open, modifications are documented, and original authorship is
-preserved as the licence requires. The Albrhi *licence* described above governs who may **run** the
-released builds; it does not change the terms under which the source is published.
+preserved as the licence requires. The released builds are free to run.
 
 *Albrhi is not affiliated with, endorsed by or sponsored by Instagram, Meta Platforms, Inc., Google, YouTube, X Corp., TikTok or Spotify.*

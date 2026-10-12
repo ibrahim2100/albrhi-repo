@@ -127,8 +127,6 @@ static NSDictionary *_arTable = nil;
         @"err_video_unresolved": @"This is a video, but no downloadable version was found",
 
         // Diagnostics
-        @"licence_row": @"Licence",
-        @"licence_row_note": @"Enter a key or a code, and see what this device is licensed for.",
         @"diag_title": @"Diagnostics",
         @"diag_sub": @"What Albrhi actually sees at runtime",
         @"diag_beta_footer": @"Something not working? Open Diagnostics and tap the speech bubble — it files a report with everything needed to fix it.",
@@ -727,8 +725,6 @@ static NSDictionary *_arTable = nil;
         @"err_video_unresolved": @"هذا فيديو، لكن لم يُعثر على نسخة قابلة للتنزيل",
 
         // التشخيص
-        @"licence_row": @"الترخيص",
-        @"licence_row_note": @"أدخل مفتاحاً أو كوداً، واعرف ما يغطّيه ترخيص هذا الجهاز.",
         @"diag_title": @"التشخيص",
         @"diag_sub": @"ما تراه Albrhi فعليًا أثناء التشغيل",
         @"diag_beta_footer": @"شيء لا يعمل؟ افتح التشخيص واضغط أيقونة الفقاعة — تُنشئ بلاغًا يحمل كل ما يلزم لإصلاحه.",

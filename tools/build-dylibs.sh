@@ -15,9 +15,11 @@
 #      so two lines are skipped or the file matches itself and a clean build reads as linked;
 #   2. no undefined MS* symbols -- a library can be dropped from the load commands while a symbol
 #      it needs remains, which fails at load time instead of here;
-#   3. the licence is compiled in -- a self-contained build used to answer the gate with an
-#      unconditional yes, so a dylib without SCILicenseAllowsProduct is one that runs unlicensed,
-#      which is the single failure nobody would ever report.
+#   3. no licence code is compiled in -- the licence layer was removed (see CLAUDE.md §6), and a
+#      symbol of it surviving in a build would mean a stale object or a reintroduced gate. This
+#      check used to demand the opposite (`SCILicenseAllowsProduct` present, because a
+#      self-contained build once answered the gate with an unconditional yes); it is inverted
+#      rather than deleted so the removal stays proved.
 #
 set -euo pipefail
 
@@ -74,8 +76,9 @@ for TWEAK in $TWEAKS; do
         exit 1
     fi
 
-    if ! nm "$DYLIB" | grep -q 'SCILicenseAllowsProduct'; then
-        echo "  FAILED: no licence check compiled in" >&2
+    if nm "$DYLIB" | grep -q 'SCILicense'; then
+        echo "  FAILED: licence code is still compiled in" >&2
+        nm "$DYLIB" | grep 'SCILicense' | head -5 >&2
         exit 1
     fi
 
@@ -85,7 +88,7 @@ for TWEAK in $TWEAKS; do
     cp "$DYLIB" "$OUT/$FILE"
 
     SIZE=$(du -h "$OUT/$FILE" | awk '{print $1}')
-    echo "  standalone, no MS symbols, licence inside  ·  $FILE  (${SIZE})"
+    echo "  standalone, no MS symbols, no licence code  ·  $FILE  (${SIZE})"
 
     # The objects must not be inherited by a package build, or a .deb would ship the injected
     # flavour of the dylib -- which loads on a jailbreak and hooks nothing through Substrate.

@@ -7,7 +7,6 @@
 
 #import "SCITTStatus.h"
 #import "SCITTSectionRegistry.h"
-#import "shared/src/SCILicenseUI.h"
 #import "SCITTBadge.h"
 #import "SCITTReport.h"
 #import "../UI/SCITTWelcome.h"
@@ -577,11 +576,6 @@
         // Dismissed first: the welcome screen draws into the key window, so leaving this sheet up
         // would put it behind the settings it was asked for from.
         [self dismissViewControllerAnimated:YES completion:^{ [SCITTWelcome show]; }];
-        return;
-    }
-
-    if ([row[kSCIRowDestination] isEqualToString:kSCIDestinationLicence]) {
-        [SCILicenseUI presentFrom:self];
         return;
     }
 

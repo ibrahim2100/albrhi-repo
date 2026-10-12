@@ -42,7 +42,6 @@ $(BUNDLE_NAME)_FILES += $(ROOT)/shared/src/Prefs/SCIPanelButtonAction.m
 
 $(BUNDLE_NAME)_FILES += $(ROOT)/shared/src/SCIKVC.m
 $(BUNDLE_NAME)_FILES += $(ROOT)/shared/src/SCIPanelGate.m
-$(BUNDLE_NAME)_FILES += $(ROOT)/shared/src/SCILicense.m
 
 $(BUNDLE_NAME)_CFLAGS += -fobjc-arc \
 	-Wno-deprecated-declarations -Wno-nullability-completeness \

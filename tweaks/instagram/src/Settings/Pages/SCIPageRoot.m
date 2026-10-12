@@ -1,5 +1,4 @@
 #import "../SCISettingsRegistry.h"
-#import "shared/src/SCILicenseUI.h"
 #import "../../Features/General/SCIUpdateChecker.h"
 #import "../TweakSettings.h"
 #import "../../Onboarding/SCIWhatsNewViewController.h"
@@ -23,37 +22,6 @@
     // the developer-contact section (order 450), not at the very top.
 
     // --- Feature pages are spliced in here, at order 300 ---
-
-    // --- The licence (order 340) ---
-    //
-    // In the app, not in a panel. Albrhi Panel's licence page exists only where PreferenceLoader
-    // does; this tweak can be installed on its own and injected into an IPA, and until this row
-    // there was no way to enter a key from inside it at all.
-    [SCISettingsRegistry registerRootSectionWithOrder:340 builder:^NSArray *{
-        return @[@{
-            @"header": @"",
-            @"rows": @[
-                [SCISetting buttonCellWithTitle:SCILocalized(@"licence_row")
-                                       subtitle:SCILocalized(@"licence_row_note")
-                                           icon:[SCISymbol symbolWithName:@"key.fill"]
-                                         action:^{
-                    // From whatever is on top: this row is inside the tweak's own settings, and
-                    // the licence screen is presented over it. The walk up from the key window is
-                    // the one route that needs no class name -- and `SCILicenseUI` climbs any
-                    // remaining presentations itself.
-                    UIWindow *window = nil;
-                    for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
-                        if (![scene isKindOfClass:[UIWindowScene class]]) continue;
-                        for (UIWindow *candidate in ((UIWindowScene *)scene).windows) {
-                            if (candidate.isKeyWindow) { window = candidate; break; }
-                        }
-                        if (window) break;
-                    }
-                    [SCILicenseUI presentFrom:window.rootViewController];
-                }]
-            ]
-        }];
-    }];
 
     // --- Diagnostics (order 350) — top level during beta, where testers can find it ---
     [SCISettingsRegistry registerRootSectionWithOrder:350 builder:^NSArray *{

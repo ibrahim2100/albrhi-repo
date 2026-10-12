@@ -12,7 +12,6 @@ NSString *const kSCIRowWarns = @"warns";
 NSString *const kSCIRowDestination = @"destination";
 NSString *const kSCIDestinationReport = @"report";
 NSString *const kSCIDestinationWelcome = @"welcome";
-NSString *const kSCIDestinationLicence = @"licence";
 NSString *const kSCISectionTitle = @"section";
 NSString *const kSCISectionIcon = @"sectionIcon";
 NSString *const kSCISectionColor = @"sectionColor";

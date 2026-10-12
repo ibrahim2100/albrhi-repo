@@ -43,8 +43,6 @@ extern NSString *const kSCIRowDestination;
 extern NSString *const kSCIDestinationReport;
 extern NSString *const kSCIDestinationWelcome;
 
-/// The licence screen, shared with every other Albrhi tweak.
-extern NSString *const kSCIDestinationLicence;
 extern NSString *const kSCISectionTitle;
 /// Optional. What the section's own row looks like on the root screen -- an SF Symbol name and a
 /// tint. A section without them still gets a row; it borrows the icon of its first switch.

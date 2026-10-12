@@ -1,5 +1,0 @@
-{
-  "v": 1,
-  "codes": {},
-  "note": "Short licence codes, published as hashes and never as codes -- reading this file hands nobody a working code. Built by the licence panel: mint codes there, copy codes.json, replace this file, push. A device looks a code up here once, at redemption; afterwards its licence is local. See docs/LICENCE-KEYS.md."
-}

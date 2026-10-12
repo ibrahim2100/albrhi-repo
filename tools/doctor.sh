@@ -56,7 +56,7 @@ if [[ -d /Applications/Xcode.app/Contents/Developer ]] || xcode-select -p >/dev/
 else
   row optional "Xcode (host tests)" "tools/run-host-tests.sh needs the macOS SDK" "xcode-select --install"
 fi
-have node && row ok node "$(node -v)" || row optional node "only the licence server's tests" "brew install node"
+have node && row ok node "$(node -v)" || row optional node "only REA (an npm package) needs it" "brew install node"
 have gh && gh auth status >/dev/null 2>&1 && row ok "gh (signed in)" "$(gh api user -q .login 2>/dev/null)" \
   || row optional "gh (signed in)" "CI logs cannot be read" "gh auth login"
 [[ "$(git config core.hooksPath)" == tools/hooks ]] && row ok "pre-commit hook" "tools/hooks" \

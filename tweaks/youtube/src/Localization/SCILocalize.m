@@ -25,7 +25,6 @@ static void SCIBuildTables(void) {
         @"about_footer": @"Copyright (C) Ibrahim Ismail AL-Rahn. Released under the GNU General Public License v3. The source is at github.com/ibrahim2100/albrhi-repo.\n\nSegment data from SponsorBlock (sponsor.ajay.app), CC BY-NC-SA 4.0. The coloured markers on the progress bar are derived from iSponsorBlock by Galactic Dev, GPLv3. Forced fullscreen direction and the screen dimmer follow YTweaks by fosterbarnes, GPLv3, which in turn credits PoomSmart's YTABConfig.",
         @"section_ads": @"Ads",
         @"section_player": @"Player",
-        @"section_general": @"General",
 
         @"identity_attached": @"Everything attached",
         @"identity_partial": @"Some features could not attach",
@@ -265,7 +264,7 @@ static void SCIBuildTables(void) {
         @"page_sponsor": @"SponsorBlock",
         @"page_sponsor_note": @"Skip the paid parts of a video",
         @"page_general": @"General",
-        @"page_general_note": @"Licence, tools for when something is wrong, and credits",
+        @"page_general_note": @"Tools for when something is wrong, and credits",
 
         @"section_fullscreen": @"Fullscreen",
         @"fullscreen_button": @"Fullscreen button",
@@ -326,8 +325,6 @@ static void SCIBuildTables(void) {
         @"diag_scan_nothing": @"  Nothing matched. Either no video is open or this build names its row something else entirely.",
         @"diag_scan_no_window": @"  No window to scan.",
         @"diag_scan_hidden": @"  (hidden)",
-        @"licence_row": @"Licence",
-        @"licence_row_note": @"Enter a key or a code, see what this device is licensed for, and remove a key.",
         @"scan_watch": @"Scan what is on screen",
         @"scan_watch_note": @"Open a video first, then run this. It writes down the classes YouTube actually built under the player — which is the only way to know where a button can go, and the answer a class dump cannot give.",
         @"scan_done": @"Asked for. Close this now and open a video — the scan is taken ten seconds from now, whatever is on screen then.",
@@ -472,7 +469,6 @@ static void SCIBuildTables(void) {
         @"about_footer": @"حقوق النشر (C) إبراهيم إسماعيل الرهن. تصدر برخصة جنو العمومية الإصدار الثالث. المصدر على github.com/ibrahim2100/albrhi-repo.\n\nبيانات المقاطع من سبونسر بلوك (sponsor.ajay.app) برخصة CC BY-NC-SA 4.0. العلامات الملوّنة على شريط التقدّم مشتقّة من iSponsorBlock لـ Galactic Dev برخصة GPLv3. فرض اتجاه ملء الشاشة وإعتام الشاشة يتبعان YTweaks لـ fosterbarnes برخصة GPLv3، وهي بدورها تنسب الفضل إلى YTABConfig لـ PoomSmart.",
         @"section_ads": @"الإعلانات",
         @"section_player": @"المشغّل",
-        @"section_general": @"عام",
 
         @"identity_attached": @"كل شيء مرتبط",
         @"identity_partial": @"بعض المميزات لم ترتبط",
@@ -712,7 +708,7 @@ static void SCIBuildTables(void) {
         @"page_sponsor": @"سبونسر بلوك",
         @"page_sponsor_note": @"تخطّي الأجزاء المدفوعة من الفيديو",
         @"page_general": @"عامّ",
-        @"page_general_note": @"الرخصة، وأدوات حين يتعطّل شيء، والحقوق",
+        @"page_general_note": @"أدوات حين يتعطّل شيء، والحقوق",
 
         @"section_fullscreen": @"ملء الشاشة",
         @"fullscreen_button": @"زرّ ملء الشاشة",
@@ -773,8 +769,6 @@ static void SCIBuildTables(void) {
         @"diag_scan_nothing": @"  لا شيء طابق. إمّا لا فيديو مفتوح، أو أن هذا البناء يسمّي صفّه باسم آخر تماماً.",
         @"diag_scan_no_window": @"  لا توجد نافذة تُفحص.",
         @"diag_scan_hidden": @"  (مخفي)",
-        @"licence_row": @"الترخيص",
-        @"licence_row_note": @"أدخل مفتاحاً أو كوداً، واعرف ما يغطّيه ترخيص هذا الجهاز، وأزل المفتاح.",
         @"scan_watch": @"افحص ما هو معروض",
         @"scan_watch_note": @"افتح فيديو أولاً ثم شغّل هذا. يسجّل الأصناف التي بناها اليوتيوب فعلاً تحت المشغّل — وهي الطريقة الوحيدة لمعرفة أين يمكن وضع زر، والجواب الذي لا يعطيه تفريغ الأصناف.",
         @"scan_done": @"طُلب الفحص. أغلق هذه الشاشة الآن وافتح فيديو — يُلتقط الفحص بعد عشر ثوانٍ مهما كان المعروض حينها.",

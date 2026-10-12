@@ -132,8 +132,8 @@ OWNER_TWEAK="${5:-}"
 #
 # They were withheld when com.albrhi became the front door: one package to install, one to update,
 # and eight half-identities in the source that nobody should be choosing between. What changed is
-# that each of them can now be licensed on its own -- so somebody who wants only YouTube has a
-# package to install and a key that covers it, which is the whole reason the scope field exists.
+# that each of them is now installable on its own -- so somebody who wants only YouTube has a
+# package to install, and the others stay out of the way.
 #
 # The suite still declares Conflicts and Replaces on all of them, so this is a choice between two
 # installs and never a way to end up with the same dylib injected twice.
@@ -141,7 +141,7 @@ OWNER_TWEAK="${5:-}"
 # What stays withheld, and why each one:
 #
 #   panel     it is not a product on its own -- it is the screen the suite ships
-#   ytmusic   no settings screen, so nowhere to enter a licence
+#   ytmusic   only ever shipped inside the suite
 #   carplay   never confirmed on a device; rebuilt in its own repository
 #   locket    removed from this repository entirely; the releases stay as history
 #

@@ -38,8 +38,6 @@ $(foreach T,$(TWEAK_NAME),\
 	$(eval $(T)_FILES += $(ROOT)/shared/src/SCIPanelGate.m)\
 	$(eval $(T)_FILES += $(ROOT)/shared/src/SCIKVC.m)\
 	$(eval $(T)_FILES += $(ROOT)/shared/src/SCIResponder.m)\
-	$(eval $(T)_FILES += $(ROOT)/shared/src/SCILicense.m)\
-	$(eval $(T)_FILES += $(ROOT)/shared/src/SCILicenseUI.m)\
 	$(eval $(T)_FRAMEWORKS += Security)\
 	$(eval $(T)_FILES += $(ROOT)/shared/src/SCISubstrateShim.m)\
 	$(eval $(T)_CFLAGS += -I$(ROOT) )\
@@ -59,28 +57,6 @@ include $(THEOS_MAKE_PATH)/tweak.mk
 #
 # Only the local sideload build reaches this; CI and the published .dylib use
 # SELFCONTAINED below instead.
-#
-# **A build for one store: one code, any number of devices, and a date it stops on.**
-#
-#   bash tools/build-store.sh na9
-#
-# STORE is the code itself -- the word the shop's customers type -- and it is compiled in, which
-# is what makes it work on these dylibs and nowhere else: an ordinary build does not merely refuse
-# it, the path that would accept it does not exist. STORE_UNTIL is when this copy stops; the
-# script sets it to ninety days out, and a build with no date set would be a copy nobody could
-# ever take back.
-#
-ifdef STORE
-# Single quotes around the double ones, which is the idiom that survives both make and the
-# shell: written as \" the backslashes are stripped and the compiler is handed a bare word,
-# which then fails as a stray identifier rather than as a missing string -- and the build that
-# produced it looked perfectly successful while carrying no store code at all.
-$(foreach T,$(TWEAK_NAME),$(eval $(T)_CFLAGS += -DSCI_STORE_ID='"$(STORE)"' ))
-$(foreach T,$(TWEAK_NAME),$(eval $(T)_CFLAGS += -DSCI_STORE_UNTIL=$(STORE_UNTIL) ))
-$(foreach T,$(TWEAK_NAME),$(eval $(T)_CFLAGS += -DSCI_STORE_NAME='"$(STORE_NAME)"' ))
-$(foreach T,$(TWEAK_NAME),$(eval $(T)_CFLAGS += -DSCI_STORE_SITE='"$(STORE_SITE)"' ))
-endif
-
 ifdef SIDELOAD
 $(foreach T,$(TWEAK_NAME),$(eval $(T)_SUBPROJECTS += $(ROOT)/modules/flexing))
 endif

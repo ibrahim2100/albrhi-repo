@@ -1,5 +1,4 @@
 #import "../Model/SCITWPageRegistry.h"
-#import "shared/src/SCILicenseUI.h"
 #import "../SCITWKeysList.h"
 #import "Features/Switches/SCITWSwitches.h"
 #import "Diagnostics/SCITWReport.h"
@@ -37,14 +36,6 @@
             [SCITWSection titled:SCILocalized(@"section_advanced")
                           footer:nil
                             rows:@[
-                // The licence, from inside the app: this tweak can be installed on its own and
-                // injected into an IPA, where there is no panel and no Settings bundle to enter
-                // a key in.
-                [SCITWRow actionRow:SCILocalized(@"licence_row")
-                               note:SCILocalized(@"licence_row_note")
-                             symbol:@"key.fill"
-                               tint:[UIColor systemBlueColor]
-                             action:^{ [SCILicenseUI presentFrom:weakHost]; }],
                 [SCITWRow actionRow:SCILocalized(@"keys_link_title")
                                note:SCILocalized(@"keys_footer")
                              symbol:@"key.fill"

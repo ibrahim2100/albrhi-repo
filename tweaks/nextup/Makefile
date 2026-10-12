@@ -45,7 +45,6 @@ AlbrhiNU_FILES = $(shell find src -type f -not -path 'src/Settings/*' -not -path
 # that fails takes the home screen rather than a feature.
 AlbrhiNU_FILES += $(ROOT)/shared/src/SCIKVC.m
 AlbrhiNU_FILES += $(ROOT)/shared/src/SCIPanelGate.m
-AlbrhiNU_FILES += $(ROOT)/shared/src/SCILicense.m
 
 # ImageIO for the artwork downscale; the rest is what the row and the hooks draw with.
 AlbrhiNU_FRAMEWORKS = UIKit Foundation CoreGraphics QuartzCore ImageIO Security

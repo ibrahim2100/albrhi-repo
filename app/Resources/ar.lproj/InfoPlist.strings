@@ -1,3 +1,0 @@
-/* Arabic is the app's own language, and declaring it is what makes iOS lay the app out
-   right-to-left. Without a localization on disk the bundle is treated as unlocalized, and an
-   unlocalized app is laid out left-to-right however Arabic its strings are. */

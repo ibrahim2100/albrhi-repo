@@ -68,8 +68,9 @@ __pycache__/
 /packages/
 tweaks/*/shared/
 
-# Licence signing keys. The private half lives in ~/.albrhi and must never be in this tree --
-# anyone holding it can mint a key for every device, forever. This pattern is a second line of
-# defence, not the arrangement: tools/licence.py never writes here in the first place.
+# Licence signing keys. The licence layer was removed from the product, but the deployed Worker
+# still signs tokens for installs that predate the removal, with a private key in ~/.albrhi that
+# must never be in this tree -- anyone holding it can mint a key for every old install. This
+# pattern is a second line of defence, not the arrangement.
 *licence-ec-private.pem
 *.p8

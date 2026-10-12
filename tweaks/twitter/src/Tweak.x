@@ -22,7 +22,7 @@
 #import "Features/Counts/SCITWCounts.h"
 #import "Features/Interface/SCITWInterface.h"
 
-NSString *SCIVersionString = @"v0.21.0";  // AlbrhiTW
+NSString *SCIVersionString = @"v0.22.0";  // AlbrhiTW
 
 %ctor {
     // Defaults registered rather than assumed: reading a key that was never written

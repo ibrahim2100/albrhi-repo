@@ -36,14 +36,6 @@ if [[ -x "$(command -v xcrun)" ]]; then
   echo
 fi
 
-# The licence server's own tests (Node, an in-memory KV that paginates like the real one).
-if command -v node >/dev/null 2>&1 && [[ -d server/test ]]; then
-  count=$((count + 1))
-  echo "=== server tests ==="
-  if ! (cd server && node --test test/*.test.mjs); then failed+=("server"); fi
-  echo
-fi
-
 if (( count == 0 )); then echo "no host tests found"; exit 1; fi
 if (( ${#failed[@]} )); then echo "HOST TESTS FAILED: ${failed[*]}"; exit 1; fi
 echo "HOST TESTS PASSED ($count tweaks)"

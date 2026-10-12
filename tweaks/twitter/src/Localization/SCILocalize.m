@@ -214,8 +214,6 @@ static void SCIBuildTables(void) {
         @"gate_off": @"Off — turn it on in Settings › Albrhi",
 
         @"section_keys": @"Switches",
-        @"licence_row": @"Licence",
-        @"licence_row_note": @"Enter a key or a code, and see what this device is licensed for.",
         @"keys_link_title": @"View every switch",
         @"keys_footer": @"This is what X asked about while you were using it, not a list written in advance. Use the app for a while and more will appear. Tap one to answer it yourself.",
         @"keys_empty": @"Nothing yet. Scroll around X and come back.",
@@ -449,8 +447,6 @@ static void SCIBuildTables(void) {
         @"gate_off": @"مُطفأ — فعّله من الإعدادات › البرهي",
 
         @"section_keys": @"المفاتيح",
-        @"licence_row": @"الترخيص",
-        @"licence_row_note": @"أدخل مفتاحاً أو كوداً، واعرف ما يغطّيه ترخيص هذا الجهاز.",
         @"keys_link_title": @"عرض كل مفتاح",
         @"keys_footer": @"هذا ما سأل عنه إكس أثناء استخدامك، لا قائمة مكتوبة مسبقاً. استخدم التطبيق قليلاً وستظهر مفاتيح أكثر. اضغط على أي مفتاح لتجيب أنت عنه.",
         @"keys_empty": @"لا شيء بعد. تصفّح إكس قليلاً ثم ارجع.",
