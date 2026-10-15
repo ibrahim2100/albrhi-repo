@@ -58,6 +58,25 @@ static BOOL SCIMayAlterRequests(void) {
 
 %end
 
+//
+// **The same decision on the class that carries it in 21.41.5.** `YTAdsInnerTubeContextDecorator` is not in that build's binary; the
+// class that answers `-decorateContext:` (`v24@0:8@16`) is `YTAdsInnerTubeContextDecoratorImpl`. Found by running tools/objc-diff.py
+// --check on this tweak against 21.41.5, which listed the old name among the hooks that attach to nothing. Both names stay: a build
+// that has the old one is served by the hook above.
+//
+%hook YTAdsInnerTubeContextDecoratorImpl
+
+- (void)decorateContext:(id)context {
+    SCIYTLaunchMark(@"ads: decorateContext (impl)");
+
+    if (!SCIPrefEnabled(SCIPrefHideAds) || !SCIMayAlterRequests()) {
+        %orig;
+        return;
+    }
+}
+
+%end
+
 %hook YTAccountScopedAdsInnerTubeContextDecorator
 
 - (void)decorateContext:(id)context {

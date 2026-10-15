@@ -3,6 +3,14 @@
 **Tested on YouTube 21.32.4.** Nothing is pinned to a version number: every class the
 tweak touches is looked up at runtime and skipped if it is not there.
 
+## v1.42.1
+
+**حجب الإعلانات على مستوى الطلب يعمل على يوتيوب 21.41.5.** الصنف `YTAdsInnerTubeContextDecorator` ليس في هذا الإصدار؛ الذي يجيب `-decorateContext:` (`v24@0:8@16`) هو `YTAdsInnerTubeContextDecoratorImpl`. أُضيف خطّاف عليه بنفس القرار، والاسم القديم باقٍ لما قبل. (الصنف `YTAccountScopedAdsInnerTubeContextDecorator` الآخر كان وما زال موجوداً بالتوقيع نفسه.)
+
+**علامات SponsorBlock لم تتأثر:** `YTSegmentableInlinePlayerBarView` غائب في 21.41.5 لكن الخطّافات مكتوبة لثلاثة أصناف معاً لأن أيها يُرسم لا يُعرف من الملف؛ و`YTInlinePlayerBarView` موجود في 21.41.5 بـ`-layoutSubviews` وَ`-totalTime` (`d16@0:8`)، فيغطيها. تحقّقتُ من هذا بقراءة الملف، ولم أحتج تعديلاً.
+
+- **لم يُجرَّب على جهاز.**
+
 ## v1.42.0
 
 **زرّان جديدان في صف المشغّل العلوي بجانب زرّ الحفظ: الجودة، والصورة داخل الصورة. كلاهما متوقف حتى تشغّله من «التشغيل ← فوق الفيديو».**
