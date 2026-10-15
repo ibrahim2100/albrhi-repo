@@ -2,6 +2,9 @@
 
 NSString *const kSCIKindSwitch = @"switch";
 NSString *const kSCIKindLink = @"link";
+NSString *const kSCIKindChoice = @"choice";
+NSString *const kSCIRowOptions = @"options";
+NSString *const kSCIRowChoiceFooter = @"choiceFooter";
 NSString *const kSCIRowKind = @"kind";
 NSString *const kSCIRowTitle = @"title";
 NSString *const kSCIRowNote = @"note";

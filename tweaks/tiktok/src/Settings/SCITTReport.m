@@ -5,6 +5,9 @@
 #import "../Localization/SCILocalize.h"
 #import "../Diagnostics/SCITTDiagnostics.h"
 #import "../Features/Extras/SCITTExtras.h"
+#import "../Features/Region/SCITTRegion.h"
+#import "../Features/Speed/SCITTSpeed.h"
+#import "../Features/Lock/SCITTAppLock.h"
 #import "../Features/Download/SCITTMedia.h"
 #import "../Features/Download/SCITTWatermark.h"
 #import "../Features/Download/SCITTPlaybackProbe.h"
@@ -110,6 +113,12 @@ static NSDictionary *SCIHeavyRow(NSString *title, NSString *value, NSString *ico
                        @"calendar", [UIColor systemIndigoColor]),
                 SCIRow(SCILocalized(@"status_extras"), SCITTExtrasReport(),
                        @"square.grid.2x2", [UIColor systemIndigoColor]),
+                SCIRow(SCILocalized(@"status_region"), SCITTRegionReport(),
+                       @"globe", [UIColor systemTealColor]),
+                SCIRow(SCILocalized(@"status_speed"), SCITTSpeedReport(),
+                       @"speedometer", [UIColor systemIndigoColor]),
+                SCIRow(SCILocalized(@"status_lock"), SCITTAppLockReport(),
+                       @"lock.fill", [UIColor systemIndigoColor]),
                 SCIRow(SCILocalized(@"status_watermark"), SCITTWatermarkReport(),
                        @"drop.fill", [UIColor systemCyanColor]),
                 SCIRow(SCILocalized(@"status_playback"), SCITTPlaybackReport(),

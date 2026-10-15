@@ -11,9 +11,12 @@
 #import "Features/Confirm/SCITTConfirm.h"
 #import "Features/Download/SCITTPlaybackProbe.h"
 #import "Features/Extras/SCITTExtras.h"
+#import "Features/Region/SCITTRegion.h"
+#import "Features/Speed/SCITTSpeed.h"
+#import "Features/Lock/SCITTAppLock.h"
 #import "Settings/SCITTGesture.h"
 
-NSString *SCIVersionString = @"v0.21.0";  // AlbrhiTT
+NSString *SCIVersionString = @"v0.22.0";  // AlbrhiTT
 
 ///
 /// TESTED ON TikTok 46.4.0. Every class here was confirmed present in that build's own
@@ -51,6 +54,9 @@ NSString *SCIVersionString = @"v0.21.0";  // AlbrhiTT
         SCIPrefPrivacyMessages: @YES,
         SCIPrefPrivacyProfile: @YES,
         SCIPrefVerboseLogging: @NO,
+        // The lock is a question asked on every return: off until somebody wants it. The country and the speed have no
+        // default on disk at all -- absent means the real country and TikTok's own speed.
+        SCIPrefAppLock: @NO,
     }];
 
     NSLog(@"[AlbrhiTT] %@ loaded into %@", SCIVersionString,
@@ -76,4 +82,7 @@ NSString *SCIVersionString = @"v0.21.0";  // AlbrhiTT
     SCITTInstallWatermarkHooks();
     SCITTInstallPlaybackProbe();
     SCITTInstallExtras();
+    SCITTInstallRegion();
+    SCITTInstallSpeed();
+    SCITTInstallAppLock();
 }

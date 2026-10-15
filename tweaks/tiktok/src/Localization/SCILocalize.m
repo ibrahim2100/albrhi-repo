@@ -15,6 +15,21 @@ static void SCIBuildTables(void) {
     _enTable = @{
         @"title": @"Albrhi for TikTok",
         @"done": @"Done",
+        @"section_region": @"Region",
+        @"row_region": @"Country TikTok sees",
+        @"row_region_note": @"Tells TikTok, and the carrier it reads, that this phone is in another country. That is something untrue about your device: it can change what the app offers, and an account moved between regions may be asked to verify itself. Off until you pick one.",
+        @"region_real": @"My real country (nothing changed)",
+        @"region_footer": @"Only the answers TikTok asks for are replaced; nothing TikTok saved is written to. Choosing your real country puts everything back.",
+        @"row_speed": @"Playback speed",
+        @"row_speed_note": @"The speed videos play at when TikTok asks for normal. TikTok's own hold-to-speed-up still works.",
+        @"speed_normal": @"TikTok's own (normal)",
+        @"row_lock": @"Lock the app",
+        @"row_lock_note": @"Asks for Face ID, Touch ID or your passcode when you come back to TikTok. A phone that cannot ask is let through.",
+        @"lock_title": @"TikTok is locked",
+        @"lock_reason": @"Unlock TikTok",
+        @"status_region": @"Region",
+        @"status_speed": @"Playback speed",
+        @"status_lock": @"App lock",
 
         @"section_privacy": @"Privacy",
 
@@ -152,6 +167,21 @@ static void SCIBuildTables(void) {
     _arTable = @{
         @"title": @"البرهي لتيك توك",
         @"done": @"تم",
+        @"section_region": @"المنطقة",
+        @"row_region": @"الدولة التي يراها تيك توك",
+        @"row_region_note": @"يخبر تيك توك، والمشغّل الذي يقرؤه، أن هذا الجوال في بلد آخر. هذا قول غير صحيح عن جهازك: قد يغيّر ما يعرضه التطبيق، وحساب يُنقل بين المناطق قد يُطلب منه التحقق. متوقفة حتى تختار دولة.",
+        @"region_real": @"بلدي الحقيقي (بلا تغيير)",
+        @"region_footer": @"تُستبدل فقط الإجابات التي يسأل عنها تيك توك، ولا يُكتب شيء في ما حفظه. اختيار بلدك الحقيقي يعيد كل شيء.",
+        @"row_speed": @"سرعة التشغيل",
+        @"row_speed_note": @"السرعة التي تعمل بها المقاطع حين يطلب تيك توك السرعة العادية. وضغطة تيك توك المطوّلة للتسريع تعمل كما هي.",
+        @"speed_normal": @"سرعة تيك توك (عادية)",
+        @"row_lock": @"قفل التطبيق",
+        @"row_lock_note": @"يطلب Face ID أو Touch ID أو رمز الجوال حين تعود إلى تيك توك. والجوال الذي لا يستطيع السؤال يُسمح له بالدخول.",
+        @"lock_title": @"تيك توك مقفل",
+        @"lock_reason": @"افتح تيك توك",
+        @"status_region": @"المنطقة",
+        @"status_speed": @"سرعة التشغيل",
+        @"status_lock": @"قفل التطبيق",
 
         @"section_privacy": @"الخصوصية",
 

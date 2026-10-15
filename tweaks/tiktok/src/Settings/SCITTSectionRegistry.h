@@ -32,6 +32,11 @@ NS_ASSUME_NONNULL_BEGIN
 //
 extern NSString *const kSCIKindSwitch;
 extern NSString *const kSCIKindLink;
+/// A row that opens a list of values and keeps the one picked (`kSCIRowPref`, `kSCIRowOptions`). The first option is the
+/// default: it removes the key, so "nothing chosen" and "the default chosen" are the same state on disk.
+extern NSString *const kSCIKindChoice;
+extern NSString *const kSCIRowOptions;
+extern NSString *const kSCIRowChoiceFooter;
 extern NSString *const kSCIRowKind;
 extern NSString *const kSCIRowTitle;
 extern NSString *const kSCIRowNote;

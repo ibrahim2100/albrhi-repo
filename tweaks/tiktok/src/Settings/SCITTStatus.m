@@ -7,6 +7,7 @@
 
 #import "SCITTStatus.h"
 #import "SCITTSectionRegistry.h"
+#import "SCITTChoiceList.h"
 #import "SCITTBadge.h"
 #import "SCITTReport.h"
 #import "../UI/SCITTWelcome.h"
@@ -526,9 +527,15 @@
                                                                                                 weight:UIImageSymbolWeightSemibold]];
     card.icon.tintColor = tint;
 
-    BOOL isLink = [row[kSCIRowKind] isEqualToString:kSCIKindLink];
+    BOOL isChoice = [row[kSCIRowKind] isEqualToString:kSCIKindChoice];
+    BOOL isLink = [row[kSCIRowKind] isEqualToString:kSCIKindLink] || isChoice;
     card.toggle.hidden = isLink;
     card.chevron.hidden = !isLink;
+    if (isChoice) {
+        // The current value leads the note: what is chosen is the first thing anybody opening this row wants to know.
+        NSString *current = SCITTChoiceCurrentTitle(row[kSCIRowOptions], row[kSCIRowPref]);
+        card.note.text = current.length ? [NSString stringWithFormat:@"%@ — %@", current, row[kSCIRowNote]] : row[kSCIRowNote];
+    }
 
     if (!isLink) {
         NSString *pref = row[kSCIRowPref];
@@ -570,6 +577,11 @@
     if (indexPath.item < 0 || indexPath.item >= (NSInteger)rows.count) return;
 
     NSDictionary *row = rows[(NSUInteger)indexPath.item];
+    if ([row[kSCIRowKind] isEqualToString:kSCIKindChoice]) {
+        SCITTChoiceList *list = [[SCITTChoiceList alloc] initWithTitle:row[kSCIRowTitle] pref:row[kSCIRowPref] options:row[kSCIRowOptions] footer:row[kSCIRowChoiceFooter]];
+        [self.navigationController pushViewController:list animated:YES];
+        return;
+    }
     if (![row[kSCIRowKind] isEqualToString:kSCIKindLink]) return;
 
     if ([row[kSCIRowDestination] isEqualToString:kSCIDestinationWelcome]) {

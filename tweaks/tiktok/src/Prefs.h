@@ -133,3 +133,24 @@ static inline BOOL SCIPrefEnabled(NSString *key) {
 /// on the class this tweak already holds for the model behind the download button.
 #define SCIPrefNoLoop           @"no_video_loop"
 
+/// The country TikTok is told this phone is in. **Absent or empty means the real one**: nothing is rewritten until
+/// somebody picks a country, and picking "real" again puts everything back (only what the app asks is answered
+/// differently; nothing TikTok stored is ever written to).
+///
+/// Answers the region questions TikTok asks about itself and its carrier -- `TTKStoreRegionService -storeRegion`,
+/// `TIKTOKRegionManager +region` and its siblings, `ATSRegionCacheManager -region`, the install-id classes'
+/// `-currentAppRegion` and `CTCarrier`'s country and network codes -- each installed only where the build declares the
+/// selector with the encoding it was written against.
+#define SCIPrefRegionCode       @"region_code"
+
+/// The speed a video plays at when TikTok itself asks for normal (1.0). Absent, or 1, means TikTok's own.
+/// A rate TikTok asks for on purpose (its hold-to-speed-up) is left alone.
+///
+/// `TTKMediaSpeedControlService -setPlaybackRate:` (`v24@0:8d16`), `-changeToSpeed:` (`v24@0:8d16`) and
+/// `-changeSpeed:logExtraDict:` (`v32@0:8d16@24`), confirmed on 46.4.0.
+#define SCIPrefSpeedRate        @"playback_rate"
+
+/// Ask for Face ID, Touch ID or the passcode when the app comes back from the background. Built from
+/// notifications and LocalAuthentication alone, so it depends on no TikTok class at all.
+#define SCIPrefAppLock          @"app_lock"
+

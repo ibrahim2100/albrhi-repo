@@ -1060,6 +1060,13 @@ there costs colours, never the video).
 - **Settings** (0.20.0) is a collection view with a layout per section — identity card, two-column category grid, option cards — one row away
   from a copyable Status report that names every number behind every feature; **hold two fingers anywhere**. Confirmations (like heart *and* double tap,
   follow on feed and profile) are off until turned on.
+- **Region, speed and app lock (0.22.0), from TTF-Mod-iOS (a BHTikTok++ fork, unlicensed: architecture only).** Region is a **choice, real by default**: no key on disk means nothing is rewritten, only
+  **getters** are answered (a setter hook would leave the lie in TikTok's own cache after the switch went off), and the row says it tells TikTok something untrue. The reference ships it on, set to Kazakhstan, without asking.
+  Confirmed on 46.4.0 with `tools/objc-classes.py`: `TTKStoreRegionService`, `TIKTOKRegionManager` (seven class methods), `ATSRegionCacheManager`, `TTKStoreRegionModel`, `TTInstallIDManager`/`BDInstallGlobalConfig -currentAppRegion`;
+  **`TTKPassportAppStoreRegionModel` is not in the binary** (the reference hooks it). The country table (36 entries, ITU E.212 codes) was written here and is best effort. Speed: `TTKMediaSpeedControlService`'s three rate
+  calls map 1.0 to the chosen rate and leave every other rate alone (hold-to-speed-up keeps working); **which of the three moves the player is not read from the binary** and the report counts each. App lock: notifications +
+  LocalAuthentication only, no TikTok class. Not taken from the reference: fake follower/verified numbers (deceiving others), its long jailbreak path list (`/bin/sh`, `/usr/lib/dyld` exist on every phone), unguarded hooks.
+  New settings row kind `kSCIKindChoice` (first option = default = key removed). **Not run on a device.**
 - Non-obvious refusals: `PIPOStoreKitHelper -isJailBroken` is not hooked (§2); the `tikwm` path was refused *as the fix, arriving quietly* and shipped as a
   switch once the owner asked knowing the trade — the earlier refusal was a different question, not wrong.
 
@@ -1196,8 +1203,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.7.0** · YouTube **1.41.0** · X **0.22.0** · TikTok **0.21.0** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.95.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.7.0** · YouTube **1.41.0** · X **0.22.0** · TikTok **0.22.0** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.96.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
