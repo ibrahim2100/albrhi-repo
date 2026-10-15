@@ -3,6 +3,14 @@
 **Tested on YouTube 21.32.4.** Nothing is pinned to a version number: every class the
 tweak touches is looked up at runtime and skipped if it is not there.
 
+## v1.41.1
+
+**الصورة داخل الصورة على يوتيوب 21.41.5: السؤال انتقل إلى صنف آخر.** `MLVideo` لم يعد يعلن `-isPlayableInPictureInPictureByUserSettings` في 21.41.5؛ صار عند `YTBackgroundabilityPolicyImpl` (`B16@0:8`) إلى جانب `-isBackgroundableByUserSettings`. فالخطّاف القديم صار يضيف دالة إلى صنف لا يسأله أحد، والميزة لا تفعل شيئاً في هذا الإصدار. أُضيف خطّاف على الصنف الجديد، والقديم باقٍ لما قبله. وجدته بتشغيل `tools/objc-diff.py --check` على الأداة مقابل ملف يوتيوب 21.41.5 الحقيقي؛ والفكرة من قراءة YouPiP لـPoomSmart (MIT)، والدالة وتوقيعها قُرئا من الملف لا منقولين.
+
+**ما وجده الفحص نفسه ولم يُعالَج بعد** (الأداة مُختبَرة على 21.30.5 و21.32.4): `YTSegmentableInlinePlayerBarView` ليس في 21.41.5 (علامات SponsorBlock على الشريط)، و`YTAdsInnerTubeContextDecorator` صار `YTAdsInnerTubeContextDecoratorImpl` (طبقة الإعلانات على مستوى الطلب).
+
+- **لم يُجرَّب على جهاز.**
+
 ## v1.41.0
 
 **نظام التراخيص أُزيل بالكامل: البرهي مجاني.** قسم «عام» في الإعدادات كان يحوي صفّ الترخيص وحده، فاختفى. صفحة «عام» الآن: الأدوات والحقوق.
