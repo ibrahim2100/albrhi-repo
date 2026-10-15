@@ -178,6 +178,14 @@ static void SCIAskForCap(SCIYTSettingsHostController *host, NSString *key) {
                        detail:SCILocalized(@"overlay_endtime_note")
                        symbol:@"clock"
                       prefKey:SCIPrefOverlayEndTime],
+            [SCIRow switchRow:SCILocalized(@"overlay_quality_title")
+                       detail:SCILocalized(@"overlay_quality_note")
+                       symbol:@"slider.horizontal.3"
+                      prefKey:SCIPrefOverlayQuality],
+            [SCIRow switchRow:SCILocalized(@"overlay_pip_title")
+                       detail:SCILocalized(@"overlay_pip_note")
+                       symbol:@"pip.enter"
+                      prefKey:SCIPrefOverlayPiP],
         ];
 
         // The experimental section is gone, and deliberately not left switched off.

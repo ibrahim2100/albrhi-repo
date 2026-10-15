@@ -1,5 +1,7 @@
 #import <objc/runtime.h>
+#import <objc/message.h>
 #import "shared/src/SCIResponder.h"
+#import "shared/src/SCIKVC.h"
 #import "../../YouTubeHeaders.h"
 #import "../../SCILog.h"
 #import "../../Prefs.h"
@@ -65,6 +67,19 @@ static CGFloat sciOverlayTopInset = 8;
 static char kSCIOverlaySaveButton;
 static char kSCIOverlayJoined;
 
+/// The buttons that sit beside the save button, nearest first: the quality label and the picture-in-picture button. An overlay gets this
+/// array once, when it is first built; a switch changed afterwards takes effect on the next video's overlay.
+static char kSCIOverlayExtras;
+static const NSInteger SCIOverlayQualityTag = 0x5C10B9;
+static const NSInteger SCIOverlayPiPTag     = 0x5C10BA;
+
+/// Every quality button that exists, held weakly, so a choice made in the quality sheet can retitle all of them without an observer
+/// per overlay that would have to be removed again.
+static NSHashTable<UIButton *> *sciQualityButtons = nil;
+static NSString *sciQualityLabel = @"Auto";
+static NSUInteger sciQualityMade = 0, sciQualityTaps = 0, sciQualityChosen = 0;
+static NSUInteger sciPiPMade = 0, sciPiPTaps = 0, sciPiPRefused = 0;
+
 /// The button's own frame, and whether it is in a window.
 ///
 /// **1.27.0's report said the button was made and handed to YouTube's layout, and nothing was on
@@ -75,18 +90,27 @@ static char kSCIOverlayJoined;
 static NSString *sciOverlayPlacement = nil;
 
 static void SCIReportOverlayState(BOOL joined) {
+    NSString *extras = [NSString stringWithFormat:SCILocalized(@"diag_overlay_extras"),
+        (unsigned long)sciQualityMade, (unsigned long)sciQualityTaps, (unsigned long)sciQualityChosen,
+        (unsigned long)sciPiPMade, (unsigned long)sciPiPTaps, (unsigned long)sciPiPRefused];
     [SCIYTDiagnostics recordOverlayButton:
-        [NSString stringWithFormat:SCILocalized(@"diag_overlay_counts"),
+        [[NSString stringWithFormat:SCILocalized(@"diag_overlay_counts"),
             (unsigned long)sciOverlaysSeen,
             (unsigned long)sciOverlayButtonsMade,
             joined ? SCILocalized(@"diag_overlay_native") : SCILocalized(@"diag_overlay_placed"),
             (unsigned long)sciOverlayTaps,
             (unsigned long)sciOverlayFadeSignals,
-            sciOverlayPlacement ?: SCILocalized(@"diag_overlay_unplaced")]];
+            sciOverlayPlacement ?: SCILocalized(@"diag_overlay_unplaced")] stringByAppendingFormat:@" · %@", extras]];
 }
 
 static const NSInteger SCIOverlayButtonTag = 0x5C10B7;
 static const NSInteger SCIEndTimeTag       = 0x5C10B8;
+
+/// Whether a view is one of the buttons this file added. The neighbour search below must never measure them: it would take its own
+/// button for the control it is meant to sit beside, and the button would walk.
+static BOOL SCIIsOurs(UIView *view) {
+    return view.tag == SCIOverlayButtonTag || view.tag == SCIOverlayQualityTag || view.tag == SCIOverlayPiPTag;
+}
 
 /// The clock time a video ends at, from now plus what is left of it.
 ///
@@ -222,9 +246,9 @@ static CGRect SCIFrameBesideTopControls(YTMainAppControlsOverlayView *overlay, U
         [queue removeObjectAtIndex:0];
         walked++;
 
-        if (child != ours && !child.hidden) [queue addObjectsFromArray:child.subviews];
+        if (child != ours && !SCIIsOurs(child) && !child.hidden) [queue addObjectsFromArray:child.subviews];
 
-        if (child == ours || child.hidden) continue;
+        if (child == ours || SCIIsOurs(child) || child.hidden) continue;
         if (![child isKindOfClass:[UIButton class]]) continue;
 
         CGRect frame = [child convertRect:child.bounds toView:overlay];
@@ -264,20 +288,41 @@ static CGRect SCIFrameBesideTopControls(YTMainAppControlsOverlayView *overlay, U
                       reference.size.width, reference.size.height);
 }
 
-static void SCIApplyTopInset(YTMainAppControlsOverlayView *overlay) {
+/// Our buttons that are in this overlay, in the order they sit: save first, then the extras, each further from the anchor.
+static NSArray<UIButton *> *SCIOurTopButtons(YTMainAppControlsOverlayView *overlay) {
+    NSMutableArray<UIButton *> *buttons = [NSMutableArray array];
     UIButton *save = objc_getAssociatedObject(overlay, &kSCIOverlaySaveButton);
-    if (!save || save.superview != overlay) return;
+    if (save && save.superview == overlay) [buttons addObject:save];
+    for (UIButton *extra in (NSArray *)objc_getAssociatedObject(overlay, &kSCIOverlayExtras)) {
+        if (extra.superview == overlay) [buttons addObject:extra];
+    }
+    return buttons;
+}
 
-    CGRect wanted = SCIFrameBesideTopControls(overlay, save);
+static void SCIApplyTopInset(YTMainAppControlsOverlayView *overlay) {
+    NSArray<UIButton *> *buttons = SCIOurTopButtons(overlay);
+    if (!buttons.count) return;
+
+    CGRect wanted = SCIFrameBesideTopControls(overlay, buttons.firstObject);
     if (CGRectIsNull(wanted)) return;
 
-    // Half a point, because a difference smaller than that is rounding, and writing rounding back
-    // into a frame from a layout-adjacent path is how a settled layout is made to move again.
-    if (ABS(save.frame.origin.x - wanted.origin.x) < 0.5 &&
-        ABS(save.frame.origin.y - wanted.origin.y) < 0.5 &&
-        ABS(save.frame.size.width - wanted.size.width) < 0.5) return;
+    // Each further button one gap beyond the one before it, away from the anchor: to the left in English, to the right in Arabic.
+    BOOL mirrored = (overlay.effectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirectionRightToLeft);
+    CGFloat step = wanted.size.width + 8;
 
-    save.frame = wanted;
+    for (NSUInteger i = 0; i < buttons.count; i++) {
+        UIButton *button = buttons[i];
+        CGRect frame = wanted;
+        frame.origin.x += (mirrored ? 1 : -1) * step * (CGFloat)i;
+
+        // Half a point, because a difference smaller than that is rounding, and writing rounding back
+        // into a frame from a layout-adjacent path is how a settled layout is made to move again.
+        if (ABS(button.frame.origin.x - frame.origin.x) < 0.5 &&
+            ABS(button.frame.origin.y - frame.origin.y) < 0.5 &&
+            ABS(button.frame.size.width - frame.size.width) < 0.5) continue;
+
+        button.frame = frame;
+    }
     sciOverlayTopInset = wanted.origin.y;
 }
 
@@ -289,7 +334,7 @@ static void SCIApplyTopInset(YTMainAppControlsOverlayView *overlay) {
 /// disappear, which is a handful a minute, and the numbers in it are real: the button has been
 /// laid out by the time these fire, so a frame of zero means something rather than "too early".
 static void SCIRecordOverlayPlacement(YTMainAppControlsOverlayView *overlay) {
-    UIButton *save = objc_getAssociatedObject(overlay, &kSCIOverlaySaveButton);
+    UIButton *save = SCIOurTopButtons(overlay).firstObject;
     if (!save) return;
 
     sciOverlayPlacement =
@@ -309,8 +354,8 @@ static void SCIRecordOverlayPlacement(YTMainAppControlsOverlayView *overlay) {
 
 
 static void SCISyncSaveButton(YTMainAppControlsOverlayView *overlay, BOOL animated) {
-    UIButton *save = objc_getAssociatedObject(overlay, &kSCIOverlaySaveButton);
-    if (!save) return;
+    NSArray<UIButton *> *buttons = SCIOurTopButtons(overlay);
+    if (!buttons.count) return;
 
     NSNumber *shown = objc_getAssociatedObject(overlay, &kSCIOverlayShown);
     NSNumber *topShown = objc_getAssociatedObject(overlay, &kSCIOverlayTopShown);
@@ -323,21 +368,103 @@ static void SCISyncSaveButton(YTMainAppControlsOverlayView *overlay, BOOL animat
                             ? [overlay isOverlayVisible] : YES));
 
     CGFloat target = wanted ? 1.0 : 0.0;
-    if (save.alpha == target) return;
 
-    // The duration is YouTube's own fade to within a frame, and a reduced-motion setting is
-    // honoured by skipping it rather than by leaving the button behind.
-    if (!animated || UIAccessibilityIsReduceMotionEnabled()) {
-        save.alpha = target;
-        return;
+    for (UIButton *button in buttons) {
+        if (button.alpha == target) continue;
+
+        // The duration is YouTube's own fade to within a frame, and a reduced-motion setting is
+        // honoured by skipping it rather than by leaving the button behind.
+        if (!animated || UIAccessibilityIsReduceMotionEnabled()) {
+            button.alpha = target;
+            continue;
+        }
+
+        [UIView animateWithDuration:0.2
+                              delay:0
+                            options:UIViewAnimationOptionBeginFromCurrentState |
+                                    UIViewAnimationOptionCurveEaseInOut
+                         animations:^{ button.alpha = target; }
+                         completion:nil];
+    }
+}
+
+
+/// The quality button's text, from the format the person just picked: 2160p becomes 4K, 1440p 2K, 1080p HD, and a frame rate above 30 goes on
+/// a second line. Written for this tweak; the idea (a label that says what is playing) is YouQuality's, by PoomSmart (MIT).
+static NSString *SCICompactQuality(id format) {
+    if (!format || ![format respondsToSelector:@selector(qualityLabel)]) return nil;
+    NSString *label = ((id (*)(id, SEL))objc_msgSend)(format, @selector(qualityLabel));
+    if (![label isKindOfClass:[NSString class]] || !label.length) return nil;
+
+    double fps = [format respondsToSelector:@selector(FPS)] ? ((double (*)(id, SEL))objc_msgSend)(format, @selector(FPS)) : 0;
+    BOOL high = fps > 30;
+    NSString *separator = high ? @"\n" : @"";
+
+    if ([label hasPrefix:@"2160p"]) label = [label stringByReplacingOccurrencesOfString:@"2160p" withString:[@"4K" stringByAppendingString:separator]];
+    else if ([label hasPrefix:@"1440p"]) label = [label stringByReplacingOccurrencesOfString:@"1440p" withString:[@"2K" stringByAppendingString:separator]];
+    else if ([label hasPrefix:@"1080p"]) label = [label stringByReplacingOccurrencesOfString:@"1080p" withString:[@"HD" stringByAppendingString:separator]];
+    else if (high) label = [label stringByReplacingOccurrencesOfString:@"p" withString:@"p\n" options:0 range:NSMakeRange(0, MIN((NSUInteger)label.length, (NSUInteger)6))];
+    if ([label hasSuffix:@" HDR"]) label = [label stringByReplacingOccurrencesOfString:@" HDR" withString:@"\nHDR"];
+    return label;
+}
+
+static void SCIQualityWasChosen(id format) {
+    NSString *label = SCICompactQuality(format);
+    if (!label) return;
+    sciQualityChosen++;
+    sciQualityLabel = label;
+    for (UIButton *button in sciQualityButtons.allObjects) [button setTitle:label forState:UIControlStateNormal];
+}
+
+/// One extra button for the top row: a text one (quality) or an icon one (picture in picture), made by YouTube's own factory where it
+/// answers and by UIKit where it does not. Same construction as the save button's, and added to the overlay the same way.
+static UIButton *SCIMakeTopButton(YTMainAppControlsOverlayView *overlay, UIImage *icon, NSString *title, NSString *accessibility,
+                                  NSInteger tag, SEL action) {
+    UIButton *button = nil;
+    if (icon && [overlay respondsToSelector:@selector(playerButtonWithImage:selectedImage:accessibilityLabel:verticalContentPadding:minHitTargetSize:)]) {
+        id built = [overlay playerButtonWithImage:icon selectedImage:icon accessibilityLabel:accessibility verticalContentPadding:0 minHitTargetSize:48];
+        if ([built isKindOfClass:[UIControl class]]) button = (UIButton *)built;
+    }
+    if (!button) {
+        button = [UIButton buttonWithType:UIButtonTypeSystem];
+        button.accessibilityLabel = accessibility;
+        if (icon) [button setImage:icon forState:UIControlStateNormal];
+    }
+    if (title) {
+        [button setTitle:title forState:UIControlStateNormal];
+        button.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightSemibold];
+        button.titleLabel.numberOfLines = 2;
+        button.titleLabel.textAlignment = NSTextAlignmentCenter;
+        [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    }
+    button.tintColor = [UIColor whiteColor];
+    button.tag = tag;
+    button.translatesAutoresizingMaskIntoConstraints = YES;
+    [button addTarget:overlay action:action forControlEvents:UIControlEventTouchUpInside];
+    [overlay addSubview:button];
+    return button;
+}
+
+/// Builds the extras once for this overlay, for whichever of the two switches was on at that moment.
+static void SCIBuildExtraButtons(YTMainAppControlsOverlayView *overlay, BOOL quality, BOOL pip) {
+    NSMutableArray<UIButton *> *extras = [NSMutableArray array];
+
+    if (quality) {
+        UIButton *button = SCIMakeTopButton(overlay, nil, sciQualityLabel, SCILocalized(@"overlay_quality"), SCIOverlayQualityTag, @selector(sciQualityTapped:));
+        static dispatch_once_t once;
+        dispatch_once(&once, ^{ sciQualityButtons = [NSHashTable weakObjectsHashTable]; });
+        [sciQualityButtons addObject:button];
+        [extras addObject:button];
+        sciQualityMade++;
     }
 
-    [UIView animateWithDuration:0.2
-                          delay:0
-                        options:UIViewAnimationOptionBeginFromCurrentState |
-                                UIViewAnimationOptionCurveEaseInOut
-                     animations:^{ save.alpha = target; }
-                     completion:nil];
+    if (pip) {
+        UIImage *icon = [UIImage systemImageNamed:@"pip.enter"] ?: [UIImage systemImageNamed:@"rectangle.on.rectangle"];
+        [extras addObject:SCIMakeTopButton(overlay, icon, nil, SCILocalized(@"overlay_pip"), SCIOverlayPiPTag, @selector(sciPiPTapped:))];
+        sciPiPMade++;
+    }
+
+    objc_setAssociatedObject(overlay, &kSCIOverlayExtras, extras, OBJC_ASSOCIATION_RETAIN);
 }
 
 
@@ -363,20 +490,26 @@ static void SCISyncSaveButton(YTMainAppControlsOverlayView *overlay, BOOL animat
     NSArray *controls = %orig;
 
     if (SCIYTStoodDown()) return controls;
-    if (!SCIPrefEnabled(SCIPrefOverlayButton)) return controls;
+
+    BOOL wantSave = SCIPrefEnabled(SCIPrefOverlayButton);
+    BOOL wantQuality = SCIPrefEnabled(SCIPrefOverlayQuality);
+    BOOL wantPiP = SCIPrefEnabled(SCIPrefOverlayPiP);
+    if (!wantSave && !wantQuality && !wantPiP) return controls;
 
     @try {
         UIButton *save = objc_getAssociatedObject(self, &kSCIOverlaySaveButton);
         BOOL joined = [objc_getAssociatedObject(self, &kSCIOverlayJoined) boolValue];
 
-        // **Nothing at all once the button is placed.** Everything below belongs to building it,
+        // **Nothing at all once the buttons are placed.** Everything below belongs to building them,
         // and this method is called during layout: anything it does on every call is something
         // layout does on every call, and two of those together stopped the app from starting.
-        if (save && save.superview == self) return controls;
+        BOOL saveSettled = !wantSave || (save && save.superview == self);
+        BOOL extrasBuilt = objc_getAssociatedObject(self, &kSCIOverlayExtras) != nil;
+        if (saveSettled && extrasBuilt) return controls;
 
         sciOverlaysSeen++;
 
-        if (!save) {
+        if (wantSave && !save) {
             // **The app's own glyph, not ours.** YouTube draws downloading as an arrow into a
             // tray, and a circled arrow beside it reads as a guest even when everything else
             // about the button is the app's. `arrow.down.to.line` is that shape in SF Symbols.
@@ -459,9 +592,16 @@ static void SCISyncSaveButton(YTMainAppControlsOverlayView *overlay, BOOL animat
             SCISyncSaveButton(self, NO);
         }
 
+        // The two extras, once, next to the save button. They are built from the same hook, on the same moment and in the same way,
+        // so a build where the save button attaches is a build where these attach.
+        if (!extrasBuilt) {
+            SCIBuildExtraButtons(self, wantQuality, wantPiP);
+            SCISyncSaveButton(self, NO);
+        }
+
         // Kept in front of whatever the player draws over the picture. Ours is the last thing
         // added and the first thing a redraw of YouTube's own controls would bury.
-        [self bringSubviewToFront:save];
+        for (UIButton *button in SCIOurTopButtons(self)) [self bringSubviewToFront:button];
 
         // The frame is not read here: at build time it is zero, because nothing has been laid
         // out yet, and a report of 0×0 would say the placement failed when it has not happened
@@ -551,8 +691,61 @@ static void SCISyncSaveButton(YTMainAppControlsOverlayView *overlay, BOOL animat
     [SCIYTDownload presentFrom:host];
 }
 
+%new
+- (void)sciQualityTapped:(UIButton *)sender {
+    sciQualityTaps++;
+    SCIReportOverlayState([objc_getAssociatedObject(self, &kSCIOverlayJoined) boolValue]);
+
+    // YouTube's own quality sheet, asked for the way its own button asks: the overlay's events delegate is the controller that owns it.
+    id delegate = SCISafeValueForKey(self, @"eventsDelegate");
+    if ([delegate respondsToSelector:@selector(didPressVideoQuality:)]) {
+        ((void (*)(id, SEL, id))objc_msgSend)(delegate, @selector(didPressVideoQuality:), sender);
+    }
+}
+
+%new
+- (void)sciPiPTapped:(UIButton *)sender {
+    sciPiPTaps++;
+
+    // overlay -> its events delegate (the overlay controller) -> the player controller it is a child of -> the playback controller -> the
+    // PiP controller. Every hop is an object getter or an object ivar, read without running anything of YouTube's.
+    id delegate = SCISafeValueForKey(self, @"eventsDelegate");
+    UIViewController *player = [delegate isKindOfClass:[UIViewController class]] ? [(UIViewController *)delegate parentViewController] : nil;
+    id playback = SCISafeValueForKey(player, @"playbackController");
+    id pip = SCISafeValueForKey(playback, @"playerPIPController");
+
+    BOOL canEnable = [pip respondsToSelector:@selector(canEnablePictureInPicture)]
+        && ((BOOL (*)(id, SEL))objc_msgSend)(pip, @selector(canEnablePictureInPicture));
+
+    if (canEnable && [pip respondsToSelector:@selector(maybeTogglePictureInPicture)]) {
+        ((void (*)(id, SEL))objc_msgSend)(pip, @selector(maybeTogglePictureInPicture));
+    } else {
+        sciPiPRefused++;
+    }
+    SCIReportOverlayState([objc_getAssociatedObject(self, &kSCIOverlayJoined) boolValue]);
+}
+
 %end
 
+%end
+
+
+%group SCIQualityOriginal
+%hook YTVideoQualitySwitchOriginalController
+- (void)singleVideo:(id)singleVideo didSelectVideoFormat:(id)format {
+    SCIQualityWasChosen(format);
+    %orig;
+}
+%end
+%end
+
+%group SCIQualityRedesigned
+%hook YTVideoQualitySwitchRedesignedController
+- (void)singleVideo:(id)singleVideo didSelectVideoFormat:(id)format {
+    SCIQualityWasChosen(format);
+    %orig;
+}
+%end
 %end
 
 
@@ -629,6 +822,20 @@ static void SCISyncSaveButton(YTMainAppControlsOverlayView *overlay, BOOL animat
         %init(SCIOverlayTop);
     } else {
         SCILogV(@"overlay: YTMainAppControlsOverlayView is not in this build");
+    }
+
+    // The quality label follows what the person picks. Each controller is bound only where it declares the call with the encoding
+    // this was written against (`v32@0:8@16@24`, read from 21.41.5): a build that renames it costs the label its updates, not the app.
+    struct { const char *name; BOOL redesigned; } sheets[] = { { "YTVideoQualitySwitchOriginalController", NO }, { "YTVideoQualitySwitchRedesignedController", YES } };
+    for (size_t i = 0; i < sizeof(sheets) / sizeof(sheets[0]); i++) {
+        Class cls = NSClassFromString(@(sheets[i].name));
+        Method method = cls ? class_getInstanceMethod(cls, @selector(singleVideo:didSelectVideoFormat:)) : NULL;
+        const char *types = method ? method_getTypeEncoding(method) : NULL;
+        if (!types || strcmp(types, "v32@0:8@16@24") != 0) {
+            SCILogV(@"overlay: %s -singleVideo:didSelectVideoFormat: is not in this build as expected", sheets[i].name);
+            continue;
+        }
+        if (sheets[i].redesigned) { %init(SCIQualityRedesigned); } else { %init(SCIQualityOriginal); }
     }
 
     if (NSClassFromString(@"YTInlinePlayerBarContainerView")) {

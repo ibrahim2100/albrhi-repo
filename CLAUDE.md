@@ -943,6 +943,13 @@ instances taught; here are the facts.
   [`docs/investigations/youtube-ios16-playback.md`](docs/investigations/youtube-ios16-playback.md). **The lesson:** a switch that rewrites what the app is offered, to cure a fault whose
   cause is a guess about the device, is a second fault; and a setting that turns itself on outlives the thing it answered.
 
+**Read against 21.41.5 with `tools/objc-diff.py --check` (2026-10-14) — the tweak was tested on 21.30.5/21.32.4 and the owner runs 21.41.5:** `MLVideo` no longer declares `-isPlayableInPictureInPictureByUserSettings`
+(it is on `YTBackgroundabilityPolicyImpl`, fixed in 1.41.1: the old hook had become a method added to a class nobody asks); `YTSegmentableInlinePlayerBarView` (SponsorBlock markers) is **not in the binary**;
+`YTAdsInnerTubeContextDecorator` is now `YTAdsInnerTubeContextDecoratorImpl` (**both not yet handled**); the bottom bar class `YTInlinePlayerBarContainerView` is **absent** from 21.41.5, so the end-time label has no home there and only the top row is used.
+1.42.0 added a quality-label button and a PiP button in the player's top row beside the save button (ideas from PoomSmart's YouQuality and YouPiP, MIT; placement ours): one hook builds up to three buttons, the neighbour
+search skips all of ours (a button that measured its own sibling would walk), and each further button sits one gap beyond the previous, mirrored in Arabic. Both are **off by default and not run on a device**.
+**YTUHD (software VP9/AV1 decoders + ABR policy changes) is deferred**: `MLABRPolicyNew/Old` and the decoder-factory selectors it hooks are not in 21.41.5.
+
 **The Download Centre** is a **tab**, built as a pivot renderer YouTube draws itself (real label, selected state, width) — never a circle
 painted over the bar; its icon is painted on afterwards because the `iconType` enum is unreadable. **History** (`FEhistory` browse id the app
 already resolves) and the Centre are rows in the tab-bar arranger (Settings › Interface › Tab bar: drag to reorder, drag across to switch a
@@ -1203,8 +1210,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.7.0** · YouTube **1.41.1** · X **0.22.0** · TikTok **0.22.0** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.97.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.7.0** · YouTube **1.42.0** · X **0.22.0** · TikTok **0.22.0** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.98.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

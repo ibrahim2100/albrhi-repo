@@ -125,6 +125,12 @@
 #define SCIPrefOverlayButton    @"overlay_save_button"
 #define SCIPrefOverlayEndTime   @"overlay_end_time"
 
+/// Two more buttons in the player's top row, beside the save button: what quality is playing (a tap opens YouTube's own quality
+/// sheet) and a picture-in-picture button. Off until turned on: the row they join is confirmed with one button in it, not three.
+/// Ideas from YouQuality and YouPiP by PoomSmart (MIT); the placement is this tweak's own.
+#define SCIPrefOverlayQuality   @"overlay_quality_button"
+#define SCIPrefOverlayPiP       @"overlay_pip_button"
+
 
 /// Quality.
 ///
