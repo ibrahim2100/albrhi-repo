@@ -106,12 +106,12 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
-          "title": "v1.95.0",
+          "title": "v1.99.0",
           "useBoldText": true
         },
         {
           "class": "DepictionMarkdownView",
-          "markdown": "• **البرهي مجاني: نظام التراخيص أُزيل بالكامل.**",
+          "markdown": "• **يوتيوب 1.42.1 — حجب الإعلانات على مستوى الطلب يعمل على 21.41.5 (الصنف تغيّر اسمه).**",
           "useSpacing": true
         },
         {
@@ -120,12 +120,12 @@
         },
         {
           "class": "DepictionSubheaderView",
-          "title": "v1.94.0",
+          "title": "v1.98.0",
           "useBoldText": true
         },
         {
           "class": "DepictionMarkdownView",
-          "markdown": "• **إنستغرام 4.6.0 — «إزالة تتبّع الروابط» و«تنظيف الذاكرة المؤقتة» (دون المساس بتنزيلاتك)، وإصلاحان لبناء 410: قيود المشاهدة مرة واحدة، وبحث مستلمي الرسائل الأخير.**",
+          "markdown": "• **يوتيوب 1.42.0 — زرّا الجودة والصورة داخل الصورة في صف المشغّل العلوي (متوقفان حتى تشغّلهما)، مع إصلاح 1.41.1 للصورة داخل الصورة على 21.41.5.**",
           "useSpacing": true
         },
         {
@@ -134,12 +134,12 @@
         },
         {
           "class": "DepictionSubheaderView",
-          "title": "v1.93.4",
+          "title": "v1.97.0",
           "useBoldText": true
         },
         {
           "class": "DepictionMarkdownView",
-          "markdown": "• **يوتيوب 1.40.4 — ترتيب داخلي: نافذة التطبيق الرئيسية في دالة واحدة بعد أن كانت مكتوبة عشر مرات، وسلّم الجودة المباشر صار له اختبارات، و`SCIYTDiagnostics.m` أصغر بثلث.",
+          "markdown": "• **يوتيوب 1.41.1 — الصورة داخل الصورة تعمل مع 21.41.5 (السؤال انتقل إلى `YTBackgroundabilityPolicyImpl`).**",
           "useSpacing": true
         },
         {
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.95.0"
+          "text": "1.99.0"
         },
         {
           "class": "DepictionTableTextView",
