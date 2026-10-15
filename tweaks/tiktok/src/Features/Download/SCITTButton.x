@@ -210,13 +210,20 @@ static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *it
 
     SCITTDateLabel *label = (SCITTDateLabel *)[host viewWithTag:kSCIDateTag];
 
-    if (!SCIPrefEnabled(SCIPrefVideoDate)) {
+    // The date and the stats line share this label: it is the one frame this code owns over a video, and a second label would be a second
+    // thing to place against the same button.
+    BOOL dateOn = SCIPrefEnabled(SCIPrefVideoDate);
+    BOOL statsOn = SCIPrefEnabled(SCIPrefVideoStats);
+    BOOL wantDate = dateOn && item.posted;
+    BOOL wantStats = statsOn && item.stats.length;
+
+    if (!dateOn && !statsOn) {
         sciDateOff++;
         label.hidden = YES;
         return;
     }
 
-    if (!item.posted) {
+    if (!wantDate && !wantStats) {
         sciDateNoDate++;
         label.hidden = YES;
         return;
@@ -233,7 +240,7 @@ static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *it
         // position, and nobody had asked for it -- the date read better with the month named and
         // the time under it. Changing what was not reported is its own kind of regression, and the
         // width it needs is the placement's problem to solve, not the format's.
-        label.numberOfLines = 2;
+        label.numberOfLines = 3;
         label.userInteractionEnabled = NO;
 
         // The same shadow TikTok gives its own rail text, so a white label stays readable over a
@@ -285,9 +292,9 @@ static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *it
     // decompose that way -- an unfamiliar locale, a time string that appears twice -- falls back
     // to the combined string untouched, which is exactly what shipped before and merely long.
     //
-    NSString *text = [formatter stringFromDate:item.posted];
-    NSString *head = [dateOnly stringFromDate:item.posted];
-    NSString *tail = [timeOnly stringFromDate:item.posted];
+    NSString *text = wantDate ? [formatter stringFromDate:item.posted] : @"";
+    NSString *head = wantDate ? [dateOnly stringFromDate:item.posted] : nil;
+    NSString *tail = wantDate ? [timeOnly stringFromDate:item.posted] : nil;
     if (head.length && tail.length && [text hasPrefix:head]) {
         NSRange timeRange = [text rangeOfString:tail options:NSBackwardsSearch];
         if (timeRange.location != NSNotFound && timeRange.location >= head.length) {
@@ -298,6 +305,7 @@ static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *it
         }
     }
 
+    if (wantStats) text = text.length ? [text stringByAppendingFormat:@"\n%@", item.stats] : item.stats;
     label.text = text;
     label.hidden = NO;
     sciDatePlaced++;

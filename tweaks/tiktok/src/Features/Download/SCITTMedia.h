@@ -87,6 +87,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// one place that already holds it; a label that reached back for the model on every layout pass
 /// is the shape of thing that crashed this app once.
 @property (nonatomic, copy, nullable) NSDate *posted;
+
+/// "♥ 1.2M  🇸🇦": the like count and the video's region, read at the same moment and for the same reason as `posted`. Nil when the model carries
+/// neither. Drawn under the date, in the label the date already owns.
+@property (nonatomic, copy, nullable) NSString *stats;
 @end
 
 

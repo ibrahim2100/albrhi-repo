@@ -8,6 +8,8 @@
 #import "../Features/Region/SCITTRegion.h"
 #import "../Features/Speed/SCITTSpeed.h"
 #import "../Features/Lock/SCITTAppLock.h"
+#import "../Features/Feed/SCITTFeedFilters.h"
+#import "../Features/Messages/SCITTReadAlert.h"
 #import "../Features/Download/SCITTMedia.h"
 #import "../Features/Download/SCITTWatermark.h"
 #import "../Features/Download/SCITTPlaybackProbe.h"
@@ -119,6 +121,10 @@ static NSDictionary *SCIHeavyRow(NSString *title, NSString *value, NSString *ico
                        @"speedometer", [UIColor systemIndigoColor]),
                 SCIRow(SCILocalized(@"status_lock"), SCITTAppLockReport(),
                        @"lock.fill", [UIColor systemIndigoColor]),
+                SCIRow(SCILocalized(@"status_feed_filters"), SCITTFeedFiltersReport(),
+                       @"line.3.horizontal.decrease.circle", [UIColor systemRedColor]),
+                SCIRow(SCILocalized(@"status_read_alert"), SCITTReadAlertReport(),
+                       @"bell.badge.fill", [UIColor systemTealColor]),
                 SCIRow(SCILocalized(@"status_watermark"), SCITTWatermarkReport(),
                        @"drop.fill", [UIColor systemCyanColor]),
                 SCIRow(SCILocalized(@"status_playback"), SCITTPlaybackReport(),

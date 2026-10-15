@@ -154,3 +154,43 @@ static inline BOOL SCIPrefEnabled(NSString *key) {
 /// notifications and LocalAuthentication alone, so it depends on no TikTok class at all.
 #define SCIPrefAppLock          @"app_lock"
 
+/// Drop a LIVE item from the feed where the model is built, the same gate and the same moment as the ad filter: `AWEAwemeModel -isLive`
+/// (`B16@0:8`, confirmed on 46.4.0). Off by default: it removes something that works.
+#define SCIPrefHideLive         @"hide_live"
+
+/// Stop TikTok putting suggested accounts into the feed. Refused at the decision, not hidden after: `TTKFeedUserRecommendManager`'s five
+/// `can…RecommendedUsers…` gates answer NO, and a recommend-user card that is built anyway (`-isRecommendUserCard`, `-isUserRecommendBigCard`)
+/// is dropped like an ad. Off by default.
+#define SCIPrefSkipSuggested    @"skip_suggested"
+
+/// A banner when somebody opens a message you sent. TikTok keeps the other side's read position per conversation
+/// (`AWEIMMessageConversation -uidParticipantReadIndexDict`) and announces a change through `-p_notifyParticipantReadIndexDidUpdate`; this compares
+/// each person's position with the one it saw before and tells you when one moved forward. The first sight of a conversation is a baseline and
+/// says nothing, so opening an old chat never fires it. Off by default.
+#define SCIPrefReadAlert        @"read_alert"
+
+/// "Follows you" on every profile it is true for: the label is behind an A/B flag (`ABTestCodeGen -addFollowsYouLabelEnabled`, `B16@0:8`) that
+/// TikTok switches per account, so some profiles show it and some do not. Forced on. Off by default.
+#define SCIPrefFollowsYou       @"follows_you"
+
+/// Likes and country under the publish date: `AWEAwemeModel -statistics` -> `-diggCount`, and `-region`. Drawn in the label the date already
+/// owns, so there is no new view to place. Off by default.
+#define SCIPrefVideoStats       @"video_stats"
+
+/// Lift a comment box's length limit to 500 where it was 100 or more (`AWETextInputController -maxLength`, `Q16@0:8`). The server has the last
+/// word: a comment it refuses is refused. Off by default.
+#define SCIPrefLongComments     @"long_comments"
+
+/// Open the comment sheet on a video whose comments are closed (`AWEAwemeModel -isForbidComment` answered NO). **Experimental**: the app opens
+/// the sheet, and whether the server then returns comments is not known; the report counts how often the answer was changed. Off by default.
+#define SCIPrefDisabledComments @"disabled_comments"
+
+/// Offer the profile's sort menu (latest, popular, oldest) on every profile. TikTok decides per profile whether the menu exists:
+/// `TTKProfileTabBarSortManager -shouldShowSort` and `-canRespondSortMethod` (both `B16@0:8`, confirmed on 46.4.0). Both answered YES.
+/// **Whether the server sorts another person's videos is not known**; the report counts the answers. Off by default.
+#define SCIPrefSortAnyProfile   @"sort_any_profile"
+
+/// A banner with the number of videos when a profile opens: `TTKProfileTabBarSortManager -initWithUserID:awemeCount:` is built with exactly
+/// that number when a profile's tab bar is made. Once per account per ten minutes. Off by default.
+#define SCIPrefVideoCount       @"video_count"
+

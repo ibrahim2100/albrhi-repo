@@ -106,9 +106,14 @@ inside one package, three stand apart.
   rather than letting the port read as original work.
 - **Unlicensed references are read for architecture only, and nothing is copied**: BHTikTok and the
   al3raQe fork, NA9 For TikTok, VibeTok, BHTwitter (the original — NeoFreeBird is a different, GPLv3 case),
-  TWIGalaxy, `carsurf`, RyukGram, Regram, InstaPlus,
+  TWIGalaxy, `carsurf`, Regram, InstaPlus,
   Legizmo (a paid tweak — its licence and DRM components were deliberately not examined), and **Rocket for Instagram 4.23.1** (closed source, obfuscated, with a paid store: read for its public feature list and the
   selector names it carries in the clear; store and entitlement code not examined; call recording not proposed — `docs/investigations/rocket-feature-map.md`).
+- **RyukGram is NOT in that list, and was wrongly in it until 2026-10-15.** Its repository carries a *proprietary* licence (all rights reserved) that forbids reverse engineering and forbids using
+  any part of it, README included, to "build, train, or assist a competing product" -- which this project's Instagram tweak is. It is not read at all, for architecture or for its feature list. **Check the LICENSE file
+  before reading a reference, not after:** "no licence file" and "a licence that forbids this" are different things and the second one was filed under the first.
+- **ASJTok (TikTok, 2026) has no source in its repository** (a README and pictures; the builds are compiled) and no licence: only its public feature list was read, and every hook in 0.23.0 was found by our own reading of the TikTok
+  binaries. What was not taken from that list on purpose: saving every story somebody opens automatically (holds others' temporary content without their knowledge) and an auto-like button in LIVE.
 - **A reference tweak's selectors are a map of *its* build, never a manifest of ours.** NA9's list
   was written against an older TikTok (`downloadHDVideo`, `canDownload`, `isPreventDownload` are not
   in 46.4.0); InstaPlus hooks six selectors that do not exist in Instagram 410, even as strings;
@@ -1210,8 +1215,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.7.0** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.22.0** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.99.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.7.0** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.23.0** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.100.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

@@ -4,6 +4,7 @@
 #import "../../SCILog.h"
 #import "../../Diagnostics/SCITTDiagnostics.h"
 #import "../Download/SCITTMedia.h"
+#import "../Feed/SCITTFeedFilters.h"
 
 ///
 /// One gate, at the model's own construction, rather than a view hidden after the fact.
@@ -46,14 +47,13 @@ static BOOL SCITTModelIsAd(id built) {
     id built = %orig;
     [SCITTDiagnostics recordModelsSeen:1 droppedAsAds:0];
 
-    if (!SCIPrefEnabled(SCIPrefHideAds)) {
-        [SCITTMedia captureModel:built];
-        return built;
-    }
-    if (SCITTModelIsAd(built)) {
+    // The ad switch, then the two filters that drop a model at this same moment (LIVE items, suggested-account cards): one place that
+    // decides what a feed model is allowed to be.
+    if (SCIPrefEnabled(SCIPrefHideAds) && SCITTModelIsAd(built)) {
         [SCITTDiagnostics recordModelsSeen:0 droppedAsAds:1];
         return nil;
     }
+    if (SCITTModelIsFilteredOut(built)) return nil;
 
     [SCITTMedia captureModel:built];
     return built;
@@ -62,14 +62,13 @@ static BOOL SCITTModelIsAd(id built) {
 - (instancetype)init {
     id built = %orig;
 
-    if (!SCIPrefEnabled(SCIPrefHideAds)) {
-        [SCITTMedia captureModel:built];
-        return built;
-    }
-    if (SCITTModelIsAd(built)) {
+    // The ad switch, then the two filters that drop a model at this same moment (LIVE items, suggested-account cards): one place that
+    // decides what a feed model is allowed to be.
+    if (SCIPrefEnabled(SCIPrefHideAds) && SCITTModelIsAd(built)) {
         [SCITTDiagnostics recordModelsSeen:0 droppedAsAds:1];
         return nil;
     }
+    if (SCITTModelIsFilteredOut(built)) return nil;
 
     [SCITTMedia captureModel:built];
     return built;

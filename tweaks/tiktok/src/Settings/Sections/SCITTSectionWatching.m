@@ -50,6 +50,30 @@
                     kSCIRowIcon: @"slider.horizontal.below.rectangle",
                     kSCIRowColor: [UIColor systemBlueColor],
                 },
+                @{
+                    kSCIRowKind: kSCIKindSwitch,
+                    kSCIRowPref: SCIPrefHideLive,
+                    kSCIRowTitle: SCILocalized(@"row_hide_live"),
+                    kSCIRowNote: SCILocalized(@"row_hide_live_note"),
+                    kSCIRowIcon: @"dot.radiowaves.left.and.right",
+                    kSCIRowColor: [UIColor systemRedColor],
+                },
+                @{
+                    kSCIRowKind: kSCIKindSwitch,
+                    kSCIRowPref: SCIPrefSkipSuggested,
+                    kSCIRowTitle: SCILocalized(@"row_skip_suggested"),
+                    kSCIRowNote: SCILocalized(@"row_skip_suggested_note"),
+                    kSCIRowIcon: @"person.crop.circle.badge.xmark",
+                    kSCIRowColor: [UIColor systemRedColor],
+                },
+                @{
+                    kSCIRowKind: kSCIKindSwitch,
+                    kSCIRowPref: SCIPrefVideoStats,
+                    kSCIRowTitle: SCILocalized(@"row_video_stats"),
+                    kSCIRowNote: SCILocalized(@"row_video_stats_note"),
+                    kSCIRowIcon: @"heart.text.square",
+                    kSCIRowColor: [UIColor systemBlueColor],
+                },
             ],
         };
     });

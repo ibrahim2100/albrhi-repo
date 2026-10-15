@@ -63,6 +63,14 @@
                 },
                 @{
                     kSCIRowKind: kSCIKindSwitch,
+                    kSCIRowPref: SCIPrefReadAlert,
+                    kSCIRowTitle: SCILocalized(@"row_read_alert"),
+                    kSCIRowNote: SCILocalized(@"row_read_alert_note"),
+                    kSCIRowIcon: @"bell.badge.fill",
+                    kSCIRowColor: [UIColor systemTealColor],
+                },
+                @{
+                    kSCIRowKind: kSCIKindSwitch,
                     kSCIRowPref: SCIPrefHideOnline,
                     kSCIRowTitle: SCILocalized(@"row_hide_online"),
                     kSCIRowNote: SCILocalized(@"row_hide_online_note"),

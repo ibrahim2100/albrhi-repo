@@ -893,6 +893,7 @@ static NSString *sciPendingItemID = nil;
 /// `model` does not exist. The compiler said so immediately; inventing a second route for one
 /// value is what would have been worth avoiding.
 static NSDate *sciPendingPosted = nil;
+static NSString *sciPendingStats = nil;
 
 /// Counted separately, because "no date appeared" was true for four different reasons and one
 /// number could not say which. Same shape as the stamp counters in Albrhi Watch, which turned a
@@ -921,6 +922,7 @@ static void SCITTAddResolvedList(NSArray<NSURL *> *urls) {
     item.itemID = sciPendingItemID;
 
     item.posted = sciPendingPosted;
+    item.stats = sciPendingStats;
     item.candidateOrigins = sciPendingOrigins;
     item.seen = [NSDate date];
     [sciRecent insertObject:item atIndex:0];
@@ -983,8 +985,51 @@ static NSURL *SCITTAudioURLFromModel(id model) {
 //
 // Cleared first, so a model that cannot answer leaves nothing rather than the previous answer.
 //
+/// 1234 -> "1.2K", 1500000 -> "1.5M". The count TikTok itself would round the same way.
+static NSString *SCITTCompactCount(double value) {
+    if (value >= 1e9) return [NSString stringWithFormat:@"%.1fB", value / 1e9];
+    if (value >= 1e6) return [NSString stringWithFormat:@"%.1fM", value / 1e6];
+    if (value >= 1e3) return [NSString stringWithFormat:@"%.1fK", value / 1e3];
+    return [NSString stringWithFormat:@"%.0f", value];
+}
+
+/// A two-letter country code as the flag it draws (regional-indicator letters), or the code itself when it is not two letters.
+static NSString *SCITTFlagFor(NSString *code) {
+    if (code.length != 2) return code;
+    NSMutableString *flag = [NSMutableString string];
+    for (NSUInteger i = 0; i < 2; i++) {
+        unichar c = [[code uppercaseString] characterAtIndex:i];
+        if (c < 'A' || c > 'Z') return code;
+        uint32_t scalar = 0x1F1E6 + (c - 'A');
+        [flag appendString:[[NSString alloc] initWithBytes:&scalar length:4 encoding:NSUTF32LittleEndianStringEncoding]];
+    }
+    return flag;
+}
+
+/// The like count and the region, from `-statistics` -> `-diggCount` and `-region` (both confirmed on 46.4.0). Never throws a missing selector.
+static void SCITTCaptureStats(id model) {
+    sciPendingStats = nil;
+    if (!model) return;
+
+    NSMutableArray<NSString *> *parts = [NSMutableArray array];
+    SEL statisticsSel = NSSelectorFromString(@"statistics");
+    id statistics = [model respondsToSelector:statisticsSel] ? ((id (*)(id, SEL))objc_msgSend)(model, statisticsSel) : nil;
+    SEL diggSel = NSSelectorFromString(@"diggCount");
+    id likes = [statistics respondsToSelector:diggSel] ? ((id (*)(id, SEL))objc_msgSend)(statistics, diggSel) : nil;
+    if ([likes respondsToSelector:@selector(doubleValue)] && [likes doubleValue] >= 0) {
+        [parts addObject:[@"♥ " stringByAppendingString:SCITTCompactCount([likes doubleValue])]];
+    }
+
+    SEL regionSel = NSSelectorFromString(@"region");
+    id region = [model respondsToSelector:regionSel] ? ((id (*)(id, SEL))objc_msgSend)(model, regionSel) : nil;
+    if ([region isKindOfClass:[NSString class]] && [region length]) [parts addObject:SCITTFlagFor(region)];
+
+    sciPendingStats = parts.count ? [parts componentsJoinedByString:@"  "] : nil;
+}
+
 static void SCITTCapturePostedDate(id model) {
     sciPendingPosted = nil;
+    SCITTCaptureStats(model);
     if (!model) return;
 
     SEL createdSel = NSSelectorFromString(@"createTime");
@@ -1027,6 +1072,7 @@ static void SCITTAddPhotoPost(NSArray<NSArray<NSURL *> *> *photos, NSURL *audio)
     // A value set in one place and consumed in two is only fixed when both consumers are found.
     //
     item.posted = sciPendingPosted;
+    item.stats = sciPendingStats;
     item.seen = [NSDate date];
     [sciRecent insertObject:item atIndex:0];
 
