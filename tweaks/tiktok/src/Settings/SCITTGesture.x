@@ -2,6 +2,8 @@
 #import <objc/runtime.h>
 #import "SCITTGesture.h"
 #import "SCITTStatus.h"
+#import "SCITTSettingsEntry.h"
+#import "../Prefs.h"
 #import "../UI/SCITTWelcome.h"
 #import "../SCILog.h"
 
@@ -26,7 +28,14 @@
 }
 
 - (void)fired:(UILongPressGestureRecognizer *)recogniser {
-    if (recogniser.state == UIGestureRecognizerStateBegan) [SCITTStatus present];
+    if (recogniser.state != UIGestureRecognizerStateBegan) return;
+
+    // A choice, off by default. Two exceptions, both so the settings are never unreachable: the row in TikTok's
+    // Settings is not installed in this build, or the tweak is switched off for the app (the panel is where it is
+    // switched back on, and a hold is how this screen is reached from there).
+    BOOL wanted = [[NSUserDefaults standardUserDefaults] boolForKey:SCIPrefGestureOpen];
+    if (!wanted && SCIPanelAllowsThisApp() && SCITTSettingsEntryInstalled()) return;
+    [SCITTStatus present];
 }
 
 @end

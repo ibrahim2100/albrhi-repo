@@ -152,6 +152,10 @@ static inline BOOL SCIPrefEnabled(NSString *key) {
 
 /// Ask for Face ID, Touch ID or the passcode when the app comes back from the background. Built from
 /// notifications and LocalAuthentication alone, so it depends on no TikTok class at all.
+/// Two fingers held anywhere in TikTok open the tweak's settings. Off by default: the row in TikTok's own Settings is the
+/// way in, and a gesture that watches every touch on every window is there only for whoever asks for it.
+#define SCIPrefGestureOpen      @"settings_gesture"
+
 #define SCIPrefAppLock          @"app_lock"
 
 /// Drop a LIVE item from the feed where the model is built, the same gate and the same moment as the ad filter: `AWEAwemeModel -isLive`

@@ -80,42 +80,15 @@ static BOOL SCITTModelIsAd(id built) {
 
 
 ///
-/// The splash/launch ad is a separate surface from the feed -- a full-screen interstitial
-/// shown before the app is even usable, decided by a manager object rather than built from
-/// a model this tweak already refuses. Three class names are hooked because reference
-/// tweaks disagree on which one a given TikTok build actually ships; each is guarded by
-/// its own `NSClassFromString` check in the installer below, so a name absent from this
-/// build simply never attaches rather than failing to compile or crashing at runtime.
+/// **There is no launch-ad suppression here, and the code that claimed there was is gone.** A `%group` hooked
+/// `-isSplashDisabled` and `-shouldShowSplash` on three splash managers; read against the 46.4.0 and 47.1.0
+/// binaries, `AWESplashManager` and `BDASplashManager` declare neither selector and `TTAdSplashManager` is not
+/// there at all, so Logos *added* two methods nobody sends to classes that never asked for them. It was
+/// "attached" in the log and did nothing in the app. The classes that decide a launch ad are
+/// `BDASplashManager` (`-pickModelWithBlock:isWarmStart:`, `-displaySplashOnWindow:`) and
+/// `AWESplashManager` (`-tryToShowSplash`); each is on the launch path, where a swallowed call is an app
+/// waiting for a finish that never comes, so none is hooked until a device says what refusing it does.
 ///
-
-@interface AWESplashManager : NSObject
-@end
-
-@interface BDASplashManager : NSObject
-@end
-
-@interface TTAdSplashManager : NSObject
-@end
-
-%group Splash
-
-%hook AWESplashManager
-- (BOOL)isSplashDisabled { return YES; }
-- (BOOL)shouldShowSplash { return NO; }
-%end
-
-%hook BDASplashManager
-- (BOOL)isSplashDisabled { return YES; }
-- (BOOL)shouldShowSplash { return NO; }
-%end
-
-%hook TTAdSplashManager
-- (BOOL)isSplashDisabled { return YES; }
-- (BOOL)shouldShowSplash { return NO; }
-%end
-
-%end
-
 
 void SCITTInstallAdBlock(void) {
     if (NSClassFromString(@"AWEAwemeModel")) {
@@ -123,17 +96,5 @@ void SCITTInstallAdBlock(void) {
         SCILogV(@"ad filter attached to AWEAwemeModel");
     } else {
         SCILogV(@"AWEAwemeModel is not in this build — no ad filter");
-    }
-
-    // Each hook in this group only fires from a class that answers %orig's own
-    // selector, so it is safe to %init the whole group even when only one of the
-    // three names exists in this build -- the other two simply never attach.
-    if (NSClassFromString(@"AWESplashManager") ||
-        NSClassFromString(@"BDASplashManager") ||
-        NSClassFromString(@"TTAdSplashManager")) {
-        %init(Splash);
-        SCILogV(@"splash-ad suppression attached");
-    } else {
-        SCILogV(@"no known splash-ad manager in this build");
     }
 }

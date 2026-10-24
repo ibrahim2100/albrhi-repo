@@ -142,15 +142,15 @@ NSString *SCITTDownloadReport(void) {
                   message:SCILocalized(@"audio_ask_message")
                    symbol:@"music.note"
                   actions:@[
-        [SCITTSheetAction title:[NSString stringWithFormat:SCILocalized(@"audio_seconds"), (double)5]
-                         symbol:nil primary:NO
-                        handler:^{ [self saveClipFromPicture:picture item:item seconds:5]; }],
         [SCITTSheetAction title:[NSString stringWithFormat:SCILocalized(@"audio_seconds"), (double)10]
-                         symbol:nil primary:YES
-                        handler:^{ [self saveClipFromPicture:picture item:item seconds:10]; }],
-        [SCITTSheetAction title:[NSString stringWithFormat:SCILocalized(@"audio_seconds"), (double)15]
                          symbol:nil primary:NO
-                        handler:^{ [self saveClipFromPicture:picture item:item seconds:15]; }],
+                        handler:^{ [self saveClipFromPicture:picture item:item seconds:10]; }],
+        [SCITTSheetAction title:[NSString stringWithFormat:SCILocalized(@"audio_seconds"), (double)30]
+                         symbol:nil primary:YES
+                        handler:^{ [self saveClipFromPicture:picture item:item seconds:30]; }],
+        [SCITTSheetAction title:SCILocalized(@"audio_minute")
+                         symbol:nil primary:NO
+                        handler:^{ [self saveClipFromPicture:picture item:item seconds:60]; }],
         [SCITTSheetAction title:SCILocalized(@"audio_picture_only")
                          symbol:@"photo" primary:NO
                         handler:^{ [self savePhotos:@[picture]]; }],

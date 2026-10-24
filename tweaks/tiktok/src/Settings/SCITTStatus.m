@@ -319,13 +319,31 @@
     host.modalPresentationStyle = UIModalPresentationPageSheet;
     host.view.tintColor = SCIAccent();
 
+    // The foreground scene's key window first: 47.1.0 runs on UIScene, where `-[UIApplication windows]` lists
+    // every scene's windows and its key one need not be the one on screen. The application-wide list stays as
+    // the fallback for a build or a moment (launch, a scene being torn down) with no active scene.
     UIWindow *key = nil;
-    for (UIWindow *window in [UIApplication sharedApplication].windows) {
-        if (window.isKeyWindow) { key = window; break; }
+    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+        if (![scene isKindOfClass:[UIWindowScene class]] || scene.activationState != UISceneActivationStateForegroundActive) continue;
+        for (UIWindow *window in ((UIWindowScene *)scene).windows) {
+            if (window.isKeyWindow) { key = window; break; }
+        }
+        if (key) break;
+    }
+    if (!key) {
+        for (UIWindow *window in [UIApplication sharedApplication].windows) {
+            if (window.isKeyWindow) { key = window; break; }
+        }
     }
 
     UIViewController *top = key.rootViewController;
     while (top.presentedViewController) top = top.presentedViewController;
+    if (!top) return;
+
+    // Opened from the row in TikTok's Settings while already open from the hold, or the other way round:
+    // present once.
+    if ([top isKindOfClass:[UINavigationController class]] &&
+        [((UINavigationController *)top).viewControllers.firstObject isKindOfClass:[SCITTStatus class]]) return;
 
     [top presentViewController:host animated:YES completion:nil];
 }

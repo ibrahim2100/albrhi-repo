@@ -35,6 +35,14 @@
             kSCISectionTitle: SCILocalized(@"section_advanced"),
             kSCISectionRows: @[
                 @{
+                    kSCIRowKind: kSCIKindSwitch,
+                    kSCIRowPref: SCIPrefGestureOpen,
+                    kSCIRowTitle: SCILocalized(@"row_gesture"),
+                    kSCIRowNote: SCILocalized(@"row_gesture_note"),
+                    kSCIRowIcon: @"hand.tap.fill",
+                    kSCIRowColor: [UIColor systemGrayColor],
+                },
+                @{
                     // The welcome screen is shown once ever, which makes it easy to lose. This is
                     // the way back to it -- and the only reason it is under Advanced rather than at
                     // the top is that somebody who wants it has already seen it once.

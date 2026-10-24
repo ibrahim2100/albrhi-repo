@@ -16,9 +16,10 @@
 #import "Features/Lock/SCITTAppLock.h"
 #import "Features/Feed/SCITTFeedFilters.h"
 #import "Features/Messages/SCITTReadAlert.h"
+#import "Settings/SCITTSettingsEntry.h"
 #import "Settings/SCITTGesture.h"
 
-NSString *SCIVersionString = @"v0.23.0";  // AlbrhiTT
+NSString *SCIVersionString = @"v0.24.0";  // AlbrhiTT
 
 ///
 /// TESTED ON TikTok 46.4.0. Every class here was confirmed present in that build's own
@@ -59,6 +60,7 @@ NSString *SCIVersionString = @"v0.23.0";  // AlbrhiTT
         // The lock is a question asked on every return: off until somebody wants it. The country and the speed have no
         // default on disk at all -- absent means the real country and TikTok's own speed.
         SCIPrefAppLock: @NO,
+        SCIPrefGestureOpen: @NO,
         SCIPrefHideLive: @NO,
         SCIPrefSkipSuggested: @NO,
         SCIPrefReadAlert: @NO,
@@ -98,4 +100,5 @@ NSString *SCIVersionString = @"v0.23.0";  // AlbrhiTT
     SCITTInstallAppLock();
     SCITTInstallFeedFilters();
     SCITTInstallReadAlert();
+    SCITTInstallSettingsEntry();
 }

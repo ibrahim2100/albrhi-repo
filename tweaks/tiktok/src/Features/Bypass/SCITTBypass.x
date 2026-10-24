@@ -1,4 +1,6 @@
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+#import <objc/runtime.h>
 #import "SCITTBypass.h"
 #import "../../Prefs.h"
 #import "../../SCILog.h"
@@ -88,7 +90,7 @@
 // answer this differently from a genuine App Store one.
 %hook FBSDKAppEventsUtility
 
-+ (BOOL)isDebugBuild {
+- (BOOL)isDebugBuild {
     if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
     [SCITTDiagnostics recordBypassAnswer:@"isDebugBuild"];
     return NO;
@@ -142,7 +144,7 @@
 // advanced validation -- answered as an unmodified device either way.
 %hook AppsFlyerUtils
 
-- (BOOL)isJailbrokenWithSkipAdvancedJailbreakValidation:(BOOL)skip {
++ (BOOL)isJailbrokenWithSkipAdvancedJailbreakValidation:(BOOL)skip {
     if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
     [SCITTDiagnostics recordBypassAnswer:@"AppsFlyer isJailbroken"];
     return NO;
@@ -155,7 +157,7 @@
 // download and signing checks are.
 %hook IESLiveDeviceInfo
 
-- (BOOL)isJailBroken {
++ (BOOL)isJailBroken {
     if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
     [SCITTDiagnostics recordBypassAnswer:@"IESLiveDeviceInfo isJailBroken"];
     return NO;
@@ -185,36 +187,6 @@
 // same question in only one place.
 
 
-// UIDevice grows a category method for this in both references' own binaries --
-// hooked as UIDevice itself rather than NSObject, since it is confirmed as a UIDevice
-// category selector specifically and not the plain-NSObject one below.
-%hook UIDevice
-
-- (BOOL)btd_isJailBroken {
-    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
-    [SCITTDiagnostics recordBypassAnswer:@"btd_isJailBroken"];
-    return NO;
-}
-
-%end
-
-
-// A plain NSObject category some SDK in this app adds a bare `-jailbroken` accessor
-// through -- hooked on NSObject itself because that is where it is confirmed to
-// exist, not on a class none of the reference tweaks name. This only ever runs for
-// the object that already responds to the selector; it changes nothing for the
-// overwhelming majority of objects that never call it.
-%hook NSObject
-
-- (BOOL)jailbroken {
-    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
-    [SCITTDiagnostics recordBypassAnswer:@"jailbroken"];
-    return NO;
-}
-
-%end
-
-
 // A signed app has no embedded provisioning profile; a resigned one usually does, and
 // this is one of the places that gets checked for. Only the one file extension is
 // touched -- every other resource lookup passes straight through.
@@ -233,7 +205,51 @@
 %end
 
 
+// **Two answers that are installed only where the process already has the selector.** Logos *adds* a
+// method to a class that lacks it: an added `-btd_isJailBroken` on UIDevice is a selector the app never
+// sends, and an added `-jailbroken` on NSObject would make every object in the process answer
+// `respondsToSelector:@selector(jailbroken)` with YES -- a side effect on code that never asked, with
+// nothing to call when the switch is off. Neither selector is declared by any class in the 46.4.0 or
+// 47.1.0 dumps; each is a category method if it exists at all, so the question is put to the runtime.
+%group BypassUIDevice
+%hook UIDevice
+
+- (BOOL)btd_isJailBroken {
+    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
+    [SCITTDiagnostics recordBypassAnswer:@"btd_isJailBroken"];
+    return NO;
+}
+
+%end
+%end
+
+%group BypassNSObject
+%hook NSObject
+
+- (BOOL)jailbroken {
+    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
+    [SCITTDiagnostics recordBypassAnswer:@"jailbroken"];
+    return NO;
+}
+
+%end
+%end
+
+
 void SCITTInstallBypass(void) {
     %init(Bypass);
-    SCILogV(@"bypass hooks attached");
+
+    NSMutableArray *absent = [NSMutableArray array];
+    if (class_getInstanceMethod([UIDevice class], sel_registerName("btd_isJailBroken"))) {
+        %init(BypassUIDevice);
+    } else {
+        [absent addObject:@"-[UIDevice btd_isJailBroken]"];
+    }
+    if (class_getInstanceMethod([NSObject class], sel_registerName("jailbroken"))) {
+        %init(BypassNSObject);
+    } else {
+        [absent addObject:@"-[NSObject jailbroken]"];
+    }
+    SCILogV(@"bypass hooks attached; not attached, selector not in this process: %@",
+            absent.count ? [absent componentsJoinedByString:@", "] : @"none");
 }

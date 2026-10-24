@@ -1064,7 +1064,7 @@ there costs colours, never the video).
   the same `tikwm.com` format string, so the reliability people attribute to their buttons is the external service, not a better internal chain.
 - **Photo posts** are an `AWEPhotoAlbumModel` under `-photoAlbum` (list `photos`, elements `AWEPhotoAlbumPhoto`: `originPhotoURL` as posted,
   `thumbnailPhotoURL` a preview) — a photo post carries a video model too, so the picture branch is asked **first**. Saved one at a time with
-  "saved N of M", **it asks first** (this picture or all, defaulting to the visible one), and a single picture can be saved as a 5/10/15-second clip
+  "saved N of M", **it asks first** (this picture or all, defaulting to the visible one), and a single picture can be saved as a 10/30/60-second clip
   with the post's own sound. Photos infers a type from the file name of a *data* resource: bytes are named by their first four bytes (a WebP
   announced as JPEG earned `PHPhotosErrorDomain 3302`), `originalFilename` set, JPEG re-encode as a last resort via `ImageIO`; downloads use
   `NSURLSession` because `+dataWithContentsOfURL:` cannot report an HTTP status. A format string is a callee with types (`%.0f` with an `int`
@@ -1081,6 +1081,22 @@ there costs colours, never the video).
   New settings row kind `kSCIKindChoice` (first option = default = key removed). **Not run on a device.**
 - Non-obvious refusals: `PIPOStoreKitHelper -isJailBroken` is not hooked (§2); the `tikwm` path was refused *as the fix, arriving quietly* and shipped as a
   switch once the owner asked knowing the trade — the earlier refusal was a different question, not wrong.
+- **Reviewed against 46.4.0 and 47.1.0 (0.24.0): a hook that "attached" is not a hook that works.** Four findings, all from reading the binary rather than a report. (1) **Class method versus instance method, and a class that
+  hides its methods.** `TTKStoryMarkReadService` is a Swift class: the runtime lists `-init`, `-initWithContext:`, `-readItemIDs` and `-setReadItemIDs:` and nothing else, so `-markAsRead:` was an added method nobody sent, in both
+  builds; the report goes out through `+[TTKStoryNetworkService reportStoryViewedWithStoryID:uid:completion:]` (and the `unlocked:` sibling). `AppsFlyerUtils` and `IESLiveDeviceInfo` answer `+isJailbroken…`/`+isJailBroken` and were hooked as
+  instance methods; `FBSDKAppEventsUtility -isDebugBuild` is an instance method hooked as a class one. `tools/objc-diff.py --check` finds exactly these (its group 1) and also lists the system-class hooks in group 2 that need a runtime
+  question instead: **`%hook NSObject -jailbroken` made every object in the process answer YES to `respondsToSelector:`**, so it, and `-[UIDevice btd_isJailBroken]`, are installed only where `class_getInstanceMethod` finds the
+  selector. (2) **A flag nobody reads.** `-[ABTestCodeGen addFollowsYouLabelEnabled]` is a thunk that forwards to `+[TTKABTest addFollowsYouLabelEnabled]`, and a scan of every selector load in `MusicallyCore` found no caller of either: the
+  "Follows you" label belongs to the suggested-account card (`UserSuggestionCardContentView.followsYouLabel`, Swift) and 47.1.0 does not ask the flag. The row now raises a banner from the profile's own `followerStatus`/`followStatus`.
+  **Before hooking a getter, ask who calls it** (the scan: selref slot of the selector, every `adrp`+`ldr` of that slot in `__text`, nearest preceding ObjC IMP as owner; `__objc_stubs` are checked first. It is a scratchpad script that
+  was not promoted into `tools/`; the owner attribution is a hint, since Swift code sits between ObjC methods). Callers exist for the five suggested-account gates, `isForbidComment` (read by `-disableComment`), the sort gates, and the
+  LIVE-entrance gates. (3) **"LIVE" is four surfaces:** the item in the feed list (dropped at construction), the badge in the top bar (`AWEFeedContainerViewController` `_shouldShowMTLiveEntranceView` + `…OnLeft`/`…OnRight` +
+  `-shouldShowLiveBadge`), the "someone you follow is live" bubble (`AWETopLiveBubbleManager -canShow`) and the strip in the Following feed (`GBLInfeedSkylightLiveCellController`, **not** handled -- no gate was found that is safe to refuse).
+  (4) **The splash-ad hooks were dead:** `-isSplashDisabled` / `-shouldShowSplash` exist on none of the three managers. The real deciders (`BDASplashManager -pickModelWithBlock:isWarmStart:`, `-displaySplashOnWindow:`,
+  `AWESplashManager -tryToShowSplash`) are on the launch path and are left alone until a device says what refusing them does. Settings: TikTok builds its Settings from plugins (`TTKSettings…CellPlugin`, found by an identifier
+  listed in a `TTKSettingsSectionRegister` and resolved through `AWEPluginManagerCenter`), which nobody here has seen registered, so the Albrhi row is a view in `TTKSettingsViewController`'s collection view (a `contentInset.top` makes
+  room), not a plugin. **None of it has run on a device.**
+
 
 ### 5.5 YouTube Music (`tweaks/ytmusic`, in the suite)
 
@@ -1215,8 +1231,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.7.0** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.23.0** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.100.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.7.0** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.0** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

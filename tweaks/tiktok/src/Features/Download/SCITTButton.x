@@ -532,6 +532,21 @@ static SCITTMediaItem *SCITTItemForRail(UIView *rail) {
     return [SCITTMedia recent].firstObject;
 }
 
+/// **Keeps the button above the profile picture in z-order.**
+///
+/// The button sits at index 0 of an arranged stack and the avatar is a later sibling, so wherever
+/// the two overlap (the avatar's follow badge and live ring both draw outside its box, and the nudge
+/// moves the button a few points) the avatar is painted over it and the button "hides behind the
+/// picture" on some videos only. Arranged order and subview order are independent in a stack view:
+/// raising the subview changes what is on top, never where the stack lays anything. Done only when it
+/// is not already on top, because this runs from a layout pass and `-bringSubviewToFront:` is not
+/// free even when nothing moves.
+static void SCITTRaiseRailButton(UIStackView *stack, UIView *button) {
+    if (!button || button.superview != stack) return;
+    if (stack.subviews.lastObject != button) [stack bringSubviewToFront:button];
+    if (button.layer.zPosition < 100) button.layer.zPosition = 100;
+}
+
 static void SCITTPlaceRailButton(UIStackView *stack) {
     if (!SCIPrefEnabled(SCIPrefDownloadButton)) return;
 
@@ -577,6 +592,7 @@ static void SCITTPlaceRailButton(UIStackView *stack) {
         // there is genuinely nothing to save.
         existing.hidden = (item == nil);
         if (item) objc_setAssociatedObject(existing, kSCIItemKey, item, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        SCITTRaiseRailButton(stack, existing);
         return;
     }
 
@@ -803,6 +819,7 @@ static void SCITTPlaceRailButton(UIStackView *stack) {
     }
 
     sciRailButtonsPlaced++;
+    SCITTRaiseRailButton(stack, button);
 
     // **Here, not at the bind.** The date label was placed where the item is attached, which on
     // this path is while the button is still being built -- no superview, no frame, and a label
