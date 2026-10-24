@@ -10,19 +10,22 @@
 #import "../Localization/SCILocalize.h"
 
 ///
-/// **Albrhi's settings, as a row on TikTok's own Settings screen.**
+/// **Albrhi's settings, as a row on TikTok's own Settings screen -- two ways, one chosen at install.**
 ///
-/// TikTok builds that screen from plugins: one `TTKSettings…CellPlugin` per row, found by an identifier
-/// string that a `TTKSettingsSectionRegister` lists under its section, resolved through
-/// `AWEPluginManagerCenter` with a protocol name and a scene name. Joining that means registering a
-/// plugin class under an identifier with two strings nobody here has seen used, in a screen every user
-/// of the app opens; a wrong guess is a Settings screen that comes up empty. So the row is **not** a
-/// plugin. It is a view in the screen's own collection view, in the space a top inset makes for it, so
-/// it scrolls with the list and TikTok's data model is never touched.
+/// *Native (preferred).* TikTok's Settings is an IGListKit-style list: `-[TTKSettingsViewController sectionViewModels]`
+/// (declared by `AWEBaseListViewController`) returns the section view models, each wrapping cell plugins whose
+/// `itemModel` is an `AWESettingItemModel`. A reference tweak (NA9, read by disassembly, nothing copied) adds a section
+/// to that array and catches the tap in `-collectionView:didSelectItemAtIndexPath:` by the item's identifier; the
+/// messages it sends are `AWESettingItemModel` `setTitle:` `setIdentifier:` `setType:` `setCellType:` `setIconImage:`,
+/// a `TTKSettingsBaseCellPlugin` given the item with `setItemModel:`, and an `AWESettingsNormalSectionViewModel` built
+/// with `initWithModelsArray:` and given `setSectionIdentifier:` `setSectionHeaderTitle:` `setSectionHeaderHeight:`.
+/// Every one of those exists with the same encoding in 46.4.0 and 47.1.0 (checked against both dumps, and again at
+/// install). The row is TikTok's own cell, with its own metrics, dark mode and right-to-left layout.
 ///
-/// Asked of the class, not assumed: `TTKSettingsViewController` is installed only if it answers
-/// `-viewDidAppear:` with the encoding recorded for 46.4.0 and 47.1.0 and its `-collectionView` is
-/// there. The report says which.
+/// *Inset (fallback, only when the native path cannot be installed).* A view in the screen's collection view, in the
+/// space a top inset makes for it. It scrolls with the list and touches no TikTok data model.
+///
+/// The report says which one is in use.
 ///
 
 static const NSInteger kSCIEntryTag = 0x5C57;
@@ -186,9 +189,109 @@ static void SCITTAttachEntry(UIViewController *controller) {
 %end
 
 
+static NSString *const kSCIEntryIdentifier = @"albrhi_settings_entry";
+static NSString *const kSCIEntrySectionIdentifier = @"albrhi_settings_section";
+static const void *kSCIEntrySectionKey = &kSCIEntrySectionKey;
+static NSUInteger sciNativeBuilt = 0, sciNativeInserted = 0, sciNativeFailed = 0;
+static BOOL sciEntryNative = NO;
+
+static NSString *SCITTSectionIdentifierOf(id section) {
+    SEL sel = NSSelectorFromString(@"sectionIdentifier");
+    if (![section respondsToSelector:sel]) return nil;
+    id value = ((id (*)(id, SEL))objc_msgSend)(section, sel);
+    return [value isKindOfClass:[NSString class]] ? value : nil;
+}
+
+/// One section of one row, made the way TikTok makes its own. Nothing is retained globally: the section belongs to the
+/// controller that asked, and is built again for the next one.
+static id SCITTMakeSettingsSection(void) {
+    Class itemClass = NSClassFromString(@"AWESettingItemModel");
+    Class pluginClass = NSClassFromString(@"TTKSettingsBaseCellPlugin");
+    Class sectionClass = NSClassFromString(@"AWESettingsNormalSectionViewModel");
+    if (!itemClass || !pluginClass || !sectionClass) return nil;
+
+    id item = [[itemClass alloc] init];
+    ((void (*)(id, SEL, id))objc_msgSend)(item, NSSelectorFromString(@"setTitle:"), SCILocalized(@"title"));
+    ((void (*)(id, SEL, id))objc_msgSend)(item, NSSelectorFromString(@"setIdentifier:"), kSCIEntryIdentifier);
+    ((void (*)(id, SEL, long long))objc_msgSend)(item, NSSelectorFromString(@"setType:"), 1);
+    ((void (*)(id, SEL, long long))objc_msgSend)(item, NSSelectorFromString(@"setCellType:"), 4);
+
+    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:18 weight:UIImageSymbolWeightMedium];
+    UIImage *icon = [[UIImage systemImageNamed:@"slider.horizontal.3" withConfiguration:config]
+                     imageWithTintColor:[UIColor labelColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
+    if (icon) ((void (*)(id, SEL, id))objc_msgSend)(item, NSSelectorFromString(@"setIconImage:"), icon);
+
+    id plugin = [[pluginClass alloc] init];
+    ((void (*)(id, SEL, id))objc_msgSend)(plugin, NSSelectorFromString(@"setItemModel:"), item);
+
+    id section = ((id (*)(id, SEL, id))objc_msgSend)([sectionClass alloc], NSSelectorFromString(@"initWithModelsArray:"), @[plugin]);
+    if (!section) return nil;
+    ((void (*)(id, SEL, id))objc_msgSend)(section, NSSelectorFromString(@"setSectionIdentifier:"), kSCIEntrySectionIdentifier);
+    ((void (*)(id, SEL, id))objc_msgSend)(section, NSSelectorFromString(@"setSectionHeaderTitle:"), SCILocalized(@"entry_header"));
+    ((void (*)(id, SEL, double))objc_msgSend)(section, NSSelectorFromString(@"setSectionHeaderHeight:"), 38.0);
+    sciNativeBuilt++;
+    return section;
+}
+
+%group SettingsNative
+
+%hook TTKSettingsViewController
+
+- (NSArray *)sectionViewModels {
+    NSArray *original = %orig;
+    if (![original isKindOfClass:[NSArray class]] || !original.count || !SCIPanelAllowsThisApp()) return original;
+
+    @try {
+        for (id section in original) {
+            if ([SCITTSectionIdentifierOf(section) isEqualToString:kSCIEntrySectionIdentifier]) return original;
+        }
+
+        id mine = objc_getAssociatedObject(self, kSCIEntrySectionKey);
+        if (!mine) {
+            mine = SCITTMakeSettingsSection();
+            if (!mine) { sciNativeFailed++; return original; }
+            objc_setAssociatedObject(self, kSCIEntrySectionKey, mine, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+
+        // Below the banner at the top (a sign-in or profile card, which is not a settings group), above the first real
+        // group. The banner is recognised by its class name, and if none is recognised the row goes first.
+        NSUInteger at = 0;
+        while (at < original.count) {
+            NSString *name = NSStringFromClass([original[at] class]);
+            if (![name containsString:@"HeaderBanner"] && ![name containsString:@"HeaderTitle"]) break;
+            at++;
+        }
+
+        NSMutableArray *sections = [original mutableCopy];
+        [sections insertObject:mine atIndex:MIN(at, sections.count)];
+        sciNativeInserted++;
+        return [sections copy];
+    } @catch (NSException *exception) {
+        sciNativeFailed++;
+        return original;
+    }
+}
+
+- (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
+    UICollectionViewCell *cell = [collectionView cellForItemAtIndexPath:indexPath];
+    id item = [cell respondsToSelector:@selector(itemModel)] ? ((id (*)(id, SEL))objc_msgSend)(cell, @selector(itemModel)) : nil;
+    id identifier = [item respondsToSelector:@selector(identifier)] ? ((id (*)(id, SEL))objc_msgSend)(item, @selector(identifier)) : nil;
+    if ([identifier isKindOfClass:[NSString class]] && [identifier isEqualToString:kSCIEntryIdentifier]) {
+        sciEntryTaps++;
+        [SCITTStatus present];
+        return;
+    }
+    %orig;
+}
+
+%end
+
+%end
+
 NSString *SCITTSettingsEntryReport(void) {
-    return [NSString stringWithFormat:@"%@; rows made: %lu, inset restored: %lu, opened from it: %lu",
-            sciEntryState ?: @"not installed", (unsigned long)sciEntryAttached,
+    return [NSString stringWithFormat:@"%@; native sections built: %lu, inserted: %lu, failed: %lu; inset rows made: %lu, inset restored: %lu; opened from the row: %lu",
+            sciEntryState ?: @"not installed", (unsigned long)sciNativeBuilt, (unsigned long)sciNativeInserted,
+            (unsigned long)sciNativeFailed, (unsigned long)sciEntryAttached,
             (unsigned long)sciEntryInsetRestored, (unsigned long)sciEntryTaps];
 }
 
@@ -196,8 +299,41 @@ static BOOL sciEntryInstalled = NO;
 
 BOOL SCITTSettingsEntryInstalled(void) { return sciEntryInstalled; }
 
+static BOOL SCITTEntryHas(Class cls, const char *selector, const char *encoding) {
+    Method method = cls ? class_getInstanceMethod(cls, sel_registerName(selector)) : NULL;
+    const char *types = method ? method_getTypeEncoding(method) : NULL;
+    return types && strcmp(types, encoding) == 0;
+}
+
 void SCITTInstallSettingsEntry(void) {
     Class screen = NSClassFromString(@"TTKSettingsViewController");
+
+    // Native first: every class and selector the section is made of, with the encoding it is sent with.
+    Class item = NSClassFromString(@"AWESettingItemModel");
+    Class plugin = NSClassFromString(@"TTKSettingsBaseCellPlugin");
+    Class section = NSClassFromString(@"AWESettingsNormalSectionViewModel");
+    Class cell = NSClassFromString(@"TTKSettingsCollectionViewCell");
+    BOOL native = SCITTEntryHas(screen, "sectionViewModels", "@16@0:8")
+        && SCITTEntryHas(screen, "collectionView:didSelectItemAtIndexPath:", "v32@0:8@16@24")
+        && SCITTEntryHas(item, "setTitle:", "v24@0:8@16") && SCITTEntryHas(item, "setIdentifier:", "v24@0:8@16")
+        && SCITTEntryHas(item, "setType:", "v24@0:8q16") && SCITTEntryHas(item, "setCellType:", "v24@0:8q16")
+        && SCITTEntryHas(item, "setIconImage:", "v24@0:8@16") && SCITTEntryHas(item, "identifier", "@16@0:8")
+        && SCITTEntryHas(plugin, "setItemModel:", "v24@0:8@16")
+        && SCITTEntryHas(section, "initWithModelsArray:", "@24@0:8@16")
+        && SCITTEntryHas(section, "setSectionIdentifier:", "v24@0:8@16")
+        && SCITTEntryHas(section, "setSectionHeaderTitle:", "v24@0:8@16")
+        && SCITTEntryHas(section, "setSectionHeaderHeight:", "v24@0:8d16")
+        && SCITTEntryHas(section, "sectionIdentifier", "@16@0:8")
+        && SCITTEntryHas(cell, "itemModel", "@16@0:8");
+    if (native) {
+        %init(SettingsNative);
+        sciEntryInstalled = YES;
+        sciEntryNative = YES;
+        sciEntryState = @"installed (native section): TTKSettingsViewController -sectionViewModels";
+        SCILogV(@"[SettingsEntry] %@", sciEntryState);
+        return;
+    }
+
     Method appear = screen ? class_getInstanceMethod(screen, @selector(viewDidAppear:)) : NULL;
     const char *types = appear ? method_getTypeEncoding(appear) : NULL;
     BOOL hasList = screen && class_getInstanceMethod(screen, @selector(collectionView)) != NULL;
@@ -213,6 +349,6 @@ void SCITTInstallSettingsEntry(void) {
 
     %init(SettingsEntry);
     sciEntryInstalled = YES;
-    sciEntryState = @"installed: TTKSettingsViewController -viewDidAppear:";
+    sciEntryState = @"installed (inset row, native path unavailable): TTKSettingsViewController -viewDidAppear:";
     SCILogV(@"[SettingsEntry] %@", sciEntryState);
 }

@@ -1093,9 +1093,8 @@ there costs colours, never the video).
   LIVE-entrance gates. (3) **"LIVE" is four surfaces:** the item in the feed list (dropped at construction), the badge in the top bar (`AWEFeedContainerViewController` `_shouldShowMTLiveEntranceView` + `…OnLeft`/`…OnRight` +
   `-shouldShowLiveBadge`), the "someone you follow is live" bubble (`AWETopLiveBubbleManager -canShow`) and the strip in the Following feed (`GBLInfeedSkylightLiveCellController`, **not** handled -- no gate was found that is safe to refuse).
   (4) **The splash-ad hooks were dead:** `-isSplashDisabled` / `-shouldShowSplash` exist on none of the three managers. The real deciders (`BDASplashManager -pickModelWithBlock:isWarmStart:`, `-displaySplashOnWindow:`,
-  `AWESplashManager -tryToShowSplash`) are on the launch path and are left alone until a device says what refusing them does. Settings: TikTok builds its Settings from plugins (`TTKSettings…CellPlugin`, found by an identifier
-  listed in a `TTKSettingsSectionRegister` and resolved through `AWEPluginManagerCenter`), which nobody here has seen registered, so the Albrhi row is a view in `TTKSettingsViewController`'s collection view (a `contentInset.top` makes
-  room), not a plugin. **None of it has run on a device.**
+  `AWESplashManager -tryToShowSplash`) are on the launch path and are left alone until a device says what refusing them does. Settings: the preferred row is a **native section**, the recipe read by disassembling NA9 (`docs/investigations/na9-analysis.md`): hook `-[TTKSettingsViewController sectionViewModels]` (inherited from `AWEBaseListViewController`), append an `AWESettingsNormalSectionViewModel` built with `initWithModelsArray:` around a `TTKSettingsBaseCellPlugin` whose `itemModel` is an `AWESettingItemModel` (`setCellType:4`, `setType:1`), and catch the tap in `-collectionView:didSelectItemAtIndexPath:` by the item's identifier; all fifteen messages exist with the same encodings in both builds and are re-checked at install. The earlier inset row (a view in the collection view, `contentInset.top` making room) is kept only as the fallback when a prerequisite is missing. **Neither has run on a device.**
+  **A closed reference's hook table can be recovered even when its strings are XOR-encoded and its calls go through trampolines:** emulate the decoding blocks linearly and read `MSHookMessageEx`'s argument registers (`docs/investigations/na9-scripts/`); and NA9's own hooks are dead on the same selectors ours were (`TTKStoryMarkReadService -markAsRead:` and others), so a reference tweak naming a selector is a lead, never evidence.
 
 
 ### 5.5 YouTube Music (`tweaks/ytmusic`, in the suite)
@@ -1231,8 +1230,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.7.0** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.0** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.7.0** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.1** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.1**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
