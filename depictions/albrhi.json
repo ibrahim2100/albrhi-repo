@@ -106,6 +106,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.101.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **تيك توك 0.24.0 — مراجعة كاملة: صف «البرهي» داخل إعدادات تيك توك، إخفاء LIVE يشمل الشارة والفقاعة، شريط «يتابعك» يعمل، خصوصية القصص على الدالة الصحيحة، تجاوز الجيلبريك…",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.100.0",
           "useBoldText": true
         },
@@ -131,20 +145,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.98.0",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **يوتيوب 1.42.0 — زرّا الجودة والصورة داخل الصورة في صف المشغّل العلوي (متوقفان حتى تشغّلهما)، مع إصلاح 1.41.1 للصورة داخل الصورة على 21.41.5.**",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.100.0"
+          "text": "1.101.0"
         },
         {
           "class": "DepictionTableTextView",
