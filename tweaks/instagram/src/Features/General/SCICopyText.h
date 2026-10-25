@@ -28,6 +28,15 @@ BOOL SCICopyOffered(NSArray<NSString *> *classNames);
 /// the object-replacement character Instagram uses for inline attachments removed.
 NSString * _Nullable SCICopyableText(NSString * _Nullable raw);
 
+/// `text` without a leading account name, given how long the name's styled run is.
+///
+/// A caption in the feed is one string, `<account> <caption>`, with the account in a heavier font. `nameLength` is the length
+/// of that first run as the caller measured it (0 when the first run is not heavier than the next, which means no name).
+/// Only a plausible name is dropped: no whitespace inside it, it ends at whitespace (or the run took the space with it),
+/// and something is left after it. Anything else returns `text` unchanged -- copying the account too is a nuisance, losing
+/// part of a caption is a bug.
+NSString *SCICopyDropLeadingName(NSString *text, NSUInteger nameLength);
+
 
 // MARK: - A ledger of what the long-press did, for the diagnostics page
 
@@ -35,7 +44,8 @@ NSString * _Nullable SCICopyableText(NSString * _Nullable raw);
 void SCICopyNoteLongPress(void);
 
 /// A text view was found under the finger, and what it put on the pasteboard.
-void SCICopyNoteCopied(NSString *viewClass, NSUInteger length);
+/// `detail` says how the text was read (what was stripped and the first styled runs), so a report can show why a name stayed.
+void SCICopyNoteCopied(NSString *viewClass, NSUInteger length, NSString * _Nullable detail);
 
 /// Nothing was copied, and why: no text view under the finger (with the chain of classes that *was* there, which is what a
 /// comment drawn by something other than `IGCoreTextView` looks like), a view the exclusion list keeps out, or no text.

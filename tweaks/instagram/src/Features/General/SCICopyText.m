@@ -40,6 +40,24 @@ NSString *SCICopyableText(NSString *raw) {
     return text.length ? text : nil;
 }
 
+NSString *SCICopyDropLeadingName(NSString *text, NSUInteger nameLength) {
+    if (![text isKindOfClass:[NSString class]] || nameLength == 0 || nameLength >= text.length) return text;
+
+    NSCharacterSet *space = [NSCharacterSet whitespaceAndNewlineCharacterSet];
+    NSString *name = [text substringToIndex:nameLength];
+    NSUInteger end = name.length;
+    while (end > 0 && [space characterIsMember:[name characterAtIndex:end - 1]]) end--;
+    if (end == 0) return text;
+    NSString *bare = [name substringToIndex:end];
+    if ([bare rangeOfCharacterFromSet:space].location != NSNotFound) return text;
+
+    // The run either carried its separator, or the next character is one.
+    BOOL separated = end < name.length || [space characterIsMember:[text characterAtIndex:nameLength]];
+    if (!separated) return text;
+
+    NSString *rest = [text substringFromIndex:nameLength];
+    return SCICopyableText(rest) ? rest : text;
+}
 
 // MARK: - Ledger
 
@@ -50,9 +68,10 @@ static NSMutableArray<NSString *> *sciRecentMisses = nil;
 
 void SCICopyNoteLongPress(void) { sciPresses++; }
 
-void SCICopyNoteCopied(NSString *viewClass, NSUInteger length) {
+void SCICopyNoteCopied(NSString *viewClass, NSUInteger length, NSString *detail) {
     sciCopies++;
-    sciLastCopy = [NSString stringWithFormat:@"%@, %lu characters", viewClass, (unsigned long)length];
+    sciLastCopy = [NSString stringWithFormat:@"%@, %lu characters%@", viewClass, (unsigned long)length,
+                   detail.length ? [@" · " stringByAppendingString:detail] : @""];
 }
 
 void SCICopyNoteMiss(NSString *reason, NSString *chain) {

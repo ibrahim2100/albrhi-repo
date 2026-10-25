@@ -35,6 +35,18 @@ int main(void) {
         CHECK(SCICopyableText(@"   \n\t ") == nil);
         CHECK(SCICopyableText(@"￼") == nil);
         CHECK(SCICopyableText((NSString *)[NSNull null]) == nil);
+
+        // A leading account name is dropped when it is plausibly one, and only then.
+        CHECK([SCICopyDropLeadingName(@"ibrahim hello world", 7) isEqualToString:@" hello world"]);
+        CHECK([SCICopyDropLeadingName(@"ibrahim hello\nworld", 8) isEqualToString:@"hello\nworld"]);   // the run carried its space
+        CHECK([SCICopyDropLeadingName(@"two words here", 9) isEqualToString:@"two words here"]);        // a name has no space inside
+        CHECK([SCICopyDropLeadingName(@"ibrahimhello", 7) isEqualToString:@"ibrahimhello"]);            // not followed by a separator
+        CHECK([SCICopyDropLeadingName(@"ibrahim", 7) isEqualToString:@"ibrahim"]);                       // nothing would be left
+        CHECK([SCICopyDropLeadingName(@"ibrahim   ", 7) isEqualToString:@"ibrahim   "]);
+        CHECK([SCICopyDropLeadingName(@"hello world", 0) isEqualToString:@"hello world"]);
+        CHECK(SCICopyDropLeadingName(@"", 3).length == 0);
+        CHECK(SCICopyDropLeadingName((NSString *)[NSNull null], 3) != nil);
+        CHECK([SCICopyableText(SCICopyDropLeadingName(@"sara￼ nice photo", 5)) isEqualToString:@"nice photo"]);   // a badge after the name
     }
     printf(fails ? "\n%d failed\n" : "\nall passed\n", fails);
     return fails ? 1 : 0;

@@ -34,27 +34,62 @@ static const void *kSCICopyWindowKey = &kSCICopyWindowKey;
 + (instancetype)shared;
 @end
 
-/// The string a core-text view is showing, or nil.
-static NSString *SCICoreTextString(id view) {
+/// What a core-text view is showing, with its styling, or nil.
+static NSAttributedString *SCICoreTextAttributed(id view) {
     SEL styledSel = NSSelectorFromString(@"styledString");
     if ([view respondsToSelector:styledSel]) {
         id styled = ((id (*)(id, SEL))objc_msgSend)(view, styledSel);
         SEL attributedSel = NSSelectorFromString(@"attributedString");
         if (styled && [styled respondsToSelector:attributedSel]) {
             id attributed = ((id (*)(id, SEL))objc_msgSend)(styled, attributedSel);
-            if ([attributed isKindOfClass:[NSAttributedString class]]) {
-                NSString *string = ((NSAttributedString *)attributed).string;
-                if (string.length) return string;
-            }
+            if ([attributed isKindOfClass:[NSAttributedString class]] && ((NSAttributedString *)attributed).length) return attributed;
         }
     }
 
     SEL textSel = NSSelectorFromString(@"text");
     if ([view respondsToSelector:textSel]) {
         id text = ((id (*)(id, SEL))objc_msgSend)(view, textSel);
-        if ([text isKindOfClass:[NSString class]]) return text;
+        if ([text isKindOfClass:[NSString class]] && [text length]) return [[NSAttributedString alloc] initWithString:text];
     }
     return nil;
+}
+
+/// How heavy the font is at `index`, and the run it covers: UIFont weight (-1…1) with the bold trait read as at least 0.4.
+static CGFloat SCIWeightAt(NSAttributedString *text, NSUInteger index, NSRange *run) {
+    NSDictionary *attributes = [text attributesAtIndex:index effectiveRange:run];
+    UIFont *font = attributes[NSFontAttributeName];
+    if (![font isKindOfClass:[UIFont class]]) return 0;
+    NSDictionary *traits = font.fontDescriptor.fontAttributes[UIFontDescriptorTraitsAttribute];
+    CGFloat weight = [traits[UIFontWeightTrait] doubleValue];
+    if (font.fontDescriptor.symbolicTraits & UIFontDescriptorTraitBold) weight = MAX(weight, 0.4);
+    return weight;
+}
+
+/// A feed caption or comment line reads `<account> <text>` with the account in a heavier font. The length of that first
+/// run when it is clearly heavier than the one after it, else 0.
+static NSUInteger SCILeadingNameLength(NSAttributedString *text) {
+    if (text.length < 2) return 0;
+    NSRange first = NSMakeRange(0, 0), second = NSMakeRange(0, 0);
+    CGFloat w0 = SCIWeightAt(text, 0, &first);
+    if (NSMaxRange(first) >= text.length) return 0;
+    CGFloat w1 = SCIWeightAt(text, NSMaxRange(first), &second);
+    return (w0 - w1 >= 0.1) ? first.length : 0;
+}
+
+/// The first three styled runs, for the ledger: "[0+8 w0.30 link][8+1 w0.00]…". Shows why a name stayed in the copy.
+static NSString *SCIRunsSummary(NSAttributedString *text) {
+    NSMutableString *out = [NSMutableString string];
+    NSUInteger at = 0;
+    for (int i = 0; i < 3 && at < text.length; i++) {
+        NSRange run = NSMakeRange(0, 0);
+        CGFloat weight = SCIWeightAt(text, at, &run);
+        NSDictionary *attributes = [text attributesAtIndex:at effectiveRange:nil];
+        BOOL link = NO;
+        for (NSString *key in attributes) if ([key rangeOfString:@"ink" options:NSCaseInsensitiveSearch].location != NSNotFound || [key rangeOfString:@"URL"].location != NSNotFound) link = YES;
+        [out appendFormat:@"[%lu+%lu w%.2f%@]", (unsigned long)run.location, (unsigned long)run.length, weight, link ? @" link" : @""];
+        at = NSMaxRange(run);
+    }
+    return out;
 }
 
 /// The first `IGCoreTextView` at or under `root` whose frame, in `window`, contains `point` (with slack).
@@ -72,6 +107,74 @@ static UIView *SCICoreTextAt(UIView *root, CGPoint point, UIWindow *window, Clas
         if (found) return found;
     }
     return nil;
+}
+
+/// The text a view draws when it is one of the plain UIKit ways to draw some (`UILabel`, `UITextView`, anything answering
+/// `-attributedText`), or nil.
+static NSAttributedString *SCIPlainTextOf(UIView *view) {
+    if ([view isKindOfClass:[UILabel class]]) {
+        UILabel *label = (UILabel *)view;
+        if (label.attributedText.length) return label.attributedText;
+        return label.text.length ? [[NSAttributedString alloc] initWithString:label.text] : nil;
+    }
+    if ([view isKindOfClass:[UITextView class]]) {
+        UITextView *textView = (UITextView *)view;
+        return textView.attributedText.length ? textView.attributedText : nil;
+    }
+    SEL attributedSel = NSSelectorFromString(@"attributedText");
+    if ([view respondsToSelector:attributedSel]) {
+        id attributed = ((id (*)(id, SEL))objc_msgSend)(view, attributedSel);
+        if ([attributed isKindOfClass:[NSAttributedString class]] && ((NSAttributedString *)attributed).length) return attributed;
+    }
+    return nil;
+}
+
+/// The first view at or under `root` that draws text and whose frame, in `window`, holds `point` (with slack).
+static UIView *SCIPlainTextAt(UIView *root, CGPoint point, UIWindow *window, NSInteger *budget) {
+    if (!root || *budget <= 0) return nil;
+    (*budget)--;
+    if (root.hidden || root.alpha < 0.01) return nil;
+
+    CGRect frame = [root convertRect:root.bounds toView:window];
+    if (SCIPlainTextOf(root) && CGRectContainsPoint(CGRectInset(frame, -14, -14), point)) return root;
+    for (UIView *child in root.subviews) {
+        UIView *found = SCIPlainTextAt(child, point, window, budget);
+        if (found) return found;
+    }
+    return nil;
+}
+
+/// The classes under `root` with their sizes, depth first, for the ledger when a comment cell gave nothing to copy: the
+/// next round names whatever draws the text.
+static void SCISubtree(UIView *root, int depth, NSMutableArray<NSString *> *out) {
+    if (!root || out.count >= 24 || depth > 7) return;
+    [out addObject:[NSString stringWithFormat:@"%@%@ %.0fx%.0f", [@"" stringByPaddingToLength:(NSUInteger)depth withString:@">" startingAtIndex:0],
+                    NSStringFromClass([root class]), root.bounds.size.width, root.bounds.size.height]];
+    for (UIView *child in root.subviews) SCISubtree(child, depth + 1, out);
+}
+
+/// Every window of the app with what a hit test says at `point` there: a comment sheet that lives in another window shows up.
+static NSString *SCIWindowsSummary(CGPoint point, UIWindow *from) {
+    NSMutableArray<NSString *> *parts = [NSMutableArray array];
+    for (UIWindow *w in UIApplication.sharedApplication.windows) {
+        UIView *hit = [w hitTest:[w convertPoint:point fromWindow:from] withEvent:nil];
+        [parts addObject:[NSString stringWithFormat:@"%@@%.0f%@→%@", NSStringFromClass([w class]), w.windowLevel, w.hidden ? @" hidden" : @"",
+                          hit ? NSStringFromClass([hit class]) : @"nil"]];
+    }
+    return [parts componentsJoinedByString:@" · "];
+}
+
+/// The names of the views `text` sits in, up to and including its cell: what `SCICopyOffered` judges. It must stop there --
+/// the view controllers above include Instagram's tab bar controller, and "TabBar" is an excluded word.
+static NSArray<NSString *> *SCIOwnersOf(UIView *view) {
+    NSMutableArray<NSString *> *owners = [NSMutableArray array];
+    UIResponder *responder = view.superview;
+    for (int step = 0; step < 16 && responder; step++, responder = responder.nextResponder) {
+        if ([responder isKindOfClass:[UIViewController class]] || [responder isKindOfClass:[UIScrollView class]]) break;
+        [owners addObject:NSStringFromClass([responder class])];
+        if ([responder isKindOfClass:[UICollectionViewCell class]] || [responder isKindOfClass:[UITableViewCell class]]) break;
+    }
+    return owners;
 }
 
 /// "IGCoreTextView ← UIView ← IGFeedItemTextCell ← …" -- nearest first, for the ledger.
@@ -139,34 +242,47 @@ static void SCICopyAttachTo(UIWindow *window) {
         if ([owner isKindOfClass:[UICollectionViewCell class]] || [owner isKindOfClass:[UITableViewCell class]]) break;
     }
 
+    // Not an IGCoreTextView: a comment can be drawn by something else. Inside a comment cell, take any view that draws text
+    // under the finger -- and if there is none, put the cell's whole subtree in the ledger so the next round can name it.
+    NSAttributedString *attributed = nil;
     if (!target) {
-        SCICopyNoteMiss(@"no IGCoreTextView at the finger", SCIChain(hit));
-        return;
+        UIView *cell = nil;
+        for (UIView *v = hit; v && v != window; v = v.superview) {
+            if ([v isKindOfClass:[UICollectionViewCell class]] || [v isKindOfClass:[UITableViewCell class]]) { cell = v; break; }
+        }
+        if (cell && [NSStringFromClass([cell class]) containsString:@"Comment"]) {
+            NSInteger plainBudget = 600;
+            target = SCIPlainTextAt(cell, point, window, &plainBudget);
+            if (!target) {
+                NSMutableArray<NSString *> *tree = [NSMutableArray array];
+                SCISubtree(cell, 0, tree);
+                SCICopyNoteMiss(@"comment cell, no text view at the finger",
+                                [NSString stringWithFormat:@"%@ ⟨%@⟩", SCIChain(hit), [tree componentsJoinedByString:@" "]]);
+                return;
+            }
+            attributed = SCIPlainTextOf(target);
+        } else {
+            SCICopyNoteMiss(@"no IGCoreTextView at the finger", [NSString stringWithFormat:@"%@ ⟨%@⟩", SCIChain(hit), SCIWindowsSummary(point, window)]);
+            return;
+        }
     }
 
-    // The owners are the views the text sits in, up to its cell. Going further reached the view controllers: the feed's
-    // sits under Instagram's tab bar controller, whose name holds "TabBar", and every caption in the feed was refused
-    // (4.7.2 on 410: "kept out by the exclusion list" for IGFeedItemTextCell).
-    NSMutableArray<NSString *> *owners = [NSMutableArray array];
-    UIResponder *responder = target.superview;
-    for (int step = 0; step < 16 && responder; step++, responder = responder.nextResponder) {
-        if ([responder isKindOfClass:[UIViewController class]] || [responder isKindOfClass:[UIScrollView class]]) break;
-        [owners addObject:NSStringFromClass([responder class])];
-        if ([responder isKindOfClass:[UICollectionViewCell class]] || [responder isKindOfClass:[UITableViewCell class]]) break;
-    }
-    if (!SCICopyOffered(owners)) {
+    if (!SCICopyOffered(SCIOwnersOf(target))) {
         SCICopyNoteMiss(@"kept out by the exclusion list", SCIChain(target));
         return;
     }
 
-    NSString *result = SCICopyableText(SCICoreTextString(target));
+    if (!attributed) attributed = SCICoreTextAttributed(target);
+    NSUInteger nameLength = attributed ? SCILeadingNameLength(attributed) : 0;
+    NSString *result = SCICopyableText(attributed ? SCICopyDropLeadingName(attributed.string, nameLength) : nil);
     if (!result) {
         SCICopyNoteMiss(@"the text view has no text", SCIChain(target));
         return;
     }
 
     [UIPasteboard generalPasteboard].string = result;
-    SCICopyNoteCopied(NSStringFromClass([target class]), result.length);
+    SCICopyNoteCopied(NSStringFromClass([target class]), result.length,
+                      [NSString stringWithFormat:@"name %lu · runs %@", (unsigned long)nameLength, SCIRunsSummary(attributed)]);
 
     UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
     [haptic impactOccurred];
