@@ -303,7 +303,6 @@
 @end
 
 @interface IGCoreTextView : UIView
-- (void)sci_copyLongPressed:(UILongPressGestureRecognizer *)sender; // new
 @end
 
 @interface IGUserSession : NSObject

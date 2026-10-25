@@ -9,42 +9,29 @@
 ///
 /// Long-press a caption, a comment or a bio to copy it.
 ///
-/// `IGCoreTextView` is Instagram's rich-text view: feed captions (`IGFeedItemTextCell._coreTextView`), comments and bios
-/// all render through it, so one hook covers them. Four things changed from the first version, each found by reading the
-/// 410.1.0 and 450.1.0 binaries rather than by trying it:
+/// **Version 1 attached a recognizer to each `IGCoreTextView` and copied nothing on the owner's phone (Instagram 410.1.0).**
+/// The cause is not in the report that came back, so this is a reading and not a finding: `IGCoreTextView` overrides
+/// `-pointInside:withEvent:` (it is on the 410 and 450 method lists), and a view that answers NO for the points that are not a
+/// link never receives the long-press that starts on plain text -- which is where a caption is pressed. The first version
+/// could not see that failure and neither could its report. This one does not depend on the text view receiving the touch:
 ///
-///  * **One recognizer per view.** The old hook added a new one every time `-didMoveToSuperview` fired, which is every
-///    time a recycled cell is reused, so a view that had been scrolled around a while copied several times and showed
-///    several confirmations. It is added once (an associated object marks the view) and only when the view is in a window.
-///  * **Only where copy makes sense.** A hundred and ninety-eight Instagram classes own an `IGCoreTextView`; settings rows,
-///    banners and message bubbles are not captions. The owners' class names decide, once, in `SCICopyOffered`.
-///  * **The text is read from where Instagram keeps it.** `-text` on this class is not a method of the class: it is a
-///    `Jest` category (a test-automation hook) that happens to be in the release build today. `-styledString` is the real
-///    API (`IGStyledString -attributedString`, both builds), so it is asked first and `-text` is the fallback.
-///  * **The setting is read when the finger lifts, too**, so switching it off takes effect without scrolling the view away.
-///
-/// Does not claim to know which of Instagram's own long-presses it overlaps (the comment's own menu, a link preview): the
-/// recognizer lets the others run, and copying alongside them is the cost.
+///  * **One recognizer on the window**, added once (`becomeKeyWindow`, `makeKeyAndVisible`), the way the TikTok tweak's own
+///    two-finger hold works. It cancels no touch and lets every other recognizer run.
+///  * **When it fires, the finger's position finds the text**: hit-test, then climb the owners and search each one's
+///    subviews for an `IGCoreTextView` whose frame, in window coordinates, contains the point (14 points of slack, hidden
+///    views skipped, a budget of views so a huge hierarchy cannot make a long-press slow).
+///  * **Only where copy makes sense** (`SCICopyOffered`: not message bubbles, settings, banners, forms) -- judged on the
+///    found view's owners.
+///  * **The text is read from where Instagram keeps it**: `IGStyledString -attributedString` first (a real API in 410 and
+///    450), `-text` -- a `Jest` test-automation category -- as the fallback.
+///  * **A ledger**, shown on Settings › Diagnostics: windows attached, long-presses seen, copies, and for every miss the
+///    chain of classes under the finger. If a comment is drawn by something other than `IGCoreTextView`, that chain names it.
 ///
 
-static const void *kSCICopyStateKey = &kSCICopyStateKey;
+static const void *kSCICopyWindowKey = &kSCICopyWindowKey;
 
-/// Lets this recognizer coexist with Instagram's own long-press on the same view.
-@interface SCICopyGestureDelegate : NSObject <UIGestureRecognizerDelegate>
+@interface SCICopyTarget : NSObject <UIGestureRecognizerDelegate>
 + (instancetype)shared;
-@end
-
-@implementation SCICopyGestureDelegate
-+ (instancetype)shared {
-    static SCICopyGestureDelegate *shared;
-    static dispatch_once_t once;
-    dispatch_once(&once, ^{ shared = [[SCICopyGestureDelegate alloc] init]; });
-    return shared;
-}
-- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer
-    shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)other {
-    return YES;
-}
 @end
 
 /// The string a core-text view is showing, or nil.
@@ -70,45 +57,111 @@ static NSString *SCICoreTextString(id view) {
     return nil;
 }
 
-%hook IGCoreTextView
+/// The first `IGCoreTextView` at or under `root` whose frame, in `window`, contains `point` (with slack).
+static UIView *SCICoreTextAt(UIView *root, CGPoint point, UIWindow *window, Class coreText, NSInteger *budget) {
+    if (!root || *budget <= 0) return nil;
+    (*budget)--;
+    if (root.hidden || root.alpha < 0.01) return nil;
 
-- (void)didMoveToWindow {
-    %orig;
-
-    if (!self.window) return;
-    if (objc_getAssociatedObject(self, kSCICopyStateKey)) return;   // decided already, either way
-    if (![SCIUtils getBoolPref:@"copy_description"]) return;        // not recorded: switching it on later still finds the view
-
-    // The owners, nearest first, up to the view controller. Walked once per view, here, never while scrolling.
-    NSMutableArray<NSString *> *owners = [NSMutableArray array];
-    UIResponder *responder = self.superview;
-    for (int step = 0; step < 16 && responder; step++, responder = responder.nextResponder) {
-        [owners addObject:NSStringFromClass([responder class])];
+    if ([root isKindOfClass:coreText]) {
+        CGRect frame = [root convertRect:root.bounds toView:window];
+        return CGRectContainsPoint(CGRectInset(frame, -14, -14), point) ? root : nil;
     }
+    for (UIView *child in root.subviews) {
+        UIView *found = SCICoreTextAt(child, point, window, coreText, budget);
+        if (found) return found;
+    }
+    return nil;
+}
 
-    if (!SCICopyOffered(owners)) {
-        objc_setAssociatedObject(self, kSCICopyStateKey, @NO, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+/// "IGCoreTextView ← UIView ← IGFeedItemTextCell ← …" -- nearest first, for the ledger.
+static NSString *SCIChain(UIView *view) {
+    NSMutableArray *names = [NSMutableArray array];
+    for (UIView *v = view; v && names.count < 8; v = v.superview) [names addObject:NSStringFromClass([v class])];
+    return [names componentsJoinedByString:@" ← "];
+}
+
+static void SCICopyAttachTo(UIWindow *window) {
+    if (!window || objc_getAssociatedObject(window, kSCICopyWindowKey)) return;
+    objc_setAssociatedObject(window, kSCICopyWindowKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+    UILongPressGestureRecognizer *press =
+        [[UILongPressGestureRecognizer alloc] initWithTarget:[SCICopyTarget shared] action:@selector(fired:)];
+    press.minimumPressDuration = 0.5;
+    press.cancelsTouchesInView = NO;
+    press.delaysTouchesBegan = NO;
+    press.delaysTouchesEnded = NO;
+    press.delegate = [SCICopyTarget shared];
+    [window addGestureRecognizer:press];
+    SCICopyNoteAttached(NSStringFromClass([window class]));
+}
+
+@implementation SCICopyTarget
+
++ (instancetype)shared {
+    static SCICopyTarget *shared;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ shared = [[SCICopyTarget alloc] init]; });
+    return shared;
+}
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer
+    shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)other {
+    return YES;
+}
+
+- (void)fired:(UILongPressGestureRecognizer *)sender {
+    if (sender.state != UIGestureRecognizerStateBegan) return;
+    if (![SCIUtils getBoolPref:@"copy_description"]) return;
+    SCICopyNoteLongPress();
+
+    UIWindow *window = (UIWindow *)sender.view;
+    if (![window isKindOfClass:[UIWindow class]]) return;
+
+    CGPoint point = [sender locationInView:window];
+    UIView *hit = [window hitTest:point withEvent:nil];
+    Class coreText = NSClassFromString(@"IGCoreTextView");
+    if (!hit || !coreText) {
+        SCICopyNoteMiss(!coreText ? @"IGCoreTextView is not in this build" : @"nothing under the finger", nil);
         return;
     }
 
-    UILongPressGestureRecognizer *press =
-        [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(sci_copyLongPressed:)];
-    press.minimumPressDuration = 0.5;
-    press.cancelsTouchesInView = NO;
-    press.delegate = [SCICopyGestureDelegate shared];
-    [self addGestureRecognizer:press];
+    // On the text itself, or on something that contains it (a cell, a header): climb, searching each owner's subviews.
+    UIView *target = nil;
+    for (UIView *v = hit; v && !target; v = v.superview) {
+        if ([v isKindOfClass:coreText]) { target = v; break; }
+    }
+    NSInteger budget = 1500;
+    UIView *owner = hit;
+    for (int level = 0; owner && owner != window && !target && level < 10; level++, owner = owner.superview) {
+        target = SCICoreTextAt(owner, point, window, coreText, &budget);
+        // A cell is the unit that holds a caption or a comment: past it the search would only find other rows' text.
+        if ([owner isKindOfClass:[UICollectionViewCell class]] || [owner isKindOfClass:[UITableViewCell class]]) break;
+    }
 
-    objc_setAssociatedObject(self, kSCICopyStateKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
+    if (!target) {
+        SCICopyNoteMiss(@"no IGCoreTextView at the finger", SCIChain(hit));
+        return;
+    }
 
-%new - (void)sci_copyLongPressed:(UILongPressGestureRecognizer *)sender {
-    if (sender.state != UIGestureRecognizerStateBegan) return;
-    if (![SCIUtils getBoolPref:@"copy_description"]) return;
+    NSMutableArray<NSString *> *owners = [NSMutableArray array];
+    UIResponder *responder = target.superview;
+    for (int step = 0; step < 16 && responder; step++, responder = responder.nextResponder) {
+        [owners addObject:NSStringFromClass([responder class])];
+    }
+    if (!SCICopyOffered(owners)) {
+        SCICopyNoteMiss(@"kept out by the exclusion list", SCIChain(target));
+        return;
+    }
 
-    NSString *result = SCICopyableText(SCICoreTextString(self));
-    if (!result) return;
+    NSString *result = SCICopyableText(SCICoreTextString(target));
+    if (!result) {
+        SCICopyNoteMiss(@"the text view has no text", SCIChain(target));
+        return;
+    }
 
     [UIPasteboard generalPasteboard].string = result;
+    SCICopyNoteCopied(NSStringFromClass([target class]), result.length);
 
     UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
     [haptic impactOccurred];
@@ -119,6 +172,20 @@ static NSString *SCICoreTextString(id view) {
 
     [HUD showInView:topMostController().view];
     [HUD dismissAfterDelay:2.0];
+}
+
+@end
+
+%hook UIWindow
+
+- (void)becomeKeyWindow {
+    %orig;
+    SCICopyAttachTo(self);
+}
+
+- (void)makeKeyAndVisible {
+    %orig;
+    SCICopyAttachTo(self);
 }
 
 %end

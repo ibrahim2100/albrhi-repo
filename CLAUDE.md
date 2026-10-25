@@ -869,6 +869,11 @@ instances taught; here are the facts.
 - **Link tracking (4.6.0)** — `strip_link_tracking`, off: `igsh`/`igshid`/`utm_*`/`fbclid`/`ig_rid` removed from Instagram's own addresses at the two doors a link leaves through
   (`UIPasteboard setURL:/setString:`, `UIActivityViewController`), so no Instagram class is involved. **Clean cache** keeps `albrhi-*` and every `<UUID>.<ext>` in Caches, because that folder also holds the
   download history and the finished downloads (found by reading where `SCIDownloadQueue` writes before writing the cleaner). 16 + 14 host tests.
+- **Copy by long-press (4.7.2) — a recogniser on the view never fired on a phone, so it is on the window.** 4.7.1 put a `UILongPressGestureRecognizer` on each `IGCoreTextView` and the owner's 410 report said nothing copied
+  (the report's own line proved the class was right: `IGCoreTextView ← UIView ← IGFeedItemTextCell`). `IGCoreTextView` overrides `-pointInside:withEvent:` and has its own long-tap recogniser; the exact reason was **not**
+  read off the device, so 4.7.2 does not depend on it: one recogniser per key `UIWindow` (`-becomeKeyWindow`, `-makeKeyAndVisible`), the view found by walking the tree for an `IGCoreTextView` whose **frame** holds the point
+  (14 pt slack), then the owner chain checked by `SCICopyOffered`. Every press lands in a ledger shown on the Diagnostics page (windows attached, presses, copies, misses **with the class chain under the finger**).
+  Verified in a simulator harness against the real source with a fake view whose `pointInside` answers NO; **comments are unverified** — their text view is a Swift lazy var whose type ObjC cannot see.
 - **Removed in 3.1.4** (broken or redundant): liquid glass, teen icons, doom-scrolling limits, per-surface download toggles,
   long-press tuning, quality picker. Keep-deleted-messages came back as `keep_unsent_messages`. Do not reintroduce without a reason.
 - **Known upstream crash, not ours:** on roothide Bootstrap, Instagram 442+ crashes when the profile picture is changed. Cut in half
@@ -1230,8 +1235,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.7.1** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.4**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.7.2** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.5**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

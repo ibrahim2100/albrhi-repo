@@ -39,3 +39,41 @@ NSString *SCICopyableText(NSString *raw) {
     text = [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     return text.length ? text : nil;
 }
+
+
+// MARK: - Ledger
+
+static NSUInteger sciPresses = 0, sciCopies = 0, sciMisses = 0;
+static NSMutableArray<NSString *> *sciWindows = nil;
+static NSString *sciLastCopy = nil;
+static NSMutableArray<NSString *> *sciRecentMisses = nil;
+
+void SCICopyNoteLongPress(void) { sciPresses++; }
+
+void SCICopyNoteCopied(NSString *viewClass, NSUInteger length) {
+    sciCopies++;
+    sciLastCopy = [NSString stringWithFormat:@"%@, %lu characters", viewClass, (unsigned long)length];
+}
+
+void SCICopyNoteMiss(NSString *reason, NSString *chain) {
+    sciMisses++;
+    if (!sciRecentMisses) sciRecentMisses = [NSMutableArray array];
+    [sciRecentMisses insertObject:chain.length ? [NSString stringWithFormat:@"%@ — %@", reason, chain] : reason atIndex:0];
+    while (sciRecentMisses.count > 4) [sciRecentMisses removeLastObject];
+}
+
+void SCICopyNoteAttached(NSString *windowClass) {
+    if (!sciWindows) sciWindows = [NSMutableArray array];
+    [sciWindows addObject:windowClass];
+}
+
+NSArray<NSString *> *SCICopyReportLines(void) {
+    NSMutableArray *lines = [NSMutableArray array];
+    [lines addObject:[NSString stringWithFormat:@"windows with the recognizer: %@",
+                      sciWindows.count ? [sciWindows componentsJoinedByString:@", "] : @"none yet"]];
+    [lines addObject:[NSString stringWithFormat:@"long-presses seen: %lu · copied: %lu · nothing to copy: %lu",
+                      (unsigned long)sciPresses, (unsigned long)sciCopies, (unsigned long)sciMisses]];
+    if (sciLastCopy) [lines addObject:[@"last copy: " stringByAppendingString:sciLastCopy]];
+    for (NSString *miss in sciRecentMisses) [lines addObject:[@"miss: " stringByAppendingString:miss]];
+    return lines;
+}
