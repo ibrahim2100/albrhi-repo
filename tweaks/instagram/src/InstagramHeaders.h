@@ -303,9 +303,7 @@
 @end
 
 @interface IGCoreTextView : UIView
-@property(nonatomic, strong) NSString *text;
-- (void)addHandleLongPress; // new
-- (void)handleLongPress:(UILongPressGestureRecognizer *)sender; // new
+- (void)sci_copyLongPressed:(UILongPressGestureRecognizer *)sender; // new
 @end
 
 @interface IGUserSession : NSObject

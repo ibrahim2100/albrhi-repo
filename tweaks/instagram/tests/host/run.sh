@@ -43,5 +43,9 @@ clang -fobjc-arc -Wall -I"$OUT" -framework Foundation \
 cp ../../src/Features/General/SCICacheRules.[hm] "$OUT/Features/General/"
 clang -fobjc-arc -Wall -I"$OUT" -framework Foundation \
     "$OUT/Features/General/SCICacheRules.m" Test_CacheRules.m -o "$OUT/test-cache"
+cp ../../src/Features/General/SCICopyText.[hm] "$OUT/Features/General/"
+clang -fobjc-arc -Wall -I"$OUT" -framework Foundation \
+    "$OUT/Features/General/SCICopyText.m" Test_CopyText.m -o "$OUT/test-copy"
 "$OUT/test-cache"
 "$OUT/test-links"
+"$OUT/test-copy"
