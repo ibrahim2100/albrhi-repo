@@ -869,18 +869,18 @@ instances taught; here are the facts.
 - **Link tracking (4.6.0)** — `strip_link_tracking`, off: `igsh`/`igshid`/`utm_*`/`fbclid`/`ig_rid` removed from Instagram's own addresses at the two doors a link leaves through
   (`UIPasteboard setURL:/setString:`, `UIActivityViewController`), so no Instagram class is involved. **Clean cache** keeps `albrhi-*` and every `<UUID>.<ext>` in Caches, because that folder also holds the
   download history and the finished downloads (found by reading where `SCIDownloadQueue` writes before writing the cleaner). 16 + 14 host tests.
-- **Copy by long-press (4.7.4) — two wrong guesses, the report that ended them, and what is still open.** 4.7.1 put a recogniser on each `IGCoreTextView` and nothing copied; 4.7.2 moved it to the window (one per key `UIWindow`, the view found by walking
-  the tree for an `IGCoreTextView` whose **frame** holds the point, 14 pt slack, because the class overrides `-pointInside:withEvent:`) and **still** copied nothing — but its ledger (Diagnostics, "Copy text by long-press": windows
-  attached, presses, copies, misses **with the class chain under the finger**) said why in one report: presses 5, copies 0, every miss `kept out by the exclusion list — IGCoreTextView ← UIView ← IGFeedItemTextCell`. The recogniser
-  had been fine; the exclusion check walked **16 responders up**, through the view controllers, into Instagram's tab bar controller (`TabBar` is an excluded word), so every caption in the feed was refused. It now checks only the
-  views around the text, up to its cell (`SCIOwnersOf`). **The harness had no tab bar controller above the list, which is why 4.7.2 "passed" there**: it has one now (`IGTabBarController` in a navigation controller), and the old code
-  was run first to reproduce the refusal before the fix was believed. 4.7.3 copied captions on the owner's phone (410: `copied: 2`, 288 characters) **with the account name in front** — a feed caption is one string `<account> <text>`;
-  4.7.4 drops the first styled run when its font is clearly heavier than the next (`SCILeadingNameLength`, weight from the font's traits, bold read as ≥ 0.4) and the pure rule that decides whether it is a plausible name is
-  `SCICopyDropLeadingName` (host-tested). **Whether Instagram's username run really differs in weight is not measured**: the ledger prints the first three runs of the last copy (`name 7 · runs [0+7 w0.40][7+55 w0.00]`), so a
-  name that stays says why.
-  **Comments are still unverified.** Their text is drawn by a Swift view whose type ObjC cannot see; inside a cell whose class name holds `Comment`, 4.7.4 takes any view that draws text under the finger (`UILabel`, `UITextView`,
-  anything answering `-attributedText`) and, when there is none, writes **the cell's whole subtree with sizes** into the ledger, and for any other miss a summary of every window and what a hit test says in it. The one 4.7.3
-  miss (`UIDimmingView ← UITransitionView ← IGWindow`) is unexplained.
+- **Copy by long-press (4.7.5) — each attempt was fixed by the report of the one before, not by a better guess.** 4.7.1 put a recogniser on each `IGCoreTextView` and nothing copied; 4.7.2 moved it to the window (one per key
+  `UIWindow`, the view found by walking the tree for an `IGCoreTextView` whose **frame** holds the point, because the class overrides `-pointInside:withEvent:`) and still copied nothing, but its ledger (Diagnostics, "Copy text by
+  long-press": windows, presses, copies, misses **with the class chain under the finger**) said why in one report: every miss was `kept out by the exclusion list — IGCoreTextView ← UIView ← IGFeedItemTextCell`. The exclusion check
+  walked **16 responders up** into Instagram's tab bar controller (`TabBar` is an excluded word); it now checks only the views around the text, up to its cell (`SCIOwnersOf`). **The harness had no tab bar controller above the list,
+  which is why 4.7.2 "passed" there**: it has one now, and the old code was run first to reproduce the refusal. 4.7.3 copied captions on 410 **with the account name in front** (a feed caption is one string `<account> <text>`).
+  4.7.4's rule — drop the first styled run when its font is clearly heavier than the next — **did nothing**, and the report said why: the 410 runs are `[0+6 w0.40 link][6+1 w0.40][7+69 w0.00]`, the account **and the space after it**
+  are two heavy runs. 4.7.5 takes every consecutive run as heavy as the first (`SCILeadingNameLength`, first run ≥ 0.2) up to the first lighter one; whether a prefix is a plausible name is `SCICopyDropLeadingName` (host-tested; no
+  whitespace inside it, a separator after it, something left). The harness now builds the string with that run shape.
+  **Comments:** the one miss in the 4.7.4 report is `IGWindow@0→UIDimmingView` — the hit test at the comment is the sheet's dimming view, not its content. So when the hit view's class holds `Dimming`, the window is searched **by
+  position** (`SCITextTopmostAt`: later subviews first, anything containing the point that draws text — `IGCoreTextView`, `UILabel`, `UITextView`, anything answering `-attributedText`), the exclusion list still applies, and the ledger
+  says `found by position under a dimming view`; with nothing found it lists everything that contains the point, front to back. **Not known: whether a 410 comment's text view is any of those** (it is drawn by a Swift view whose type
+  ObjC cannot see). Inside a cell whose class holds `Comment` and no dimming view, the same plain-text search runs and a miss writes the cell's subtree with sizes.
 - **Removed in 3.1.4** (broken or redundant): liquid glass, teen icons, doom-scrolling limits, per-surface download toggles,
   long-press tuning, quality picker. Keep-deleted-messages came back as `keep_unsent_messages`. Do not reintroduce without a reason.
 - **Known upstream crash, not ours:** on roothide Bootstrap, Instagram 442+ crashes when the profile picture is changed. Cut in half
@@ -1242,8 +1242,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.7.4** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.7**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.7.5** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.8**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

@@ -65,15 +65,23 @@ static CGFloat SCIWeightAt(NSAttributedString *text, NSUInteger index, NSRange *
     return weight;
 }
 
-/// A feed caption or comment line reads `<account> <text>` with the account in a heavier font. The length of that first
-/// run when it is clearly heavier than the one after it, else 0.
+/// A feed caption or comment line reads `<account> <text>` with the account in a heavier font. The length of the heavy
+/// prefix when something clearly lighter follows it, else 0. The prefix is every consecutive run as heavy as the first:
+/// on the owner's 410 the account is one run (a link) and the space after it is a second run of the same weight
+/// (`[0+6 w0.40 link][6+1 w0.40][7+69 w0.00]`), so comparing the first run with the next one found no difference.
 static NSUInteger SCILeadingNameLength(NSAttributedString *text) {
     if (text.length < 2) return 0;
-    NSRange first = NSMakeRange(0, 0), second = NSMakeRange(0, 0);
-    CGFloat w0 = SCIWeightAt(text, 0, &first);
-    if (NSMaxRange(first) >= text.length) return 0;
-    CGFloat w1 = SCIWeightAt(text, NSMaxRange(first), &second);
-    return (w0 - w1 >= 0.1) ? first.length : 0;
+    NSRange run = NSMakeRange(0, 0);
+    CGFloat heavy = SCIWeightAt(text, 0, &run);
+    if (heavy < 0.2) return 0;   // nothing is called a name in the regular weight
+    NSUInteger end = NSMaxRange(run);
+    while (end < text.length) {
+        NSRange next = NSMakeRange(0, 0);
+        CGFloat weight = SCIWeightAt(text, end, &next);
+        if (heavy - weight >= 0.1) return end;
+        end = NSMaxRange(next);
+    }
+    return 0;
 }
 
 /// The first three styled runs, for the ledger: "[0+8 w0.30 link][8+1 w0.00]…". Shows why a name stayed in the copy.
@@ -142,6 +150,29 @@ static UIView *SCIPlainTextAt(UIView *root, CGPoint point, UIWindow *window, NSI
         if (found) return found;
     }
     return nil;
+}
+
+/// The topmost view under `point` that draws text (an `IGCoreTextView` or anything `SCIPlainTextOf` reads), found by where
+/// views are and not by what a hit test says -- for a press that a covering view (Instagram's comment sheet answers with a
+/// `UIDimmingView`) takes. Later subviews are in front, so they are asked first. `seen` collects what contains the point.
+static UIView *SCITextTopmostAt(UIView *root, CGPoint point, UIWindow *window, Class coreText, NSInteger *budget, NSMutableArray<NSString *> *seen) {
+    if (!root || *budget <= 0) return nil;
+    (*budget)--;
+    if (root.hidden || root.alpha < 0.01) return nil;
+
+    CGRect frame = [root convertRect:root.bounds toView:window];
+    BOOL contains = CGRectContainsPoint(frame, point);
+    if (contains && seen.count < 14) {
+        [seen addObject:[NSString stringWithFormat:@"%@ %.0fx%.0f", NSStringFromClass([root class]), frame.size.width, frame.size.height]];
+    }
+    if (contains || !root.clipsToBounds) {
+        for (UIView *child in [root.subviews reverseObjectEnumerator]) {
+            UIView *found = SCITextTopmostAt(child, point, window, coreText, budget, seen);
+            if (found) return found;
+        }
+    }
+    BOOL draws = (coreText && [root isKindOfClass:coreText]) || SCIPlainTextOf(root) != nil;
+    return (draws && CGRectContainsPoint(CGRectInset(frame, -14, -14), point)) ? root : nil;
 }
 
 /// The classes under `root` with their sizes, depth first, for the ledger when a comment cell gave nothing to copy: the
@@ -245,6 +276,20 @@ static void SCICopyAttachTo(UIWindow *window) {
     // Not an IGCoreTextView: a comment can be drawn by something else. Inside a comment cell, take any view that draws text
     // under the finger -- and if there is none, put the cell's whole subtree in the ledger so the next round can name it.
     NSAttributedString *attributed = nil;
+    NSString *via = @"";
+    if (!target && [NSStringFromClass([hit class]) containsString:@"Dimming"]) {
+        // A covering view took the touch (a sheet's dimming view): look for the text by where it is.
+        NSInteger geoBudget = 2500;
+        NSMutableArray<NSString *> *seen = [NSMutableArray array];
+        target = SCITextTopmostAt(window, point, window, coreText, &geoBudget, seen);
+        via = @" · found by position under a dimming view";
+        if (!target) {
+            SCICopyNoteMiss(@"a dimming view took the press and no text view is under it",
+                            [NSString stringWithFormat:@"%@ ⟨%@⟩ ⟨%@⟩", SCIChain(hit), SCIWindowsSummary(point, window), [seen componentsJoinedByString:@" > "]]);
+            return;
+        }
+        if (![target isKindOfClass:coreText]) attributed = SCIPlainTextOf(target);
+    }
     if (!target) {
         UIView *cell = nil;
         for (UIView *v = hit; v && v != window; v = v.superview) {
@@ -282,7 +327,7 @@ static void SCICopyAttachTo(UIWindow *window) {
 
     [UIPasteboard generalPasteboard].string = result;
     SCICopyNoteCopied(NSStringFromClass([target class]), result.length,
-                      [NSString stringWithFormat:@"name %lu · runs %@", (unsigned long)nameLength, SCIRunsSummary(attributed)]);
+                      [NSString stringWithFormat:@"name %lu · runs %@%@", (unsigned long)nameLength, SCIRunsSummary(attributed), via]);
 
     UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
     [haptic impactOccurred];
