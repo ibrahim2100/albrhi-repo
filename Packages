@@ -1,72 +1,4 @@
 Package: com.albrhi
-Version: 1.100.0
-Architecture: iphoneos-arm64
-Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
-Installed-Size: 1708
-Depends: mobilesubstrate, preferenceloader
-Conflicts: com.albrhi.roothide, com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide, com.dvntm.ytmultimate
-Replaces: com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide
-Filename: debs/com.albrhi_1.100.0_iphoneos-arm64.deb
-Size: 2475000
-MD5sum: df6f70a61f79cba6c367ab47e7808e62
-SHA1: bb5d1731aa6785c7d5b90df77636e6ff1dc8f67c
-SHA256: a8c0a6f18fa3dbe6cb1c70b806e8b9228074a97d3530097ec437c9b42cf79df9
-Section: Tweaks
-Homepage: https://github.com/ibrahim2100/albrhi-repo
-Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
- .
- Everything Albrhi makes for social apps, in a single package. Install this and you have
- the Instagram tweak, the YouTube tweak, the X tweak and the TikTok tweak; there is
- nothing else to download and one thing to update.
- .
- ▍CHOOSE FROM SETTINGS
- Settings › Albrhi lists every app Albrhi patches, with a switch each. Turn one off and
- Albrhi does nothing inside that app — no uninstalling, and your settings are kept for
- when you turn it back on. Close and reopen the app for a change to take effect.
- .
- ▍INSTAGRAM
- A download button in every post and reel, a Download Center with a real queue, a feed
- without ads or suggestions, watching stories without telling anyone, and confirmations
- before a mis-tap becomes a notification.
- .
- ▍YOUTUBE
- Downloads with their own player and Download Centre tab, no ads, SponsorBlock, playback
- that keeps going in the background, and a quality ceiling per connection.
- .
- ▍X
- Save any video, photo or GIF to Photos — a download button on the video itself, at the
- best quality X offers, plus a list of everything it has shown you. Plus no ads, no Promote button, no Grok, no Premium nags,
- less tracking, no view counts and a faster launch. Hold two fingers anywhere in X.
- .
- ▍TIKTOK
- No ads — including the launch splash ad — and a download button right in the feed,
- beside like, comment and share, for the video actually on screen, at the best quality
- TikTok offers — and photo posts save as photos, every image in the post. A seek bar
- that stays under the video instead of appearing only while you drag. Three separate
- privacy switches: no story-seen mark, no read receipt sent for a message, no
- profile-view report — turn off just the one you want. Plus the jailbreak hidden from
- every check TikTok asks. Hold two fingers anywhere in TikTok for a real settings
- screen — a switch and an explanation for each feature, what has been resolved for
- download, and live numbers behind every hook.
- .
- ▍GROWING
- New Albrhi tweaks arrive in this same package and appear in the same list, so there is
- never a second thing to install.
- .
- Arabic and English throughout.
- .
- Developed by Ibrahim Ismail AL-Rahn. The Instagram tweak is an educational and corrective
- derivative of SCInsta by SoCuul, rebuilt with AI assistance to improve code quality,
- design, performance and user experience. Open source under the GNU GPL v3, with
- original authorship credited and preserved.
-Tag: role::enduser
-Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
-Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
-Name: Albrhi (rootless)
-Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
-
-Package: com.albrhi
 Version: 1.101.0
 Architecture: iphoneos-arm64
 Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
@@ -147,6 +79,74 @@ Size: 2481194
 MD5sum: 39ae521ea71f42f07c18f96e8febe64e
 SHA1: 3194d6d1f835157da7f1f32009cc070ca86b711b
 SHA256: 5445e7568cc1ae2322a34dc90bef4641d28665826586933fef77c2e5813b22fe
+Section: Tweaks
+Homepage: https://github.com/ibrahim2100/albrhi-repo
+Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
+ .
+ Everything Albrhi makes for social apps, in a single package. Install this and you have
+ the Instagram tweak, the YouTube tweak, the X tweak and the TikTok tweak; there is
+ nothing else to download and one thing to update.
+ .
+ ▍CHOOSE FROM SETTINGS
+ Settings › Albrhi lists every app Albrhi patches, with a switch each. Turn one off and
+ Albrhi does nothing inside that app — no uninstalling, and your settings are kept for
+ when you turn it back on. Close and reopen the app for a change to take effect.
+ .
+ ▍INSTAGRAM
+ A download button in every post and reel, a Download Center with a real queue, a feed
+ without ads or suggestions, watching stories without telling anyone, and confirmations
+ before a mis-tap becomes a notification.
+ .
+ ▍YOUTUBE
+ Downloads with their own player and Download Centre tab, no ads, SponsorBlock, playback
+ that keeps going in the background, and a quality ceiling per connection.
+ .
+ ▍X
+ Save any video, photo or GIF to Photos — a download button on the video itself, at the
+ best quality X offers, plus a list of everything it has shown you. Plus no ads, no Promote button, no Grok, no Premium nags,
+ less tracking, no view counts and a faster launch. Hold two fingers anywhere in X.
+ .
+ ▍TIKTOK
+ No ads — including the launch splash ad — and a download button right in the feed,
+ beside like, comment and share, for the video actually on screen, at the best quality
+ TikTok offers — and photo posts save as photos, every image in the post. A seek bar
+ that stays under the video instead of appearing only while you drag. Three separate
+ privacy switches: no story-seen mark, no read receipt sent for a message, no
+ profile-view report — turn off just the one you want. Plus the jailbreak hidden from
+ every check TikTok asks. Hold two fingers anywhere in TikTok for a real settings
+ screen — a switch and an explanation for each feature, what has been resolved for
+ download, and live numbers behind every hook.
+ .
+ ▍GROWING
+ New Albrhi tweaks arrive in this same package and appear in the same list, so there is
+ never a second thing to install.
+ .
+ Arabic and English throughout.
+ .
+ Developed by Ibrahim Ismail AL-Rahn. The Instagram tweak is an educational and corrective
+ derivative of SCInsta by SoCuul, rebuilt with AI assistance to improve code quality,
+ design, performance and user experience. Open source under the GNU GPL v3, with
+ original authorship credited and preserved.
+Tag: role::enduser
+Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
+Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
+Name: Albrhi (rootless)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
+
+Package: com.albrhi
+Version: 1.101.3
+Architecture: iphoneos-arm64
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 1708
+Depends: mobilesubstrate, preferenceloader
+Conflicts: com.albrhi.roothide, com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide, com.dvntm.ytmultimate
+Replaces: com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide
+Filename: debs/com.albrhi_1.101.3_iphoneos-arm64.deb
+Size: 2478828
+MD5sum: 6509345c9f6ee4ca0517bc34634721ca
+SHA1: 98874c9681aeb5998b50830539df45bcef46deea
+SHA256: ae561fd9fe258385f489b702fb22a9af7b38e8b729815a080442d85100be7aef
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
@@ -515,74 +515,6 @@ Name: Albrhi NextUp (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
 
 Package: com.albrhi.roothide
-Version: 1.100.0
-Architecture: iphoneos-arm64e
-Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
-Installed-Size: 1708
-Depends: mobilesubstrate, preferenceloader
-Conflicts: com.albrhi.roothide, com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide, com.dvntm.ytmultimate
-Replaces: com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide
-Filename: debs/com.albrhi.roothide_1.100.0_iphoneos-arm64e.deb
-Size: 2471504
-MD5sum: 67b85f3379e7087aaa81495c556d52cb
-SHA1: f968b1efb659c396d2d5eadba5d5d2d62c6b000f
-SHA256: 1fcd2352fba0326bbd67fc8e8f4ab6175db6d8beade7f830e3a21a7f73827774
-Section: Tweaks
-Homepage: https://github.com/ibrahim2100/albrhi-repo
-Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
- .
- Everything Albrhi makes for social apps, in a single package. Install this and you have
- the Instagram tweak, the YouTube tweak, the X tweak and the TikTok tweak; there is
- nothing else to download and one thing to update.
- .
- ▍CHOOSE FROM SETTINGS
- Settings › Albrhi lists every app Albrhi patches, with a switch each. Turn one off and
- Albrhi does nothing inside that app — no uninstalling, and your settings are kept for
- when you turn it back on. Close and reopen the app for a change to take effect.
- .
- ▍INSTAGRAM
- A download button in every post and reel, a Download Center with a real queue, a feed
- without ads or suggestions, watching stories without telling anyone, and confirmations
- before a mis-tap becomes a notification.
- .
- ▍YOUTUBE
- Downloads with their own player and Download Centre tab, no ads, SponsorBlock, playback
- that keeps going in the background, and a quality ceiling per connection.
- .
- ▍X
- Save any video, photo or GIF to Photos — a download button on the video itself, at the
- best quality X offers, plus a list of everything it has shown you. Plus no ads, no Promote button, no Grok, no Premium nags,
- less tracking, no view counts and a faster launch. Hold two fingers anywhere in X.
- .
- ▍TIKTOK
- No ads — including the launch splash ad — and a download button right in the feed,
- beside like, comment and share, for the video actually on screen, at the best quality
- TikTok offers — and photo posts save as photos, every image in the post. A seek bar
- that stays under the video instead of appearing only while you drag. Three separate
- privacy switches: no story-seen mark, no read receipt sent for a message, no
- profile-view report — turn off just the one you want. Plus the jailbreak hidden from
- every check TikTok asks. Hold two fingers anywhere in TikTok for a real settings
- screen — a switch and an explanation for each feature, what has been resolved for
- download, and live numbers behind every hook.
- .
- ▍GROWING
- New Albrhi tweaks arrive in this same package and appear in the same list, so there is
- never a second thing to install.
- .
- Arabic and English throughout.
- .
- Developed by Ibrahim Ismail AL-Rahn. The Instagram tweak is an educational and corrective
- derivative of SCInsta by SoCuul, rebuilt with AI assistance to improve code quality,
- design, performance and user experience. Open source under the GNU GPL v3, with
- original authorship credited and preserved.
-Tag: role::enduser
-Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
-Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
-Name: Albrhi (roothide)
-Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
-
-Package: com.albrhi.roothide
 Version: 1.101.0
 Architecture: iphoneos-arm64e
 Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
@@ -718,67 +650,73 @@ Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 
-Package: com.albrhi.tiktok
-Version: 0.23.0
-Architecture: iphoneos-arm64
+Package: com.albrhi.roothide
+Version: 1.101.3
+Architecture: iphoneos-arm64e
 Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
-Installed-Size: 460
-Depends: mobilesubstrate
-Conflicts: com.albrhi.tiktok.roothide
-Replaces: com.albrhi.tiktok.roothide
-Filename: debs/com.albrhi.tiktok_0.23.0_iphoneos-arm64.deb
-Size: 118242
-MD5sum: 532c5963995b1aad3fd4e4fcb35c9ee0
-SHA1: b34540c6e314b4c976c515715daf1a693bd0606a
-SHA256: 8afade8d0b133b33df5dd5c9522453c460218af3a32489ae452942c29094180f
+Installed-Size: 1708
+Depends: mobilesubstrate, preferenceloader
+Conflicts: com.albrhi.roothide, com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide, com.dvntm.ytmultimate
+Replaces: com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide
+Filename: debs/com.albrhi.roothide_1.101.3_iphoneos-arm64e.deb
+Size: 2475842
+MD5sum: 2451140f6fabbf3d041b61dda94fd528
+SHA1: 28117714cf7120752b37d21e6e6d63a025a7c688
+SHA256: 5ea398aa8f20e7656e198173b7a316a908400409da4b9a88869783b8c3bbe5e2
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
-Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
- unmodified phone would.
+Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
  .
- ▍NO ADS
- A feed item TikTok's own server marked as an ad never becomes an object at all — refused
- at the model itself, the moment it is built, rather than a view hidden after the fact.
- A separate splash-ad surface is suppressed too.
+ Everything Albrhi makes for social apps, in a single package. Install this and you have
+ the Instagram tweak, the YouTube tweak, the X tweak and the TikTok tweak; there is
+ nothing else to download and one thing to update.
  .
- ▍DOWNLOAD
- One button, right beside like, comment and share, on the video actually on screen.
- Saved straight into Photos — no list to open, no second place to look.
+ ▍CHOOSE FROM SETTINGS
+ Settings › Albrhi lists every app Albrhi patches, with a switch each. Turn one off and
+ Albrhi does nothing inside that app — no uninstalling, and your settings are kept for
+ when you turn it back on. Close and reopen the app for a change to take effect.
  .
- ▍PRIVACY
- Three separate switches, not one — a story's seen mark, a message's read receipt and a
- profile view report to three different places, so turning one off never touches the
- other two. Never touches what this device's own screen shows.
+ ▍INSTAGRAM
+ A download button in every post and reel, a Download Center with a real queue, a feed
+ without ads or suggestions, watching stories without telling anyone, and confirmations
+ before a mis-tap becomes a notification.
  .
- ▍HIDES THE JAILBREAK
- TikTok asks many places whether the device is modified: a direct jailbreak check, its
- signing information, whether the app looks like a genuine App Store build, whether an
- embedded provisioning profile exists, and more. Each is answered the way it would be on
- an unmodified phone. Nothing here touches a purchase, a receipt or a subscription —
- deliberately, even where a reference tweak names a jailbreak check living inside that
- surface.
+ ▍YOUTUBE
+ Downloads with their own player and Download Centre tab, no ads, SponsorBlock, playback
+ that keeps going in the background, and a quality ceiling per connection.
  .
- ▍SEE WHAT IT CAUGHT
- Hold two fingers anywhere in TikTok for a real settings screen: a switch and an
- explanation for every feature, and live numbers behind each hook. Arabic and English.
+ ▍X
+ Save any video, photo or GIF to Photos — a download button on the video itself, at the
+ best quality X offers, plus a list of everything it has shown you. Plus no ads, no Promote button, no Grok, no Premium nags,
+ less tracking, no view counts and a faster launch. Hold two fingers anywhere in X.
  .
- TESTED ON TikTok 46.4.0. Nothing is pinned to a version number: every class is looked up
- at runtime and skipped if it is not there.
+ ▍TIKTOK
+ No ads — including the launch splash ad — and a download button right in the feed,
+ beside like, comment and share, for the video actually on screen, at the best quality
+ TikTok offers — and photo posts save as photos, every image in the post. A seek bar
+ that stays under the video instead of appearing only while you drag. Three separate
+ privacy switches: no story-seen mark, no read receipt sent for a message, no
+ profile-view report — turn off just the one you want. Plus the jailbreak hidden from
+ every check TikTok asks. Hold two fingers anywhere in TikTok for a real settings
+ screen — a switch and an explanation for each feature, what has been resolved for
+ download, and live numbers behind every hook.
  .
- Architecture was read from BandarHL's and al3raQe's published BHTikTok source
- (github.com/BandarHL/BHTikTok, github.com/al3raQe/BHTikTok) and from two further
- compiled references, NA9 For TikTok and VibeTok — none carry a LICENSE file, so all are
- read for where TikTok is hookable only, the same cautious way this project treats every
- unlicensed reference. No code is taken from any of them; every class named here was
- independently confirmed present in TikTok's own binary before being hooked.
+ ▍GROWING
+ New Albrhi tweaks arrive in this same package and appear in the same list, so there is
+ never a second thing to install.
  .
- Developed by Ibrahim Ismail AL-Rahn. Open source under the GNU GPL v3.
+ Arabic and English throughout.
+ .
+ Developed by Ibrahim Ismail AL-Rahn. The Instagram tweak is an educational and corrective
+ derivative of SCInsta by SoCuul, rebuilt with AI assistance to improve code quality,
+ design, performance and user experience. Open source under the GNU GPL v3, with
+ original authorship credited and preserved.
 Tag: role::enduser
-Author: Ibrahim Ismail AL-Rahn
-Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.html
+Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
 Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
-Name: Albrhi for TikTok (rootless)
-Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
+Name: Albrhi (roothide)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 
 Package: com.albrhi.tiktok
 Version: 0.24.0
@@ -904,19 +842,19 @@ Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for TikTok (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
 
-Package: com.albrhi.tiktok.roothide
-Version: 0.23.0
-Architecture: iphoneos-arm64e
+Package: com.albrhi.tiktok
+Version: 0.24.3
+Architecture: iphoneos-arm64
 Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
-Installed-Size: 460
+Installed-Size: 476
 Depends: mobilesubstrate
-Conflicts: com.albrhi.tiktok
-Replaces: com.albrhi.tiktok
-Filename: debs/com.albrhi.tiktok.roothide_0.23.0_iphoneos-arm64e.deb
-Size: 117990
-MD5sum: 4f0d18cbffa26a8cb57e3a87a632f36f
-SHA1: 876b82f9a65e41363ca727889206d3144552349d
-SHA256: 4375d3ffe0aeb07d63f38780fe260448f637220d663d2ea37af978369567b025
+Conflicts: com.albrhi.tiktok.roothide
+Replaces: com.albrhi.tiktok.roothide
+Filename: debs/com.albrhi.tiktok_0.24.3_iphoneos-arm64.deb
+Size: 122756
+MD5sum: 06b1e927cc8c39c141f9c9ced20a0cc1
+SHA1: c34e0addd254b5938cdf049a3fa0019dad1f7149
+SHA256: af9d90fcc465cb82f94670c271bf13242e1c8f87fa19e1f8a4d6f678ad9fd0c6
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
@@ -963,7 +901,7 @@ Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.html
 Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
-Name: Albrhi for TikTok (roothide)
+Name: Albrhi for TikTok (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
 
 Package: com.albrhi.tiktok.roothide
@@ -1090,6 +1028,68 @@ Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for TikTok (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
 
+Package: com.albrhi.tiktok.roothide
+Version: 0.24.3
+Architecture: iphoneos-arm64e
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 476
+Depends: mobilesubstrate
+Conflicts: com.albrhi.tiktok
+Replaces: com.albrhi.tiktok
+Filename: debs/com.albrhi.tiktok.roothide_0.24.3_iphoneos-arm64e.deb
+Size: 122724
+MD5sum: ae031aa68787e17fc3b7fcfb502e0251
+SHA1: 20ee0874b3fd2bee3f7d4026d4fa385840545c2e
+SHA256: 2a252060ec79bcbd06196d5646412d0fa32b6c2108b177efc4ed3bf19d183b7d
+Section: Tweaks
+Homepage: https://github.com/ibrahim2100/albrhi-repo
+Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
+ unmodified phone would.
+ .
+ ▍NO ADS
+ A feed item TikTok's own server marked as an ad never becomes an object at all — refused
+ at the model itself, the moment it is built, rather than a view hidden after the fact.
+ A separate splash-ad surface is suppressed too.
+ .
+ ▍DOWNLOAD
+ One button, right beside like, comment and share, on the video actually on screen.
+ Saved straight into Photos — no list to open, no second place to look.
+ .
+ ▍PRIVACY
+ Three separate switches, not one — a story's seen mark, a message's read receipt and a
+ profile view report to three different places, so turning one off never touches the
+ other two. Never touches what this device's own screen shows.
+ .
+ ▍HIDES THE JAILBREAK
+ TikTok asks many places whether the device is modified: a direct jailbreak check, its
+ signing information, whether the app looks like a genuine App Store build, whether an
+ embedded provisioning profile exists, and more. Each is answered the way it would be on
+ an unmodified phone. Nothing here touches a purchase, a receipt or a subscription —
+ deliberately, even where a reference tweak names a jailbreak check living inside that
+ surface.
+ .
+ ▍SEE WHAT IT CAUGHT
+ Hold two fingers anywhere in TikTok for a real settings screen: a switch and an
+ explanation for every feature, and live numbers behind each hook. Arabic and English.
+ .
+ TESTED ON TikTok 46.4.0. Nothing is pinned to a version number: every class is looked up
+ at runtime and skipped if it is not there.
+ .
+ Architecture was read from BandarHL's and al3raQe's published BHTikTok source
+ (github.com/BandarHL/BHTikTok, github.com/al3raQe/BHTikTok) and from two further
+ compiled references, NA9 For TikTok and VibeTok — none carry a LICENSE file, so all are
+ read for where TikTok is hookable only, the same cautious way this project treats every
+ unlicensed reference. No code is taken from any of them; every class named here was
+ independently confirmed present in TikTok's own binary before being hooked.
+ .
+ Developed by Ibrahim Ismail AL-Rahn. Open source under the GNU GPL v3.
+Tag: role::enduser
+Author: Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.html
+Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
+Name: Albrhi for TikTok (roothide)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
+
 Package: com.albrhi.tweak
 Version: 4.7.0
 Architecture: iphoneos-arm64
@@ -1099,10 +1099,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tweak.roothide
 Replaces: com.albrhi.tweak.roothide
 Filename: debs/com.albrhi.tweak_4.7.0_iphoneos-arm64.deb
-Size: 506016
-MD5sum: 99b540b56ccb4e808046e7782c505fab
-SHA1: 227632970e63705ab89d05b28db2bd351c11c9f2
-SHA256: f0fb89fe2b3fc2026ddaa59c57b5904fdfbb2d75c61c6a283e39eef81db2726f
+Size: 505968
+MD5sum: 0889756072e1b1cff6a8b6aa13fd4a85
+SHA1: f6c891c590225951c8797baec1bdc98b8ca1e1a5
+SHA256: 17a134c2cec9f1002598a6bf97799ef70306174a5f05b6dd1c5e305df5b4c4c6
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download anything, hide the noise, browse invisibly — in Arabic or English.
@@ -1171,10 +1171,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tweak
 Replaces: com.albrhi.tweak
 Filename: debs/com.albrhi.tweak.roothide_4.7.0_iphoneos-arm64e.deb
-Size: 506020
-MD5sum: e7231275b82b1d914c755f9d6937f745
-SHA1: 01842eade02988e238b2692eaea261effc3374c3
-SHA256: d87e6c74dee3fe13b22893c8f8fd7c9469ec0f4af6cc63ead1f371e491e36b9e
+Size: 506230
+MD5sum: 081fac49ea552921951b9568ef18cddf
+SHA1: d6b6665cb0c3740580bd4bd0cd3b995b2dc603a1
+SHA256: 9fe3aa0e53a3548fdc1c6f501133dfc422ecf21f48837ffac2243af5c2f43055
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download anything, hide the noise, browse invisibly — in Arabic or English.
@@ -1243,10 +1243,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.twitter.roothide
 Replaces: com.albrhi.twitter.roothide
 Filename: debs/com.albrhi.twitter_0.22.0_iphoneos-arm64.deb
-Size: 103354
-MD5sum: 2142fa403ce6b036e6ec088dd14fe165
-SHA1: f61d7374e95c6b34bf56a8c365b166a8e24760a4
-SHA256: b2b0011762ee959aa6b30e20f9026fa1f8d8876264e320875065e8531a0662a8
+Size: 103392
+MD5sum: 0f99d8a8f46bb19c4edef2294f146bf3
+SHA1: ce480ec69c0e9fd57123ffc4904cf543c1a860af
+SHA256: b6190e578532c44a48622b545da594b8ed632dd105d90eccb22e847fa54cbd6a
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
@@ -1317,10 +1317,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.twitter
 Replaces: com.albrhi.twitter
 Filename: debs/com.albrhi.twitter.roothide_0.22.0_iphoneos-arm64e.deb
-Size: 103310
-MD5sum: 5f668a5f1e95bdd2d425c8f8d4b8ac1e
-SHA1: 16437adc1839746a224502b431fe333ff922eac3
-SHA256: e35ff0eeda0206abb3964dd463d2927cb987c66935d333feb9d4291edb275f24
+Size: 103468
+MD5sum: 0b1e875873a0b1353131c1560b44a378
+SHA1: c7dd9c83936d941b7ce7a9c1440773e4993078b0
+SHA256: 11a9bcce843095a8b3ec5d11287dabd64b2322669c68fd60da726afb7e2634a2
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
@@ -1645,10 +1645,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.youtube.roothide
 Replaces: com.albrhi.youtube.roothide
 Filename: debs/com.albrhi.youtube_1.42.1_iphoneos-arm64.deb
-Size: 484174
-MD5sum: a77d7afab445db28e6fcffb3bab5b62f
-SHA1: 746c3ed94c712e257ec4ae33f7a9480fed6c6624
-SHA256: 1a448c0f62228a0f141a4dc8337c395c7c8f44143358358a070d54f5c02ee0e6
+Size: 484664
+MD5sum: 2279c30f49159e8d55d4f28bb4e88362
+SHA1: 880c386def9ba2fe6c61a45e956f5ade9778e15a
+SHA256: 2dcb8ed3011520d948287dd16cbf495137c4b176a2b489aed8eabf8d05553a92
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
@@ -1707,10 +1707,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.youtube
 Replaces: com.albrhi.youtube
 Filename: debs/com.albrhi.youtube.roothide_1.42.1_iphoneos-arm64e.deb
-Size: 484504
-MD5sum: 3ef0d9c0ae13f68366d3a23f1c835f9f
-SHA1: 279cef6bbb3baf6d383496f790459c3a3ebf58b2
-SHA256: 05044881f417856165c8a89d7285f1e6e87531902fd0ba445cc95c17d3221b73
+Size: 484308
+MD5sum: c9b19015425b7df8f709296302c0e57f
+SHA1: f5edf4a48e96206b9cb011ba008703ea1d4f9d85
+SHA256: f7ba4a4ccfeed546eff9a96b0b6ea68a8c919ce32c4d769b4a22bd37bef753e5
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
