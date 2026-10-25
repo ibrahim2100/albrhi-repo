@@ -112,6 +112,11 @@ static UIView *sciFill = nil;
 
         [self layout:window];
 
+        // A banner that was last a notice had its bar hidden; every other state shows it.
+        sciTrack.hidden = NO;
+        sciIcon.tintColor = [UIColor whiteColor];
+        sciFill.backgroundColor = [UIColor whiteColor];
+
         sciLabel.text = text;
         sciIcon.image = [UIImage systemImageNamed:symbol];
 
@@ -161,6 +166,22 @@ static UIView *sciFill = nil;
     dispatch_async(dispatch_get_main_queue(), ^{
         sciIcon.tintColor = ok ? [UIColor systemGreenColor] : [UIColor systemOrangeColor];
         sciFill.backgroundColor = sciIcon.tintColor;
+    });
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.2 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        [self dismiss];
+    });
+}
+
++ (void)noticeWithText:(NSString *)text symbol:(NSString *)symbol {
+    [self showText:text symbol:symbol progress:0];
+
+    // Queued after the update above, on the same queue, so it applies to the banner that update built.
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (!sciBanner) return;
+        sciTrack.hidden = YES;
+        sciLabel.frame = CGRectMake(44, (sciBanner.bounds.size.height - 18) / 2, sciLabel.frame.size.width, 18);
     });
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.2 * NSEC_PER_SEC)),

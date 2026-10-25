@@ -73,14 +73,6 @@
                 },
                 @{
                     kSCIRowKind: kSCIKindSwitch,
-                    kSCIRowPref: SCIPrefFollowsYou,
-                    kSCIRowTitle: SCILocalized(@"row_follows_you"),
-                    kSCIRowNote: SCILocalized(@"row_follows_you_note"),
-                    kSCIRowIcon: @"person.fill.checkmark",
-                    kSCIRowColor: [UIColor systemIndigoColor],
-                },
-                @{
-                    kSCIRowKind: kSCIKindSwitch,
                     kSCIRowPref: SCIPrefLongComments,
                     kSCIRowTitle: SCILocalized(@"row_long_comments"),
                     kSCIRowNote: SCILocalized(@"row_long_comments_note"),

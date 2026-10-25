@@ -225,12 +225,14 @@ looked up, through the superclass chain, in the `tools/objc-classes.py` dumps of
 
 ### Reading the table
 
-- **NA9's own hooks are dead in 46.4.0 and 47.1.0 on exactly the selectors we found dead in ours.**
-  `TTKStoryMarkReadService -markAsRead:` (a Swift class: its story-seen privacy has never worked in this range),
-  `PIPOStoreKitHelper -isJailBroken` (an instance hook of a class method), `FBSDKAppEventsUtility +isDebugBuild`
-  (a class hook of an instance method), `TTKTabBarController -px_isTabBarHidden/_isBarHidden/_isBarEffectivelyHidden`,
-  `AWEIMSendMessageController -sendMessage:conversation:completion:` and `…progress:completion:`, `AWEIMChatRoomMessageSender`.
-  Two references agreeing on a selector is not the app having it.
+- **Eighteen of NA9's hooks name a selector that no class in the chain declares, in both builds** (the `NOT DECLARED` rows).
+  Logos/MobileSubstrate would *add* such a method, so the hook cannot intercept a call the app makes through its declared methods.
+  What is established: the declaration is absent from both dumps. What is **not** established: whether the feature behind
+  it works for NA9 some other way. The owner reports that NA9 works on 47.1.0 (taken from him, not observed here), so a
+  feature built on a `NOT DECLARED` row may reach the app through another route; for `TTKStoryMarkReadService -markAsRead:` a scan
+  of `MusicallyCore` found three sends of a `markAsRead:` selector (inside `TTKRichContentMarkReadService` code) to a receiver
+  no class declares it on, which is how a hook on a non-declaring class could still matter and is why it is left open.
+  **A selector named by a reference tweak is a lead, never evidence that the app has it or that the hook is live.**
 - **`TTKProfileUserRelationInfoComponent -p_estimatedTotalWidth` exists only from 47.1.0** (`p_calculateTotalWidth` is
   its older sibling): NA9 hooks the three layout methods (`p_layoutComponents`, `p_adjustItemComponent`, the width one)
   to add a "posts" statistic and a relationship word to the profile's followers/following/likes row.
@@ -297,4 +299,4 @@ reaches the store-receipt and request-signing layers, which §2 treats separatel
   a recovered control flow. Constants such as the section header height and the insertion predicate were not read.
 - Entries marked `undecoded` (three) and the system-class names with a corrupted byte (`NSURLRequest…`, `BDAssert`, `VKBundle`)
   come from the emulator following one branch only.
-- NA9's version 1.0.1 targets an unknown TikTok build; "works there" was never observed.
+- The owner reports NA9 1.0.1 works on TikTok 47.1.0 (the build analysed here). That is his observation; nothing in this document was run.

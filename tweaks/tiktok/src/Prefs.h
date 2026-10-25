@@ -173,9 +173,6 @@ static inline BOOL SCIPrefEnabled(NSString *key) {
 /// says nothing, so opening an old chat never fires it. Off by default.
 #define SCIPrefReadAlert        @"read_alert"
 
-/// "Follows you" on every profile it is true for: the label is behind an A/B flag (`ABTestCodeGen -addFollowsYouLabelEnabled`, `B16@0:8`) that
-/// TikTok switches per account, so some profiles show it and some do not. Forced on. Off by default.
-#define SCIPrefFollowsYou       @"follows_you"
 
 /// Likes and country under the publish date: `AWEAwemeModel -statistics` -> `-diggCount`, and `-region`. Drawn in the label the date already
 /// owns, so there is no new view to place. Off by default.

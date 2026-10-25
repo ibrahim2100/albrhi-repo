@@ -71,7 +71,7 @@ static void SCITTCompareReads(NSString *conversation, NSString *me, NSString *na
 
     sciReadAlerts++;
     NSString *text = name.length ? [NSString stringWithFormat:SCILocalized(@"read_alert_named"), name] : SCILocalized(@"read_alert");
-    [SCITTToast finishWithText:text ok:YES];
+    [SCITTToast noticeWithText:text symbol:@"envelope.open.fill"];
 }
 
 %group SCITTReadAlertGroup

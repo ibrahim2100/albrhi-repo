@@ -8,7 +8,7 @@
 #import <Foundation/Foundation.h>
 
 /// Installs the four small answers in this file's group, each only where its class and selectors exist with the encoding they were
-/// written against: suggested accounts, "Follows you", longer comments, closed comments.
+/// written against: suggested accounts, longer comments, closed comments.
 void SCITTInstallFeedFilters(void);
 
 /// A feed model that is a LIVE item or a suggested-account card, when the matching switch is on. Used by the ad filter, which is where models are built.

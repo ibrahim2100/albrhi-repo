@@ -29,6 +29,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// Replaces whatever is showing with a final state and takes it away after a moment.
 + (void)finishWithText:(NSString *)text ok:(BOOL)ok;
 
+/// An information banner: an icon and a line, **no progress bar and no green check.** The banner a download ends with is a
+/// check mark and a full green bar, so using it to say "this account has 124 videos" read as "something was saved"; a notice
+/// that only informs must not look like a transfer finishing.
++ (void)noticeWithText:(NSString *)text symbol:(NSString *)symbol;
+
 /// Takes it away now.
 + (void)dismiss;
 
