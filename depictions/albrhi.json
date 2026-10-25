@@ -106,40 +106,40 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.101.2",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **تيك توك 0.24.2 — إزالة «يتابعك»، وشريط عدد الفيديوهات وتنبيه القراءة بلا علامة «تم الحفظ».**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "v1.101.1",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **تيك توك 0.24.1 — صف «البرهي» قسم أصلي في إعدادات تيك توك (بالطريقة المقروءة من NA9)، مع الصف القديم احتياطاً.**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.101.0",
           "useBoldText": true
         },
         {
           "class": "DepictionMarkdownView",
           "markdown": "• **تيك توك 0.24.0 — مراجعة كاملة: صف «البرهي» داخل إعدادات تيك توك، إخفاء LIVE يشمل الشارة والفقاعة، شريط «يتابعك» يعمل، خصوصية القصص على الدالة الصحيحة، تجاوز الجيلبريك…",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.100.0",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **تيك توك 0.23.0 — تسع ميزات اختيارية للخلاصة والمحادثات والملفات (إخفاء LIVE، بلا حسابات مقترحة، تنبيه القراءة، «يتابعك»، ترتيب أي حساب، عدد الفيديوهات، الإعجابات…",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.99.0",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **يوتيوب 1.42.1 — حجب الإعلانات على مستوى الطلب يعمل على 21.41.5 (الصنف تغيّر اسمه).**",
           "useSpacing": true
         },
         {
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.101.0"
+          "text": "1.101.2"
         },
         {
           "class": "DepictionTableTextView",
