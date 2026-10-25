@@ -94,3 +94,93 @@ REA's whole-binary analysis of YouTube (225 MB) was started for `didParseSelecta
 the owner after 11 minutes without a result**; it is neither a success nor a failure of the tool. Decompiling a
 single function from a big app needs a persistent session (the MCP server keeps one open) rather than one
 `rea decompile` command per question.
+
+
+---
+
+# Rocket 4.24.0 (received 2026-10-25) — what changed, what the binary says, what REA did
+
+**Same line as above: features and architecture only.** Licence, store, entitlement and the string-decryption
+routine (Rocket's strings are not readable in the binary and `CCCrypt` is imported; which one decrypts what was not established) were **not** examined, and no decryption
+was attempted: decrypting every string would expose the paid-store code this file deliberately leaves alone.
+
+## The vendor's notes (public Sileo depiction, read 2026-10-25)
+
+- **4.24.0** — hide friend suggestions in Reels; OLED theme fix (toggle switches turned black).
+- 4.23.2 — profile watching faster ("significantly improved"); the "For You" menu label when Following is the default feed.
+- 4.23.1 — bug fixes, iPad navigation. 4.23.0 — Following as the default Home feed, save feed posts without the collection picker, OLED Continue button.
+- Compatibility notes still stop at Instagram 443 (4.13.1). Whether 4.24.0 runs on 450 is not stated anywhere.
+
+## The two binaries, side by side
+
+| | 4.23.1 | 4.24.0 |
+|---|---|---|
+| `Rocket.dylib` | 4,869,600 bytes | 4,903,104 bytes (+33 KB) |
+| classes | 287 (282 hashed) | 289 (284 hashed) |
+| app-side selectors named in the clear (`ref-leads.py`) | 604 | 605; **one new**, `_ra_scrollFadeView` (Rocket's own) |
+| of which already named in `tweaks/instagram` | 54 | 54 |
+
+**Everything is renamed on every build**: the class names *and* the selectors of Rocket's own classes are hashes that
+change between releases (`z0453dff…` in one, a different string in the next), so a class-by-class diff of two Rocket
+builds is meaningless — only 5 class names are readable at all (`RATabBarLayoutBarCell/EmptyCell/HiddenCell`, `SAMKeychain`,
+`SDWebImageDownloader`). A diff that matches on a *name-independent* signature (superclass, counts, ivar types, the
+few clear selectors) still pairs only part of them (54 new vs 52 gone), because Rocket also changes ivar names and
+counts. **The new feature leaves no new app-side selector**, so it is built from selectors it already used, and its
+class and string names are encrypted: it cannot be read from this binary without the decryption step above.
+
+## How Rocket works, from what is in the clear
+
+- **Hooks are installed at runtime through the Objective-C runtime**, not through Substrate: it imports
+  `class_replaceMethod`, `method_setImplementation`, `method_exchangeImplementations` and `imp_implementationWithBlock`
+  (plus `objc_allocateClassPair`, `class_addMethod`, `class_addProtocol`, `objc_allocateProtocol` for classes it builds
+  itself), and **no `MSHookMessageEx`**. Block implementations (`imp_implementationWithBlock`) mean most replacements are
+  closures, not functions with names. (NA9, by contrast, uses `MSHookMessageEx` with trampolines; see `na9-analysis.md`.)
+- **Linked frameworks say what it does:** `AVFoundation`/`AVKit`/`VideoToolbox`/`CoreMedia`/`CoreVideo` (downloads, quality,
+  Reels in PiP), `Photos`, `ImageIO`, `CoreImage`, `Accelerate`; `JavaScriptCore` (a scripting layer or remote rules —
+  not read); `sqlite3` (a local store: downloads, watched profiles); `MetricKit` (probably the crash-report export the notes mention);
+  `UserNotifications` (watch profile notices); `MapKit`, `WebKit`, `QuickLook`, `CFNetwork`, `Security` (keychain via
+  the bundled `SAMKeychain`), `CoreText` (themes and custom fonts).
+- **Bundled resources:** eight app icons (Ember, Evergreen, Midnight, Ocean, Orchid, Rose, Sand, Slate, each in several sizes),
+  theme previews in light and dark for each, four home-feed layout icons (`layout-icon-grid/list/multi/video`), a
+  release-highlights image, a `NYTPhotoViewer` bundle (the profile-picture viewer), `cercube-icon.png`, and `ra-store-*`
+  images (the paid store; not examined).
+- **A custom tab-bar layout** is the only feature whose classes are readable (`RATabBarLayout*Cell`).
+
+## Where REA stood
+
+REA 6.4.0 with Ghidra 12.1.4 opened the file (arm64, sha256 `ccac562e…`) and then **timed out on every query after the
+first (330 s each, three tries: overview, class list, session status)**; no analysis process was observed running. The
+4.4 MB `__text` of an obfuscated dylib did not finish in the budget the server allows, where NA9's 1.6 MB did. Nothing
+here was decompiled. What did the work: `objc-classes.py --dump`, `ref-leads.py`, `otool`, and — the important
+part — **an Instagram binary on this machine** (below).
+
+## Verified against Instagram 450.1.0 (the step this file said was missing)
+
+`com.burbn.instagram_450.1.0_und3fined.ipa` is in Downloads. Of Rocket 4.24.0's 541 usable leads (property noise and
+underscore ivars removed), **329 are declared by some class in 450.1.0** (main binary plus `FBSharedFramework`) and 212
+are not (Rocket's own helpers such as `rocketSettingsAccent`, UIKit/SDK selectors and a few Instagram selectors that
+are gone). So the lead list is mostly real, and `docs/investigations/instagram-450-check.md` is the other half of the
+same exercise: **the Instagram tweak's own hooks against 450.1.0** — 31 of the classes it hooks now exist only under
+Swift-mangled names.
+
+## "Hide friend suggestions in Reels" (new in 4.24.0) — the 450.1.0 classes behind it
+
+Nothing in Rocket's clear text names it, but 450.1.0 has a family built for exactly this carousel:
+
+- `IGSundialSuggestedUsersSectionController` (`IGListSectionController`; ivars `_suggestUserModel : IGSuggestedUserInReelsModel`,
+  `_netegoItem : IGSundialNetegoItem`, `_quadCardProvider`; `-numberOfItems q16@0:8`, `-cellForItemAtIndex:`, `-isAd B16@0:8`)
+  and the follow/dismiss callbacks `quadCardContainerProvider:didTapFollowButtonForUser:index:`, `…didTapDismissButtonForUser:index:isLastCard:`.
+- `_TtC29IGSundialNetegoSuggestedUsers43IGSundialFriendingCarouselSectionController` (Swift; `-numberOfItems q16@0:8`,
+  `-sizeForItemAtIndex:`, `-didUpdateToObject:`), with `IGSundialFriendingCardProvider`, `IGSundialFriendingCarouselCell`,
+  `…PageCell`, `…ContainerView`, and the logger `IGSundialNetegoSuggestedUsersLogger`.
+- The old name `IGSuggestionsUnitViewModel` / `IGSuggestedUnitViewModel` the Instagram tweak hooks for "no suggested users"
+  survives only as a Swift-mangled class (`_TtC17IGSuggestionsUnit26IGSuggestionsUnitViewModel`) and the other not at all.
+
+**A candidate gate, not a finding:** an IGListKit section whose `-numberOfItems` answers 0 draws nothing, which is how the
+tweak's other list filters work. Whether either controller's `-numberOfItems` is the right door, and whether returning 0
+there is safe while the list adapter holds the object, is unknown and needs a device. **Not built.**
+
+## What Rocket 4.24.0 adds to the gap list above
+
+Only one row: **hide friend suggestions in Reels** (gap; leads above). The OLED toggle fix and the profile-watching
+speed-up change nothing we lack, and the Following-default and save-without-picker features of 4.23.0 were already rows.
