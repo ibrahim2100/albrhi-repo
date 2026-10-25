@@ -87,11 +87,12 @@ static inline BOOL SCIPrefEnabled(NSString *key) {
 /// whole album changes. Off means one picture saves as one picture, with no question.
 #define SCIPrefPhotoAudio       @"photo_audio"
 
-/// The version that showed the welcome screen, or nothing if it has never been shown.
-///
-/// A string rather than a BOOL: it costs the same and it answers a question a later release might
-/// actually have -- which build this person met first -- where a BOOL only ever answers "yes".
-#define SCIPrefWelcomeSeen      @"welcome_seen_version"
+/// The edition of the welcome screen this phone has seen (an integer, zero when none). The screen belongs to an *update*, not
+/// to an install: it carries what that update changed, and it appears once, on the first launch after that update is
+/// installed. `kSCIWelcomeEdition` in SCITTWelcome.m is raised by hand when a release has something worth saying, so an
+/// ordinary patch release stays silent. (It replaced `welcome_seen_version`, a string that only ever recorded the first
+/// install; that key is no longer read.)
+#define SCIPrefWelcomeEdition   @"welcome_edition_seen"
 
 /// Ask before a like, and ask before a follow.
 ///

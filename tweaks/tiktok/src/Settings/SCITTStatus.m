@@ -8,7 +8,7 @@
 #import "SCITTStatus.h"
 #import "SCITTSectionRegistry.h"
 #import "SCITTChoiceList.h"
-#import "SCITTBadge.h"
+#import "SCITTRowIcon.h"
 #import "SCITTReport.h"
 #import "../UI/SCITTWelcome.h"
 #import "../Tweak.h"
@@ -16,284 +16,76 @@
 #import "../Localization/SCILocalize.h"
 #import "shared/src/SCIPanelGate.h"
 
-// MARK: - Cards
+// MARK: - The identity header
 
 ///
-/// **One cell class per shape, and three shapes is the whole screen.**
+/// **The only custom cell on the screen.** Everything else is a plain list cell, so it draws, highlights, separates and
+/// mirrors in right-to-left exactly the way TikTok's own Settings does -- that was the point of the redesign, and the
+/// reason the cards, the two-column grid and the coloured icon wells are gone.
 ///
-/// The old screen drew everything with `UITableViewCellStyleSubtitle` and an image view, which is
-/// why every row looked like every other row whether it was a switch, a link or a heading. A card
-/// that holds a switch and a card that opens a page are different things and now look different.
+/// The header is centred and sits on the page rather than in a card: the mark, the name, the versions and one line that
+/// says how much is switched on. When the panel has the tweak switched off for TikTok the line says that instead, in
+/// orange, because a screen of switches that are being ignored is worse than an empty one.
 ///
-
-/// The identity card: the mark, the name, the version, and how much is switched on.
-@interface SCITTHeroCard : UICollectionViewCell
-@property (nonatomic, strong) UILabel *title;
-@property (nonatomic, strong) UILabel *subtitle;
-@property (nonatomic, strong) UILabel *tally;
-@property (nonatomic, strong) UIView *warning;
-@property (nonatomic, strong) UILabel *warningText;
+@interface SCITTHeader : UICollectionViewCell
+@property (nonatomic, strong) UILabel *name;
+@property (nonatomic, strong) UILabel *versions;
+@property (nonatomic, strong) UILabel *state;
 @end
 
-@implementation SCITTHeroCard
+@implementation SCITTHeader
 
 - (instancetype)initWithFrame:(CGRect)frame {
-    self = [super initWithFrame:frame];
-    if (!self) return self;
+    if (!(self = [super initWithFrame:frame])) return nil;
 
-    self.contentView.backgroundColor = [UIColor secondarySystemGroupedBackgroundColor];
-    self.contentView.layer.cornerRadius = 22;
-    self.contentView.layer.cornerCurve = kCACornerCurveContinuous;
-
-    // The mark is the download glyph on an accent disc: the same arrow as the button in the feed
-    // and the icon on the saving banner. Three places, one identity -- and deliberately not
-    // TikTok's own music note, which would be borrowing somebody else's mark.
-    UIView *disc = [[UIView alloc] init];
-    disc.backgroundColor = SCIAccent();
-    disc.layer.cornerRadius = 15;
-    disc.layer.cornerCurve = kCACornerCurveContinuous;
-    disc.translatesAutoresizingMaskIntoConstraints = NO;
-
+    // The mark is the download glyph on the accent: the arrow on the feed button and on the banner, so the
+    // identity is the same in three places, and not TikTok's own music note, which would be borrowing a mark.
+    UIView *mark = [[UIView alloc] init];
+    mark.backgroundColor = SCIAccent();
+    mark.layer.cornerRadius = 17;
+    mark.layer.cornerCurve = kCACornerCurveContinuous;
     UIImageView *glyph = [[UIImageView alloc] initWithImage:
         [UIImage systemImageNamed:@"arrow.down"
-                withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:15
-                                                                                 weight:UIImageSymbolWeightBold]]];
+                withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:28 weight:UIImageSymbolWeightBold]]];
     glyph.tintColor = [UIColor whiteColor];
     glyph.translatesAutoresizingMaskIntoConstraints = NO;
-    [disc addSubview:glyph];
+    [mark addSubview:glyph];
 
-    self.title = [[UILabel alloc] init];
-    self.title.font = [UIFont systemFontOfSize:22 weight:UIFontWeightBold];
-    self.title.textColor = [UIColor labelColor];
-    self.title.translatesAutoresizingMaskIntoConstraints = NO;
+    self.name = [[UILabel alloc] init];
+    self.name.font = [UIFont systemFontOfSize:20 weight:UIFontWeightBold];
+    self.name.textColor = [UIColor labelColor];
+    self.name.textAlignment = NSTextAlignmentCenter;
 
-    self.subtitle = [[UILabel alloc] init];
-    self.subtitle.font = [UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightMedium];
-    self.subtitle.textColor = [UIColor secondaryLabelColor];
-    self.subtitle.translatesAutoresizingMaskIntoConstraints = NO;
+    self.versions = [[UILabel alloc] init];
+    self.versions.font = [UIFont monospacedDigitSystemFontOfSize:12.5 weight:UIFontWeightRegular];
+    self.versions.textColor = [UIColor secondaryLabelColor];
+    self.versions.textAlignment = NSTextAlignmentCenter;
 
-    self.tally = [[UILabel alloc] init];
-    self.tally.font = [UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
-    self.tally.textColor = SCIAccent();
-    self.tally.translatesAutoresizingMaskIntoConstraints = NO;
+    self.state = [[UILabel alloc] init];
+    self.state.font = [UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
+    self.state.textAlignment = NSTextAlignmentCenter;
+    self.state.numberOfLines = 0;
 
-    self.warning = [[UIView alloc] init];
-    self.warning.backgroundColor = [[UIColor systemRedColor] colorWithAlphaComponent:0.14];
-    self.warning.layer.cornerRadius = 12;
-    self.warning.layer.cornerCurve = kCACornerCurveContinuous;
-    self.warning.translatesAutoresizingMaskIntoConstraints = NO;
-    self.warning.hidden = YES;
-
-    self.warningText = [[UILabel alloc] init];
-    self.warningText.font = [UIFont systemFontOfSize:12 weight:UIFontWeightSemibold];
-    self.warningText.textColor = [UIColor systemRedColor];
-    self.warningText.numberOfLines = 0;
-    self.warningText.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.warning addSubview:self.warningText];
-
-    for (UIView *view in @[disc, self.title, self.subtitle, self.tally, self.warning]) {
-        [self.contentView addSubview:view];
-    }
+    UIStackView *stack = [[UIStackView alloc] initWithArrangedSubviews:@[mark, self.name, self.versions, self.state]];
+    stack.axis = UILayoutConstraintAxisVertical;
+    stack.alignment = UIStackViewAlignmentCenter;
+    stack.spacing = 4;
+    [stack setCustomSpacing:12 afterView:mark];
+    [stack setCustomSpacing:10 afterView:self.versions];
+    stack.translatesAutoresizingMaskIntoConstraints = NO;
+    mark.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.contentView addSubview:stack];
 
     [NSLayoutConstraint activateConstraints:@[
-        [disc.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:18],
-        [disc.topAnchor constraintEqualToAnchor:self.contentView.topAnchor constant:18],
-        [disc.widthAnchor constraintEqualToConstant:30],
-        [disc.heightAnchor constraintEqualToConstant:30],
-        [glyph.centerXAnchor constraintEqualToAnchor:disc.centerXAnchor],
-        [glyph.centerYAnchor constraintEqualToAnchor:disc.centerYAnchor],
-
-        [self.title.leadingAnchor constraintEqualToAnchor:disc.trailingAnchor constant:12],
-        [self.title.centerYAnchor constraintEqualToAnchor:disc.centerYAnchor],
-        [self.title.trailingAnchor constraintLessThanOrEqualToAnchor:self.contentView.trailingAnchor constant:-18],
-
-        [self.subtitle.leadingAnchor constraintEqualToAnchor:disc.leadingAnchor],
-        [self.subtitle.topAnchor constraintEqualToAnchor:disc.bottomAnchor constant:12],
-
-        [self.tally.leadingAnchor constraintEqualToAnchor:disc.leadingAnchor],
-        [self.tally.topAnchor constraintEqualToAnchor:self.subtitle.bottomAnchor constant:4],
-
-        [self.warning.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:18],
-        [self.warning.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-18],
-        [self.warning.topAnchor constraintEqualToAnchor:self.tally.bottomAnchor constant:12],
-        [self.warning.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor constant:-18],
-
-        [self.warningText.leadingAnchor constraintEqualToAnchor:self.warning.leadingAnchor constant:12],
-        [self.warningText.trailingAnchor constraintEqualToAnchor:self.warning.trailingAnchor constant:-12],
-        [self.warningText.topAnchor constraintEqualToAnchor:self.warning.topAnchor constant:10],
-        [self.warningText.bottomAnchor constraintEqualToAnchor:self.warning.bottomAnchor constant:-10],
+        [mark.widthAnchor constraintEqualToConstant:68],
+        [mark.heightAnchor constraintEqualToConstant:68],
+        [glyph.centerXAnchor constraintEqualToAnchor:mark.centerXAnchor],
+        [glyph.centerYAnchor constraintEqualToAnchor:mark.centerYAnchor],
+        [stack.topAnchor constraintEqualToAnchor:self.contentView.topAnchor constant:8],
+        [stack.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor constant:-12],
+        [stack.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:24],
+        [stack.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-24],
     ]];
-
-    // With no warning the card ends under the tally, so the empty banner does not leave a gap.
-    NSLayoutConstraint *tight = [self.tally.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor constant:-18];
-    tight.priority = UILayoutPriorityDefaultHigh;
-    tight.active = YES;
-
-    return self;
-}
-
-@end
-
-/// A category on the root grid: an icon in its own tinted square, a name, and a count.
-@interface SCITTCategoryCard : UICollectionViewCell
-@property (nonatomic, strong) UIImageView *icon;
-@property (nonatomic, strong) UIView *iconWell;
-@property (nonatomic, strong) UILabel *title;
-@property (nonatomic, strong) UILabel *count;
-@end
-
-@implementation SCITTCategoryCard
-
-- (instancetype)initWithFrame:(CGRect)frame {
-    self = [super initWithFrame:frame];
-    if (!self) return self;
-
-    self.contentView.backgroundColor = [UIColor secondarySystemGroupedBackgroundColor];
-    self.contentView.layer.cornerRadius = 18;
-    self.contentView.layer.cornerCurve = kCACornerCurveContinuous;
-
-    self.iconWell = [[UIView alloc] init];
-    self.iconWell.layer.cornerRadius = 11;
-    self.iconWell.layer.cornerCurve = kCACornerCurveContinuous;
-    self.iconWell.translatesAutoresizingMaskIntoConstraints = NO;
-
-    self.icon = [[UIImageView alloc] init];
-    self.icon.contentMode = UIViewContentModeScaleAspectFit;
-    self.icon.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.iconWell addSubview:self.icon];
-
-    self.title = [[UILabel alloc] init];
-    self.title.font = [UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
-    self.title.textColor = [UIColor labelColor];
-    self.title.numberOfLines = 2;
-    self.title.translatesAutoresizingMaskIntoConstraints = NO;
-
-    self.count = [[UILabel alloc] init];
-    self.count.font = [UIFont systemFontOfSize:12 weight:UIFontWeightMedium];
-    self.count.textColor = [UIColor secondaryLabelColor];
-    self.count.translatesAutoresizingMaskIntoConstraints = NO;
-
-    for (UIView *view in @[self.iconWell, self.title, self.count]) [self.contentView addSubview:view];
-
-    [NSLayoutConstraint activateConstraints:@[
-        [self.iconWell.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:14],
-        [self.iconWell.topAnchor constraintEqualToAnchor:self.contentView.topAnchor constant:14],
-        [self.iconWell.widthAnchor constraintEqualToConstant:34],
-        [self.iconWell.heightAnchor constraintEqualToConstant:34],
-
-        [self.icon.centerXAnchor constraintEqualToAnchor:self.iconWell.centerXAnchor],
-        [self.icon.centerYAnchor constraintEqualToAnchor:self.iconWell.centerYAnchor],
-        [self.icon.widthAnchor constraintEqualToConstant:18],
-        [self.icon.heightAnchor constraintEqualToConstant:18],
-
-        [self.title.leadingAnchor constraintEqualToAnchor:self.iconWell.leadingAnchor],
-        [self.title.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-12],
-        [self.title.topAnchor constraintEqualToAnchor:self.iconWell.bottomAnchor constant:10],
-
-        [self.count.leadingAnchor constraintEqualToAnchor:self.iconWell.leadingAnchor],
-        [self.count.topAnchor constraintEqualToAnchor:self.title.bottomAnchor constant:2],
-        [self.count.bottomAnchor constraintLessThanOrEqualToAnchor:self.contentView.bottomAnchor constant:-14],
-    ]];
-
-    return self;
-}
-
-/// The press state, because a card that opens a page should say so when it is touched.
-- (void)setHighlighted:(BOOL)highlighted {
-    [super setHighlighted:highlighted];
-    [UIView animateWithDuration:0.12 animations:^{
-        self.contentView.transform = highlighted ? CGAffineTransformMakeScale(0.97, 0.97)
-                                                 : CGAffineTransformIdentity;
-    }];
-}
-
-@end
-
-/// One option: icon, name, what it does, and the switch that does it.
-@interface SCITTOptionCard : UICollectionViewCell
-@property (nonatomic, strong) UIImageView *icon;
-@property (nonatomic, strong) UIView *iconWell;
-@property (nonatomic, strong) UILabel *title;
-@property (nonatomic, strong) UILabel *note;
-@property (nonatomic, strong) UISwitch *toggle;
-@property (nonatomic, strong) UIImageView *chevron;
-@end
-
-@implementation SCITTOptionCard
-
-- (instancetype)initWithFrame:(CGRect)frame {
-    self = [super initWithFrame:frame];
-    if (!self) return self;
-
-    self.contentView.backgroundColor = [UIColor secondarySystemGroupedBackgroundColor];
-    self.contentView.layer.cornerRadius = 16;
-    self.contentView.layer.cornerCurve = kCACornerCurveContinuous;
-
-    self.iconWell = [[UIView alloc] init];
-    self.iconWell.layer.cornerRadius = 9;
-    self.iconWell.layer.cornerCurve = kCACornerCurveContinuous;
-    self.iconWell.translatesAutoresizingMaskIntoConstraints = NO;
-
-    self.icon = [[UIImageView alloc] init];
-    self.icon.contentMode = UIViewContentModeScaleAspectFit;
-    self.icon.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.iconWell addSubview:self.icon];
-
-    self.title = [[UILabel alloc] init];
-    self.title.font = [UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
-    self.title.textColor = [UIColor labelColor];
-    self.title.numberOfLines = 0;
-    self.title.translatesAutoresizingMaskIntoConstraints = NO;
-
-    self.note = [[UILabel alloc] init];
-    self.note.font = [UIFont systemFontOfSize:13];
-    self.note.textColor = [UIColor secondaryLabelColor];
-    self.note.numberOfLines = 0;
-    self.note.translatesAutoresizingMaskIntoConstraints = NO;
-
-    self.toggle = [[UISwitch alloc] init];
-    self.toggle.onTintColor = SCIAccent();
-    self.toggle.translatesAutoresizingMaskIntoConstraints = NO;
-
-    self.chevron = [[UIImageView alloc] initWithImage:
-        [UIImage systemImageNamed:@"chevron.right"
-                withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:13
-                                                                                 weight:UIImageSymbolWeightSemibold]]];
-    self.chevron.tintColor = [UIColor tertiaryLabelColor];
-    self.chevron.translatesAutoresizingMaskIntoConstraints = NO;
-    self.chevron.hidden = YES;
-
-    for (UIView *view in @[self.iconWell, self.title, self.note, self.toggle, self.chevron]) {
-        [self.contentView addSubview:view];
-    }
-
-    [NSLayoutConstraint activateConstraints:@[
-        [self.iconWell.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:14],
-        [self.iconWell.topAnchor constraintEqualToAnchor:self.contentView.topAnchor constant:14],
-        [self.iconWell.widthAnchor constraintEqualToConstant:30],
-        [self.iconWell.heightAnchor constraintEqualToConstant:30],
-
-        [self.icon.centerXAnchor constraintEqualToAnchor:self.iconWell.centerXAnchor],
-        [self.icon.centerYAnchor constraintEqualToAnchor:self.iconWell.centerYAnchor],
-        [self.icon.widthAnchor constraintEqualToConstant:16],
-        [self.icon.heightAnchor constraintEqualToConstant:16],
-
-        [self.title.leadingAnchor constraintEqualToAnchor:self.iconWell.trailingAnchor constant:12],
-        [self.title.topAnchor constraintEqualToAnchor:self.contentView.topAnchor constant:14],
-        [self.title.trailingAnchor constraintEqualToAnchor:self.toggle.leadingAnchor constant:-12],
-
-        [self.note.leadingAnchor constraintEqualToAnchor:self.title.leadingAnchor],
-        [self.note.trailingAnchor constraintEqualToAnchor:self.toggle.leadingAnchor constant:-12],
-        [self.note.topAnchor constraintEqualToAnchor:self.title.bottomAnchor constant:3],
-        [self.note.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor constant:-14],
-
-        [self.toggle.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-14],
-        [self.toggle.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor],
-
-        [self.chevron.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
-        [self.chevron.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor],
-    ]];
-
     return self;
 }
 
@@ -305,9 +97,14 @@
 @property (nonatomic, strong) UICollectionView *collection;
 @property (nonatomic, strong) NSArray<NSDictionary *> *sections;
 
-/// The section this page is showing, or nil for the root. One controller does both, because the
-/// card drawing and the switch handling are the same either way.
+/// The section this page is showing, or nil for the root. One controller does both: the list, the switches and the
+/// navigation are the same either way.
 @property (nonatomic, strong, nullable) NSDictionary *focus;
+
+@property (nonatomic, strong) UICollectionViewCellRegistration *headerRegistration;
+@property (nonatomic, strong) UICollectionViewCellRegistration *categoryRegistration;
+@property (nonatomic, strong) UICollectionViewCellRegistration *optionRegistration;
+@property (nonatomic, strong) UISelectionFeedbackGenerator *haptic;
 @end
 
 @implementation SCITTStatus
@@ -350,49 +147,30 @@
 
 // MARK: Layout
 
-///
-/// **A layout per section rather than one for the screen.**
-///
-/// The identity card is full width and sized to its own contents; the categories are a two-column
-/// grid; an option is a full-width card that grows with its note. A table view can express exactly
-/// one of those three, which is why the old screen made all three look the same.
-///
+/// A plain full-width item for the header, and the system's inset-grouped list for everything else. The list layout is
+/// the system's own, which is the whole reason this screen looks like a Settings screen.
 - (UICollectionViewLayout *)buildLayout {
-    UICollectionViewCompositionalLayoutConfiguration *configuration =
-        [[UICollectionViewCompositionalLayoutConfiguration alloc] init];
-    configuration.interSectionSpacing = 14;
-
     __weak typeof(self) weakSelf = self;
-
-    UICollectionViewCompositionalLayout *layout = [[UICollectionViewCompositionalLayout alloc]
-        initWithSectionProvider:^NSCollectionLayoutSection *(NSInteger index,
-                                                            id<NSCollectionLayoutEnvironment> environment) {
+    return [[UICollectionViewCompositionalLayout alloc] initWithSectionProvider:
+        ^NSCollectionLayoutSection *(NSInteger index, id<NSCollectionLayoutEnvironment> environment) {
         typeof(self) self = weakSelf;
-        if (!self) return nil;
 
-        BOOL grid = (!self.focus && index == 1);
+        if (self && !self.focus && index == 0) {
+            NSCollectionLayoutSize *size = [NSCollectionLayoutSize
+                sizeWithWidthDimension:[NSCollectionLayoutDimension fractionalWidthDimension:1.0]
+                       heightDimension:[NSCollectionLayoutDimension estimatedDimension:170]];
+            NSCollectionLayoutItem *item = [NSCollectionLayoutItem itemWithLayoutSize:[NSCollectionLayoutSize
+                sizeWithWidthDimension:[NSCollectionLayoutDimension fractionalWidthDimension:1.0]
+                       heightDimension:[NSCollectionLayoutDimension estimatedDimension:170]]];
+            NSCollectionLayoutGroup *group = [NSCollectionLayoutGroup verticalGroupWithLayoutSize:size subitems:@[item]];
+            return [NSCollectionLayoutSection sectionWithGroup:group];
+        }
 
-        NSCollectionLayoutSize *itemSize = [NSCollectionLayoutSize
-            sizeWithWidthDimension:[NSCollectionLayoutDimension fractionalWidthDimension:grid ? 0.5 : 1.0]
-                   heightDimension:[NSCollectionLayoutDimension estimatedDimension:grid ? 116 : 84]];
-        NSCollectionLayoutItem *item = [NSCollectionLayoutItem itemWithLayoutSize:itemSize];
-
-        NSCollectionLayoutSize *groupSize = [NSCollectionLayoutSize
-            sizeWithWidthDimension:[NSCollectionLayoutDimension fractionalWidthDimension:1.0]
-                   heightDimension:[NSCollectionLayoutDimension estimatedDimension:grid ? 116 : 84]];
-
-        NSCollectionLayoutGroup *group = grid
-            ? [NSCollectionLayoutGroup horizontalGroupWithLayoutSize:groupSize subitem:item count:2]
-            : [NSCollectionLayoutGroup verticalGroupWithLayoutSize:groupSize subitems:@[item]];
-        group.interItemSpacing = [NSCollectionLayoutSpacing fixedSpacing:12];
-
-        NSCollectionLayoutSection *section = [NSCollectionLayoutSection sectionWithGroup:group];
-        section.interGroupSpacing = 12;
-        section.contentInsets = NSDirectionalEdgeInsetsMake(0, 16, 0, 16);
-        return section;
-    } configuration:configuration];
-
-    return layout;
+        UICollectionLayoutListConfiguration *list =
+            [[UICollectionLayoutListConfiguration alloc] initWithAppearance:UICollectionLayoutListAppearanceInsetGrouped];
+        list.backgroundColor = [UIColor clearColor];
+        return [NSCollectionLayoutSection sectionWithListConfiguration:list layoutEnvironment:environment];
+    }];
 }
 
 - (void)viewDidLoad {
@@ -401,11 +179,11 @@
     self.sections = SCITTSections();
     self.title = self.focus ? self.focus[kSCISectionTitle] : SCILocalized(@"title");
     self.view.backgroundColor = [UIColor systemGroupedBackgroundColor];
+    self.haptic = [[UISelectionFeedbackGenerator alloc] init];
 
-    self.navigationItem.largeTitleDisplayMode = self.focus
-        ? UINavigationItemLargeTitleDisplayModeNever
-        : UINavigationItemLargeTitleDisplayModeAlways;
-    self.navigationController.navigationBar.prefersLargeTitles = !self.focus;
+    // Inline on both: the large title repeated the name the header already shows, and TikTok's own pages are inline.
+    self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
+    self.navigationController.navigationBar.prefersLargeTitles = NO;
 
     // Only the root closes the sheet; a pushed page has a back chevron already.
     if (!self.focus) {
@@ -416,19 +194,12 @@
                                             action:@selector(dismissSelf)];
     }
 
-    self.collection = [[UICollectionView alloc] initWithFrame:self.view.bounds
-                                       collectionViewLayout:[self buildLayout]];
+    self.collection = [[UICollectionView alloc] initWithFrame:self.view.bounds collectionViewLayout:[self buildLayout]];
     self.collection.backgroundColor = [UIColor clearColor];
     self.collection.alwaysBounceVertical = YES;
-    self.collection.contentInset = UIEdgeInsetsMake(12, 0, 28, 0);
     self.collection.dataSource = self;
     self.collection.delegate = self;
     self.collection.translatesAutoresizingMaskIntoConstraints = NO;
-
-    [self.collection registerClass:[SCITTHeroCard class] forCellWithReuseIdentifier:@"hero"];
-    [self.collection registerClass:[SCITTCategoryCard class] forCellWithReuseIdentifier:@"category"];
-    [self.collection registerClass:[SCITTOptionCard class] forCellWithReuseIdentifier:@"option"];
-
     [self.view addSubview:self.collection];
     [NSLayoutConstraint activateConstraints:@[
         [self.collection.topAnchor constraintEqualToAnchor:self.view.topAnchor],
@@ -436,13 +207,135 @@
         [self.collection.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [self.collection.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
     ]];
+
+    __weak typeof(self) weakSelf = self;
+
+    self.headerRegistration = [UICollectionViewCellRegistration registrationWithCellClass:[SCITTHeader class]
+        configurationHandler:^(SCITTHeader *cell, NSIndexPath *indexPath, id item) {
+        typeof(self) self = weakSelf;
+        if (!self) return;
+        cell.name.text = SCILocalized(@"title");
+        cell.versions.text = [NSString stringWithFormat:@"%@ · TikTok %@", SCIVersionString,
+            [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"?"];
+
+        // The gate has the last word over every switch below, so when it is closed the header says so rather than
+        // leaving a screen full of switches that are being ignored.
+        if (SCIPanelAllowsThisApp()) {
+            NSInteger on = 0, total = 0;
+            for (NSDictionary *section in self.sections) {
+                NSInteger sectionOn = 0, sectionTotal = 0;
+                [self countOn:&sectionOn of:&sectionTotal in:section[kSCISectionRows]];
+                on += sectionOn; total += sectionTotal;
+            }
+            cell.state.text = [NSString stringWithFormat:SCILocalized(@"hero_tally"), (long)on, (long)total];
+            cell.state.textColor = SCIAccent();
+        } else {
+            cell.state.text = SCILocalized(@"gate_off");
+            cell.state.textColor = [UIColor systemOrangeColor];
+        }
+    }];
+
+    // One row per registered section: icon, name, "3/5", and the chevron.
+    self.categoryRegistration = [UICollectionViewCellRegistration registrationWithCellClass:[UICollectionViewListCell class]
+        configurationHandler:^(UICollectionViewListCell *cell, NSIndexPath *indexPath, NSDictionary *section) {
+        typeof(self) self = weakSelf;
+        if (!self) return;
+
+        UIListContentConfiguration *content = [UIListContentConfiguration cellConfiguration];
+        content.text = section[kSCISectionTitle];
+        content.image = SCITTRowIcon(section[kSCISectionIcon] ?: @"square.grid.2x2");
+        content.imageProperties.tintColor = [UIColor labelColor];
+        content.imageProperties.reservedLayoutSize = CGSizeMake(30, 30);
+        content.imageProperties.maximumSize = CGSizeMake(24, 24);
+        content.imageToTextPadding = 12;
+        cell.contentConfiguration = content;
+
+        NSInteger on = 0, total = 0;
+        [self countOn:&on of:&total in:section[kSCISectionRows]];
+        NSMutableArray *accessories = [NSMutableArray array];
+        if (total > 0) {
+            UICellAccessoryLabel *count = [[UICellAccessoryLabel alloc] initWithText:
+                [NSString stringWithFormat:@"%ld/%ld", (long)on, (long)total]];
+            count.font = [UIFont monospacedDigitSystemFontOfSize:15 weight:UIFontWeightRegular];
+            [accessories addObject:count];
+        }
+        [accessories addObject:[[UICellAccessoryDisclosureIndicator alloc] init]];
+        cell.accessories = accessories;
+    }];
+
+    // One option: icon, name, what it does underneath, and the switch / the current value / the chevron.
+    self.optionRegistration = [UICollectionViewCellRegistration registrationWithCellClass:[UICollectionViewListCell class]
+        configurationHandler:^(UICollectionViewListCell *cell, NSIndexPath *indexPath, NSDictionary *row) {
+        typeof(self) self = weakSelf;
+        if (!self) return;
+
+        UIListContentConfiguration *content = [UIListContentConfiguration subtitleCellConfiguration];
+        content.text = row[kSCIRowTitle];
+        content.textProperties.numberOfLines = 0;
+        content.secondaryText = row[kSCIRowNote];
+        content.secondaryTextProperties.numberOfLines = 0;
+        content.secondaryTextProperties.font = [UIFont preferredFontForTextStyle:UIFontTextStyleFootnote];
+        content.secondaryTextProperties.color = [row[kSCIRowWarns] boolValue] ? [UIColor systemOrangeColor]
+                                                                                : [UIColor secondaryLabelColor];
+        content.textToSecondaryTextVerticalPadding = 3;
+        content.image = SCITTRowIcon(row[kSCIRowIcon]);
+        content.imageProperties.tintColor = [UIColor labelColor];
+        content.imageProperties.reservedLayoutSize = CGSizeMake(30, 30);
+        content.imageProperties.maximumSize = CGSizeMake(24, 24);
+        content.imageToTextPadding = 12;
+        cell.contentConfiguration = content;
+
+        NSString *kind = row[kSCIRowKind];
+        BOOL isChoice = [kind isEqualToString:kSCIKindChoice];
+        BOOL isLink = [kind isEqualToString:kSCIKindLink];
+
+        if (isChoice) {
+            // The current value leads the second line, in the label colour: what is chosen is the first thing anybody
+            // opening this row wants to know. (As a trailing label it squeezed the text beside it into a narrow column.)
+            NSString *current = SCITTChoiceCurrentTitle(row[kSCIRowOptions], row[kSCIRowPref]);
+            if (current.length) {
+                UIFont *noteFont = [UIFont preferredFontForTextStyle:UIFontTextStyleFootnote];
+                NSMutableAttributedString *text = [[NSMutableAttributedString alloc] initWithString:current attributes:@{
+                    NSFontAttributeName: [UIFont systemFontOfSize:noteFont.pointSize weight:UIFontWeightSemibold],
+                    NSForegroundColorAttributeName: SCIAccent(),
+                }];
+                if ([row[kSCIRowNote] length]) {
+                    [text appendAttributedString:[[NSAttributedString alloc] initWithString:[@"\n" stringByAppendingString:row[kSCIRowNote]] attributes:@{
+                        NSFontAttributeName: noteFont,
+                        NSForegroundColorAttributeName: [UIColor secondaryLabelColor],
+                    }]];
+                }
+                content.secondaryAttributedText = text;
+                cell.contentConfiguration = content;
+            }
+            cell.accessories = @[[[UICellAccessoryDisclosureIndicator alloc] init]];
+        } else if (isLink) {
+            cell.accessories = @[[[UICellAccessoryDisclosureIndicator alloc] init]];
+        } else {
+            // A new switch each time the cell is configured, so a recycled cell never carries the previous row's
+            // handler (the old screen kept one switch per cell and re-pointed it by tag).
+            NSString *pref = row[kSCIRowPref];
+            UISwitch *toggle = [[UISwitch alloc] init];
+            toggle.onTintColor = SCIAccent();
+            toggle.on = pref.length ? SCIPrefEnabled(pref) : NO;
+            [toggle addAction:[UIAction actionWithHandler:^(UIAction *action) {
+                if (!pref.length) return;
+                [[NSUserDefaults standardUserDefaults] setBool:toggle.isOn forKey:pref];
+                [weakSelf.haptic selectionChanged];
+            }] forControlEvents:UIControlEventValueChanged];
+            UICellAccessoryCustomView *accessory =
+                [[UICellAccessoryCustomView alloc] initWithCustomView:toggle placement:UICellAccessoryPlacementTrailing];
+            accessory.maintainsFixedSize = YES;
+            cell.accessories = @[accessory];
+        }
+    }];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
 
-    // Rebuilt on return rather than cached: a switch changed on a section page must be reflected
-    // by the count on the card that opened it.
+    // Rebuilt on return rather than cached: a switch changed on a section page must be reflected by the count on the
+    // row that opened it.
     self.sections = SCITTSections();
     [self.collection reloadData];
 }
@@ -458,7 +351,7 @@
 }
 
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
-    return self.focus ? 1 : 2;   // identity, then the grid of categories
+    return self.focus ? 1 : 2;   // the header, then the list of categories
 }
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
@@ -472,6 +365,7 @@
     for (NSDictionary *row in rows) {
         NSString *pref = row[kSCIRowPref];
         if (!pref.length) continue;
+        if ([row[kSCIRowKind] isEqualToString:kSCIKindChoice]) continue;   // a choice is a value, not an on/off
         (*total)++;
         if (SCIPrefEnabled(pref)) (*on)++;
     }
@@ -479,102 +373,25 @@
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView
                   cellForItemAtIndexPath:(NSIndexPath *)indexPath {
-
-    // The identity card, at the top of the root and nowhere else.
     if (!self.focus && indexPath.section == 0) {
-        SCITTHeroCard *card = [collectionView dequeueReusableCellWithReuseIdentifier:@"hero" forIndexPath:indexPath];
-        card.title.text = SCILocalized(@"title");
-        card.subtitle.text = [NSString stringWithFormat:@"%@ · TikTok %@", SCIVersionString,
-            [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"?"];
-
-        NSInteger on = 0, total = 0;
-        for (NSDictionary *section in self.sections) {
-            NSInteger sectionOn = 0, sectionTotal = 0;
-            [self countOn:&sectionOn of:&sectionTotal in:section[kSCISectionRows]];
-            on += sectionOn; total += sectionTotal;
-        }
-        card.tally.text = [NSString stringWithFormat:SCILocalized(@"hero_tally"), (long)on, (long)total];
-
-        // The gate has the last word over every switch above, so when it is closed the card says
-        // so rather than leaving a screen full of switches that are being ignored.
-        BOOL allowed = SCIPanelAllowsThisApp();
-        card.warning.hidden = allowed;
-        card.warningText.text = allowed ? nil : SCILocalized(@"gate_off");
-        return card;
+        return [collectionView dequeueConfiguredReusableCellWithRegistration:self.headerRegistration
+                                                                forIndexPath:indexPath item:@YES];
     }
 
-    // A category on the root grid.
     if (!self.focus) {
-        SCITTCategoryCard *card = [collectionView dequeueReusableCellWithReuseIdentifier:@"category" forIndexPath:indexPath];
-        NSDictionary *section = self.sections[(NSUInteger)indexPath.item];
-        NSArray<NSDictionary *> *rows = section[kSCISectionRows];
-
-        card.title.text = section[kSCISectionTitle];
-
-        NSInteger on = 0, total = 0;
-        [self countOn:&on of:&total in:rows];
-        card.count.text = total > 0
-            ? [NSString stringWithFormat:SCILocalized(@"hero_tally"), (long)on, (long)total]
-            : [NSString stringWithFormat:SCILocalized(@"section_count"), (unsigned long)rows.count];
-
-        UIColor *tint = section[kSCISectionColor] ?: SCIAccent();
-        card.iconWell.backgroundColor = [tint colorWithAlphaComponent:0.16];
-        card.icon.image = [UIImage systemImageNamed:(section[kSCISectionIcon] ?: @"square.grid.2x2.fill")
-                                  withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:16
-                                                                                                   weight:UIImageSymbolWeightSemibold]];
-        card.icon.tintColor = tint;
-        return card;
+        NSDictionary *section = (NSUInteger)indexPath.item < self.sections.count ? self.sections[(NSUInteger)indexPath.item] : @{};
+        return [collectionView dequeueConfiguredReusableCellWithRegistration:self.categoryRegistration
+                                                                forIndexPath:indexPath item:section];
     }
 
-    // An option inside a section.
-    SCITTOptionCard *card = [collectionView dequeueReusableCellWithReuseIdentifier:@"option" forIndexPath:indexPath];
     NSArray<NSDictionary *> *rows = [self rowsForSection];
-    if (indexPath.item < 0 || indexPath.item >= (NSInteger)rows.count) return card;
-
-    NSDictionary *row = rows[(NSUInteger)indexPath.item];
-
-    card.title.text = row[kSCIRowTitle];
-    card.note.text = row[kSCIRowNote];
-    card.note.textColor = [row[kSCIRowWarns] boolValue] ? [UIColor systemOrangeColor]
-                                                        : [UIColor secondaryLabelColor];
-
-    UIColor *tint = row[kSCIRowColor] ?: SCIAccent();
-    card.iconWell.backgroundColor = [tint colorWithAlphaComponent:0.16];
-    card.icon.image = [UIImage systemImageNamed:(row[kSCIRowIcon] ?: @"circle.fill")
-                              withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:14
-                                                                                                weight:UIImageSymbolWeightSemibold]];
-    card.icon.tintColor = tint;
-
-    BOOL isChoice = [row[kSCIRowKind] isEqualToString:kSCIKindChoice];
-    BOOL isLink = [row[kSCIRowKind] isEqualToString:kSCIKindLink] || isChoice;
-    card.toggle.hidden = isLink;
-    card.chevron.hidden = !isLink;
-    if (isChoice) {
-        // The current value leads the note: what is chosen is the first thing anybody opening this row wants to know.
-        NSString *current = SCITTChoiceCurrentTitle(row[kSCIRowOptions], row[kSCIRowPref]);
-        card.note.text = current.length ? [NSString stringWithFormat:@"%@ — %@", current, row[kSCIRowNote]] : row[kSCIRowNote];
-    }
-
-    if (!isLink) {
-        NSString *pref = row[kSCIRowPref];
-        card.toggle.on = pref.length ? SCIPrefEnabled(pref) : NO;
-        card.toggle.tag = indexPath.item;
-        [card.toggle removeTarget:self action:NULL forControlEvents:UIControlEventValueChanged];
-        [card.toggle addTarget:self action:@selector(toggled:) forControlEvents:UIControlEventValueChanged];
-    }
-
-    return card;
+    NSDictionary *row = (NSUInteger)indexPath.item < rows.count ? rows[(NSUInteger)indexPath.item] : @{};
+    return [collectionView dequeueConfiguredReusableCellWithRegistration:self.optionRegistration
+                                                            forIndexPath:indexPath item:row];
 }
 
-- (void)toggled:(UISwitch *)toggle {
-    NSArray<NSDictionary *> *rows = [self rowsForSection];
-    NSInteger index = toggle.tag;
-    if (index < 0 || index >= (NSInteger)rows.count) return;
-
-    NSString *pref = rows[(NSUInteger)index][kSCIRowPref];
-    if (!pref.length) return;
-
-    [[NSUserDefaults standardUserDefaults] setBool:toggle.isOn forKey:pref];
+- (BOOL)collectionView:(UICollectionView *)collectionView shouldSelectItemAtIndexPath:(NSIndexPath *)indexPath {
+    return self.focus || indexPath.section != 0;   // the header is not a row
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
@@ -595,22 +412,36 @@
     if (indexPath.item < 0 || indexPath.item >= (NSInteger)rows.count) return;
 
     NSDictionary *row = rows[(NSUInteger)indexPath.item];
-    if ([row[kSCIRowKind] isEqualToString:kSCIKindChoice]) {
-        SCITTChoiceList *list = [[SCITTChoiceList alloc] initWithTitle:row[kSCIRowTitle] pref:row[kSCIRowPref] options:row[kSCIRowOptions] footer:row[kSCIRowChoiceFooter]];
+    NSString *kind = row[kSCIRowKind];
+
+    if ([kind isEqualToString:kSCIKindChoice]) {
+        SCITTChoiceList *list = [[SCITTChoiceList alloc] initWithTitle:row[kSCIRowTitle] pref:row[kSCIRowPref]
+                                                               options:row[kSCIRowOptions] footer:row[kSCIRowChoiceFooter]];
         [self.navigationController pushViewController:list animated:YES];
         return;
     }
-    if (![row[kSCIRowKind] isEqualToString:kSCIKindLink]) return;
 
-    if ([row[kSCIRowDestination] isEqualToString:kSCIDestinationWelcome]) {
-        // Dismissed first: the welcome screen draws into the key window, so leaving this sheet up
-        // would put it behind the settings it was asked for from.
-        [self dismissViewControllerAnimated:YES completion:^{ [SCITTWelcome show]; }];
+    if ([kind isEqualToString:kSCIKindLink]) {
+        if ([row[kSCIRowDestination] isEqualToString:kSCIDestinationWelcome]) {
+            // Dismissed first: the welcome screen draws into the key window, so leaving this sheet up would put it
+            // behind the settings it was asked for from.
+            [self dismissViewControllerAnimated:YES completion:^{ [SCITTWelcome show]; }];
+        } else if ([row[kSCIRowDestination] isEqualToString:kSCIDestinationReport]) {
+            [self.navigationController pushViewController:[[SCITTReport alloc] init] animated:YES];
+        }
         return;
     }
 
-    if ([row[kSCIRowDestination] isEqualToString:kSCIDestinationReport]) {
-        [self.navigationController pushViewController:[[SCITTReport alloc] init] animated:YES];
+    // A switch row: the whole row is the control, as in every native list, not only the small switch at its end.
+    UICollectionViewListCell *cell = (UICollectionViewListCell *)[collectionView cellForItemAtIndexPath:indexPath];
+    for (UICellAccessory *accessory in cell.accessories) {
+        if (![accessory isKindOfClass:[UICellAccessoryCustomView class]]) continue;
+        UIView *view = ((UICellAccessoryCustomView *)accessory).customView;
+        if ([view isKindOfClass:[UISwitch class]]) {
+            UISwitch *toggle = (UISwitch *)view;
+            [toggle setOn:!toggle.isOn animated:YES];
+            [toggle sendActionsForControlEvents:UIControlEventValueChanged];
+        }
     }
 }
 

@@ -1069,9 +1069,8 @@ there costs colours, never the video).
   announced as JPEG earned `PHPhotosErrorDomain 3302`), `originalFilename` set, JPEG re-encode as a last resort via `ImageIO`; downloads use
   `NSURLSession` because `+dataWithContentsOfURL:` cannot report an HTTP status. A format string is a callee with types (`%.0f` with an `int`
   literal read every clip as `0 seconds`).
-- **Settings** (0.20.0) is a collection view with a layout per section — identity card, two-column category grid, option cards — one row away
-  from a copyable Status report that names every number behind every feature; **hold two fingers anywhere**. Confirmations (like heart *and* double tap,
-  follow on feed and profile) are off until turned on.
+- **Settings** (redesigned in 0.24.3) are the system's own inset-grouped list (`UICollectionLayoutListConfiguration`, cell registrations, `UIListContentConfiguration`) under a centred identity header: one row per registered section (outline icon, name, "on/total", chevron), and inside a section a title with its note beneath, the switch at the end (the whole row flips it), a choice showing its current value on the second line. Colour is meaning only (accent on a switch, orange on a warning); icons are the outline variant of the registry's symbol (`SCITTRowIcon.h`), shared with the status report. The registry (`SCITTRegisterSection`) is unchanged: the redesign touched drawing only. **Look at it before changing it:** a throwaway simulator app that compiles `SCITTStatus.m`, the registry, the sections and `SCILocalize.m` with three stubs (`SCITTReport`, `SCITTWelcome`, `SCIPanelAllowsThisApp`) builds in seconds with `clang -target arm64-apple-ios15.0-simulator` and was how this one was drawn, in light, dark and Arabic. A one-row-away copyable Status report names every number behind every feature; the way in is the Albrhi section in TikTok's own Settings (the two-finger hold is an off-by-default option). **The update screen** (`SCITTWelcome`) appears once on the first launch after an update that raises `kSCIWelcomeEdition` (an integer in SCITTWelcome.m, stored as `welcome_edition_seen`; a patch release leaves it alone and stays silent), says what changed in a light tone, and is recorded as seen when it is *drawn*, never before (the old screen used its single showing up when no window existed). It waits for an active app with a key window for about half a minute. Reduced-motion phones get no confetti and no staggered entrance. Raise the edition by hand when a release has something worth telling; the rows are `welcome_r1..r4` in both tables.
+  Confirmations (like heart *and* double tap, follow on feed and profile) are off until turned on.
 - **Region, speed and app lock (0.22.0), from TTF-Mod-iOS (a BHTikTok++ fork, unlicensed: architecture only).** Region is a **choice, real by default**: no key on disk means nothing is rewritten, only
   **getters** are answered (a setter hook would leave the lie in TikTok's own cache after the switch went off), and the row says it tells TikTok something untrue. The reference ships it on, set to Kazakhstan, without asking.
   Confirmed on 46.4.0 with `tools/objc-classes.py`: `TTKStoreRegionService`, `TIKTOKRegionManager` (seven class methods), `ATSRegionCacheManager`, `TTKStoreRegionModel`, `TTInstallIDManager`/`BDInstallGlobalConfig -currentAppRegion`;
@@ -1231,8 +1230,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.7.0** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.2** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.2**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.7.0** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.3**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

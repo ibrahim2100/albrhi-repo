@@ -11,6 +11,7 @@
 #import "../Features/Feed/SCITTFeedFilters.h"
 #import "../Features/Messages/SCITTReadAlert.h"
 #import "SCITTSettingsEntry.h"
+#import "SCITTRowIcon.h"
 #import "../Features/Download/SCITTMedia.h"
 #import "../Features/Download/SCITTWatermark.h"
 #import "../Features/Download/SCITTPlaybackProbe.h"
@@ -339,7 +340,8 @@ static NSDictionary *SCIHeavyRow(NSString *title, NSString *value, NSString *ico
     cell.detailTextLabel.text = value;
     cell.detailTextLabel.numberOfLines = 0;
     cell.detailTextLabel.textColor = [UIColor secondaryLabelColor];
-    cell.imageView.image = SCITTBadgeImage(row[kSCIRowIcon], row[kSCIRowColor]);
+    cell.imageView.image = SCITTRowIcon(row[kSCIRowIcon]);
+    cell.imageView.tintColor = [UIColor labelColor];
 
     return cell;
 }

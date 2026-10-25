@@ -33,9 +33,6 @@
 - (void)resetCollectMode;
 @end
 
-@interface IOSSecuritySuite : NSObject
-@end
-
 @interface AppsFlyerUtils : NSObject
 @end
 
@@ -126,20 +123,6 @@
 %end
 
 
-// A general-purpose jailbreak-detection library some apps vendor wholesale rather than
-// write their own checks -- confirmed present by class name in this build, cross-
-// validated between both newer reference tweaks.
-%hook IOSSecuritySuite
-
-+ (BOOL)amIJailbroken {
-    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
-    [SCITTDiagnostics recordBypassAnswer:@"amIJailbroken"];
-    return NO;
-}
-
-%end
-
-
 // AppsFlyer's own device-integrity check, asked with the option to skip its own more
 // advanced validation -- answered as an unmodified device either way.
 %hook AppsFlyerUtils
@@ -205,12 +188,12 @@
 %end
 
 
-// **Two answers that are installed only where the process already has the selector.** Logos *adds* a
+// **An answer that is installed only where the process already has the selector.** Logos *adds* a
 // method to a class that lacks it: an added `-btd_isJailBroken` on UIDevice is a selector the app never
-// sends, and an added `-jailbroken` on NSObject would make every object in the process answer
-// `respondsToSelector:@selector(jailbroken)` with YES -- a side effect on code that never asked, with
-// nothing to call when the switch is off. Neither selector is declared by any class in the 46.4.0 or
-// 47.1.0 dumps; each is a category method if it exists at all, so the question is put to the runtime.
+// sends. The selector is declared by no class in the 46.4.0 or 47.1.0 dumps; it is a category method if it exists at all,
+// so the question is put to the runtime. (Two hooks were deleted outright: `+[IOSSecuritySuite amIJailbroken]` and
+// `-[NSObject jailbroken]` -- neither the class nor the selector string exists anywhere in `MusicallyCore` 47.1.0, so a
+// hook could only ever have added a method nobody sends.)
 %group BypassUIDevice
 %hook UIDevice
 
@@ -223,19 +206,6 @@
 %end
 %end
 
-%group BypassNSObject
-%hook NSObject
-
-- (BOOL)jailbroken {
-    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
-    [SCITTDiagnostics recordBypassAnswer:@"jailbroken"];
-    return NO;
-}
-
-%end
-%end
-
-
 void SCITTInstallBypass(void) {
     %init(Bypass);
 
@@ -244,11 +214,6 @@ void SCITTInstallBypass(void) {
         %init(BypassUIDevice);
     } else {
         [absent addObject:@"-[UIDevice btd_isJailBroken]"];
-    }
-    if (class_getInstanceMethod([NSObject class], sel_registerName("jailbroken"))) {
-        %init(BypassNSObject);
-    } else {
-        [absent addObject:@"-[NSObject jailbroken]"];
     }
     SCILogV(@"bypass hooks attached; not attached, selector not in this process: %@",
             absent.count ? [absent componentsJoinedByString:@", "] : @"none");
