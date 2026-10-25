@@ -143,10 +143,10 @@ Depends: mobilesubstrate, preferenceloader
 Conflicts: com.albrhi.roothide, com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide, com.dvntm.ytmultimate
 Replaces: com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide
 Filename: debs/com.albrhi_1.101.7_iphoneos-arm64.deb
-Size: 2485602
-MD5sum: 7eb4be24c2a1cd1d2df65ff4609b92e7
-SHA1: 714aae2ce7184731713dbebde8295727c770f3db
-SHA256: b703e6bc2efc96ee4c2a249be82c3f641ae95d1bfa8cf16fc7ddc98e6fe0ab74
+Size: 2485648
+MD5sum: fb42062fc4bd623a14ad462a93096d68
+SHA1: 0cf05cb31bc78dd4cbdabc62242892631e8350be
+SHA256: f613d4e811b72121566f85ea85afa68b5054493f9c82d67f5e5bab344752324d
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
@@ -659,10 +659,10 @@ Depends: mobilesubstrate, preferenceloader
 Conflicts: com.albrhi.roothide, com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide, com.dvntm.ytmultimate
 Replaces: com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide
 Filename: debs/com.albrhi.roothide_1.101.7_iphoneos-arm64e.deb
-Size: 2482776
-MD5sum: 2c05482223ba3630a09ec459b3b60810
-SHA1: b07db85bebf285b9a1dd5d91c4b02cd83f52d368
-SHA256: 22adc3adfb9214d74c5d484df32a49d67fe57f8d32420cea4cc58f060927cdae
+Size: 2482806
+MD5sum: c72bfe78bb5df1ce11cf5b06cb8cf322
+SHA1: 47e69eaf872ab0ffe23eeeff2d969fc4833c74b4
+SHA256: cc8be6ec6b59e00562c3f5a04470190dfcdddcb77b0b30570858fe733969a4db
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
@@ -727,10 +727,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tiktok.roothide
 Replaces: com.albrhi.tiktok.roothide
 Filename: debs/com.albrhi.tiktok_0.24.3_iphoneos-arm64.deb
-Size: 122590
-MD5sum: 266a9e3980c4d7928d45b4a49bf3ea37
-SHA1: 7d09a2788982ceef21758fbe0640e0619b9d3d7b
-SHA256: ffea189851fda41ad22592302328de17dee278b406911ace0393754ea7bd5e1e
+Size: 122798
+MD5sum: adacbf531b9392eea949001510bd9db5
+SHA1: bb639c9f2373132471f00e503054a1389a57e65f
+SHA256: 912ba9c2c6c3125949ca9f6d8b933dc62da73cbfcf5c9032860b1384c97ba181
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
@@ -789,10 +789,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tiktok
 Replaces: com.albrhi.tiktok
 Filename: debs/com.albrhi.tiktok.roothide_0.24.3_iphoneos-arm64e.deb
-Size: 122574
-MD5sum: 3f7a9b3258e549be8f35e47a44202e4a
-SHA1: 073b6bc9d0bcf1d66723951c1a85a927a2213806
-SHA256: bd103741bd8f4f46d626a96eca40af706fdf1a368be8b94b40fed8900515c8c5
+Size: 122588
+MD5sum: 5b6681864c4fcd87f8827ae1d5d193d0
+SHA1: 1d662922168f81fbbfcd44ce5864cb91e2d78146
+SHA256: 52f984aeee1051cabcd82a152f845a2d433959fa95c16ab37b603270d26efccc
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
@@ -1283,10 +1283,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.twitter.roothide
 Replaces: com.albrhi.twitter.roothide
 Filename: debs/com.albrhi.twitter_0.22.0_iphoneos-arm64.deb
-Size: 103302
-MD5sum: c40498813d7316a01303b692f2a3287d
-SHA1: e819000b4817d483caa9451cb397721ab675037e
-SHA256: c274ff75aaeb4992b0ebf39104efb9c15721d0ff7628a644b2f37c24bfa69771
+Size: 103462
+MD5sum: e4d0b2c54702ca99255e97ae370862aa
+SHA1: 0fdf1070f9bad556b4c87d9cec7c9afaf718f729
+SHA256: 46fdd1414e2e36661f9575019f252894cc9655a54c3be13856079db50e5c6b74
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
@@ -1357,10 +1357,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.twitter
 Replaces: com.albrhi.twitter
 Filename: debs/com.albrhi.twitter.roothide_0.22.0_iphoneos-arm64e.deb
-Size: 103326
-MD5sum: 2a5afc0b0aef105744c3b3a415f0160d
-SHA1: 35dbf45f0e3d6ddc552292f1528c1edfb12ce368
-SHA256: 583a0293d39d2bfe3212ceed706c0576c1b0b508307d7917d09ac8c3c3859b97
+Size: 103318
+MD5sum: 89b4fe884891599da5ab9eef348eefd2
+SHA1: 09a581fe60ef34cf371920fcef3acb02daae1e09
+SHA256: 5ccb618ad047047dab6447bb18c50cea550b0db694ee34f1e5b09262549dded5
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
@@ -1685,10 +1685,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.youtube.roothide
 Replaces: com.albrhi.youtube.roothide
 Filename: debs/com.albrhi.youtube_1.42.1_iphoneos-arm64.deb
-Size: 484862
-MD5sum: 8b21fedd0812ad6fbffa30482ad0f162
-SHA1: 705c4c48841945c9d6433b9ef38e807836d43e6d
-SHA256: 5bc3474e7c3b80ede03df6aa1a1ec1f8d864f3a61a30d8b3b85010f1eea3dbff
+Size: 484278
+MD5sum: 4789fb5abc025e7a2ba0201a4acca6dc
+SHA1: e5bbb08fd47e8d6ff6ea97e1f6a5a0eb6d0b1064
+SHA256: a834ec33bf972c8775e3df3035f41e47b97eba21d90a253a01fbb47b6ce89046
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
@@ -1747,10 +1747,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.youtube
 Replaces: com.albrhi.youtube
 Filename: debs/com.albrhi.youtube.roothide_1.42.1_iphoneos-arm64e.deb
-Size: 485158
-MD5sum: 6df7d1e76eacb4610dc743e8b431ffce
-SHA1: b606143a649a73aec57a0e1c9fe0ac2a6c87b9c3
-SHA256: 55930d982242d6ebd065d39f19730c0e28e042f26001d8335ed43191f8e38e95
+Size: 484396
+MD5sum: 6833b4daca5e9796f411c090af089eca
+SHA1: 6338e40a208e27cf3722a98a43a03965731b9d32
+SHA256: 8165176204f97f406e3036748491180ed3b16fcd4925e46e6302b8ef756d3b19
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
