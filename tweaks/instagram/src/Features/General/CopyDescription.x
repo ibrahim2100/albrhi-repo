@@ -144,10 +144,15 @@ static void SCICopyAttachTo(UIWindow *window) {
         return;
     }
 
+    // The owners are the views the text sits in, up to its cell. Going further reached the view controllers: the feed's
+    // sits under Instagram's tab bar controller, whose name holds "TabBar", and every caption in the feed was refused
+    // (4.7.2 on 410: "kept out by the exclusion list" for IGFeedItemTextCell).
     NSMutableArray<NSString *> *owners = [NSMutableArray array];
     UIResponder *responder = target.superview;
     for (int step = 0; step < 16 && responder; step++, responder = responder.nextResponder) {
+        if ([responder isKindOfClass:[UIViewController class]] || [responder isKindOfClass:[UIScrollView class]]) break;
         [owners addObject:NSStringFromClass([responder class])];
+        if ([responder isKindOfClass:[UICollectionViewCell class]] || [responder isKindOfClass:[UITableViewCell class]]) break;
     }
     if (!SCICopyOffered(owners)) {
         SCICopyNoteMiss(@"kept out by the exclusion list", SCIChain(target));
