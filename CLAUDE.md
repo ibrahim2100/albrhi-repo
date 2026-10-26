@@ -882,7 +882,12 @@ instances taught; here are the facts.
   `IGCommentCellContentView.commentTextView`, whose type ObjC cannot name). The model is ObjC: `IGCommentCell -bindViewModel:` (`v24@0:8@16`) is hooked, the model's text is read
   through `SCISafeValueForKey` and kept on the cell; at the press the comment cell is found **by position** (`SCICommentCellAt`, front to back, class name holds `IGComment`) and that text is copied, before any text-view search; a
   press on a `UIControl` inside the cell (the like button) copies nothing. The ledger line `comment cells bound: N (with text: M) · model class: X` says whether the hook ever ran (N), and whether the model had the shape
-  assumed (M, X). **The first guess at the model was wrong, and the ledger line said so in one report** (4.7.6: `comment cells bound: 4 (with text: 0) · model class: IGCommentModel`): 410 hands `-bindViewModel:` an `IGCommentModel`, whose text is `text`; `commentText` is on the section view model, which is not what arrives. 4.7.7 reads `text`, then `commentText`, then `comment.text` (`SCICommentTextOf`), and the harness now uses a class named `IGCommentModel` with only `text`. Not yet seen working on a device. `IGCommentCell` is not in 450.1.0 under that name, so there the
+  assumed (M, X). **The first guess at the model was wrong, and the ledger line said so in one report** (4.7.6: `comment cells bound: 4 (with text: 0) · model class: IGCommentModel`): 410 hands `-bindViewModel:` an `IGCommentModel`, whose text is `text`; `commentText` is on the section view model, which is not what arrives. 4.7.7 reads `text`, then `commentText`, then `comment.text` (`SCICommentTextOf`), and the harness now uses a class named `IGCommentModel` with only `text`. **4.7.7 still copied the header label** (`comment cells bound: 6 (with text: 6)`, one press, `found by position under a dimming view`): the model was right and the cell was not found at the press.
+  Reading: `IGCommentCell` has a `contextMenuDelegate`, so Instagram's own long-press on a comment (a context menu) puts a dimming view over everything *before our half second is up* and hides the view it lifts into the preview; a hit test
+  then answers with the dimming view, a by-position search skips the hidden cell, and the nearest visible text is the menu's own table header. **That is an inference, not a measurement** — but it is reproduced in the harness (`-menu`:
+  a dimming view after 0.25 s and the pressed cell hidden) where the 4.7.7 code copied nothing. 4.7.8 does not depend on it: `-gestureRecognizer:shouldReceiveTouch:` records the view the finger landed on **at touch-down**
+  (`SCICopyTarget.touchDownView`), the comment cell is reached by climbing from that view, and a `UIControl` on the way (the like button) means no copy; by-position search is only the fallback when no touch-down view exists.
+  Instagram's own menu still opens; the copy happens beside it. Not yet seen working on a device. `IGCommentCell` is not in 450.1.0 under that name, so there the
   hook is inert and only the by-position search remains. The by-position text search under a dimming view is kept as the fallback; the 4.7.5 caption fix (heavy prefix) is separate and **not yet seen working on a device**: the 4.7.5 report's last copy was the header label, not a caption, and the owner did not say whether the account name was gone.
 - **Removed in 3.1.4** (broken or redundant): liquid glass, teen icons, doom-scrolling limits, per-surface download toggles,
   long-press tuning, quality picker. Keep-deleted-messages came back as `keep_unsent_messages`. Do not reintroduce without a reason.
@@ -1245,8 +1250,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.7.7** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.10**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.7.8** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.11**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

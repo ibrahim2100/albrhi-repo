@@ -33,6 +33,11 @@ static const void *kSCICopyWindowKey = &kSCICopyWindowKey;
 
 @interface SCICopyTarget : NSObject <UIGestureRecognizerDelegate>
 + (instancetype)shared;
+/// The view the finger landed on **when it landed**, and where. A long-press fires half a second later, and by then
+/// Instagram's own long-press (a comment's context menu) has put a dimming view over everything: a hit test at fire time
+/// answers with that view (4.7.7 report: `IGWindow@0→UIDimmingView`, every time), the touch-down view does not.
+@property (nonatomic, weak) UIView *touchDownView;
+@property (nonatomic) CGPoint touchDownPoint;
 @end
 
 /// What a core-text view is showing, with its styling, or nil.
@@ -315,6 +320,13 @@ static void SCICopyAttachTo(UIWindow *window) {
     return YES;
 }
 
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
+    self.touchDownView = touch.view;
+    UIWindow *window = touch.window;
+    self.touchDownPoint = window ? [touch locationInView:window] : CGPointZero;
+    return YES;
+}
+
 - (void)fired:(UILongPressGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateBegan) return;
     if (![SCIUtils getBoolPref:@"copy_description"]) return;
@@ -325,6 +337,9 @@ static void SCICopyAttachTo(UIWindow *window) {
 
     CGPoint point = [sender locationInView:window];
     UIView *hit = [window hitTest:point withEvent:nil];
+    UIView *down = self.touchDownView;
+    BOOL usingTouchDown = down && down.window == window;
+    if (usingTouchDown) hit = down;   // what was under the finger when it landed, not what covers it half a second later
     Class coreText = NSClassFromString(@"IGCoreTextView");
     if (!hit || !coreText) {
         SCICopyNoteMiss(!coreText ? @"IGCoreTextView is not in this build" : @"nothing under the finger", nil);
@@ -334,22 +349,36 @@ static void SCICopyAttachTo(UIWindow *window) {
     // A comment: the cell is found by position and its text is the one remembered from its model. This comes first because
     // the comment's text view cannot be named (Swift) and, under a sheet's dimming view, a hit test answers with the dimming view.
     NSString *via = @"";
-    NSInteger cellBudget = 2500;
-    UICollectionViewCell *commentCell = SCICommentCellAt(window, point, window, &cellBudget);
+    UICollectionViewCell *commentCell = nil;
+    UIControl *touchedControl = nil;
+    for (UIView *v = hit; v && v != window; v = v.superview) {
+        if (!touchedControl && [v isKindOfClass:[UIControl class]]) touchedControl = (UIControl *)v;
+        if ([v isKindOfClass:[UICollectionViewCell class]]) {
+            if ([NSStringFromClass([v class]) containsString:@"IGComment"]) commentCell = (UICollectionViewCell *)v;
+            break;
+        }
+    }
+    if (!commentCell && !usingTouchDown) {
+        NSInteger cellBudget = 2500;
+        commentCell = SCICommentCellAt(window, point, window, &cellBudget);
+    }
     if (commentCell) {
         NSString *remembered = objc_getAssociatedObject(commentCell, kSCICommentTextKey);
         NSString *comment = SCICopyableText(remembered);
-        if (SCIControlAt(commentCell, point, window)) {
-            SCICopyNoteMiss(@"a control inside the comment cell was pressed", NSStringFromClass([commentCell class]));
+        if (touchedControl || (!usingTouchDown && SCIControlAt(commentCell, point, window))) {
+            SCICopyNoteMiss(@"a control inside the comment cell was pressed", SCIChain(hit));
             return;
         }
         if (comment) {
-            SCICopyFinish(comment, NSStringFromClass([commentCell class]), @"comment text from its model");
+            SCICopyFinish(comment, NSStringFromClass([commentCell class]),
+                          usingTouchDown ? @"comment text from its model · cell from the touch-down view" : @"comment text from its model · cell found by position");
             return;
         }
         // Nothing remembered (the cell was bound before the tweak could see it, or the model has another shape): fall through
         // to the text-view search, and say so wherever that ends.
         via = [NSString stringWithFormat:@" · %@ found with no text remembered from its model", NSStringFromClass([commentCell class])];
+    } else if (usingTouchDown) {
+        via = [NSString stringWithFormat:@" · touch-down chain %@", SCIChain(hit)];
     }
 
     // On the text itself, or on something that contains it (a cell, a header): climb, searching each owner's subviews.
