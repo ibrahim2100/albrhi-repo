@@ -877,12 +877,12 @@ instances taught; here are the facts.
   4.7.4's rule — drop the first styled run when its font is clearly heavier than the next — **did nothing**, and the report said why: the 410 runs are `[0+6 w0.40 link][6+1 w0.40][7+69 w0.00]`, the account **and the space after it**
   are two heavy runs. 4.7.5 takes every consecutive run as heavy as the first (`SCILeadingNameLength`, first run ≥ 0.2) up to the first lighter one; whether a prefix is a plausible name is `SCICopyDropLeadingName` (host-tested; no
   whitespace inside it, a separator after it, something left). The harness now builds the string with that run shape.
-  **Comments, third attempt (4.7.6): take the text from the model, not from whatever draws it.** The 4.7.4 miss was `IGWindow@0→UIDimmingView` (the hit test at a comment is the sheet's dimming view). 4.7.5 searched the window
+  **Comments, third attempt (4.7.6, corrected in 4.7.7): take the text from the model, not from whatever draws it.** The 4.7.4 miss was `IGWindow@0→UIDimmingView` (the hit test at a comment is the sheet's dimming view). 4.7.5 searched the window
   **by position** for any text-drawing view and the report showed what that gets you: `_UITableViewHeaderFooterViewLabel`, 86 characters — a header label, not the comment (its text view is a Swift lazy var,
-  `IGCommentCellContentView.commentTextView`, whose type ObjC cannot name). The model is ObjC: `IGCommentCell -bindViewModel:` (`v24@0:8@16`) is hooked, `IGCommentSectionViewModel.commentText` (else `.comment.text`) is read
+  `IGCommentCellContentView.commentTextView`, whose type ObjC cannot name). The model is ObjC: `IGCommentCell -bindViewModel:` (`v24@0:8@16`) is hooked, the model's text is read
   through `SCISafeValueForKey` and kept on the cell; at the press the comment cell is found **by position** (`SCICommentCellAt`, front to back, class name holds `IGComment`) and that text is copied, before any text-view search; a
   press on a `UIControl` inside the cell (the like button) copies nothing. The ledger line `comment cells bound: N (with text: M) · model class: X` says whether the hook ever ran (N), and whether the model had the shape
-  assumed (M, X). **Not verified on a device: that 410 passes an `IGCommentSectionViewModel` to `bindViewModel:`** (the parameter is `id`); the harness uses a stand-in. `IGCommentCell` is not in 450.1.0 under that name, so there the
+  assumed (M, X). **The first guess at the model was wrong, and the ledger line said so in one report** (4.7.6: `comment cells bound: 4 (with text: 0) · model class: IGCommentModel`): 410 hands `-bindViewModel:` an `IGCommentModel`, whose text is `text`; `commentText` is on the section view model, which is not what arrives. 4.7.7 reads `text`, then `commentText`, then `comment.text` (`SCICommentTextOf`), and the harness now uses a class named `IGCommentModel` with only `text`. Not yet seen working on a device. `IGCommentCell` is not in 450.1.0 under that name, so there the
   hook is inert and only the by-position search remains. The by-position text search under a dimming view is kept as the fallback; the 4.7.5 caption fix (heavy prefix) is separate and **not yet seen working on a device**: the 4.7.5 report's last copy was the header label, not a caption, and the owner did not say whether the account name was gone.
 - **Removed in 3.1.4** (broken or redundant): liquid glass, teen icons, doom-scrolling limits, per-surface download toggles,
   long-press tuning, quality picker. Keep-deleted-messages came back as `keep_unsent_messages`. Do not reintroduce without a reason.
@@ -1245,8 +1245,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.7.6** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.9**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.7.7** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.10**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

@@ -4,6 +4,14 @@
 Other versions should work too — the tweak looks for what it needs while the app runs
 rather than expecting a particular version number.
 
+## v4.7.7
+
+**نسخ التعليقات: النموذج الذي تُربط به الخلية هو `IGCommentModel`، ونصه في `text`.**
+
+- **ما قاله تقرير 4.7.6:** `comment cells bound: 4 (with text: 0) · model class: IGCommentModel`. الخطّاف على `IGCommentCell -bindViewModel:` اشتغل (٤ خلايا)، لكن 4.7.6 قرأ `commentText` (من `IGCommentSectionViewModel`) فلم يجد شيئاً، لأن 410 يمرّر `IGCommentModel` نفسه. فبقي النسخ يسقط إلى البحث بالموقع ويلتقط عنوان جدول من جديد.
+- **الآن:** يُقرأ `text` أولاً ثم `commentText` ثم `comment.text`، ويبقى الباقي كما هو (خلية التعليق بالموقع، ولا نسخ عند الضغط على زر).
+- جُرّب في المحاكي بصنف باسم `IGCommentModel` فيه `text` فقط (شكل النموذج الذي أظهره التقرير): انتُسخ نص التعليق تحت طبقة تعتيم. **لا هاتف.** هذه المرة الشكل مقروء من هاتفك لا مفترَض.
+
 ## v4.7.6
 
 **نسخ التعليقات: نص التعليق يُؤخذ من نموذجه لا من العرض الذي يرسمه.**

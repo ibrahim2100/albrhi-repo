@@ -211,19 +211,26 @@ static NSArray<NSString *> *SCIOwnersOf(UIView *view) {
 
 /// A comment's own text, remembered on its cell when Instagram binds the cell to its model. The comment text view is a Swift
 /// lazy var whose type ObjC cannot see (the 4.7.5 report found a table header label instead), but the model it is built
-/// from is ObjC: `IGCommentSectionViewModel.commentText` (and `.comment.text` on its `IGCommentModel`).
+/// from is ObjC. **`-bindViewModel:` is handed an `IGCommentModel` on 410** (the 4.7.6 report: `comment cells bound: 4
+/// (with text: 0) · model class: IGCommentModel`) -- its text is `text`, and `commentText` belongs to the section view model
+/// the first guess assumed. Both shapes are read, in the order a plain model is most likely.
 static const void *kSCICommentTextKey = &kSCICommentTextKey;
+
+static NSString *SCICommentTextOf(id model) {
+    for (NSString *key in @[@"text", @"commentText"]) {
+        id text = SCISafeValueForKey(model, key);
+        if ([text isKindOfClass:[NSString class]] && [text length]) return text;
+    }
+    id comment = SCISafeValueForKey(model, @"comment");
+    id text = comment ? SCISafeValueForKey(comment, @"text") : nil;
+    return ([text isKindOfClass:[NSString class]] && [text length]) ? text : nil;
+}
 
 static void SCIRememberComment(UIView *cell, id viewModel) {
     if (!viewModel || ![SCIUtils getBoolPref:@"copy_description"]) return;
-    id text = SCISafeValueForKey(viewModel, @"commentText");
-    if (![text isKindOfClass:[NSString class]] || ![text length]) {
-        id comment = SCISafeValueForKey(viewModel, @"comment");
-        text = comment ? SCISafeValueForKey(comment, @"text") : nil;
-    }
-    BOOL had = [text isKindOfClass:[NSString class]] && [text length];
-    SCICopyNoteBind(NSStringFromClass([viewModel class]), had);
-    objc_setAssociatedObject(cell, kSCICommentTextKey, had ? [text copy] : nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    NSString *text = SCICommentTextOf(viewModel);
+    SCICopyNoteBind(NSStringFromClass([viewModel class]), text != nil);
+    objc_setAssociatedObject(cell, kSCICommentTextKey, [text copy], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 /// The comment cell (`IGCommentCell` and its subclasses) under `point`, by where cells are and not by a hit test, front to back.
