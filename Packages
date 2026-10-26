@@ -1,16 +1,16 @@
 Package: com.albrhi
-Version: 1.101.7
+Version: 1.101.10
 Architecture: iphoneos-arm64
 Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
-Installed-Size: 1708
+Installed-Size: 1724
 Depends: mobilesubstrate, preferenceloader
 Conflicts: com.albrhi.roothide, com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide, com.dvntm.ytmultimate
 Replaces: com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide
-Filename: debs/com.albrhi_1.101.7_iphoneos-arm64.deb
-Size: 2485602
-MD5sum: 7eb4be24c2a1cd1d2df65ff4609b92e7
-SHA1: 714aae2ce7184731713dbebde8295727c770f3db
-SHA256: b703e6bc2efc96ee4c2a249be82c3f641ae95d1bfa8cf16fc7ddc98e6fe0ab74
+Filename: debs/com.albrhi_1.101.10_iphoneos-arm64.deb
+Size: 2488880
+MD5sum: 111f3694c4d0dc8bf88a0b4a2dab40b9
+SHA1: 25984e291f65cf233b1f3eeb5b889f2566c36469
+SHA256: 7dfc8b8cdacf7b00aa78aab97f5da7da8c3fef08f265d703c03d9efdfe3d872d
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
@@ -515,18 +515,18 @@ Name: Albrhi NextUp (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
 
 Package: com.albrhi.roothide
-Version: 1.101.7
+Version: 1.101.10
 Architecture: iphoneos-arm64e
 Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
-Installed-Size: 1708
+Installed-Size: 1724
 Depends: mobilesubstrate, preferenceloader
 Conflicts: com.albrhi.roothide, com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide, com.dvntm.ytmultimate
 Replaces: com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide
-Filename: debs/com.albrhi.roothide_1.101.7_iphoneos-arm64e.deb
-Size: 2482776
-MD5sum: 2c05482223ba3630a09ec459b3b60810
-SHA1: b07db85bebf285b9a1dd5d91c4b02cd83f52d368
-SHA256: 22adc3adfb9214d74c5d484df32a49d67fe57f8d32420cea4cc58f060927cdae
+Filename: debs/com.albrhi.roothide_1.101.10_iphoneos-arm64e.deb
+Size: 2486340
+MD5sum: 5c2ae093489cbda256421faed74d5d05
+SHA1: 711db2924fc59da18bb41d30020af1d98822384b
+SHA256: 758e259dfd77278a03f692c941e78b9dd6f0379cc75608a51b3bb9a4b8e16850
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
@@ -727,10 +727,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tiktok.roothide
 Replaces: com.albrhi.tiktok.roothide
 Filename: debs/com.albrhi.tiktok_0.24.3_iphoneos-arm64.deb
-Size: 122598
-MD5sum: 26bc7ac2195d1662ab348d270c3e659e
-SHA1: 7db4eebb848baf6efd776fb9252fbda012494562
-SHA256: d6e5dc4515a0428e6e60212394ab39345ae4df0461729508ac2826c627a5444b
+Size: 122642
+MD5sum: 90d15023768fb3492413521d0ebd3c2a
+SHA1: b6fd178460d3fe96ff9adc84e9ef3667d9bb9746
+SHA256: c5ad5ef0f8f9f2869855bfd4f43546e896663823537ab5b2d66cb88e1adde8c3
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
@@ -789,10 +789,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tiktok
 Replaces: com.albrhi.tiktok
 Filename: debs/com.albrhi.tiktok.roothide_0.24.3_iphoneos-arm64e.deb
-Size: 122668
-MD5sum: 9c86927e6ef6b56f2305b71a9dd55907
-SHA1: 6dbbd5570c7b1eaa463f2b12270dfe56c5136ad0
-SHA256: aa1d5f6089a8710bc0a5b118df3812f844f7ed467214912c5d77a3f867d6454e
+Size: 122546
+MD5sum: a6604d0140945b3c519cf2d6dd0819e0
+SHA1: a0f82f34afb326c5a1ec6cadb8705835c0f48b57
+SHA256: 4faac55e5a76315d96d93bba34b22981066876aa1d0b6f2b41a03a14a193b504
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
@@ -841,78 +841,6 @@ Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.ht
 Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for TikTok (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
-
-Package: com.albrhi.tweak
-Version: 4.7.4
-Architecture: iphoneos-arm64
-Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
-Installed-Size: 1708
-Depends: mobilesubstrate
-Conflicts: com.albrhi.tweak.roothide
-Replaces: com.albrhi.tweak.roothide
-Filename: debs/com.albrhi.tweak_4.7.4_iphoneos-arm64.deb
-Size: 510520
-MD5sum: e20aee4345e71a47721f8e941a58151c
-SHA1: 085850c566472fe47f20313941cc8f07979c413c
-SHA256: b3d325b93fcfa1790bd619152edb5a2d54c10a35bd00a2ffcbbf0b6ec1704626
-Section: Tweaks
-Homepage: https://github.com/ibrahim2100/albrhi-repo
-Description: Download anything, hide the noise, browse invisibly — in Arabic or English.
- .
- Albrhi adds a download button to Instagram, clears the clutter out of your feed, and
- lets you watch without the app reporting it. Everything is in one settings panel.
- .
- ▍DOWNLOADS
- A download button in the action row of every post and reel, next to the save icon.
- One tap saves the best quality straight to Photos, or to its own album.
- .
- Stories and view-once messages have their own button. Reels can be saved as video or
- as just the audio. Profile pictures save in full size on a long press.
- .
- ▍DOWNLOAD CENTER
- A proper queue: pause, resume, retry and cancel, several downloads at once, and they
- keep going after you leave the app. Repeated links are spotted, finished files are
- tidied away once they reach Photos, and a searchable history keeps track.
- .
- ▍A QUIETER FEED
- Turn off ads, sponsored posts, suggested posts, suggested accounts, suggested reels,
- Threads posts, Meta AI, the friends map, trending searches and the explore grid.
- Hide the stories tray, or the whole feed.
- .
- ▍PRIVACY
- Watch stories without telling the person who posted it, and choose per story when to
- tell them. View-once photos and videos stay unseen until you tap the eye button on
- that message. Hide the typing indicator and turn off screenshot detection.
- .
- ▍REELS
- Tap to pause or mute instead of liking. Keep the progress bar visible. Stop reels
- unmuting themselves. Hide the header and the blend button.
- .
- ▍CONFIRMATIONS
- An optional "are you sure" before liking, following, reposting, calling, commenting
- or sending a voice message, so a mis-tap does not become a notification.
- .
- ▍ARABIC AND ENGLISH
- Full Arabic and English, with the layout flipping automatically. Choose your own
- accent colour, dark mode included. Open the settings by holding the menu button on
- your profile.
- .
- There is also a diagnostics page. If something does not work, it shows what the tweak
- can actually see on your phone, and sends a report in one tap.
- .
- ▍INSTAGRAM VERSIONS
- Tested on Instagram 410, 439 and 441. Nothing here is tied to a version number — the
- tweak looks for what it needs while the app runs, so other versions should work too.
- .
- Developed by Ibrahim Ismail AL-Rahn. Based on SCInsta by SoCuul, rebuilt with AI
- assistance to improve code quality, design, performance and user experience. Open source
- under the GNU GPL v3, with original authorship credited and preserved.
-Tag: role::enduser
-Author: Ibrahim Ismail AL-Rahn (based on SCInsta by SoCuul, GPLv3)
-Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
-Name: Albrhi for Instagram (rootless)
-Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 
 Package: com.albrhi.tweak
 Version: 4.7.5
@@ -1058,19 +986,19 @@ Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for Instagram (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 
-Package: com.albrhi.tweak.roothide
-Version: 4.7.4
-Architecture: iphoneos-arm64e
+Package: com.albrhi.tweak
+Version: 4.7.7
+Architecture: iphoneos-arm64
 Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
-Installed-Size: 1708
+Installed-Size: 1724
 Depends: mobilesubstrate
-Conflicts: com.albrhi.tweak
-Replaces: com.albrhi.tweak
-Filename: debs/com.albrhi.tweak.roothide_4.7.4_iphoneos-arm64e.deb
-Size: 510582
-MD5sum: 667a185908b0cac226d7b0a3975351d9
-SHA1: 73ad3371def3fdd8531f72fe1e752e70a35ec382
-SHA256: f8298380e46918945673ca846788c48ca3e7cbd164426e2fe95d89a7e9b75ee2
+Conflicts: com.albrhi.tweak.roothide
+Replaces: com.albrhi.tweak.roothide
+Filename: debs/com.albrhi.tweak_4.7.7_iphoneos-arm64.deb
+Size: 512374
+MD5sum: 29abfed524cf4e6528a1e0b27cdf2136
+SHA1: 5361520672e3a383d394190c71e446eb64b3cce4
+SHA256: 531f5dbafdcaee5d546ec56248a3c4d30fb0732963e246c0c0837c4dbac23275
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download anything, hide the noise, browse invisibly — in Arabic or English.
@@ -1127,7 +1055,7 @@ Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
 Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
-Name: Albrhi for Instagram (roothide)
+Name: Albrhi for Instagram (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 
 Package: com.albrhi.tweak.roothide
@@ -1274,6 +1202,78 @@ Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for Instagram (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 
+Package: com.albrhi.tweak.roothide
+Version: 4.7.7
+Architecture: iphoneos-arm64e
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 1724
+Depends: mobilesubstrate
+Conflicts: com.albrhi.tweak
+Replaces: com.albrhi.tweak
+Filename: debs/com.albrhi.tweak.roothide_4.7.7_iphoneos-arm64e.deb
+Size: 512344
+MD5sum: d736716fa09b1ceec057fea7547a4c99
+SHA1: 6b0139b0ac2b282fc1f77bb2ff49a0acec6cb81e
+SHA256: 18e4ad68adefb0a20e8ac1cf92805f6d6ecb7c7092dc19f2adddbd8f7974f4d9
+Section: Tweaks
+Homepage: https://github.com/ibrahim2100/albrhi-repo
+Description: Download anything, hide the noise, browse invisibly — in Arabic or English.
+ .
+ Albrhi adds a download button to Instagram, clears the clutter out of your feed, and
+ lets you watch without the app reporting it. Everything is in one settings panel.
+ .
+ ▍DOWNLOADS
+ A download button in the action row of every post and reel, next to the save icon.
+ One tap saves the best quality straight to Photos, or to its own album.
+ .
+ Stories and view-once messages have their own button. Reels can be saved as video or
+ as just the audio. Profile pictures save in full size on a long press.
+ .
+ ▍DOWNLOAD CENTER
+ A proper queue: pause, resume, retry and cancel, several downloads at once, and they
+ keep going after you leave the app. Repeated links are spotted, finished files are
+ tidied away once they reach Photos, and a searchable history keeps track.
+ .
+ ▍A QUIETER FEED
+ Turn off ads, sponsored posts, suggested posts, suggested accounts, suggested reels,
+ Threads posts, Meta AI, the friends map, trending searches and the explore grid.
+ Hide the stories tray, or the whole feed.
+ .
+ ▍PRIVACY
+ Watch stories without telling the person who posted it, and choose per story when to
+ tell them. View-once photos and videos stay unseen until you tap the eye button on
+ that message. Hide the typing indicator and turn off screenshot detection.
+ .
+ ▍REELS
+ Tap to pause or mute instead of liking. Keep the progress bar visible. Stop reels
+ unmuting themselves. Hide the header and the blend button.
+ .
+ ▍CONFIRMATIONS
+ An optional "are you sure" before liking, following, reposting, calling, commenting
+ or sending a voice message, so a mis-tap does not become a notification.
+ .
+ ▍ARABIC AND ENGLISH
+ Full Arabic and English, with the layout flipping automatically. Choose your own
+ accent colour, dark mode included. Open the settings by holding the menu button on
+ your profile.
+ .
+ There is also a diagnostics page. If something does not work, it shows what the tweak
+ can actually see on your phone, and sends a report in one tap.
+ .
+ ▍INSTAGRAM VERSIONS
+ Tested on Instagram 410, 439 and 441. Nothing here is tied to a version number — the
+ tweak looks for what it needs while the app runs, so other versions should work too.
+ .
+ Developed by Ibrahim Ismail AL-Rahn. Based on SCInsta by SoCuul, rebuilt with AI
+ assistance to improve code quality, design, performance and user experience. Open source
+ under the GNU GPL v3, with original authorship credited and preserved.
+Tag: role::enduser
+Author: Ibrahim Ismail AL-Rahn (based on SCInsta by SoCuul, GPLv3)
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
+Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
+Name: Albrhi for Instagram (roothide)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
+
 Package: com.albrhi.twitter
 Version: 0.22.0
 Architecture: iphoneos-arm64
@@ -1283,10 +1283,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.twitter.roothide
 Replaces: com.albrhi.twitter.roothide
 Filename: debs/com.albrhi.twitter_0.22.0_iphoneos-arm64.deb
-Size: 103266
-MD5sum: aebccec52a0265137ae77057ec78fedd
-SHA1: 23b8bfa1e880455f1e82d170b70973a89f329d13
-SHA256: d06ad77d3cb660d346e285382874f98f09e8fd1659da628d0d76505c582b85f8
+Size: 103296
+MD5sum: 194aa7d8822f9339868cc65e23ed41e1
+SHA1: d5c746448a912f83b22fae356ac2d10eee102761
+SHA256: c3d36755b524040b91ce15330b8133d5144c99258ea49c12a5dde32e41afe0b4
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
@@ -1357,10 +1357,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.twitter
 Replaces: com.albrhi.twitter
 Filename: debs/com.albrhi.twitter.roothide_0.22.0_iphoneos-arm64e.deb
-Size: 103308
-MD5sum: 38fb686b5f7954d6202f8639cd6b8861
-SHA1: b352a4024eb6b0f79720051b4a0c2dbc91c17543
-SHA256: 07c2f3901787b851a646980b1238d828fbed401ca869e3456c5f0d62dc2d5735
+Size: 103800
+MD5sum: 3ae00392148270ac5dd5b1f40e6d69c5
+SHA1: 08568f5697d491b9bd4a724767fe15eff305bc1b
+SHA256: f90f37ce510cab8f28b307b1eab250b0d75f81dc8bd91e94e3c1ccfb7ca24330
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
@@ -1685,10 +1685,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.youtube.roothide
 Replaces: com.albrhi.youtube.roothide
 Filename: debs/com.albrhi.youtube_1.42.1_iphoneos-arm64.deb
-Size: 484568
-MD5sum: 72948195cbe16f73fccfc0464868aebd
-SHA1: 294a2079b26f26e0ab8548791348946f856f866c
-SHA256: 2315a281662e4e53d34ea76856ce77c6311930805d0fb859b4e3a38426fa6a2c
+Size: 484602
+MD5sum: 04132860adbc008b25bc3f34149fd602
+SHA1: 38b9d2c34b3667f51860143643f13bfcd29ea907
+SHA256: c11646445546ea9cee7c6b79f299f134d76767f353fc98fe03295806af9c90b0
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
@@ -1747,10 +1747,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.youtube
 Replaces: com.albrhi.youtube
 Filename: debs/com.albrhi.youtube.roothide_1.42.1_iphoneos-arm64e.deb
-Size: 484408
-MD5sum: be68272f5d503910afb0ab9eed268e84
-SHA1: 5b6fc189afc90ebea3b4f10767ff82b1c16570c5
-SHA256: 2c83a370bfe04f687e3c2dfbddfb263e988d134b58d12493f1f2094470fb80a5
+Size: 484308
+MD5sum: 326ed34e41dd31614a6df742ff129829
+SHA1: 58eaea01f2dd5fb21d70ea090f22d9eff4bc4636
+SHA256: 3864bc7594d14229447cf3311723a44fa310f1ff39e7640c75cb4a080e3f42b3
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
