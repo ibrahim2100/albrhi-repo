@@ -19,6 +19,8 @@ int main(void) {
         CHECK(!SCICopyOffered(@[@"IGBannerViewV2", @"IGViewController"]));
         CHECK(!SCICopyOffered(@[@"IGAccountDetailedPrivacySwitchRowView", @"IGSettingsViewController"]));
         CHECK(!SCICopyOffered(@[@"IGChangePasswordView_NEW"]));
+        CHECK(!SCICopyOffered(@[@"IGSocialUFIView.IGSocialUFIButtonView", @"IGFeedItemUFICell"]));   // the action bar under a post
+        CHECK(!SCICopyOffered(@[@"IGUFIInteractionCountsView"]));
         // One excluded owner anywhere up the chain is enough.
         CHECK(!SCICopyOffered(@[@"IGFeedItemTextCell", @"UIView", @"IGDirectInboxViewController"]));
 

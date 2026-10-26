@@ -15,6 +15,7 @@ static NSArray<NSString *> *SCICopyExcluded(void) {
             @"Composer",          // the thing being typed into
             @"Survey", @"Nux", @"NUX", @"Upsell",
             @"TabBar", @"NavigationBar", @"Button",
+            @"UFI",               // the action bar under a post (like, comment, share, save, and their counts)
             @"Typeahead", @"Keyboard",
             @"Registration", @"Login", @"Onboarding", @"Password", @"CodeConfirmation", @"CodeVerification",
         ];

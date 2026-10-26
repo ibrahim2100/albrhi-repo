@@ -375,6 +375,22 @@ static void SCICopyHandlePress(UIWindow *window, UIView *down, CGPoint point) {
     for (UIView *v = hit; v && !target; v = v.superview) {
         if ([v isKindOfClass:coreText]) { target = v; break; }
     }
+
+    // Not on text: the finger is on something near it. A button's long press has its own meaning, and the like count and
+    // the caption sit within a thumb's width of the buttons under a post (the owner: long-pressing the share button
+    // copied text). So a press that lands on a control, or on a view named for a button or the UFI bar, copies nothing --
+    // the 14 points of slack around text are for a finger that missed the text, not for one that hit something else.
+    if (!target) {
+        NSMutableArray<NSString *> *names = [NSMutableArray array];
+        for (UIView *v = hit; v && v != window && names.count < 12; v = v.superview) {
+            [names addObject:NSStringFromClass([v class])];
+            if ([v isKindOfClass:[UICollectionViewCell class]] || [v isKindOfClass:[UITableViewCell class]]) break;
+        }
+        if (touchedControl || !SCICopyOffered(names)) {
+            SCICopyNoteMiss(touchedControl ? @"pressed on a control" : @"pressed on a button or the action bar", SCIChain(hit));
+            return;
+        }
+    }
     NSInteger budget = 1500;
     UIView *owner = hit;
     for (int level = 0; owner && owner != window && !target && level < 10; level++, owner = owner.superview) {

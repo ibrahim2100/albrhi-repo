@@ -901,6 +901,10 @@ instances taught; here are the facts.
   and `SCICopyWrapProvider` wraps the provider only when the touch that opened the menu (`sciTouchView`, ≤ 3 s old, no `UIControl` on the way) landed on an `IGComment*` cell with remembered text; the action goes first
   (`menuByReplacingChildren:`). While the button is on offer (2 s), the by-itself copy for comments stays quiet (`press left to the button`), and is the fallback if the hook never fires. Captions have no menu and still copy on press.
   Ledger: `context menus built · Copy button added · tapped · press left to the button`. **Not seen on a device**; the harness builds the configuration through `SCICopyWrapProvider` because the Logos hook is not in the cut source.
+  **4.8.1: a long press on a post's buttons copied nearby text** (the owner: the share button, "غلط هيك"). The 14 pt slack that finds text for a finger that missed it also reaches the like count and the caption, which sit a thumb's
+  width from the action bar. A press that is not on text and lands on a `UIControl`, or on a view whose class holds `Button` or `UFI`, now copies nothing (`pressed on a control` / `pressed on a button or the action bar` in the ledger);
+  `UFI` joined `SCICopyOffered`'s words, so text inside the action bar is excluded as well. Reproduced first in the harness with a `UIButton` and a plain `IGSocialUFIButtonView` under a caption (old code copied the caption from both).
+  The real class names in 410's bar were not measured beyond what the report listed (`IGUFIButtonWithCountsView`, `IGSocialUFIView`, `IGUFIInteractionCountsView`).
    `IGCommentCell` is not in 450.1.0 under that name, so there the
   hook is inert and only the by-position search remains. The by-position text search under a dimming view is kept as the fallback; the 4.7.5 caption fix (heavy prefix) is separate and **not yet seen working on a device**: the 4.7.5 report's last copy was the header label, not a caption, and the owner did not say whether the account name was gone.
 - **Removed in 3.1.4** (broken or redundant): liquid glass, teen icons, doom-scrolling limits, per-surface download toggles,
@@ -1264,8 +1268,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.8.0** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.13**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.14**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
