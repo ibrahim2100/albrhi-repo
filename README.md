@@ -11,8 +11,8 @@
 [![Rootless](https://img.shields.io/badge/rootless-supported-success.svg)](#-compatibility)
 [![roothide](https://img.shields.io/badge/roothide-supported-success.svg)](#-compatibility)
 
-[![Albrhi](https://img.shields.io/badge/Albrhi-1.101.8-blueviolet.svg)](suite/CHANGELOG.md)
-[![Instagram](https://img.shields.io/badge/Instagram-4.7.5-orange.svg)](tweaks/instagram/CHANGELOG.md)
+[![Albrhi](https://img.shields.io/badge/Albrhi-1.101.9-blueviolet.svg)](suite/CHANGELOG.md)
+[![Instagram](https://img.shields.io/badge/Instagram-4.7.6-orange.svg)](tweaks/instagram/CHANGELOG.md)
 [![YouTube](https://img.shields.io/badge/YouTube-1.42.1-red.svg)](tweaks/youtube/CHANGELOG.md)
 [![X](https://img.shields.io/badge/X-0.22.0-black.svg)](tweaks/twitter/CHANGELOG.md)
 [![TikTok](https://img.shields.io/badge/TikTok-0.24.3-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
@@ -122,7 +122,7 @@ Developed by **Ibrahim Ismail AL-Rahn** ([@ibrahim2100](https://github.com/ibrah
 
 | Tweak | Patches | Version | In `com.albrhi` | What it does |
 |---|---|---|:-:|---|
-| **[Instagram](#-albrhi-for-instagram)** | Instagram | 4.7.5 | ✅ | downloads, AV1 reels transcoded on the device, a quieter feed, watching stories without a receipt, unsent messages kept and marked |
+| **[Instagram](#-albrhi-for-instagram)** | Instagram | 4.7.6 | ✅ | downloads, AV1 reels transcoded on the device, a quieter feed, watching stories without a receipt, unsent messages kept and marked |
 | **[YouTube](#-albrhi-for-youtube)** | YouTube | 1.42.1 | ✅ | downloads that survive app updates, their own Download Centre tab, no ads, SponsorBlock, background playback |
 | **[X](#-albrhi-for-x)** | X / Twitter | 0.22.0 | ✅ | media downloads with a button you can place yourself, and fifteen-plus switches for what X does |
 | **[TikTok](#-albrhi-for-tiktok)** | TikTok | 0.24.3 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |

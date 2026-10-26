@@ -3,6 +3,7 @@
 #import "../../Utils.h"
 #import "../../InstagramHeaders.h"
 #import "../../Localization/SCILocalize.h"
+#import "shared/src/SCIKVC.h"
 #import "SCICopyText.h"
 #import "modules/JGProgressHUD/JGProgressHUD.h"
 
@@ -208,6 +209,69 @@ static NSArray<NSString *> *SCIOwnersOf(UIView *view) {
     return owners;
 }
 
+/// A comment's own text, remembered on its cell when Instagram binds the cell to its model. The comment text view is a Swift
+/// lazy var whose type ObjC cannot see (the 4.7.5 report found a table header label instead), but the model it is built
+/// from is ObjC: `IGCommentSectionViewModel.commentText` (and `.comment.text` on its `IGCommentModel`).
+static const void *kSCICommentTextKey = &kSCICommentTextKey;
+
+static void SCIRememberComment(UIView *cell, id viewModel) {
+    if (!viewModel || ![SCIUtils getBoolPref:@"copy_description"]) return;
+    id text = SCISafeValueForKey(viewModel, @"commentText");
+    if (![text isKindOfClass:[NSString class]] || ![text length]) {
+        id comment = SCISafeValueForKey(viewModel, @"comment");
+        text = comment ? SCISafeValueForKey(comment, @"text") : nil;
+    }
+    BOOL had = [text isKindOfClass:[NSString class]] && [text length];
+    SCICopyNoteBind(NSStringFromClass([viewModel class]), had);
+    objc_setAssociatedObject(cell, kSCICommentTextKey, had ? [text copy] : nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+/// The comment cell (`IGCommentCell` and its subclasses) under `point`, by where cells are and not by a hit test, front to back.
+static UICollectionViewCell *SCICommentCellAt(UIView *root, CGPoint point, UIWindow *window, NSInteger *budget) {
+    if (!root || *budget <= 0) return nil;
+    (*budget)--;
+    if (root.hidden || root.alpha < 0.01) return nil;
+
+    CGRect frame = [root convertRect:root.bounds toView:window];
+    BOOL contains = CGRectContainsPoint(frame, point);
+    if (contains && [root isKindOfClass:[UICollectionViewCell class]] && [NSStringFromClass([root class]) containsString:@"IGComment"]) {
+        return (UICollectionViewCell *)root;
+    }
+    if (contains || !root.clipsToBounds) {
+        for (UIView *child in [root.subviews reverseObjectEnumerator]) {
+            UICollectionViewCell *found = SCICommentCellAt(child, point, window, budget);
+            if (found) return found;
+        }
+    }
+    return nil;
+}
+
+/// A button or other control inside `cell` at `point` (the like button's own long-press must keep its meaning).
+static UIView *SCIControlAt(UIView *root, CGPoint point, UIWindow *window) {
+    if (root.hidden || root.alpha < 0.01 || !CGRectContainsPoint([root convertRect:root.bounds toView:window], point)) return nil;
+    for (UIView *child in [root.subviews reverseObjectEnumerator]) {
+        UIView *found = SCIControlAt(child, point, window);
+        if (found) return found;
+    }
+    return [root isKindOfClass:[UIControl class]] ? root : nil;
+}
+
+/// The finish every copy shares: pasteboard, a tap of feedback, the "copied" notice, and the ledger.
+static void SCICopyFinish(NSString *result, NSString *viewClass, NSString *detail) {
+    [UIPasteboard generalPasteboard].string = result;
+    SCICopyNoteCopied(viewClass, result.length, detail);
+
+    UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
+    [haptic impactOccurred];
+
+    JGProgressHUD *HUD = [[JGProgressHUD alloc] init];
+    HUD.textLabel.text = SCILocalized(@"p_copied_text");
+    HUD.indicatorView = [[JGProgressHUDSuccessIndicatorView alloc] init];
+
+    [HUD showInView:topMostController().view];
+    [HUD dismissAfterDelay:2.0];
+}
+
 /// "IGCoreTextView ← UIView ← IGFeedItemTextCell ← …" -- nearest first, for the ledger.
 static NSString *SCIChain(UIView *view) {
     NSMutableArray *names = [NSMutableArray array];
@@ -260,6 +324,27 @@ static void SCICopyAttachTo(UIWindow *window) {
         return;
     }
 
+    // A comment: the cell is found by position and its text is the one remembered from its model. This comes first because
+    // the comment's text view cannot be named (Swift) and, under a sheet's dimming view, a hit test answers with the dimming view.
+    NSString *via = @"";
+    NSInteger cellBudget = 2500;
+    UICollectionViewCell *commentCell = SCICommentCellAt(window, point, window, &cellBudget);
+    if (commentCell) {
+        NSString *remembered = objc_getAssociatedObject(commentCell, kSCICommentTextKey);
+        NSString *comment = SCICopyableText(remembered);
+        if (SCIControlAt(commentCell, point, window)) {
+            SCICopyNoteMiss(@"a control inside the comment cell was pressed", NSStringFromClass([commentCell class]));
+            return;
+        }
+        if (comment) {
+            SCICopyFinish(comment, NSStringFromClass([commentCell class]), @"comment text from its model");
+            return;
+        }
+        // Nothing remembered (the cell was bound before the tweak could see it, or the model has another shape): fall through
+        // to the text-view search, and say so wherever that ends.
+        via = [NSString stringWithFormat:@" · %@ found with no text remembered from its model", NSStringFromClass([commentCell class])];
+    }
+
     // On the text itself, or on something that contains it (a cell, a header): climb, searching each owner's subviews.
     UIView *target = nil;
     for (UIView *v = hit; v && !target; v = v.superview) {
@@ -276,15 +361,14 @@ static void SCICopyAttachTo(UIWindow *window) {
     // Not an IGCoreTextView: a comment can be drawn by something else. Inside a comment cell, take any view that draws text
     // under the finger -- and if there is none, put the cell's whole subtree in the ledger so the next round can name it.
     NSAttributedString *attributed = nil;
-    NSString *via = @"";
     if (!target && [NSStringFromClass([hit class]) containsString:@"Dimming"]) {
         // A covering view took the touch (a sheet's dimming view): look for the text by where it is.
         NSInteger geoBudget = 2500;
         NSMutableArray<NSString *> *seen = [NSMutableArray array];
         target = SCITextTopmostAt(window, point, window, coreText, &geoBudget, seen);
-        via = @" · found by position under a dimming view";
+        via = [via stringByAppendingString:@" · found by position under a dimming view"];
         if (!target) {
-            SCICopyNoteMiss(@"a dimming view took the press and no text view is under it",
+            SCICopyNoteMiss([@"a dimming view took the press and no text view is under it" stringByAppendingString:via],
                             [NSString stringWithFormat:@"%@ ⟨%@⟩ ⟨%@⟩", SCIChain(hit), SCIWindowsSummary(point, window), [seen componentsJoinedByString:@" > "]]);
             return;
         }
@@ -307,7 +391,7 @@ static void SCICopyAttachTo(UIWindow *window) {
             }
             attributed = SCIPlainTextOf(target);
         } else {
-            SCICopyNoteMiss(@"no IGCoreTextView at the finger", [NSString stringWithFormat:@"%@ ⟨%@⟩", SCIChain(hit), SCIWindowsSummary(point, window)]);
+            SCICopyNoteMiss([@"no IGCoreTextView at the finger" stringByAppendingString:via], [NSString stringWithFormat:@"%@ ⟨%@⟩", SCIChain(hit), SCIWindowsSummary(point, window)]);
             return;
         }
     }
@@ -325,19 +409,8 @@ static void SCICopyAttachTo(UIWindow *window) {
         return;
     }
 
-    [UIPasteboard generalPasteboard].string = result;
-    SCICopyNoteCopied(NSStringFromClass([target class]), result.length,
-                      [NSString stringWithFormat:@"name %lu · runs %@%@", (unsigned long)nameLength, SCIRunsSummary(attributed), via]);
-
-    UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
-    [haptic impactOccurred];
-
-    JGProgressHUD *HUD = [[JGProgressHUD alloc] init];
-    HUD.textLabel.text = SCILocalized(@"p_copied_text");
-    HUD.indicatorView = [[JGProgressHUDSuccessIndicatorView alloc] init];
-
-    [HUD showInView:topMostController().view];
-    [HUD dismissAfterDelay:2.0];
+    SCICopyFinish(result, NSStringFromClass([target class]),
+                  [NSString stringWithFormat:@"name %lu · runs %@%@", (unsigned long)nameLength, SCIRunsSummary(attributed), via]);
 }
 
 @end
@@ -352,6 +425,15 @@ static void SCICopyAttachTo(UIWindow *window) {
 - (void)makeKeyAndVisible {
     %orig;
     SCICopyAttachTo(self);
+}
+
+%end
+
+%hook IGCommentCell
+
+- (void)bindViewModel:(id)viewModel {
+    %orig;
+    SCIRememberComment(self, viewModel);
 }
 
 %end

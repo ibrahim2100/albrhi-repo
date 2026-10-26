@@ -302,6 +302,10 @@
 @interface IGDirectMessageUpdate : NSObject
 @end
 
+@interface IGCommentCell : UICollectionViewCell
+- (void)bindViewModel:(id)viewModel;
+@end
+
 @interface IGCoreTextView : UIView
 @end
 

@@ -64,6 +64,8 @@ NSString *SCICopyDropLeadingName(NSString *text, NSUInteger nameLength) {
 static NSUInteger sciPresses = 0, sciCopies = 0, sciMisses = 0;
 static NSMutableArray<NSString *> *sciWindows = nil;
 static NSString *sciLastCopy = nil;
+static NSUInteger sciBinds = 0, sciBindsWithText = 0;
+static NSString *sciBindModel = nil;
 static NSMutableArray<NSString *> *sciRecentMisses = nil;
 
 void SCICopyNoteLongPress(void) { sciPresses++; }
@@ -81,6 +83,12 @@ void SCICopyNoteMiss(NSString *reason, NSString *chain) {
     while (sciRecentMisses.count > 4) [sciRecentMisses removeLastObject];
 }
 
+void SCICopyNoteBind(NSString *modelClass, BOOL hadText) {
+    sciBinds++;
+    if (hadText) sciBindsWithText++;
+    sciBindModel = modelClass;
+}
+
 void SCICopyNoteAttached(NSString *windowClass) {
     if (!sciWindows) sciWindows = [NSMutableArray array];
     [sciWindows addObject:windowClass];
@@ -92,6 +100,8 @@ NSArray<NSString *> *SCICopyReportLines(void) {
                       sciWindows.count ? [sciWindows componentsJoinedByString:@", "] : @"none yet"]];
     [lines addObject:[NSString stringWithFormat:@"long-presses seen: %lu · copied: %lu · nothing to copy: %lu",
                       (unsigned long)sciPresses, (unsigned long)sciCopies, (unsigned long)sciMisses]];
+    [lines addObject:[NSString stringWithFormat:@"comment cells bound: %lu (with text: %lu) · model class: %@",
+                      (unsigned long)sciBinds, (unsigned long)sciBindsWithText, sciBindModel ?: @"none seen"]];
     if (sciLastCopy) [lines addObject:[@"last copy: " stringByAppendingString:sciLastCopy]];
     for (NSString *miss in sciRecentMisses) [lines addObject:[@"miss: " stringByAppendingString:miss]];
     return lines;

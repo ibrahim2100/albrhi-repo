@@ -4,6 +4,16 @@
 Other versions should work too — the tweak looks for what it needs while the app runs
 rather than expecting a particular version number.
 
+## v4.7.6
+
+**نسخ التعليقات: نص التعليق يُؤخذ من نموذجه لا من العرض الذي يرسمه.**
+
+- **ما قاله تقرير 4.7.5:** `copied: 3`، وآخر نسخة `_UITableViewHeaderFooterViewLabel, 86 characters … found by position under a dimming view`. أي أن البحث بالموقع وجد نصاً، لكنه عنوان جدول لا التعليق: نص التعليق عرض Swift (`commentTextView` متغيّر lazy في `IGCommentCellContentView`) لا يطابق ما نبحث عنه، فيُلتقط أي عرض آخر يرسم نصاً قريباً.
+- **الحل:** عند ربط خلية التعليق بنموذجها (`IGCommentCell -bindViewModel:`، `v24@0:8@16` في 410) يُقرأ `IGCommentSectionViewModel.commentText` (و`comment.text` احتياطاً) عبر `SCISafeValueForKey` ويُحفظ على الخلية. عند الضغط تُوجَد خلية التعليق **بالموقع** (النافذة من الأمام للخلف، لا بـ hit test الذي يعيد التعتيم) ويُنسخ ذلك النص، قبل أي بحث عن عروض نص. ما يُنسخ هو نص التعليق نفسه، فلا اسم حساب فيه.
+- **الضغط على زر داخل الخلية (الإعجاب وغيره) لا ينسخ**: ضغطته الطويلة لها معناها.
+- **تشخيص جديد:** `comment cells bound: N (with text: M) · model class: …`. إن كان N صفراً فالخطّاف لم يُستدعَ؛ إن كان M صفراً فالنموذج بشكل آخر وتخبرنا الصنف.
+- **المجرَّب:** في المحاكي بنموذج مقلَّد وطبقة تعتيم تغطي الشاشة: انتُسخ نص النموذج لتعليق يرسمه `UILabel` ولتعليق يرسمه عرض لا يحمل نصاً، وتجاوز الزر. **لا هاتف، ولم يُتحقَّق أن 410 يمرّر `IGCommentSectionViewModel` إلى `bindViewModel:`** (النوع `id` في التوقيع). في 450.1.0 الصنف `IGCommentCell` غير موجود بهذا الاسم، فالخطّاف لا يعمل هناك ويبقى البحث بالموقع.
+
 ## v4.7.5
 
 **نسخ الوصف: اسم الحساب بقي في 4.7.4، والتعليقات تأخذ الضغطة عنها طبقة تعتيم. الاثنان سببهما في تقرير الهاتف.**

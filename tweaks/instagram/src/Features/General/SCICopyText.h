@@ -51,6 +51,10 @@ void SCICopyNoteCopied(NSString *viewClass, NSUInteger length, NSString * _Nulla
 /// comment drawn by something other than `IGCoreTextView` looks like), a view the exclusion list keeps out, or no text.
 void SCICopyNoteMiss(NSString *reason, NSString * _Nullable chain);
 
+/// A comment cell was bound to its model: the model's class, and whether its text could be read. Counted so a report says
+/// whether the comment path ever had anything to work with.
+void SCICopyNoteBind(NSString *modelClass, BOOL hadText);
+
 /// Where the window recognizer was attached (class names), once each.
 void SCICopyNoteAttached(NSString *windowClass);
 
