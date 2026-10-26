@@ -1,108 +1,76 @@
 # Building Albrhi
 
-Target device: **RootHide Dopamine 2 (rootless)**, Instagram **v409** (works on nearby versions).
+The short version lives in the README ([Building](README.md#-building)). This file is the longer one:
+what to install once, what to run before pushing, and what CI does with it.
+The reasoning behind each rule — what broke, and why it is a rule — is in [CLAUDE.md](CLAUDE.md) §3.
 
-The build must run on a **Mac or Linux** machine with Theos — it cannot be produced on-device or in a sandbox without the iOS SDK.
-
----
-
-## 1. Prerequisites (one-time)
-
-1. **Install Theos** (official): https://theos.dev/docs/installation
-   ```bash
-   export THEOS=~/theos
-   git clone --recursive https://github.com/theos/theos.git $THEOS
-   ```
-2. **Add an iOS SDK** into `$THEOS/sdks` (a recent 16.x/17.x SDK is fine; the Makefile uses `latest`).
-3. **Confirm the toolchain** (Swift/clang for iOS). On Linux use the Theos-provided toolchain.
-
-## 2. Get the source ready
-
-From the project root:
-```bash
-# Pull the FLEXing + JGProgressHUD submodules referenced by .gitmodules
-git submodule update --init --recursive
-```
-> The uploaded ZIP does **not** include submodule contents. `modules/JGProgressHUD` and `modules/FLEXing` must be populated or the build will fail.
-
-## 3. Build the rootless .deb
-
-```bash
-export THEOS_PACKAGE_SCHEME=rootless
-make clean
-make package
-```
-Output:
-```
-packages/com.albrhi.tweak_*_iphoneos-arm64.deb
-```
-The bundled `build.sh` also works: `./build.sh instagram rootless`.
-
-## 4. Install on the device
-
-Copy the `.deb` to the phone and install with your package manager (Sileo/Zebra) or over SSH:
-```bash
-scp packages/com.albrhi.tweak_*_iphoneos-arm64.deb mobile@<device-ip>:/tmp/
-ssh mobile@<device-ip>
-sudo dpkg -i /tmp/com.albrhi.tweak_*_iphoneos-arm64.deb
-sudo sbreload   # or fully re-open Instagram
-```
-
-## 5. Converting to .deb from other formats
-
-If you build the sideload/IPA variant instead (`./build.sh instagram sideload`), that produces an `.ipa`, not a `.deb`. For Dopamine 2 you want the **rootless `.deb`** from step 3 — no conversion needed.
+Building needs a **Mac** (or Linux) with Theos. The iOS SDK is not available anywhere else.
 
 ---
 
-## Notes on v409 vs v418
-
-SCInsta was tested on Instagram **418.2.0**; you're on **409**. Class names are almost always identical across this range, but if a specific feature misbehaves:
-
-1. Confirm which hook is failing (check Console logs filtered by `Albrhi` / `SCInsta`).
-2. `class-dump` your installed Instagram binary and compare the class/ivar names in `tweaks/instagram/src/InstagramHeaders.h`.
-3. Adjust only the mismatched selector/ivar; leave the rest intact.
-
-### Download quality — how it now works
-`SCIUtils getVideoUrl:` selects the highest-quality video by:
-1. Reading `_videoVersionDictionaries` (each entry has `url` + `width`/`height` + bitrate) and picking the largest pixel area, tie-broken by bitrate.
-2. If unavailable, using `sortedVideoURLsBySize` and taking the **last** (largest) element.
-3. As a last resort, `allVideoURLs` (an unordered set) — returns any object.
-
-If your Instagram version exposes a different ivar name for the version list, update the KVC keys in `getVideoUrl:` (`_videoVersionDictionaries` / `videoVersionDictionaries`).
-
-### Save directly to Photos
-Controlled by the `dw_save_to_camera` toggle (Downloads section). When on, media is written to the library via the Photos framework instead of the share sheet. The host app already carries a photo-add usage description; if a save silently fails, verify Instagram has "Add Photos Only" or full Photos permission in iOS Settings.
-
----
-
-## v2.2.0 — new capabilities & caveats
-
-**Photos permission (direct save + custom album):** saving straight to the library or to the "Albrhi" album uses the Photos framework. Instagram already declares photo-library usage, so this normally works. If a save fails silently, grant Instagram full Photos access in iOS Settings → Privacy → Photos.
-
-**Silent video** re-encodes via `AVAssetExportSession` (highest-quality preset). This adds a short processing delay after download and needs temporary disk space. Output is always `.mp4`.
-
-**Reel audio download:** audio lives on `IGMedia`, which isn't always reachable from the reels video cell in every build. The extractor walks several accessors (`media`, `item`, `mediaView`, `video`); if none expose the audio asset, Albrhi cleanly falls back to a normal video download — no crash. If audio download doesn't appear on reels in your build, that's why; the video path still works.
-
-**Quality picker** reads `-[IGVideo videoVersions]` (array of `IGAPIVideoVersion`). If empty, Albrhi falls back to automatic best-quality selection.
-
-**Custom accent color** requires iOS 14+ (system `UIColorPickerViewController`). Stored as a hex string in `albrhi_accent_hex`; the reset button clears it back to the Albrhi orange.
-
-## Building for roothide
-
-roothide uses its own Theos fork, so install it separately:
+## 1. Once per machine
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/roothide/theos/master/bin/install-theos)"
+brew install ldid make dpkg                 # dpkg only for dpkg-deb; it cannot install packages here
+git clone --recursive https://github.com/theos/theos.git ~/theos
+# the SDK CI uses: iPhoneOS16.2.sdk from xybp888/iOS-SDKs, into ~/theos/sdks/
+
+export THEOS=$HOME/theos
+export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"     # GNU make; Apple's fails Theos
 ```
 
-Then, with `THEOS` pointing at that installation:
+roothide needs a **second** Theos, the roothide fork, because Theos decides the package layout when it stages
+(the flavour is chosen by which Theos builds it, never by the `control` file):
 
 ```bash
-./build.sh instagram roothide
+git clone --recursive https://github.com/roothide/theos.git ~/theos-roothide    # then copy sdks/ across
 ```
 
-Albrhi needs no `jbroot()` calls: it writes only inside Instagram's own container
-(`NSSearchPathForDirectoriesInDomains` with `NSUserDomainMask`, and
-`NSTemporaryDirectory`), never to jailbreak paths. The rootless sources therefore
-build unchanged under the roothide scheme, and `DISABLE_ROOTLESS_COMPAT_WARNING` is
-defined in the Makefile to silence the compatibility notice.
+`bash tools/doctor.sh` checks all of this and says how to fix what is missing. It changes nothing.
+`bash tools/install-hooks.sh` installs a pre-commit hook that runs the source checks.
+
+## 2. Every time
+
+```bash
+python3 tools/check.py            # source rules: seconds, not a five-minute compile
+python3 tools/check-repo.py       # versions, changelogs, README badges, workflows
+bash tools/run-host-tests.sh      # pure logic, run on this Mac
+./build.sh instagram rootless     # → tweaks/instagram/packages/
+```
+
+`build.sh <tweak> <mode>` takes `rootless`, `roothide`, `rootful` or `sideload`. A device is still the third gate:
+compiling and host tests do not catch a wrong hook signature or a layout bug (see the Diagnostics pages).
+
+## 3. A package for your own phone
+
+```bash
+tools/build-local.sh                    # the whole suite, roothide, into ~/Desktop/Albrhi
+tools/build-local.sh instagram rootless
+tools/build-dylibs.sh                   # the four standalone dylibs → ~/Desktop/Albrhi-Dylibs
+```
+
+It proves the flavour from the staged paths and refuses to copy out a mismatch. A local build carries a `+N`
+suffix (`4.8.1+1`) so it installs over the last one. **`+N` is for this machine and is never pushed**
+(`check-repo.py` refuses it when staged).
+
+## 4. What CI does
+
+| workflow | builds | publishes |
+|---|---|---|
+| `buildsuite.yml` | `com.albrhi` (rootless and roothide), the four standalone dylibs, the individual debs | **yes** — tag `v<suite version>` |
+| `buildnextup.yml` · `buildwatch.yml` | NextUp · Watch | yes — `nextup-v*` · `watch-v*` |
+| `buildtweak.yml` · `buildyoutube.yml` · `buildtwitter.yml` · `buildtiktok.yml` · `buildpanel.yml` | one tweak each | no — manual builds only |
+| `build-dav1d.yml` | the AV1 decoder Instagram links | on demand |
+
+A suite run: **host tests** (about 80 s; a failure withholds the release) → source checks → build only if
+`v<suite version>` is not yet tagged → release assets → rebuild the APT index from what is published (newest three
+versions of each package) → write `gh-pages` → ask the **live URL** whether it serves the version just built.
+A daily run (05:17 UTC) retries anything a dropped run lost. All publishers share the `albrhi-pages` concurrency
+group; a shared group keeps only the newest *pending* run, so **do not push a release in the same commit as a change
+to `tools/` or `shared/`** — push those first, separately.
+
+## 5. Releasing
+
+See [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md). In one line: four numbers move together (the tweak's `control`,
+its `SCIVersionString`, its `CHANGELOG.md`, and `suite/control` with the suite changelog), then README and
+CLAUDE.md's *Known state*, and `check-repo.py` fails if one is missed.

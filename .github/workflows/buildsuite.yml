@@ -76,11 +76,11 @@ on:
 jobs:
     # The pure logic of each tweak, run on a Mac against the macOS SDK (tools/run-host-tests.sh).
     #
-    # **Report-only for now, and that is stated rather than hidden.** These harnesses were written
-    # and run on a developer machine and have never run on a CI image; a difference in Xcode or SDK
-    # there would otherwise block a release for a reason unrelated to the code. It is a separate job
-    # with no `needs` link, so a red mark here is seen on the run and never withholds a publish.
-    # Once it has been green on a few runs, make `build` depend on it.
+    # **`build` waits for this job.** It was report-only while these harnesses had never run on a CI
+    # image (a difference in Xcode or SDK there would have blocked a release for a reason unrelated
+    # to the code). It then passed fourteen runs in a row (2026-10-25 to 26, about 80 s each), so a
+    # red result now withholds the release: a pure-logic regression should not reach a phone. The
+    # daily schedule retries, so a flaky runner costs a day and not a release.
     host-tests:
         name: Host tests (pure logic)
         runs-on: macos-latest
@@ -106,6 +106,7 @@ jobs:
 
     build:
         name: Build, release and publish
+        needs: host-tests
         runs-on: macos-latest
 
         # Shared with the older workflows, and never cancelled. They can still be run

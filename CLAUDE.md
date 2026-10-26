@@ -177,7 +177,7 @@ and `src/`. Nothing outside it knows which app it patches.
 tweaks/<app>/        a complete Theos project (control Version drives the release)
 suite/               com.albrhi — control, DEBIAN/preinst, CHANGELOG.md
 shared/              tweak.mk, SCIPanelGate, SCIKVC, SCIResponder, Prefs/ — what every tweak shares
-docs/                investigations/ — what was measured, in what order, and what turned out wrong
+docs/                investigations/ — what was measured, in what order, and what turned out wrong · audit-2026-10.md — the whole-repo audit and what it left open
 tools/               checks, APT index, depictions, signing, injection, browser tools (§3.6)
 modules/ vendor/     third-party code (JGProgressHUD, dav1d, LightMessaging, libSandy, FLEXing)
 extra-debs/          drop a .deb here and the source publishes it
@@ -325,7 +325,7 @@ said "29 tests in about a second" — a test nobody runs in CI is a test that ro
 | `deb-edit.py` · `deb-edit.html` | edit `.deb` metadata (`label` appends `(rootless)`/`(roothide)`/`(rootful)`; `normalize` converts an xz control archive to gzip — the browser tool carries a hand-written DEFLATE because `DecompressionStream` is iOS 16.4+) |
 | `make-logo.py` · `repo-index.html` | repo icon in pure Python, the source's landing page (built from the live index) |
 
-**REA (`morluto/rea`, npm `rea-agents` 6.4.0, MIT) is installed on the owner's Mac as an aid, not a dependency** (nothing in the build or CI uses it): `npm install --global --ignore-scripts`, registered in
+**REA (`morluto/rea`, npm `rea-agents` 6.4.0 — 6.8.0 was the newest published on 2026-10-26, not installed — MIT) is installed on the owner's Mac as an aid, not a dependency** (nothing in the build or CI uses it): `npm install --global --ignore-scripts`, registered in
 Claude Code as an MCP server by `rea setup --client claude_code` (backup `~/.claude.json.rea.backup`; tools appear after a restart), Ghidra 12.1.4 and JDK 21 from Homebrew. **Measured, not assumed:**
 its ObjC metadata matches `objc-classes.py` on classes (adds protocols, categories, implementation addresses; **no type encodings**) and **refuses a binary whose metadata exceeds 64 MiB (YouTube 21.34.3)**;
 its decompiler works through Ghidra and names ObjC methods `Class::selector:` (with the colon; `rea search --kind procedures` lists them) — **the one capability we lacked, not yet used on a real app**: the
@@ -347,7 +347,7 @@ result installs cleanly and fails on the device. Build both flavours from source
 | `buildtweak.yml` · `buildyoutube.yml` · `buildtwitter.yml` · `buildtiktok.yml` · `buildpanel.yml` | one tweak each | **manual build only, write nothing** |
 | `build-dav1d.yml` | the AV1 decoder Instagram links | on demand |
 
-`buildsuite.yml` also carries a **`host-tests` job** (`tools/run-host-tests.sh` on a macOS runner) that is **report-only on purpose**: these harnesses had never run on a CI image, so it has no `needs` link and a red mark there shows on the run without withholding a publish. Make `build` depend on it once it has been green for a few runs. **First run on CI (suite 1.93.4): all six Mac suites passed (instagram, panel, tiktok, twitter, youtube 11, ytmusic 29),** (a licence-server Node test also ran there and needed a glob rather than a directory; the server is gone and so is that test). **CI time is compiling** (measured on one run: about 7 of 8 minutes; Theos setup 12 s), so caching Theos was not worth adding.
+`buildsuite.yml` also carries a **`host-tests` job** (`tools/run-host-tests.sh` on a macOS runner, about 80 s) and **`build` waits for it** (`needs: host-tests`, since the 2026-10-26 audit): it was report-only while these harnesses had never run on a CI image, and it then passed fourteen runs in a row, so a red result now withholds the release; the daily schedule retries, so a flaky runner costs a day and not a release. **First run on CI (suite 1.93.4): all six Mac suites passed (instagram, panel, tiktok, twitter, youtube 11, ytmusic 29),** (a licence-server Node test also ran there and needed a glob rather than a directory; the server is gone and so is that test). **CI time is compiling** (measured on one run: about 7 of 8 minutes; Theos setup 12 s), so caching Theos was not worth adding.
 
 There is no Spotify workflow. **Three workflows publish and all take the `albrhi-pages` concurrency group** — the
 one thing stopping two runs writing `gh-pages` at once.
@@ -1291,8 +1291,7 @@ workflow shaped like `buildnextup.yml`, or into the suite; (5) host tests for `S
 tweak** — postponed, Watusi 3's architecture already read; (7) CarPlay rebuilt from scratch in its own repository; settings profiles; crash isolation that disables a faulting
 feature rather than the whole tweak.
 
-**Working agreement.** The owner works in Arabic and pushes **directly to `main`** (no pull requests; `gh` is installed via brew but not signed in — `gh auth login` is the
-owner's step). A diagnostic is written when asked for, never on its own. When a report says "worked" it was run on the device; when it was only compiled or run on this
+**Working agreement.** The owner works in Arabic and pushes **directly to `main`** (no pull requests; `gh` is installed and signed in as `ibrahim2100`). **Since 2026-10-26 the owner has authorised pushing finished, checked work to `main` without asking each time** (the checks, the four numbers and a local build first; never a force-push, and nothing outside `main`); CI results are still not read back unless asked, so say that a push was not verified. A diagnostic is written when asked for, never on its own. When a report says "worked" it was run on the device; when it was only compiled or run on this
 Mac, say so plainly. The README is a map of what exists, not a second source of rules: update it when a tweak's visible features or versions change.
 
 **When something does not work on a device:** (1) the tweak's diagnostics — read what actually attached; (2) Instagram's magnifier scans the live view hierarchy and names the

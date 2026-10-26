@@ -198,8 +198,8 @@ colour · a **follow-back badge** under the followers count (green *follows you*
 account info.
 
 ### 🛠️ Interface
-Native inset-grouped settings with **search** · **backup & restore** to a file · copy any text by
-long-press · full dark mode · Arabic/English with RTL · tab ordering, hiding and swipe-between-tabs ·
+Native inset-grouped settings with **search** · **backup & restore** to a file · **copy a caption** by
+long-press and **a comment** from a *Copy* button added to Instagram's own comment menu · full dark mode · Arabic/English with RTL · tab ordering, hiding and swipe-between-tabs ·
 a **Diagnostics** page that reports what actually attached at runtime, scans the live view hierarchy,
 and files an issue with the whole report in one tap.
 
@@ -552,14 +552,15 @@ tools/build-local.sh youtube rootless
 ```
 
 It proves the flavour from the staged paths rather than the filename, and refuses to copy out a mismatch.
-See [BUILD.md](BUILD.md) and [GITHUB_BUILD.md](GITHUB_BUILD.md) for CI.
+See [BUILD.md](BUILD.md) for the checks, the roothide flavour and what CI does.
 
-**Pure logic is run, not only compiled.** The YouTube Music lyrics module and the YouTube transport layer
-build against the macOS SDK and execute on the build machine:
+**Pure logic is run, not only compiled.** Parsers, rankings and decision rules (the YouTube Music lyrics module,
+the YouTube transport, Instagram's deleted-messages log and copy rules, X's timeline filter, TikTok's link ranking,
+the panel's version check) build against the macOS SDK and execute on the build machine — and CI runs them before
+it will build a release:
 
 ```bash
-bash tweaks/ytmusic/tests/host/run.sh
-bash tweaks/youtube/tests/host/run.sh
+bash tools/run-host-tests.sh          # every tweaks/*/tests/host/run.sh
 ```
 
 A hook needs a device and there is no way around that. A parser does not.
@@ -658,13 +659,15 @@ The accumulated reasoning — what broke, why, and what was learned — lives in
 - [x] **Instagram:** story-seen hiding fixed on 439, unsent messages kept **and marked**
 - [x] **YouTube:** arrangeable tab bar, History tab, playback-error recovery, extra ad gates
 - [x] **X:** fifteen features, a draggable in-video button, Face ID cover
-- [x] **TikTok:** a card-based settings screen, save media from comments
-- [x] **Tests that run on the build machine** for YouTube Music and YouTube
+- [x] **TikTok:** Albrhi as a native section of TikTok's own Settings, an update screen that shows once per release, save media from comments
+- [x] **Instagram:** copy a caption by long-press, and a *Copy* button in the comment menu
+- [x] **Tests that run on the build machine** for six tweaks — and CI runs them before it builds a release
 
 **Next**
 - [ ] Confirm the deleted-messages log on a device — which message shape Instagram's update stream really carries decides whether text is captured
 - [ ] Hiding the reels **seen** mark (`write_seen_state` still goes out)
-- [ ] Take the host-test arrangement to the rest — the DASH ladder, the quality ranking and version comparison are pure functions
+- [ ] Host tests for what still has none — the DASH remuxer (`SCIYTFragments`) and TikTok's link comparator
+- [ ] Instagram 450 and newer: thirty-one hooked classes exist there only under Swift-mangled names (checked, not yet supported)
 - [ ] Spotify publishing from its own workflow
 - [ ] **Albrhi CarPlay, rebuilt from scratch in its own repository**
 - [ ] Settings profiles · crash protection that disables a faulting feature rather than the whole tweak
@@ -690,7 +693,6 @@ Issues and pull requests are welcome.
 ## 🙏 Credits
 
 - **[SoCuul](https://github.com/SoCuul)** — author of [SCInsta](https://github.com/SoCuul/SCInsta), the project Albrhi is derived from.
-- **[RyukGram](https://github.com/faroukbmiled/RyukGram)** by faroukbmiled — a fellow SCInsta fork, read for where Instagram is hookable.
 - **[YTKACE](https://github.com/itzzace/ytkace)** by itzzace (MIT) — the direct download method and several ad gates; **YTPlaybackFix** by Mark02 (MIT) — the playback-error recovery approach.
 - **[iSponsorBlock](https://github.com/Galactic-Dev/iSponsorBlock)** by Galactic Dev (GPLv3) — the coloured progress-bar markers; **[SponsorBlock](https://sponsor.ajay.app)** by Ajay Ramachandran — the segment database (CC BY-NC-SA 4.0).
 - **[YTMusicUltimate](https://github.com/dayanch96/YTMusicUltimate)** by **dayanch96** and **[YTMEnhanced](https://github.com/py233/YTMEnhanced)** by **py233** (GPLv3) — the YouTube Music hooks and synced-lyrics module. Their Premium claim deliberately is not carried over.
