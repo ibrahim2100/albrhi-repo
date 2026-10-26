@@ -58,6 +58,10 @@ void SCICopyNoteSource(BOOL fromTouchTimer);
 /// What became of a touch the timer was following: 0 began, 1 lifted before the half second, 2 moved away, 3 cancelled by the system.
 void SCICopyNoteTouch(int kind);
 
+/// The context menu's Copy button: 0 a menu configuration was built, 1 the button was added to a comment's menu, 2 it was
+/// tapped, 3 a long press was left to the button instead of copying by itself.
+void SCICopyNoteMenu(int kind);
+
 /// A comment cell was bound to its model: the model's class, and whether its text could be read. Counted so a report says
 /// whether the comment path ever had anything to work with.
 void SCICopyNoteBind(NSString *modelClass, BOOL hadText);

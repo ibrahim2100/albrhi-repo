@@ -895,7 +895,13 @@ instances taught; here are the facts.
   stopped by lift-off, a move over 12 pt, a second finger or a system cancel, each counted. Both ways call one `SCICopyHandlePress`, which ignores a second press within 1.5 s and 30 pt, so a screen where both work copies once.
   The ledger says which noticed it (`noticed by: recognizer N · touch timer M`) and what became of the touches (`touches followed … lifted early … moved away … cancelled by the system`). **Unverified:** that `touch.phase` seen in
   `sendEvent:` before `%orig` is the hardware's and not already cancelled when Instagram's menu starts; if it is cancelled, the last counter says so. **Lesson for this feature: when a fix does nothing, count the stage before it
-  (did the press arrive?) before refining the stage after it** — the ledger had `long-presses seen` from 4.7.2 and it was read for the wrong number until the seventh report. Not yet seen working on a device. `IGCommentCell` is not in 450.1.0 under that name, so there the
+  (did the press arrive?) before refining the stage after it** — the ledger had `long-presses seen` from 4.7.2 and it was read for the wrong number until the seventh report. **4.7.9 worked on the owner's phone** (copy of a caption and of a comment, "اشتغل النسخ حلو جدا"), and his screenshot of the comment menu (Reply with a reel, Add to story, Share, Report, Block) showed what to do next:
+  **4.8.0 adds Copy to that menu** instead of copying by itself on a comment. The menu is built in Swift (`_TtC19IGCommentActionMenu19IGCommentActionMenu`, `-config` lazy) and its `UIContextMenuInteractionDelegate` is in no
+  Objective-C method list, so nothing of Instagram's is hooked: `UIContextMenuConfiguration +configurationWithIdentifier:previewProvider:actionProvider:` is the one factory a Swift `UIContextMenuConfiguration(...)` reaches,
+  and `SCICopyWrapProvider` wraps the provider only when the touch that opened the menu (`sciTouchView`, ≤ 3 s old, no `UIControl` on the way) landed on an `IGComment*` cell with remembered text; the action goes first
+  (`menuByReplacingChildren:`). While the button is on offer (2 s), the by-itself copy for comments stays quiet (`press left to the button`), and is the fallback if the hook never fires. Captions have no menu and still copy on press.
+  Ledger: `context menus built · Copy button added · tapped · press left to the button`. **Not seen on a device**; the harness builds the configuration through `SCICopyWrapProvider` because the Logos hook is not in the cut source.
+   `IGCommentCell` is not in 450.1.0 under that name, so there the
   hook is inert and only the by-position search remains. The by-position text search under a dimming view is kept as the fallback; the 4.7.5 caption fix (heavy prefix) is separate and **not yet seen working on a device**: the 4.7.5 report's last copy was the header label, not a caption, and the owner did not say whether the account name was gone.
 - **Removed in 3.1.4** (broken or redundant): liquid glass, teen icons, doom-scrolling limits, per-surface download toggles,
   long-press tuning, quality picker. Keep-deleted-messages came back as `keep_unsent_messages`. Do not reintroduce without a reason.
@@ -1258,8 +1264,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.7.9** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.12**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.8.0** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.13**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

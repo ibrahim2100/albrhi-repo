@@ -310,6 +310,7 @@ static void SCICopyAttachTo(UIWindow *window) {
 /// where, in `window`. A half second later Instagram's own long-press (a comment's context menu) has put a dimming view over
 /// everything, so a hit test then answers with that view.
 static CFAbsoluteTime sciLastHandled = 0;
+static CFAbsoluteTime sciMenuOfferedAt = 0;   // when a comment's context menu was given its Copy button
 static CGPoint sciLastHandledPoint;
 
 static void SCICopyHandlePress(UIWindow *window, UIView *down, CGPoint point) {
@@ -350,6 +351,11 @@ static void SCICopyHandlePress(UIWindow *window, UIView *down, CGPoint point) {
         NSString *comment = SCICopyableText(remembered);
         if (touchedControl || (!usingTouchDown && SCIControlAt(commentCell, point, window))) {
             SCICopyNoteMiss(@"a control inside the comment cell was pressed", SCIChain(hit));
+            return;
+        }
+        if (comment && CFAbsoluteTimeGetCurrent() - sciMenuOfferedAt < 2.0) {
+            // Instagram's own menu is up and carries a Copy button: copying by ourselves as well would copy twice.
+            SCICopyNoteMenu(3);
             return;
         }
         if (comment) {
@@ -445,6 +451,7 @@ static NSUInteger sciTouchToken = 0;
 static BOOL sciTouchTracking = NO;
 static CGPoint sciTouchPoint;
 static __weak UIView *sciTouchView;
+static CFAbsoluteTime sciTouchTime = 0;
 
 static void SCICopyObserveTouches(UIWindow *window, UIEvent *event) {
     if (event.type != UIEventTypeTouches) return;
@@ -462,6 +469,7 @@ static void SCICopyObserveTouches(UIWindow *window, UIEvent *event) {
             sciTouchTracking = YES;
             sciTouchPoint = [touch locationInView:window];
             sciTouchView = touch.view;
+            sciTouchTime = CFAbsoluteTimeGetCurrent();
             SCICopyNoteTouch(0);
             NSUInteger token = ++sciTouchToken;
             __weak UIWindow *weakWindow = window;
@@ -491,6 +499,50 @@ static void SCICopyObserveTouches(UIWindow *window, UIEvent *event) {
         default:
             break;
     }
+}
+
+// MARK: - A Copy button in a comment's own context menu
+//
+// Long-pressing a comment opens Instagram's menu (Reply with a reel, Add to story, Share, Report, Block), and there is no
+// Copy in it. The menu is built in Swift (`IGCommentActionMenu`) and its delegate is not in the Objective-C method lists,
+// so nothing of Instagram's is hooked: every `UIContextMenuConfiguration` goes through one UIKit factory, and when the
+// finger that opened the menu landed on a comment cell whose text was remembered (`SCIRememberComment`) the menu's
+// provider is wrapped to put a Copy action first. The decision is taken when the configuration is built, a fraction of a
+// second after the touch, and only for a touch still fresh.
+
+static NSString *SCICommentTextForMenu(void) {
+    if (CFAbsoluteTimeGetCurrent() - sciTouchTime > 3.0) return nil;
+    for (UIView *v = sciTouchView; v; v = v.superview) {
+        if ([v isKindOfClass:[UICollectionViewCell class]]) {
+            if (![NSStringFromClass([v class]) containsString:@"IGComment"]) return nil;
+            return SCICopyableText(objc_getAssociatedObject(v, kSCICommentTextKey));
+        }
+        if ([v isKindOfClass:[UIControl class]]) return nil;   // the like button's own menu is not a comment's
+    }
+    return nil;
+}
+
+static UIContextMenuActionProvider SCICopyWrapProvider(UIContextMenuActionProvider original) {
+    SCICopyNoteMenu(0);
+    if (!original || ![SCIUtils getBoolPref:@"copy_description"]) return original;
+    NSString *text = SCICommentTextForMenu();
+    if (!text) return original;
+
+    sciMenuOfferedAt = CFAbsoluteTimeGetCurrent();
+    return ^UIMenu *(NSArray<UIMenuElement *> *suggested) {
+        UIMenu *menu = original(suggested);
+        if (![menu isKindOfClass:[UIMenu class]]) return menu;
+
+        UIAction *copy = [UIAction actionWithTitle:SCILocalized(@"comment_copy_action")
+                                             image:[UIImage systemImageNamed:@"doc.on.doc"]
+                                        identifier:nil
+                                           handler:^(__kindof UIAction *action) {
+            SCICopyNoteMenu(2);
+            SCICopyFinish(text, @"IGCommentCell", @"copied from the menu's Copy button");
+        }];
+        SCICopyNoteMenu(1);
+        return [menu menuByReplacingChildren:[@[copy] arrayByAddingObjectsFromArray:menu.children]];
+    };
 }
 
 @implementation SCICopyTarget
@@ -554,6 +606,14 @@ static void SCICopyObserveTouches(UIWindow *window, UIEvent *event) {
 - (void)sendEvent:(UIEvent *)event {
     SCICopyObserveTouches(self, event);
     %orig;
+}
+
+%end
+
+%hook UIContextMenuConfiguration
+
++ (instancetype)configurationWithIdentifier:(id<NSCopying>)identifier previewProvider:(UIContextMenuContentPreviewProvider)previewProvider actionProvider:(UIContextMenuActionProvider)actionProvider {
+    return %orig(identifier, previewProvider, SCICopyWrapProvider(actionProvider));
 }
 
 %end
