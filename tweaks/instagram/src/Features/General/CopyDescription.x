@@ -306,38 +306,21 @@ static void SCICopyAttachTo(UIWindow *window) {
     SCICopyNoteAttached(NSStringFromClass([window class]));
 }
 
-@implementation SCICopyTarget
+/// What a long press does, whichever way it was noticed: `down` is the view the finger landed on **when it landed**, `point`
+/// where, in `window`. A half second later Instagram's own long-press (a comment's context menu) has put a dimming view over
+/// everything, so a hit test then answers with that view.
+static CFAbsoluteTime sciLastHandled = 0;
+static CGPoint sciLastHandledPoint;
 
-+ (instancetype)shared {
-    static SCICopyTarget *shared;
-    static dispatch_once_t once;
-    dispatch_once(&once, ^{ shared = [[SCICopyTarget alloc] init]; });
-    return shared;
-}
-
-- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer
-    shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)other {
-    return YES;
-}
-
-- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
-    self.touchDownView = touch.view;
-    UIWindow *window = touch.window;
-    self.touchDownPoint = window ? [touch locationInView:window] : CGPointZero;
-    return YES;
-}
-
-- (void)fired:(UILongPressGestureRecognizer *)sender {
-    if (sender.state != UIGestureRecognizerStateBegan) return;
-    if (![SCIUtils getBoolPref:@"copy_description"]) return;
+static void SCICopyHandlePress(UIWindow *window, UIView *down, CGPoint point) {
+    // Two ways of noticing the same press (the recognizer and the touch timer) must copy once.
+    CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+    if (now - sciLastHandled < 1.5 && hypot(point.x - sciLastHandledPoint.x, point.y - sciLastHandledPoint.y) < 30) return;
+    sciLastHandled = now;
+    sciLastHandledPoint = point;
     SCICopyNoteLongPress();
 
-    UIWindow *window = (UIWindow *)sender.view;
-    if (![window isKindOfClass:[UIWindow class]]) return;
-
-    CGPoint point = [sender locationInView:window];
     UIView *hit = [window hitTest:point withEvent:nil];
-    UIView *down = self.touchDownView;
     BOOL usingTouchDown = down && down.window == window;
     if (usingTouchDown) hit = down;   // what was under the finger when it landed, not what covers it half a second later
     Class coreText = NSClassFromString(@"IGCoreTextView");
@@ -449,6 +432,98 @@ static void SCICopyAttachTo(UIWindow *window) {
                   [NSString stringWithFormat:@"name %lu · runs %@%@", (unsigned long)nameLength, SCIRunsSummary(attributed), via]);
 }
 
+// MARK: - The touch timer
+//
+// **Why a second way of noticing a press.** In the 4.7.8 report the comment presses never reached the recognizer at all
+// (`long-presses seen: 1`, and that one was on the tab bar): inside Instagram's comments something takes the touches
+// before a window recognizer can finish -- most likely the comment's own context-menu gesture, which this code cannot
+// inspect. The touches themselves still pass through `-[UIWindow sendEvent:]` whatever the gesture system decides, so a
+// plain half-second timer started there cannot be starved by it. It stops on lift-off, on a move of more than 12 points,
+// on a second finger, or on the system cancelling the touch (each counted in the ledger).
+
+static NSUInteger sciTouchToken = 0;
+static BOOL sciTouchTracking = NO;
+static CGPoint sciTouchPoint;
+static __weak UIView *sciTouchView;
+
+static void SCICopyObserveTouches(UIWindow *window, UIEvent *event) {
+    if (event.type != UIEventTypeTouches) return;
+    if (!objc_getAssociatedObject(window, kSCICopyWindowKey)) return;
+
+    NSSet<UITouch *> *touches = [event touchesForWindow:window];
+    if (touches.count > 1) { sciTouchTracking = NO; return; }
+    UITouch *touch = touches.anyObject;
+    if (!touch) return;
+
+    switch (touch.phase) {
+        case UITouchPhaseBegan: {
+            sciTouchTracking = NO;
+            if (![SCIUtils getBoolPref:@"copy_description"]) return;
+            sciTouchTracking = YES;
+            sciTouchPoint = [touch locationInView:window];
+            sciTouchView = touch.view;
+            SCICopyNoteTouch(0);
+            NSUInteger token = ++sciTouchToken;
+            __weak UIWindow *weakWindow = window;
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                UIWindow *strongWindow = weakWindow;
+                if (!strongWindow || !sciTouchTracking || token != sciTouchToken) return;
+                sciTouchTracking = NO;
+                SCICopyNoteSource(YES);
+                SCICopyHandlePress(strongWindow, sciTouchView, sciTouchPoint);
+            });
+            break;
+        }
+        case UITouchPhaseMoved: {
+            if (!sciTouchTracking) break;
+            CGPoint now = [touch locationInView:window];
+            if (hypot(now.x - sciTouchPoint.x, now.y - sciTouchPoint.y) > 12) { sciTouchTracking = NO; SCICopyNoteTouch(2); }
+            break;
+        }
+        case UITouchPhaseEnded:
+            if (sciTouchTracking) SCICopyNoteTouch(1);
+            sciTouchTracking = NO;
+            break;
+        case UITouchPhaseCancelled:
+            if (sciTouchTracking) SCICopyNoteTouch(3);
+            sciTouchTracking = NO;
+            break;
+        default:
+            break;
+    }
+}
+
+@implementation SCICopyTarget
+
++ (instancetype)shared {
+    static SCICopyTarget *shared;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ shared = [[SCICopyTarget alloc] init]; });
+    return shared;
+}
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer
+    shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)other {
+    return YES;
+}
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
+    self.touchDownView = touch.view;
+    UIWindow *window = touch.window;
+    self.touchDownPoint = window ? [touch locationInView:window] : CGPointZero;
+    return YES;
+}
+
+- (void)fired:(UILongPressGestureRecognizer *)sender {
+    if (sender.state != UIGestureRecognizerStateBegan) return;
+    if (![SCIUtils getBoolPref:@"copy_description"]) return;
+
+    UIWindow *window = (UIWindow *)sender.view;
+    if (![window isKindOfClass:[UIWindow class]]) return;
+    SCICopyNoteSource(NO);
+    SCICopyHandlePress(window, self.touchDownView, [sender locationInView:window]);
+}
+
 @end
 
 %hook UIWindow
@@ -470,6 +545,15 @@ static void SCICopyAttachTo(UIWindow *window) {
 - (void)bindViewModel:(id)viewModel {
     %orig;
     SCIRememberComment(self, viewModel);
+}
+
+%end
+
+%hook UIWindow
+
+- (void)sendEvent:(UIEvent *)event {
+    SCICopyObserveTouches(self, event);
+    %orig;
 }
 
 %end

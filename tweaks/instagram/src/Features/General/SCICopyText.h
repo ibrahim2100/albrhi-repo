@@ -51,6 +51,13 @@ void SCICopyNoteCopied(NSString *viewClass, NSUInteger length, NSString * _Nulla
 /// comment drawn by something other than `IGCoreTextView` looks like), a view the exclusion list keeps out, or no text.
 void SCICopyNoteMiss(NSString *reason, NSString * _Nullable chain);
 
+/// Which way a long press was noticed: the gesture recognizer (`NO`) or the touch timer (`YES`). Counted separately, so a
+/// report says whether the recognizer ever fires inside a screen where the timer does.
+void SCICopyNoteSource(BOOL fromTouchTimer);
+
+/// What became of a touch the timer was following: 0 began, 1 lifted before the half second, 2 moved away, 3 cancelled by the system.
+void SCICopyNoteTouch(int kind);
+
 /// A comment cell was bound to its model: the model's class, and whether its text could be read. Counted so a report says
 /// whether the comment path ever had anything to work with.
 void SCICopyNoteBind(NSString *modelClass, BOOL hadText);

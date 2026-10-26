@@ -64,6 +64,7 @@ NSString *SCICopyDropLeadingName(NSString *text, NSUInteger nameLength) {
 static NSUInteger sciPresses = 0, sciCopies = 0, sciMisses = 0;
 static NSMutableArray<NSString *> *sciWindows = nil;
 static NSString *sciLastCopy = nil;
+static NSUInteger sciBySource[2] = {0, 0}, sciTouch[4] = {0, 0, 0, 0};
 static NSUInteger sciBinds = 0, sciBindsWithText = 0;
 static NSString *sciBindModel = nil;
 static NSMutableArray<NSString *> *sciRecentMisses = nil;
@@ -83,6 +84,10 @@ void SCICopyNoteMiss(NSString *reason, NSString *chain) {
     while (sciRecentMisses.count > 4) [sciRecentMisses removeLastObject];
 }
 
+void SCICopyNoteSource(BOOL fromTouchTimer) { sciBySource[fromTouchTimer ? 1 : 0]++; }
+
+void SCICopyNoteTouch(int kind) { if (kind >= 0 && kind < 4) sciTouch[kind]++; }
+
 void SCICopyNoteBind(NSString *modelClass, BOOL hadText) {
     sciBinds++;
     if (hadText) sciBindsWithText++;
@@ -100,6 +105,10 @@ NSArray<NSString *> *SCICopyReportLines(void) {
                       sciWindows.count ? [sciWindows componentsJoinedByString:@", "] : @"none yet"]];
     [lines addObject:[NSString stringWithFormat:@"long-presses seen: %lu · copied: %lu · nothing to copy: %lu",
                       (unsigned long)sciPresses, (unsigned long)sciCopies, (unsigned long)sciMisses]];
+    [lines addObject:[NSString stringWithFormat:@"noticed by: recognizer %lu · touch timer %lu",
+                      (unsigned long)sciBySource[0], (unsigned long)sciBySource[1]]];
+    [lines addObject:[NSString stringWithFormat:@"touches followed: %lu · lifted early: %lu · moved away: %lu · cancelled by the system: %lu",
+                      (unsigned long)sciTouch[0], (unsigned long)sciTouch[1], (unsigned long)sciTouch[2], (unsigned long)sciTouch[3]]];
     [lines addObject:[NSString stringWithFormat:@"comment cells bound: %lu (with text: %lu) · model class: %@",
                       (unsigned long)sciBinds, (unsigned long)sciBindsWithText, sciBindModel ?: @"none seen"]];
     if (sciLastCopy) [lines addObject:[@"last copy: " stringByAppendingString:sciLastCopy]];

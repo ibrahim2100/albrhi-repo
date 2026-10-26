@@ -887,7 +887,15 @@ instances taught; here are the facts.
   then answers with the dimming view, a by-position search skips the hidden cell, and the nearest visible text is the menu's own table header. **That is an inference, not a measurement** — but it is reproduced in the harness (`-menu`:
   a dimming view after 0.25 s and the pressed cell hidden) where the 4.7.7 code copied nothing. 4.7.8 does not depend on it: `-gestureRecognizer:shouldReceiveTouch:` records the view the finger landed on **at touch-down**
   (`SCICopyTarget.touchDownView`), the comment cell is reached by climbing from that view, and a `UIControl` on the way (the like button) means no copy; by-position search is only the fallback when no touch-down view exists.
-  Instagram's own menu still opens; the copy happens beside it. Not yet seen working on a device. `IGCommentCell` is not in 450.1.0 under that name, so there the
+  Instagram's own menu still opens; the copy happens beside it.
+  **4.7.8 copied nothing either, and its report moved the problem a step earlier than every fix so far:** `long-presses seen: 1`, that one on `IGTabBarButton`, with `comment cells bound: 5 (with text: 4)`. The comment presses never
+  reached the window recognizer at all, so 4.7.5–4.7.8 were all repairs to a step that did not happen. Something inside the comments (most likely the comment's own context-menu gesture) takes the touch before a window recognizer
+  can finish; **the cause is an inference**, but it is reproduced in the harness (`-menu -block`: a second recogniser with `cancelsTouchesInView` and a delegate refusing simultaneous recognition) where the 4.7.8 code saw
+  `presses 0`. 4.7.9 therefore also **follows the touch itself** from `-[UIWindow sendEvent:]` (`SCICopyObserveTouches`, before `%orig`, only on windows the recognizer was attached to): a half-second timer from the touch-down,
+  stopped by lift-off, a move over 12 pt, a second finger or a system cancel, each counted. Both ways call one `SCICopyHandlePress`, which ignores a second press within 1.5 s and 30 pt, so a screen where both work copies once.
+  The ledger says which noticed it (`noticed by: recognizer N · touch timer M`) and what became of the touches (`touches followed … lifted early … moved away … cancelled by the system`). **Unverified:** that `touch.phase` seen in
+  `sendEvent:` before `%orig` is the hardware's and not already cancelled when Instagram's menu starts; if it is cancelled, the last counter says so. **Lesson for this feature: when a fix does nothing, count the stage before it
+  (did the press arrive?) before refining the stage after it** — the ledger had `long-presses seen` from 4.7.2 and it was read for the wrong number until the seventh report. Not yet seen working on a device. `IGCommentCell` is not in 450.1.0 under that name, so there the
   hook is inert and only the by-position search remains. The by-position text search under a dimming view is kept as the fallback; the 4.7.5 caption fix (heavy prefix) is separate and **not yet seen working on a device**: the 4.7.5 report's last copy was the header label, not a caption, and the owner did not say whether the account name was gone.
 - **Removed in 3.1.4** (broken or redundant): liquid glass, teen icons, doom-scrolling limits, per-surface download toggles,
   long-press tuning, quality picker. Keep-deleted-messages came back as `keep_unsent_messages`. Do not reintroduce without a reason.
@@ -1250,8 +1258,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.7.8** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.11**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.7.9** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.12**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
