@@ -4,13 +4,19 @@
 //  A probe, not a product. It answers one question before anything bigger is built:
 //  **can this phone's screen be captured from a root process, and does that keep working while the phone is locked?**
 //
-//  It listens on 127.0.0.1 only (the Mac reaches it through a USB tunnel, `iproxy`), serves one client at a time,
-//  **and loopback is not private on a phone: any app on the device can connect to 127.0.0.1.** So the first message
-//  must carry a random token printed when the daemon starts, and the daemon exits by itself after `--lifetime` seconds.
-//  captures the display as JPEG frames, and reports what it can see about the device: iOS version, lock state,
-//  which private symbols resolved, how long a capture took, and whether the picture changed since the last one.
-//  It does not inject touches, does not change power or brightness and does not start itself. Encryption and pairing
-//  for a network listener are stage 4, and nothing leaves the loopback before them.
+//  It listens on 127.0.0.1 only (the Mac reaches it through a USB tunnel, `iproxy`) and serves one client at a time.
+//  **Loopback is not private on a phone: any app on the device can connect to 127.0.0.1.** So nothing is sent to a
+//  client that has not proved it holds a secret that only a paired Mac has:
+//
+//    * It starts by itself (a LaunchDaemon) and sits idle: no capture, no output, until an authenticated session.
+//    * **Pairing, once**: the viewer asks to pair, the phone shows a six-digit code in an alert, the person types it on the
+//      Mac, and the daemon hands over a random 32-byte secret (stored 0600 on the phone). Three wrong codes, or 120 seconds,
+//      end the attempt; a new alert is not shown more than once every 20 seconds, nor within 30 seconds of a failed attempt.
+//    * **Every later session**: each side sends a random nonce and proves it knows the secret with HMAC-SHA256 over both
+//      nonces and its role, so the Mac also knows it is talking to the daemon and not to an app squatting on the port.
+//
+//  It does not inject touches and does not change power or brightness. Frames are not encrypted: they never leave the
+//  USB tunnel, and encryption is stage 4, before any listener on the network.
 //
 //  Copyright (C) Ibrahim Ismail AL-Rahn. GPLv3.
 //
@@ -26,13 +32,18 @@
 #include <unistd.h>
 #include <dlfcn.h>
 #include <mach/mach_time.h>
+#include <sys/stat.h>
+#include <errno.h>
+#import <CommonCrypto/CommonHMAC.h>
+#import <CoreFoundation/CFUserNotification.h>
 
 #if TARGET_OS_IPHONE
 #import <IOSurface/IOSurfaceRef.h>
 #endif
 
 // ---- wire format: [type:1][length:4 big endian][payload] ---------------------------------------------------------
-enum { kMsgInfo = 1, kMsgFrame = 2, kMsgEvent = 3, kMsgCommand = 10, kMsgAuth = 20 };
+enum { kMsgInfo = 1, kMsgFrame = 2, kMsgEvent = 3, kMsgCommand = 10,
+       kMsgHello = 20, kMsgChallenge = 21, kMsgProof = 22, kMsgPairCode = 23, kMsgPaired = 24 };
 
 static BOOL SendAll(int fd, const void *bytes, size_t length) {
     const uint8_t *p = bytes;
@@ -266,64 +277,173 @@ static void Serve(int client, double fps) {
     }
 }
 
-static BOOL Authenticate(int client, NSString *token) {
-    struct timeval limit = { 3, 0 };
-    setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, &limit, sizeof(limit));
+// ---- pairing and the handshake ------------------------------------------------------------------------------------
+static NSString *sSecretPath = @"/var/mobile/Library/Preferences/com.albrhi.mirror.pairing";
+static BOOL sTestPrintCode;   // host test builds only: print the pairing code instead of showing an alert
+
+static NSString *Hex(NSData *data) {
+    NSMutableString *out = [NSMutableString stringWithCapacity:data.length * 2];
+    const uint8_t *p = data.bytes;
+    for (NSUInteger i = 0; i < data.length; i++) [out appendFormat:@"%02x", p[i]];
+    return out;
+}
+
+static NSData *RandomBytes(size_t count) {
+    NSMutableData *data = [NSMutableData dataWithLength:count];
+    arc4random_buf(data.mutableBytes, count);
+    return data;
+}
+
+static NSString *Proof(NSData *secret, NSString *role, NSString *clientNonce, NSString *serverNonce) {
+    NSData *message = [[NSString stringWithFormat:@"%@|%@|%@", role, clientNonce, serverNonce] dataUsingEncoding:NSUTF8StringEncoding];
+    uint8_t mac[CC_SHA256_DIGEST_LENGTH];
+    CCHmac(kCCHmacAlgSHA256, secret.bytes, secret.length, message.bytes, message.length, mac);
+    return Hex([NSData dataWithBytes:mac length:sizeof(mac)]);
+}
+
+static BOOL ConstantTimeEqual(id a, id b) {
+    if (![a isKindOfClass:[NSString class]] || ![b isKindOfClass:[NSString class]] || [a length] != [b length]) return NO;
+    unsigned diff = 0;
+    for (NSUInteger i = 0; i < [a length]; i++) diff |= (unsigned)([a characterAtIndex:i] ^ [b characterAtIndex:i]);
+    return diff == 0;
+}
+
+static NSData *LoadSecret(void) {
+    NSData *data = [NSData dataWithContentsOfFile:sSecretPath];
+    return data.length == 32 ? data : nil;
+}
+
+static BOOL SaveSecret(NSData *secret) {
+    if (![secret writeToFile:sSecretPath atomically:YES]) return NO;
+    chmod(sSecretPath.fileSystemRepresentation, 0600);
+    return YES;
+}
+
+/// 1 = a message, 0 = nothing arrived in time, -1 = the connection closed or sent nonsense.
+static int ReadMessage(int fd, double timeout, uint8_t *type, NSData **payload) {
+    struct timeval limit = { (time_t)timeout, (suseconds_t)((timeout - (time_t)timeout) * 1e6) };
+    setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &limit, sizeof(limit));
     uint8_t header[5];
-    BOOL ok = NO;
-    if (recv(client, header, 5, MSG_WAITALL) == 5 && header[0] == kMsgAuth) {
-        uint32_t length = ((uint32_t)header[1] << 24) | (header[2] << 16) | (header[3] << 8) | header[4];
-        if (length > 0 && length <= 64) {
-            char body[65] = {0};
-            if (recv(client, body, length, MSG_WAITALL) == (ssize_t)length) {
-                const char *want = token.UTF8String;
-                // constant-time compare: the length is public, the content is not
-                unsigned diff = (strlen(want) == length) ? 0 : 1;
-                for (size_t i = 0; i < length; i++) diff |= (unsigned)(body[i] ^ want[i % strlen(want)]);
-                ok = (diff == 0);
-            }
+    ssize_t n = recv(fd, header, 5, MSG_WAITALL);
+    if (n == 0) return -1;
+    if (n < 0) return (errno == EAGAIN || errno == EWOULDBLOCK) ? 0 : -1;
+    if (n != 5) return -1;
+    uint32_t length = ((uint32_t)header[1] << 24) | (header[2] << 16) | (header[3] << 8) | header[4];
+    if (length > 4096) return -1;
+    NSMutableData *body = [NSMutableData dataWithLength:length];
+    if (length && recv(fd, body.mutableBytes, length, MSG_WAITALL) != (ssize_t)length) return -1;
+    *type = header[0]; *payload = body;
+    return 1;
+}
+
+static NSDictionary *ReadJSON(int fd, double timeout, uint8_t expected) {
+    uint8_t type = 0; NSData *payload = nil;
+    if (ReadMessage(fd, timeout, &type, &payload) != 1 || type != expected) return nil;
+    id object = [NSJSONSerialization JSONObjectWithData:payload options:0 error:nil];
+    return [object isKindOfClass:[NSDictionary class]] ? object : nil;
+}
+
+static double sNextPairingAllowed = 0;
+static volatile BOOL sPairingCancelled;
+
+static void ShowCodeAlert(NSString *code) {
+    // On the phone the code is shown in an alert (it appears over the lock screen too). A host test build never opens one.
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        CFOptionFlags response = 0;
+        NSString *message = [NSString stringWithFormat:@"A Mac asked to pair with this iPhone.\n\n%@\n\nType this code on the Mac. Cancel if you did not ask for it.\n\nمكبوك يطلب الاقتران بهذا الآيفون. اكتب الرمز على الماك، أو اضغط Cancel إن لم تطلبه.", code];
+        SInt32 result = CFUserNotificationDisplayAlert(120, kCFUserNotificationNoteAlertLevel, NULL, NULL, NULL, CFSTR("Albrhi Mirror"),
+                                       (__bridge CFStringRef)message, CFSTR("OK"), CFSTR("Cancel"), NULL, &response);
+        // The log never carries the code. A non-zero result means the phone could not show the alert at all.
+        printf("pairing alert closed: result %d, response %lu\n", (int)result, (unsigned long)response); fflush(stdout);
+        if (response == kCFUserNotificationAlternateResponse) sPairingCancelled = YES;
+    });
+}
+
+static void DoPairing(int client) {
+    if (Seconds() < sNextPairingAllowed) { SendJSON(client, kMsgChallenge, @{ @"error": @"wait a little before asking again" }); return; }
+    sNextPairingAllowed = Seconds() + 20;
+
+    NSString *code = [NSString stringWithFormat:@"%06u", arc4random_uniform(1000000)];
+    sPairingCancelled = NO;
+    if (sTestPrintCode) { printf("PAIRING CODE: %s\n", code.UTF8String); fflush(stdout); }
+    else { ShowCodeAlert(code); printf("pairing alert requested\n"); fflush(stdout); }
+    SendJSON(client, kMsgChallenge, @{ @"pairing": @"code-shown" });
+
+    double deadline = Seconds() + 120; int wrong = 0;
+    while (Seconds() < deadline && wrong < 3 && !sPairingCancelled) {
+        uint8_t type = 0; NSData *payload = nil;
+        int got = ReadMessage(client, 2, &type, &payload);
+        if (got < 0) return;
+        if (got == 0 || type != kMsgPairCode) continue;
+        NSDictionary *message = [NSJSONSerialization JSONObjectWithData:payload options:0 error:nil];
+        if (ConstantTimeEqual(message[@"code"], code)) {
+            NSData *secret = RandomBytes(32);
+            if (!SaveSecret(secret)) { SendJSON(client, kMsgEvent, @{ @"error": @"could not store the pairing on the phone" }); return; }
+            SendJSON(client, kMsgPaired, @{ @"secret": Hex(secret) });
+            return;
         }
+        wrong++;
+        SendJSON(client, kMsgEvent, @{ @"error": @"wrong code", @"attemptsLeft": @(3 - wrong) });
     }
-    struct timeval none = { 0, 0 };
-    setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, &none, sizeof(none));
-    return ok;
+    sNextPairingAllowed = Seconds() + 30;
+    SendJSON(client, kMsgEvent, @{ @"error": sPairingCancelled ? @"cancelled on the phone" : @"pairing failed or timed out" });
+}
+
+/// YES when the client has proved it holds the pairing secret **and** the daemon has proved the same to the client.
+static BOOL Handshake(int client) {
+    NSDictionary *hello = ReadJSON(client, 5, kMsgHello);
+    NSString *clientNonce = hello[@"cn"];
+    if (![clientNonce isKindOfClass:[NSString class]] || clientNonce.length != 32) return NO;
+
+    if ([hello[@"pair"] boolValue]) { DoPairing(client); return NO; }
+
+    NSData *secret = LoadSecret();
+    if (!secret) { SendJSON(client, kMsgChallenge, @{ @"error": @"unpaired" }); return NO; }
+    NSString *serverNonce = Hex(RandomBytes(16));
+    SendJSON(client, kMsgChallenge, @{ @"sn": serverNonce, @"proof": Proof(secret, @"S", clientNonce, serverNonce) });
+    NSDictionary *reply = ReadJSON(client, 5, kMsgProof);
+    return reply && ConstantTimeEqual(reply[@"proof"], Proof(secret, @"C", clientNonce, serverNonce));
 }
 
 int main(int argc, char **argv) {
     @autoreleasepool {
         signal(SIGPIPE, SIG_IGN);
-        int port = 9777; double fps = 4, lifetime = 900; BOOL once = NO;
+        int port = 9777; double fps = 4, lifetime = 0; BOOL once = NO;
         for (int i = 1; i < argc; i++) {
             if (!strcmp(argv[i], "--port") && i + 1 < argc) port = atoi(argv[++i]);
             else if (!strcmp(argv[i], "--fps") && i + 1 < argc) fps = atof(argv[++i]);
-            else if (!strcmp(argv[i], "--lifetime") && i + 1 < argc) lifetime = atof(argv[++i]);
+            else if (!strcmp(argv[i], "--lifetime") && i + 1 < argc) lifetime = atof(argv[++i]);   // 0 = until stopped
+            else if (!strcmp(argv[i], "--secret-file") && i + 1 < argc) sSecretPath = @(argv[++i]);
+            else if (!strcmp(argv[i], "--test-print-code")) sTestPrintCode = YES;
+            else if (!strcmp(argv[i], "--unpair")) { unlink(sSecretPath.fileSystemRepresentation); printf("unpaired\n"); return 0; }
             else if (!strcmp(argv[i], "--once")) once = YES;
         }
         ResolveSymbols();
-        NSString *token = [NSString stringWithFormat:@"%08x%08x", arc4random(), arc4random()];
 
         int listener = socket(AF_INET, SOCK_STREAM, 0);
         int yes = 1; setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
         struct sockaddr_in address = { .sin_len = sizeof(address), .sin_family = AF_INET, .sin_port = htons((uint16_t)port) };
         address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);          // loopback only: never on the network
         if (bind(listener, (struct sockaddr *)&address, sizeof(address)) != 0 || listen(listener, 1) != 0) {
-            fprintf(stderr, "albrhi-mirrord: cannot listen on 127.0.0.1:%d (is something else, or the Mac test build, using it?)\n", port);
+            fprintf(stderr, "albrhi-mirrord: cannot listen on 127.0.0.1:%d (already running, or the Mac test build is using it)\n", port);
             return 1;
         }
-        printf("albrhi-mirrord stage 1 listening on 127.0.0.1:%d\n", port);
-        printf("TOKEN (type it into the viewer, or use --token): %s\n", token.UTF8String);
-        printf("it stops by itself after %.0f seconds\n", lifetime);
+        printf("albrhi-mirrord stage 1 listening on 127.0.0.1:%d, %s\n", port, LoadSecret() ? "paired" : "not paired yet");
         fflush(stdout);
 
-        double deadline = Seconds() + lifetime;
-        while (Seconds() < deadline) {
+        double deadline = lifetime > 0 ? Seconds() + lifetime : 0;
+        while (deadline == 0 || Seconds() < deadline) {
             fd_set readable; FD_ZERO(&readable); FD_SET(listener, &readable);
             struct timeval wait = { 1, 0 };
             if (select(listener + 1, &readable, NULL, NULL, &wait) <= 0) continue;
             int client = accept(listener, NULL, NULL);
             if (client < 0) continue;
-            if (!Authenticate(client, token)) { close(client); continue; }   // anything that cannot say the token gets nothing
-            @autoreleasepool { Serve(client, fps); }
+            @autoreleasepool {
+                if (Handshake(client)) {
+                    struct timeval none = { 0, 0 }; setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, &none, sizeof(none));
+                    Serve(client, fps);
+                }
+            }
             close(client);
             if (once) break;
         }

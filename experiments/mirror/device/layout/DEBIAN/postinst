@@ -1,0 +1,45 @@
+#!/bin/sh
+# Makes albrhi-mirrord start by itself now and after every restart. The path of the binary is resolved here, on the phone,
+# because a roothide jailbreak has a different random root on every device and a plist cannot carry a path it does not know.
+if command -v jbroot >/dev/null 2>&1; then
+    BIN="$(jbroot /usr/bin/albrhi-mirrord)"
+    DIR="$(jbroot /Library/LaunchDaemons)"
+else
+    BIN="/var/jb/usr/bin/albrhi-mirrord"
+    DIR="/var/jb/Library/LaunchDaemons"
+fi
+PLIST="$DIR/com.albrhi.mirrord.plist"
+
+mkdir -p "$DIR"
+cat > "$PLIST" <<PLISTEOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.albrhi.mirrord</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>$BIN</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>20</integer>
+    <key>StandardOutPath</key>
+    <string>/tmp/albrhi-mirrord.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/albrhi-mirrord.log</string>
+</dict>
+</plist>
+PLISTEOF
+chmod 644 "$PLIST"
+chown root:wheel "$PLIST" 2>/dev/null
+
+# Replace a running copy (an upgrade, or one started by hand), then start the service.
+launchctl unload "$PLIST" 2>/dev/null
+pkill -x albrhi-mirrord 2>/dev/null
+launchctl load -w "$PLIST" 2>/dev/null
+exit 0
