@@ -13,6 +13,8 @@
 #import "Features/Extras/SCITTExtras.h"
 #import "Features/Region/SCITTRegion.h"
 #import "Features/Profile/SCITTProfileBackground.h"
+#import "Features/Profile/SCITTAvatarSave.h"
+#import "Features/Browse/SCITTBrowse.h"
 #import "Features/Speed/SCITTSpeed.h"
 #import "Features/Lock/SCITTAppLock.h"
 #import "Features/Feed/SCITTFeedFilters.h"
@@ -20,7 +22,7 @@
 #import "Settings/SCITTSettingsEntry.h"
 #import "Settings/SCITTGesture.h"
 
-NSString *SCIVersionString = @"v0.25.0";  // AlbrhiTT
+NSString *SCIVersionString = @"v0.26.0";  // AlbrhiTT
 
 ///
 /// TESTED ON TikTok 46.4.0. Every class here was confirmed present in that build's own
@@ -71,6 +73,16 @@ NSString *SCIVersionString = @"v0.25.0";  // AlbrhiTT
         SCIPrefSortAnyProfile: @NO,
         SCIPrefVideoCount: @NO,
         SCIPrefProfileBackground: @NO,
+        // The nine things this release adds are all off: each changes what the app does or draws, and nobody asked for it until they turn it on.
+        SCIPrefOpenInSafari: @NO,
+        SCIPrefHideWarnings: @NO,
+        SCIPrefHideTikBot: @NO,
+        SCIPrefUnmute: @NO,
+        SCIPrefAutoAdvance: @NO,
+        SCIPrefOpenFollowing: @NO,
+        SCIPrefLongBio: @NO,
+        SCIPrefCopyMenu: @NO,
+        SCIPrefSaveAvatar: @NO,
     }];
 
     NSLog(@"[AlbrhiTT] %@ loaded into %@", SCIVersionString,
@@ -98,6 +110,8 @@ NSString *SCIVersionString = @"v0.25.0";  // AlbrhiTT
     SCITTInstallExtras();
     SCITTInstallRegion();
     SCITTInstallProfileBackground();
+    SCITTInstallBrowse();
+    SCITTInstallAvatarSave();
     SCITTInstallSpeed();
     SCITTInstallAppLock();
     SCITTInstallFeedFilters();

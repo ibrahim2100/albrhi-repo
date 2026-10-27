@@ -4,6 +4,7 @@
 #import "SCITTButton.h"
 #import "SCITTMedia.h"
 #import "SCITTDownload.h"
+#import "../Copy/SCITTCopyMenu.h"
 #import "../../TikTokHeaders.h"
 #import "../../Prefs.h"
 #import "../../SCILog.h"
@@ -420,6 +421,11 @@ NSString *SCITTDateReport(void) {
 - (void)tapped:(UIButton *)button;
 @end
 
+/// Adds the hold-to-copy recogniser to a download button, once. The recogniser's own action is on SCITTButtonTarget; whether the menu opens
+/// is decided when the hold happens (the switch can be turned on after the button was made).
+static void SCITTAttachCopyMenu(UIButton *button);
+static UIViewController *SCITTOwningController(UIView *view);
+
 @implementation SCITTButtonTarget
 
 + (instancetype)shared {
@@ -463,7 +469,29 @@ NSString *SCITTDateReport(void) {
     [SCITTDownload save:item];
 }
 
+/// A hold on the button: copy something about this video. The model is asked of the controller the button is inside **now**, for the
+/// reason `-tapped:` gives -- a recycled cell is a video ago the moment it is stashed.
+- (void)copyHeld:(UILongPressGestureRecognizer *)recognizer {
+    if (recognizer.state != UIGestureRecognizerStateBegan) return;
+    if (!SCIPrefEnabled(SCIPrefCopyMenu)) return;
+
+    UIViewController *owner = SCITTOwningController(recognizer.view);
+    id model = owner ? ((id (*)(id, SEL))objc_msgSend)(owner, NSSelectorFromString(@"model")) : nil;
+    SCITTShowCopyMenu(model);
+}
+
 @end
+
+static void SCITTAttachCopyMenu(UIButton *button) {
+    static const void *kAttachedKey = &kAttachedKey;
+    if (objc_getAssociatedObject(button, kAttachedKey)) return;
+    objc_setAssociatedObject(button, kAttachedKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+    UILongPressGestureRecognizer *hold = [[UILongPressGestureRecognizer alloc] initWithTarget:[SCITTButtonTarget shared]
+                                                                                       action:@selector(copyHeld:)];
+    hold.minimumPressDuration = 0.5;
+    [button addGestureRecognizer:hold];
+}
 
 
 // `SCITTViewIsCentered` was here: a test for whether a rail sat within a quarter of the window's
@@ -691,6 +719,7 @@ static void SCITTPlaceRailButton(UIStackView *stack) {
     [button addTarget:[SCITTButtonTarget shared]
                action:@selector(tapped:)
      forControlEvents:UIControlEventTouchUpInside];
+    SCITTAttachCopyMenu(button);
 
     objc_setAssociatedObject(button, kSCIItemKey, item, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 
@@ -1019,6 +1048,7 @@ static BOOL sciCellItemFromCell = NO;
             [button addTarget:[SCITTButtonTarget shared]
                        action:@selector(tapped:)
              forControlEvents:UIControlEventTouchUpInside];
+            SCITTAttachCopyMenu(button);
 
             [host addSubview:button];
             sciCellButtonsPlaced++;
@@ -1222,6 +1252,8 @@ static UIButton *SCITTMakeDownloadButton(void) {
                action:@selector(released:)
      forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside |
                       UIControlEventTouchCancel];
+
+    SCITTAttachCopyMenu(button);
 
     return button;
 }

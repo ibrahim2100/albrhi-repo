@@ -201,3 +201,41 @@ static inline BOOL SCIPrefEnabled(NSString *key) {
 /// that number when a profile's tab bar is made. Once per account per ten minutes. Off by default.
 #define SCIPrefVideoCount       @"video_count"
 
+/// Open a link in Safari instead of TikTok's own in-app browser. The decision is `AWEThirdWebModuleServiceImpl -shouldOpenURLInIAB:`
+/// (`B24@0:8@16`, answered NO) and the door is `-tryOpenURL:dataflowId:` (`B32@0:8@16@24`): an http(s) address that TikTok itself calls
+/// third-party (`-isThirdHttpURL:`) is handed to the system. TikTok's own pages stay inside TikTok. Off by default.
+#define SCIPrefOpenInSafari     @"open_links_safari"
+
+/// Hide the warning label TikTok draws over a video (`AWEPlayInteractionWarningElementView -updateContent:`, `v24@0:8@16`). It is hidden after
+/// TikTok has filled it, never emptied: the video, and whatever the label was about, is untouched. Off by default.
+#define SCIPrefHideWarnings     @"hide_warnings"
+
+/// Remove the TikBot (AI chat) button from the feed's right rail. Refused at the decision, not hidden after:
+/// `TTKPlayInteractionTikBotElement -p_shouldShowtikBotButton` and `-p_shouldShowTikbotButtonStatic` (`B16@0:8`) answer NO. Off by default.
+#define SCIPrefHideTikBot       @"hide_tikbot"
+
+/// Play a video's own sound when TikTok would have muted it: `TTKMediaMusicComponent -muteMusicIfNeeded` runs, and a mute asked of
+/// `TTKMediaPlayerRuntime -setMute:` while it runs is answered NO. Off by default.
+#define SCIPrefUnmute           @"unmute_videos"
+
+/// Scroll to the next video when this one reaches its end instead of starting it again: `TTKMediaPlayerRuntime -playerWillLoopPlaying:` while
+/// the feed (`AWENewFeedTableViewController`) is on screen calls its own `-scrollToNextVideo`. Needs the video to be allowed to end, so it does
+/// not work together with "do not repeat a video". Off by default.
+#define SCIPrefAutoAdvance      @"auto_advance"
+
+/// Start on the Following tab. The tab is found by its class (`TikTokFeedTabItemFollowControl`) in the tab control's item list, its index is
+/// remembered, and it is applied once per launch at `AWEFeedContainerViewController -createTabItemsWithSelectedIndex:`. A launch that did not
+/// reach the feed after applying it is not applied again. Off by default.
+#define SCIPrefOpenFollowing    @"open_following"
+
+/// Lift the profile bio's length limit (`TTKEditProfileBioStrategy -maxTextLength`, `q16@0:8`) to 500. TikTok's server has the last word: a bio
+/// it refuses is refused. Off by default.
+#define SCIPrefLongBio          @"long_bio"
+
+/// Hold the download button to copy something about the video: the account's name, its bio, the sound's link or the post's link and text.
+/// Reads only what the model already holds. Off by default.
+#define SCIPrefCopyMenu         @"copy_menu"
+
+/// A Save button on the enlarged profile picture (`TTKEnlargeAvatarViewController`). Off by default.
+#define SCIPrefSaveAvatar       @"save_avatar"
+

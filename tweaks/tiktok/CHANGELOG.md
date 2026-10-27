@@ -1,5 +1,23 @@
 # Albrhi for TikTok — what changed
 
+## v0.26.0
+
+**تسع ميزات صغيرة، كلها مطفأة افتراضياً، في قسم جديد «التصفح»، وتجاوز جيلبريك إضافي.** (الإضافات ‹ «التصفح»)
+
+- **الأصل:** أداة مغلقة بلا رخصة (ASJTok 1.3 لتيك توك 47.0.0) أظهرت أن هذه الأماكن موجودة. لم يُنسخ منها كود: قُرئت فئات تيك توك 47.1.0 بـ`tools/objc-classes.py`، ومن يسأل كل قرار بفحص المستدعين (`callers.py`)، وقُرئ ما تفعله الأداة بكل جواب (فك ترجمة) ثم كُتب الكود هنا. وما رُفض مكتوب في `docs/investigations/asjtok-asjtube.md`.
+- **فتح الروابط في سفاري:** `AWEThirdWebModuleServiceImpl -shouldOpenURLInIAB:` يجيب لا، و`-tryOpenURL:dataflowId:` يسلّم النظام عنواناً يعدّه تيك توك نفسه خارجياً (`-isThirdHttpURL:`). صفحات تيك توك تبقى داخله، وإن غاب المصنّف لا يعترض شيئاً.
+- **إخفاء ملصق التحذير:** `AWEPlayInteractionWarningElementView -updateContent:` يُخفى بعد أن يملأه تيك توك. الفيديو لا يُمسّ.
+- **إخفاء زر TikBot:** يُرفض القرار نفسه، لا يُخفى زر مبني: `TTKPlayInteractionTikBotElement -p_shouldShowtikBotButton` و`-p_shouldShowTikbotButtonStatic` يجيبان لا (يسألهما `containerDidFullyDisplayWithReason:`).
+- **الصوت في الفيديو الصامت:** أثناء `TTKMediaMusicComponent -muteMusicIfNeeded` فقط، يُجاب كتمٌ مطلوب من `TTKMediaPlayerRuntime -setMute:` بـ«لا». كتم المستخدم من مسار آخر يمرّ كما هو.
+- **الفيديو التالي عند النهاية:** إشعار التكرار `TTKMediaPlayerRuntime -playerWillLoopPlaying:` والخلاصة (`AWENewFeedTableViewController`) على الشاشة يستدعيان `-scrollToNextVideo`؛ مرة واحدة لكل ١٫٢ ثانية. يحتاج أن يُترك الفيديو ينتهي فلا يعمل مع «عدم تكرار الفيديو».
+- **البدء من تبويب المتابَعين:** يُعرف التبويب بصنفه (`TikTokFeedTabItemFollowControl`) لا بعنوانه (العناوين تُترجم)، ويُجاب به `AWEFeedContainerViewController -segmentControlInitialIndex` (يسأله `_generateSegmentControlByReason:` و`p_onFinishLogin`) قبل أول ظهور للخلاصة فقط. إن بقي من التشغيل السابق علامة «طُبّق ولم تظهر الخلاصة» يتوقف حتى يُطفأ المفتاح ويُشغَّل من جديد.
+- **نبذة أطول:** `TTKEditProfileBioStrategy -maxTextLength` يجيب ٥٠٠ (السيرفر يقرر القبول). **لم يُتحقق أن المحرر كله يسأل هذا الصنف وحده**: لـ`AWEProfileEditTextViewController` دالة `maxTextLength` خاصة به لم تُمسّ لأنها تخدم الاسم واسم المستخدم أيضاً، والعدّاد يقول.
+- **الضغط المطوّل للنسخ:** على زر التنزيل نفسه (مطفأ). قائمة من عندنا، لا إضافة إلى لوحة تيك توك: اسم الحساب (`author.uniqueIDForShow`)، النبذة (`signature`)، رابط الصوت (`music.shareInfo.shareUrl`)، نص المنشور مع رابطه. لا شيء يُجلب ولا يُرسل؛ صف بلا قيمة لا يُرسم.
+- **حفظ صورة الملف الشخصي:** زر حفظ على `TTKEnlargeAvatarViewController`، الروابط من `avatarLarger` ثم `avatar300` ثم `avatarMedium` ثم `avatarThumb` (`URLList`) كصورة واحدة بعدة روابط عبر نفس حافظ الصور.
+- **تجاوز الجيلبريك:** `+[BDADeviceHelper isJailBroken]` (`B16@0:8`) يجيب لا تحت مفتاح التجاوز الموجود. الصنف والترميز مقروءان في 47.1.0.
+- **التشخيص:** ثلاثة صفوف في تقرير الحالة (التصفح، النسخ، صورة الملف الشخصي) بعدّاد لكل جواب؛ «مركّب» بجانب «صفر» معناه هوك على مسار لا يمرّ به أحد.
+- **لم يُجرَّب على جهاز.** يُبنى محلياً ويمرّ فحوص المشروع.
+
 ## v0.25.0
 
 **محرّر خلفية الملف الشخصي: ميزة موجودة في تيك توك نفسه ومطفأة من السيرفر؛ مفتاح جديد يفتحها.** (الإضافات ‹ «خلفية الملف الشخصي»، مطفأ افتراضياً)

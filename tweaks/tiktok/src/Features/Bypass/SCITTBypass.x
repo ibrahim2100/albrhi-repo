@@ -160,6 +160,20 @@
 %end
 
 
+// ByteDance's shared device helper: a class method `+isJailBroken` (`B16@0:8`) on a class whose instance side
+// is empty, read in `MusicallyCore` 47.1.0. A closed reference tweak names it and ours did not; the class and the
+// encoding were checked in the binary before this was written, not taken from that list.
+%hook BDADeviceHelper
+
++ (BOOL)isJailBroken {
+    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
+    [SCITTDiagnostics recordBypassAnswer:@"BDADeviceHelper isJailBroken"];
+    return NO;
+}
+
+%end
+
+
 // PIPOStoreKitHelper is deliberately left alone even though a reference tweak names an
 // -isJailBroken selector on it -- this project's own TikTok changelog (v0.1.0) already
 // drew the line at that class and its sibling PIPOIAPStoreManager, the same way

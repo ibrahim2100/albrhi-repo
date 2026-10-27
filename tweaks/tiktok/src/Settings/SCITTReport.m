@@ -7,6 +7,9 @@
 #import "../Features/Extras/SCITTExtras.h"
 #import "../Features/Region/SCITTRegion.h"
 #import "../Features/Profile/SCITTProfileBackground.h"
+#import "../Features/Profile/SCITTAvatarSave.h"
+#import "../Features/Browse/SCITTBrowse.h"
+#import "../Features/Copy/SCITTCopyMenu.h"
 #import "../Features/Speed/SCITTSpeed.h"
 #import "../Features/Lock/SCITTAppLock.h"
 #import "../Features/Feed/SCITTFeedFilters.h"
@@ -122,6 +125,12 @@ static NSDictionary *SCIHeavyRow(NSString *title, NSString *value, NSString *ico
                        @"globe", [UIColor systemTealColor]),
                 SCIRow(SCILocalized(@"status_profile_bg"), SCITTProfileBackgroundReport(),
                        @"photo.on.rectangle", [UIColor systemTealColor]),
+                SCIRow(SCILocalized(@"status_browse"), SCITTBrowseReport(),
+                       @"safari", [UIColor systemBlueColor]),
+                SCIRow(SCILocalized(@"status_copy"), SCITTCopyReport(),
+                       @"doc.on.doc", [UIColor systemBlueColor]),
+                SCIRow(SCILocalized(@"status_avatar"), SCITTAvatarSaveReport(),
+                       @"person.crop.circle", [UIColor systemBlueColor]),
                 SCIRow(SCILocalized(@"status_speed"), SCITTSpeedReport(),
                        @"speedometer", [UIColor systemIndigoColor]),
                 SCIRow(SCILocalized(@"status_lock"), SCITTAppLockReport(),
