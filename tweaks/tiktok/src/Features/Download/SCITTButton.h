@@ -7,7 +7,11 @@
 //  Copyright (C) Ibrahim Ismail AL-Rahn. GPLv3.
 //
 
-#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+
+/// Whether a hold began on one of this tweak's download buttons (or something inside one), and if so opens the copy menu for the video it
+/// belongs to. Asked by the window's touch follower (`SCITTHold.x`); NO when the switch is off or the view is not one of ours.
+BOOL SCITTCopyHoldOnDownloadButton(UIView *hit);
 
 /// Hooks the feed cell and its interaction rail so a download button sits beside
 /// like, comment and share on the video that is actually on screen. Safe to call

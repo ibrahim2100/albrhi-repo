@@ -10,6 +10,7 @@
 #import "../Features/Profile/SCITTAvatarSave.h"
 #import "../Features/Browse/SCITTBrowse.h"
 #import "../Features/Copy/SCITTCopyMenu.h"
+#import "../Features/Copy/SCITTHold.h"
 #import "../Features/Speed/SCITTSpeed.h"
 #import "../Features/Lock/SCITTAppLock.h"
 #import "../Features/Feed/SCITTFeedFilters.h"
@@ -127,7 +128,7 @@ static NSDictionary *SCIHeavyRow(NSString *title, NSString *value, NSString *ico
                        @"photo.on.rectangle", [UIColor systemTealColor]),
                 SCIRow(SCILocalized(@"status_browse"), SCITTBrowseReport(),
                        @"safari", [UIColor systemBlueColor]),
-                SCIRow(SCILocalized(@"status_copy"), SCITTCopyReport(),
+                SCIRow(SCILocalized(@"status_copy"), [NSString stringWithFormat:@"%@ | %@", SCITTCopyReport(), SCITTHoldReport()],
                        @"doc.on.doc", [UIColor systemBlueColor]),
                 SCIRow(SCILocalized(@"status_avatar"), SCITTAvatarSaveReport(),
                        @"person.crop.circle", [UIColor systemBlueColor]),

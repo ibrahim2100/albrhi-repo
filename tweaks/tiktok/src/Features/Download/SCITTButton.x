@@ -421,6 +421,9 @@ NSString *SCITTDateReport(void) {
 - (void)tapped:(UIButton *)button;
 @end
 
+static const void *kSCITTCopyMarkKey = &kSCITTCopyMarkKey;
+static const void *kSCITTHeldKey = &kSCITTHeldKey;
+
 /// Adds the hold-to-copy recogniser to a download button, once. The recogniser's own action is on SCITTButtonTarget; whether the menu opens
 /// is decided when the hold happens (the switch can be turned on after the button was made).
 static void SCITTAttachCopyMenu(UIButton *button);
@@ -436,6 +439,7 @@ static UIViewController *SCITTOwningController(UIView *view);
 }
 
 - (void)pressed:(UIButton *)button {
+    objc_setAssociatedObject(button, kSCITTHeldKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [UIView animateWithDuration:0.12 animations:^{
         button.transform = CGAffineTransformScale(SCITTRailRest(), 0.86, 0.86);
         button.alpha = 0.75;
@@ -455,6 +459,11 @@ static UIViewController *SCITTOwningController(UIView *view);
 }
 
 - (void)tapped:(UIButton *)button {
+    // A hold that opened the copy menu ends in a lift on the button; that lift is not a tap.
+    if (objc_getAssociatedObject(button, kSCITTHeldKey)) {
+        objc_setAssociatedObject(button, kSCITTHeldKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        return;
+    }
     // **Resolved again, here, rather than trusting what was stashed when the button was made.**
     // A cell is recycled and a photo album is swiped, and both happen after placement: the stashed
     // item can be a video ago, and its recorded page index certainly can. Asking the controller the
@@ -469,28 +478,30 @@ static UIViewController *SCITTOwningController(UIView *view);
     [SCITTDownload save:item];
 }
 
-/// A hold on the button: copy something about this video. The model is asked of the controller the button is inside **now**, for the
-/// reason `-tapped:` gives -- a recycled cell is a video ago the moment it is stashed.
-- (void)copyHeld:(UILongPressGestureRecognizer *)recognizer {
-    if (recognizer.state != UIGestureRecognizerStateBegan) return;
-    if (!SCIPrefEnabled(SCIPrefCopyMenu)) return;
-
-    UIViewController *owner = SCITTOwningController(recognizer.view);
-    id model = owner ? ((id (*)(id, SEL))objc_msgSend)(owner, NSSelectorFromString(@"model")) : nil;
-    SCITTShowCopyMenu(model);
-}
-
 @end
 
+/// Marks a download button as one a hold means something on. **The hold itself is not followed here**: a recogniser on the button competes
+/// with TikTok's own long-press (the feed's panel) and loses whenever TikTok's recognises first, and the first version did exactly that and
+/// copied nothing. The window follows the touch itself (`SCITTHold.x`, from `-[UIWindow sendEvent:]`) and asks `SCITTCopyHoldOnDownloadButton`.
 static void SCITTAttachCopyMenu(UIButton *button) {
-    static const void *kAttachedKey = &kAttachedKey;
-    if (objc_getAssociatedObject(button, kAttachedKey)) return;
-    objc_setAssociatedObject(button, kAttachedKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(button, kSCITTCopyMarkKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
 
-    UILongPressGestureRecognizer *hold = [[UILongPressGestureRecognizer alloc] initWithTarget:[SCITTButtonTarget shared]
-                                                                                       action:@selector(copyHeld:)];
-    hold.minimumPressDuration = 0.5;
-    [button addGestureRecognizer:hold];
+BOOL SCITTCopyHoldOnDownloadButton(UIView *hit) {
+    UIView *view = hit;
+    for (NSInteger step = 0; view && step < 6; step++, view = view.superview) {
+        if (!objc_getAssociatedObject(view, kSCITTCopyMarkKey)) continue;
+        if (!SCIPrefEnabled(SCIPrefCopyMenu)) return NO;
+
+        // The finger is still down: the lift that follows is the end of a hold, not a tap, and must not start a download.
+        objc_setAssociatedObject(view, kSCITTHeldKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+        UIViewController *owner = SCITTOwningController(view);
+        id model = owner ? ((id (*)(id, SEL))objc_msgSend)(owner, NSSelectorFromString(@"model")) : nil;
+        SCITTShowCopyMenu(model);
+        return YES;
+    }
+    return NO;
 }
 
 
