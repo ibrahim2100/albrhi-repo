@@ -47,6 +47,14 @@
                 },
                 @{
                     kSCIRowKind: kSCIKindSwitch,
+                    kSCIRowPref: SCIPrefProfileBackground,
+                    kSCIRowTitle: SCILocalized(@"row_profile_bg"),
+                    kSCIRowNote: SCILocalized(@"row_profile_bg_note"),
+                    kSCIRowIcon: @"photo.on.rectangle",
+                    kSCIRowColor: [UIColor systemTealColor],
+                },
+                @{
+                    kSCIRowKind: kSCIKindSwitch,
                     kSCIRowPref: SCIPrefNoLoop,
                     kSCIRowTitle: SCILocalized(@"row_no_loop"),
                     kSCIRowNote: SCILocalized(@"row_no_loop_note"),

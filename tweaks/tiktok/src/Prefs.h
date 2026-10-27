@@ -44,6 +44,11 @@
 /// The publish date, drawn under Albrhi's own button.
 #define SCIPrefVideoDate        @"video_date"
 
+/// TikTok's own profile-background editor, which ships switched off by a server-side experiment. Turning this on tells TikTok
+/// the device is on that experiment's allow list (the flag is sent with the profile request) and, only while the editor is
+/// resolving its state, supplies an empty background component so its controls exist. Off by default: it says something untrue.
+#define SCIPrefProfileBackground @"profile_background"
+
 #define SCIPrefVerboseLogging   @"verbose_logging"
 
 /// Albrhi Panel's per-app switch, asked first. Every feature here reads its setting

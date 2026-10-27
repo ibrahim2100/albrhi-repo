@@ -12,6 +12,7 @@
 #import "Features/Download/SCITTPlaybackProbe.h"
 #import "Features/Extras/SCITTExtras.h"
 #import "Features/Region/SCITTRegion.h"
+#import "Features/Profile/SCITTProfileBackground.h"
 #import "Features/Speed/SCITTSpeed.h"
 #import "Features/Lock/SCITTAppLock.h"
 #import "Features/Feed/SCITTFeedFilters.h"
@@ -19,7 +20,7 @@
 #import "Settings/SCITTSettingsEntry.h"
 #import "Settings/SCITTGesture.h"
 
-NSString *SCIVersionString = @"v0.24.3";  // AlbrhiTT
+NSString *SCIVersionString = @"v0.25.0";  // AlbrhiTT
 
 ///
 /// TESTED ON TikTok 46.4.0. Every class here was confirmed present in that build's own
@@ -69,6 +70,7 @@ NSString *SCIVersionString = @"v0.24.3";  // AlbrhiTT
         SCIPrefDisabledComments: @NO,
         SCIPrefSortAnyProfile: @NO,
         SCIPrefVideoCount: @NO,
+        SCIPrefProfileBackground: @NO,
     }];
 
     NSLog(@"[AlbrhiTT] %@ loaded into %@", SCIVersionString,
@@ -95,6 +97,7 @@ NSString *SCIVersionString = @"v0.24.3";  // AlbrhiTT
     SCITTInstallPlaybackProbe();
     SCITTInstallExtras();
     SCITTInstallRegion();
+    SCITTInstallProfileBackground();
     SCITTInstallSpeed();
     SCITTInstallAppLock();
     SCITTInstallFeedFilters();

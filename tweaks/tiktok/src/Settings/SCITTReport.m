@@ -6,6 +6,7 @@
 #import "../Diagnostics/SCITTDiagnostics.h"
 #import "../Features/Extras/SCITTExtras.h"
 #import "../Features/Region/SCITTRegion.h"
+#import "../Features/Profile/SCITTProfileBackground.h"
 #import "../Features/Speed/SCITTSpeed.h"
 #import "../Features/Lock/SCITTAppLock.h"
 #import "../Features/Feed/SCITTFeedFilters.h"
@@ -119,6 +120,8 @@ static NSDictionary *SCIHeavyRow(NSString *title, NSString *value, NSString *ico
                        @"square.grid.2x2", [UIColor systemIndigoColor]),
                 SCIRow(SCILocalized(@"status_region"), SCITTRegionReport(),
                        @"globe", [UIColor systemTealColor]),
+                SCIRow(SCILocalized(@"status_profile_bg"), SCITTProfileBackgroundReport(),
+                       @"photo.on.rectangle", [UIColor systemTealColor]),
                 SCIRow(SCILocalized(@"status_speed"), SCITTSpeedReport(),
                        @"speedometer", [UIColor systemIndigoColor]),
                 SCIRow(SCILocalized(@"status_lock"), SCITTAppLockReport(),

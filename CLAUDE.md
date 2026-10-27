@@ -105,7 +105,7 @@ inside one package, three stand apart.
   the changelog and the panel page's footer, and `tweaks/nextup/CHANGELOG.md` lists every change
   rather than letting the port read as original work.
 - **Unlicensed references are read for architecture only, and nothing is copied**: BHTikTok and the
-  al3raQe fork, NA9 For TikTok, VibeTok, BHTwitter (the original — NeoFreeBird is a different, GPLv3 case),
+  al3raQe fork, NA9 For TikTok, VibeTok, ProfileBanner (TikTok, by Nasser | NoTimeToChill: four hooks and no licence; its hook table was the list of places to look and nothing was carried over), BHTwitter (the original — NeoFreeBird is a different, GPLv3 case),
   TWIGalaxy, `carsurf`, Regram, InstaPlus,
   Legizmo (a paid tweak — its licence and DRM components were deliberately not examined), and **Rocket for Instagram 4.23.1** (closed source, obfuscated, with a paid store: read for its public feature list and the
   selector names it carries in the clear; store and entitlement code not examined; call recording not proposed — `docs/investigations/rocket-feature-map.md`).
@@ -147,6 +147,9 @@ line is not "never touch a third party"; it is that a privacy cost is never paid
 without telling them. The same goes for the *hold*: Albrhi Watch makes iOS say "up to date" in a
 sentence the tweak caused, so the Software Update page names Albrhi as the reason. **A tweak that makes
 the system state a fact about your device, without saying it did, is worse than the thing it hid.**
+
+**Telling the server something untrue about the device is a cost, and the row that causes it says so and is off by default.** TikTok's region choice (§5.4) and the profile-background switch (0.25.0) are the two: the second sends
+`profileBgInAllowList = 1` with the profile request. A tweak that only *shows* something on the device the person holds is a different thing from one that changes what the server is told.
 
 **Hiding is not forbidding.** "Hide Spaces" in X set `voice_rooms_consumption_enabled: NO`, which tells
 X the account may not *listen* to a Space at all, so a link somebody sent came back "unavailable". The
@@ -1116,6 +1119,16 @@ there costs colours, never the video).
   calls map 1.0 to the chosen rate and leave every other rate alone (hold-to-speed-up keeps working); **which of the three moves the player is not read from the binary** and the report counts each. App lock: notifications +
   LocalAuthentication only, no TikTok class. Not taken from the reference: fake follower/verified numbers (deceiving others), its long jailbreak path list (`/bin/sh`, `/usr/lib/dyld` exist on every phone), unguarded hooks.
   New settings row kind `kSCIKindChoice` (first option = default = key removed). **Not run on a device.**
+- **Profile background (0.25.0): TikTok ships the whole editor and the server keeps it off.** The binary has `TTKProfileBackgroundService`, a coordinator, crop, photo and video preview, an education manager and an
+  edit request/result; `TIKTOKProfileEditMainViewController` has the buttons (`p_didTapProfileBackgroundChangeButton`, `p_runProfileBackgroundFlowWithBgInfo:sourceView:`, ivars `_hasProfileBackgroundComponent`,
+  `_hasProfileBackground`, `_profileBackgroundInfo`). **Who reads the flags** (caller scan, `docs/investigations/na9-scripts/callers.py` over `MusicallyCore` 47.1.0): `+[TTKABTest profileBgInAllowList]` and
+  `profileBgEnableConsumptionGroup` (`q16@0:8`) are read by `-[TTKProfileComponentDataController getRequestParamsWithParams:isCurrentUser:]` and by nothing else, so they are **request parameters**: the answer is the
+  server's. `TTKProfileHeaderAdaptor p_setupComponentsWithModel:isCache:isPreload:` reads `hasProfileBackground`/`hasProfileBackgroundData`; `profileBgReduceTransparencyFixEnabled` has no caller. The editor shows its controls
+  when `p_resolveProfileBackgroundSnapshot` finds `TTKProfileComponentResponseModel -profileBackground`. Ours (`Features/Profile/SCITTProfileBackground.x`, switch `profile_background`, **off by default** with the cost on the
+  row) answers `profileBgInAllowList` with 1 and, only inside the editor's resolve and only on that thread, gives an empty `TTKProfileBaseComponentModel` (`bizData = @{}`) when the response has none. Each of the three hooks
+  installs on its own behind the encoding check; `objc-diff --check` against 47.1.0 passes them. **Not run on a device**: whether the server then accepts the upload for an account, and whether `bizData = @{}` is a shape the
+  editor tolerates (the reference passes something else; what it passes was not resolved), are the two things a report will say. `profileBgEnableConsumptionGroup` is left alone: it concerns *viewing* backgrounds.
+  The idea came from `ProfileBanner` (unlicensed, §2); only the places to look were taken.
 - Non-obvious refusals: `PIPOStoreKitHelper -isJailBroken` is not hooked (§2); the `tikwm` path was refused *as the fix, arriving quietly* and shipped as a
   switch once the owner asked knowing the trade — the earlier refusal was a different question, not wrong.
 - **Reviewed against 46.4.0 and 47.1.0 (0.24.0): a hook that "attached" is not a hook that works.** Four findings, all from reading the binary rather than a report. (1) **Class method versus instance method, and a class that
@@ -1268,8 +1281,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.24.3** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.14**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.25.0** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.15**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
