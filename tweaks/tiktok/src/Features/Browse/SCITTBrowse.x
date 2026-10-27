@@ -33,10 +33,6 @@
 /// Status screen's counters are for: "installed" beside "0 answered" would be a hook on a path nothing takes.
 ///
 
-@interface AWEThirdWebModuleServiceImpl : NSObject
-- (BOOL)isThirdHttpURL:(id)url;
-@end
-
 @interface AWEPlayInteractionWarningElementView : UIView
 @end
 
@@ -64,7 +60,6 @@
 static NSString *sciBrowseState = nil;
 
 // Tallies, one per answer. A tally on the path that executes -- "installed" beside zero is a finding.
-static NSUInteger sciLinkAsked = 0, sciLinkHandedOff = 0, sciLinkKept = 0;
 static NSUInteger sciWarningsHidden = 0;
 static NSUInteger sciTikBotRefused = 0;
 static NSUInteger sciUnmuteArmed = 0, sciUnmuteAnswered = 0;
@@ -86,39 +81,6 @@ static BOOL SCITTBrowseHas(Class cls, const char *selector, const char *encoding
     const char *types = method ? method_getTypeEncoding(method) : NULL;
     return types && strcmp(types, encoding) == 0;
 }
-
-#pragma mark - Links in Safari
-
-%group SCITTBrowseLinks
-%hook AWEThirdWebModuleServiceImpl
-
-- (BOOL)shouldOpenURLInIAB:(id)url {
-    if (!SCIPrefEnabled(SCIPrefOpenInSafari)) return %orig;
-    sciLinkAsked++;
-    return NO;
-}
-
-- (BOOL)tryOpenURL:(id)url dataflowId:(id)dataflowId {
-    if (!SCIPrefEnabled(SCIPrefOpenInSafari)) return %orig;
-
-    // Only an address TikTok itself calls third-party leaves the app: its own pages, sign-in and checkout stay where they are. When the
-    // classifier is not there the answer is "do not intercept", never "intercept everything".
-    NSURL *target = [url isKindOfClass:[NSURL class]] ? (NSURL *)url : nil;
-    NSString *scheme = target.scheme.lowercaseString;
-    BOOL web = [scheme isEqualToString:@"http"] || [scheme isEqualToString:@"https"];
-    BOOL third = web && [self respondsToSelector:@selector(isThirdHttpURL:)] && [self isThirdHttpURL:target];
-    if (!third) {
-        sciLinkKept++;
-        return %orig;
-    }
-
-    sciLinkHandedOff++;
-    [[UIApplication sharedApplication] openURL:target options:@{} completionHandler:nil];
-    return YES;
-}
-
-%end
-%end
 
 #pragma mark - The warning label
 
@@ -349,11 +311,10 @@ static NSString *const kSCITTFollowTrippedKey = @"albrhi_tt_following_tripped";
 
 NSString *SCITTBrowseReport(void) {
     return [NSString stringWithFormat:
-        @"%@; links asked %lu, handed to Safari %lu, kept in TikTok %lu; warnings hidden %lu; TikBot refused %lu; "
+        @"%@; warnings hidden %lu; TikBot refused %lu; "
         @"unmute armed %lu, answered %lu; advance: loop notices %lu, scrolled %lu, no feed on screen %lu, too soon %lu; "
         @"following: asked %lu, applied %lu (index %ld), not found %lu, skipped after an unfinished launch %lu; bio asked %lu",
         sciBrowseState ?: @"not installed",
-        (unsigned long)sciLinkAsked, (unsigned long)sciLinkHandedOff, (unsigned long)sciLinkKept,
         (unsigned long)sciWarningsHidden, (unsigned long)sciTikBotRefused,
         (unsigned long)sciUnmuteArmed, (unsigned long)sciUnmuteAnswered,
         (unsigned long)sciAdvanceSeen, (unsigned long)sciAdvanceDone, (unsigned long)sciAdvanceNoFeed, (unsigned long)sciAdvanceTooSoon,
@@ -375,14 +336,6 @@ void SCITTInstallBrowse(void) {
 
     // Each decides for itself: a build missing one class must not cost the others, and a hook on a selector the class does not declare
     // would *add* it. Every one waits for its own type encoding.
-    Class web = NSClassFromString(@"AWEThirdWebModuleServiceImpl");
-    if (SCITTBrowseHas(web, "shouldOpenURLInIAB:", "B24@0:8@16") && SCITTBrowseHas(web, "tryOpenURL:dataflowId:", "B32@0:8@16@24")) {
-        %init(SCITTBrowseLinks);
-        [installed addObject:@"links"];
-    } else {
-        [skipped addObject:@"AWEThirdWebModuleServiceImpl -shouldOpenURLInIAB:/-tryOpenURL:dataflowId:"];
-    }
-
     if (SCITTBrowseHas(NSClassFromString(@"AWEPlayInteractionWarningElementView"), "updateContent:", "v24@0:8@16")) {
         %init(SCITTBrowseWarnings);
         [installed addObject:@"warnings"];

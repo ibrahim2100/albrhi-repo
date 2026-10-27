@@ -15,6 +15,7 @@
 #import "Features/Profile/SCITTProfileBackground.h"
 #import "Features/Profile/SCITTAvatarSave.h"
 #import "Features/Browse/SCITTBrowse.h"
+#import "Features/Browse/SCITTLinks.h"
 #import "Features/Copy/SCITTHold.h"
 #import "Features/Speed/SCITTSpeed.h"
 #import "Features/Lock/SCITTAppLock.h"
@@ -23,7 +24,7 @@
 #import "Settings/SCITTSettingsEntry.h"
 #import "Settings/SCITTGesture.h"
 
-NSString *SCIVersionString = @"v0.26.1";  // AlbrhiTT
+NSString *SCIVersionString = @"v0.26.2";  // AlbrhiTT
 
 ///
 /// TESTED ON TikTok 46.4.0. Every class here was confirmed present in that build's own
@@ -112,6 +113,7 @@ NSString *SCIVersionString = @"v0.26.1";  // AlbrhiTT
     SCITTInstallRegion();
     SCITTInstallProfileBackground();
     SCITTInstallBrowse();
+    SCITTInstallLinks();
     SCITTInstallHold();
     SCITTInstallAvatarSave();
     SCITTInstallSpeed();

@@ -1132,10 +1132,15 @@ there costs colours, never the video).
   the server accepts the change for every account (one phone is one data point), (the reference passes the same thing: its imports include `___NSDictionary0__struct`, i.e. `@{}`; an earlier line here said it passed "something else", which was a guess from a constant that had not been resolved). `profileBgEnableConsumptionGroup` is left alone: it concerns *viewing* backgrounds.
   The idea came from `ProfileBanner` (unlicensed, §2); only the places to look were taken.
 - **Browsing switches (0.26.0, all off, section «Browsing»): decisions, not views.** Who asks was measured first (caller scan, 47.1.0): `TTKPlayInteractionTikBotElement -p_shouldShowtikBotButton` is read by `-containerDidFullyDisplayWithReason:`,
-  `AWEThirdWebModuleServiceImpl -shouldOpenURLInIAB:` by `-tryOpenURL:dataflowId:` of two classes, `AWEFeedContainerViewController -segmentControlInitialIndex` by `_generateSegmentControlByReason:` and `p_onFinishLogin`. The Following tab is found **by class**
+  `AWEThirdWebModuleServiceImpl -shouldOpenURLInIAB:` by `-tryOpenURL:dataflowId:` of two classes (**`PHFDfidRouterServiceImpl` declares its own copy of the decision, which 0.26.0 never hooked: grep every implementer**), `AWEFeedContainerViewController -segmentControlInitialIndex` by `_generateSegmentControlByReason:` and `p_onFinishLogin`. The Following tab is found **by class**
   (`TikTokFeedTabItemFollowControl`), never by title (titles are translated); it is applied only until the feed first appears, behind a "did not finish" flag that stands the feature down until the switch has been seen off. **`TTKEditProfileBioStrategy -maxTextLength` is not the only
   reader**: `AWEProfileEditTextViewController` has its own `maxTextLength` for nickname and username too, and was left alone, so whether the bio really lengthens is a question for the counter. The copy menu (hold the download button) and the avatar Save button are this tweak's own views, not additions to TikTok's long-press
   panel (never read). **The hold on the button did nothing in 0.26.0**: a recogniser on the button loses to TikTok's own feed long-press, so 0.26.1 follows the touch from `-[UIWindow sendEvent:]` (the Instagram 4.7.9 lesson, §5.1) and also copies the name or bio under a hold on a profile; its report line keeps the class chain of the last hold that matched nothing. `+[BDADeviceHelper isJailBroken]` joined the bypass. **None of it has run on a device.**
+- **Links in Safari did nothing in 0.26.0, and the reason was in the reference all along (0.26.2).** The first version hooked the "browser or system?" decision of one class. The reference (decompiled, not copied) intercepts where an address *enters*: `GBLRouterImpl`'s four `openURLString:…` and
+  `AWE3rdWebContainerService`'s `openURL:…`, opens an http(s) address with `UIApplication` and **swallows the call**, with a `WKWebView loadRequest:` net underneath. Two further facts the first version missed: **TikTok wraps outbound links in its link-safety redirect** (a host containing `tiktoklinksafety`
+  or a path beginning `/link/`, the real address percent-encoded in a query item), so "is this address foreign?" asked of the wrapper says no -- unwrap first; and the reference's list of TikTok-owned hosts is nine suffixes (`tiktokv.com`, `tiktokcdn.com`, `byteoversea.com`, `bytedance.com`, `musical.ly`,
+  `ttwstatic.com`, `ibytedtos.com`, `tiktokglobalshop.com`, `capcut.com`), to which `tiktok.com` is added here. **Which door a bio or comment link takes is not known from this machine** (the router's callers are live-room components and `TPPieceParser handleClickableStringPiece:`), so every door counts
+  and a foreign address a web view loads with no door having caught it is named with its class chain on the Status screen. Not run on a device.
 - Non-obvious refusals: `PIPOStoreKitHelper -isJailBroken` is not hooked (§2); the `tikwm` path was refused *as the fix, arriving quietly* and shipped as a
   switch once the owner asked knowing the trade — the earlier refusal was a different question, not wrong.
 - **Reviewed against 46.4.0 and 47.1.0 (0.24.0): a hook that "attached" is not a hook that works.** Four findings, all from reading the binary rather than a report. (1) **Class method versus instance method, and a class that
@@ -1288,8 +1293,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.26.1** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.17**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.26.2** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.18**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

@@ -201,9 +201,9 @@ static inline BOOL SCIPrefEnabled(NSString *key) {
 /// that number when a profile's tab bar is made. Once per account per ten minutes. Off by default.
 #define SCIPrefVideoCount       @"video_count"
 
-/// Open a link in Safari instead of TikTok's own in-app browser. The decision is `AWEThirdWebModuleServiceImpl -shouldOpenURLInIAB:`
-/// (`B24@0:8@16`, answered NO) and the door is `-tryOpenURL:dataflowId:` (`B32@0:8@16@24`): an http(s) address that TikTok itself calls
-/// third-party (`-isThirdHttpURL:`) is handed to the system. TikTok's own pages stay inside TikTok. Off by default.
+/// Open a link to a site that is not TikTok's in Safari instead of TikTok's own in-app browser, at every door the app is known to use (the router,
+/// the web container service, the two browser-or-system services, the Safari-view wrapper, and a web view in a browser asked to load a foreign host),
+/// unwrapping TikTok's link-safety redirect first. TikTok's own addresses stay inside TikTok. See SCITTLinks.x. Off by default.
 #define SCIPrefOpenInSafari     @"open_links_safari"
 
 /// Hide the warning label TikTok draws over a video (`AWEPlayInteractionWarningElementView -updateContent:`, `v24@0:8@16`). It is hidden after
