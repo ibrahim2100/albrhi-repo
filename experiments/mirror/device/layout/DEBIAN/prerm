@@ -2,13 +2,16 @@
 # Stops the service. A removal (not an upgrade) also forgets the pairing, so a package that is gone leaves no secret behind.
 if command -v jbroot >/dev/null 2>&1; then
     PLIST="$(jbroot /Library/LaunchDaemons)/com.albrhi.mirrord.plist"
+    APP="$(jbroot /Applications/AlbrhiMirror.app)"
 else
     PLIST="/var/jb/Library/LaunchDaemons/com.albrhi.mirrord.plist"
+    APP="/var/jb/Applications/AlbrhiMirror.app"
 fi
 launchctl unload "$PLIST" 2>/dev/null
 pkill -x albrhi-mirrord 2>/dev/null
 rm -f "$PLIST"
 if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
-    rm -f /var/mobile/Library/Preferences/com.albrhi.mirror.pairing
+    rm -rf /var/mobile/Library/AlbrhiMirror
+    if command -v uicache >/dev/null 2>&1; then uicache -u "$APP" >/dev/null 2>&1; fi
 fi
 exit 0

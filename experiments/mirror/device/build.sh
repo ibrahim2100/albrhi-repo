@@ -19,6 +19,7 @@ for f in packages/*.deb; do
   listing="$(dpkg-deb -c "$f")"
   if [ "$SCHEME" = rootless ] && ! grep -q "var/jb/usr/bin/albrhi-mirrord" <<<"$listing"; then echo "NOT a rootless layout: $f" >&2; exit 3; fi
   if [ "$SCHEME" = roothide ] &&   grep -q "var/jb" <<<"$listing"; then echo "NOT a roothide layout (found var/jb): $f" >&2; exit 3; fi
+  if ! grep -q "Applications/AlbrhiMirror.app/AlbrhiMirror" <<<"$listing"; then echo "the app is missing from $f" >&2; exit 3; fi
   cp "$f" "$HOME/Desktop/Albrhi-Mirror/$(basename "$f" .deb)_$SCHEME.deb"
   echo "copied: $HOME/Desktop/Albrhi-Mirror/$(basename "$f" .deb)_$SCHEME.deb"
 done

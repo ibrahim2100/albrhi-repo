@@ -4,9 +4,11 @@
 if command -v jbroot >/dev/null 2>&1; then
     BIN="$(jbroot /usr/bin/albrhi-mirrord)"
     DIR="$(jbroot /Library/LaunchDaemons)"
+    APP="$(jbroot /Applications/AlbrhiMirror.app)"
 else
     BIN="/var/jb/usr/bin/albrhi-mirrord"
     DIR="/var/jb/Library/LaunchDaemons"
+    APP="/var/jb/Applications/AlbrhiMirror.app"
 fi
 PLIST="$DIR/com.albrhi.mirrord.plist"
 
@@ -42,4 +44,11 @@ chown root:wheel "$PLIST" 2>/dev/null
 launchctl unload "$PLIST" 2>/dev/null
 pkill -x albrhi-mirrord 2>/dev/null
 launchctl load -w "$PLIST" 2>/dev/null
+
+# The app that switches mirroring on and off and shows the pairing code: put its icon on the home screen.
+# The pairing file of version 0.2.0 lived in Preferences; the daemon keeps its state in its own folder now.
+rm -f /var/mobile/Library/Preferences/com.albrhi.mirror.pairing
+if command -v uicache >/dev/null 2>&1 && [ -d "$APP" ]; then
+    uicache -p "$APP" >/dev/null 2>&1
+fi
 exit 0

@@ -158,6 +158,13 @@ static NSString *Pair(int fd, NSString *(^askCode)(NSString *note)) {
     }
 }
 
+/// What the person should do, for the daemon's short answers.
+static NSString *Friendly(NSString *error) {
+    if ([error isEqual:@"disabled"]) return @"Mirroring is switched off on the iPhone.\nOpen the Albrhi Mirror app there and turn it on.";
+    if ([error isEqual:@"pairing-closed"]) return @"Not paired yet.\nOn the iPhone open the Albrhi Mirror app and tap “Pair a Mac”; the code appears there.";
+    return error;
+}
+
 // ---- the USB tunnel -----------------------------------------------------------------------------------------------
 static NSTask *sTunnel;
 
@@ -253,10 +260,10 @@ static NSString *DescribeInfo(NSDictionary *info) {
 
         NSData *secret = LoadSecret();
         if (!secret) {
-            [self show:@"Not paired yet. Asking the phone to show a code…"];
+            [self show:@"Not paired yet. Asking the phone for a pairing…"];
             NSString *error = Pair(fd, ^NSString *(NSString *note) { return [self askCode:note]; });
             close(fd);
-            if (error) { [self show:[@"Pairing did not finish: " stringByAppendingString:error]]; sleep(3); }
+            if (error) { [self show:[error isEqual:@"pairing-closed"] || [error isEqual:@"disabled"] ? Friendly(error) : [@"Pairing did not finish: " stringByAppendingString:error]]; sleep(2); }
             continue;
         }
 
@@ -264,7 +271,7 @@ static NSString *DescribeInfo(NSDictionary *info) {
         if (error) {
             close(fd);
             if ([error isEqual:@"unpaired"]) { unlink(sSecretFile.fileSystemRepresentation); error = @"the phone has no pairing any more (reinstalled or reset): pairing again"; }
-            [self show:error]; sleep(2); continue;
+            [self show:Friendly(error)]; sleep(2); continue;
         }
 
         NSString *report = @""; NSString *frameLine = @"";
