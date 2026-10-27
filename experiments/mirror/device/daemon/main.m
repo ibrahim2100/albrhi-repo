@@ -33,6 +33,7 @@
 #include <sys/utsname.h>
 #include <unistd.h>
 #include <dlfcn.h>
+#include <mach/mach.h>
 #include <mach/mach_time.h>
 #include <sys/stat.h>
 #include <sys/un.h>
@@ -131,13 +132,65 @@ static NSString *LockText(void) {
 #if TARGET_OS_IPHONE
 static IOSurfaceRef sSurface;
 static PixelSize sSurfaceSize;
+static NSString *sSurfaceLadder = @"not tried yet";   // what each way of creating the surface did, for the report
+static int sSurfaceVariant = -1;                      // the first one that worked
 
-static IOSurfaceRef MakeSurface(PixelSize size) {
-    NSDictionary *props = @{
+static size_t Align(size_t value, size_t to) { return (value + to - 1) / to * to; }
+
+/// IOSurfaceCreate returns only NULL, never a reason, and the first version of this daemon failed there on the owner's phone
+/// (iOS 16.1, iPhone14,2, root, symbols all found). So the surface is tried several ways, from the plainest to the ones screenshot
+/// tools have used, and the report says which worked. A tiny surface is tried too: if only the big ones fail it is about size or
+/// memory, if the tiny one fails as well it is about permission.
+static NSDictionary *SurfaceProperties(PixelSize size, int variant) {
+    size_t stride = Align(size.width * 4, 64);
+    NSMutableDictionary *props = [@{
         (id)kIOSurfaceWidth: @(size.width), (id)kIOSurfaceHeight: @(size.height),
         (id)kIOSurfaceBytesPerElement: @4, (id)kIOSurfacePixelFormat: @((uint32_t)'BGRA'),
-    };
-    return IOSurfaceCreate((__bridge CFDictionaryRef)props);
+    } mutableCopy];
+    if (variant >= 1) { props[(id)kIOSurfaceBytesPerRow] = @(stride); props[(id)kIOSurfaceAllocSize] = @(Align(stride * size.height, 16384)); }
+    if (variant == 2) props[@"IOSurfaceIsGlobal"] = @YES;
+    if (variant == 3) props[@"IOSurfaceMemoryRegion"] = @"PurpleGfxMem";
+    return props;
+}
+
+static IOSurfaceRef MakeSurface(PixelSize size) {
+    NSMutableString *ladder = [NSMutableString string];
+    static const char *names[] = { "plain", "aligned", "aligned+global", "aligned+PurpleGfxMem" };
+    IOSurfaceRef tiny = IOSurfaceCreate((__bridge CFDictionaryRef)SurfaceProperties((PixelSize){ 64, 64 }, 0));
+    [ladder appendFormat:@"64x64 plain: %@", tiny ? @"ok" : @"FAILED"];
+    if (tiny) CFRelease(tiny);
+    IOSurfaceRef result = NULL;
+    for (int variant = 0; variant < 4; variant++) {
+        IOSurfaceRef surface = IOSurfaceCreate((__bridge CFDictionaryRef)SurfaceProperties(size, variant));
+        [ladder appendFormat:@" · %zux%zu %s: %@", size.width, size.height, names[variant], surface ? @"ok" : @"FAILED"];
+        if (surface && !result) { result = surface; sSurfaceVariant = variant; }
+        else if (surface) CFRelease(surface);
+        if (result) break;
+    }
+    sSurfaceLadder = ladder;
+    return result;
+}
+
+/// Opens IOSurfaceRoot the way IOSurface itself does and reports the kernel's answer: 0 means the user client is reachable,
+/// 0xe00002c1 (not permitted) or 0xe00002c2 (not privileged) means a sandbox or entitlement is in the way.
+static NSString *IOSurfaceRootNote(void) {
+    void *iokit = dlopen("/System/Library/Frameworks/IOKit.framework/IOKit", RTLD_NOW);
+    if (!iokit) return @"IOKit could not be loaded";
+    typedef CFMutableDictionaryRef (*MatchingFn)(const char *);
+    typedef uint32_t (*GetServiceFn)(uint32_t, CFDictionaryRef);
+    typedef int (*OpenFn)(uint32_t, uint32_t, uint32_t, uint32_t *);
+    typedef int (*CloseFn)(uint32_t);
+    MatchingFn matching = (MatchingFn)dlsym(iokit, "IOServiceMatching");
+    GetServiceFn getService = (GetServiceFn)dlsym(iokit, "IOServiceGetMatchingService");
+    OpenFn open = (OpenFn)dlsym(iokit, "IOServiceOpen");
+    CloseFn close = (CloseFn)dlsym(iokit, "IOServiceClose");
+    if (!matching || !getService || !open || !close) return @"IOKit symbols missing";
+    uint32_t service = getService(0, matching("IOSurfaceRoot"));
+    if (!service) return @"IOSurfaceRoot service not found";
+    uint32_t connection = 0;
+    int kr = open(service, mach_task_self(), 0, &connection);
+    if (kr == 0) close(connection);
+    return [NSString stringWithFormat:@"IOServiceOpen(IOSurfaceRoot) = 0x%x%@", (unsigned)kr, kr == 0 ? @" (reachable)" : @" (refused)"];
 }
 #endif
 
@@ -158,7 +211,7 @@ static NSData *CaptureFrame(PixelSize *outSize, uint32_t *outFingerprint, double
         sSurface = MakeSurface(wanted);
         sSurfaceSize = wanted;
     }
-    if (!sSurface) { *outError = @"IOSurfaceCreate failed"; CGColorSpaceRelease(rgb); return nil; }
+    if (!sSurface) { *outError = [NSString stringWithFormat:@"IOSurfaceCreate failed every way: %@ · %@", sSurfaceLadder, IOSurfaceRootNote()]; CGColorSpaceRelease(rgb); return nil; }
     sRender(0, CFSTR("LCD"), sSurface, 0, 0);
     IOSurfaceLock(sSurface, kIOSurfaceLockReadOnly, NULL);
     pixels = IOSurfaceGetBaseAddress(sSurface);
@@ -224,6 +277,10 @@ static NSDictionary *DeviceInfo(void) {
     info[@"ios"] = @"(host test build, no iPhone)";
 #endif
     if (sFrameCounter) info[@"renderFrameCounter"] = @(sFrameCounter(0));
+#if TARGET_OS_IPHONE
+    info[@"surface"] = sSurfaceVariant >= 0 ? [NSString stringWithFormat:@"variant %d works (%@)", sSurfaceVariant, sSurfaceLadder] : sSurfaceLadder;
+    info[@"iosurfaceRoot"] = IOSurfaceRootNote();
+#endif
     return info;
 }
 
@@ -232,6 +289,7 @@ static BOOL SessionAllowed(void);
 static void Serve(int client, double fps) {
     SendJSON(client, kMsgInfo, DeviceInfo());
     uint32_t previous = 0; BOOL first = YES; double lastInfo = 0; NSUInteger sent = 0, changed = 0;
+    uint32_t previousCounter = 0;
     double interval = 1.0 / (fps > 0 ? fps : 4);
 
     while (SessionAllowed()) {
@@ -259,8 +317,11 @@ static void Serve(int client, double fps) {
         if (Seconds() - lastInfo > 1.5) {
             lastInfo = Seconds();
             NSMutableDictionary *info = [DeviceInfo() mutableCopy];
+            uint32_t counterNow = sFrameCounter ? sFrameCounter(0) : 0;
             info[@"live"] = @{ @"framesSent": @(sent), @"framesThatDiffered": @(changed),
-                               @"lastCaptureMs": @((int)(took * 1000)), @"nonBlackShare": @(nonBlack) };
+                               @"lastCaptureMs": @((int)(took * 1000)), @"nonBlackShare": @(nonBlack),
+                               @"renderCounterMoved": @(previousCounter ? (int64_t)counterNow - (int64_t)previousCounter : 0) };
+            previousCounter = counterNow;
             if (!SendJSON(client, kMsgInfo, info)) return;
         }
 

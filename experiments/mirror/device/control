@@ -1,6 +1,6 @@
 Package: com.albrhi.mirror.probe
 Name: Albrhi Mirror (stage 1)
-Version: 0.3.0
+Version: 0.3.1
 Architecture: iphoneos-arm64
 Description: Stage 1 of a screen mirroring experiment: an app to switch it on and pair a Mac, and a service that captures the screen and reports what the phone allows, including while locked. Off until switched on; loopback only.
 Maintainer: Ibrahim Ismail AL-Rahn

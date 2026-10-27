@@ -70,9 +70,27 @@ can reach the socket, and whether any of it survives the phone locking.
 If the viewer shows a coloured moving pattern and `iOS (host test build, no iPhone)`, it is talking to the Mac test build and not the
 phone: `pkill mirrord-host`.
 
+## First report from the phone (0.3.0, 2026-10-27)
+
+Installed, paired and connected on an iPhone 13 Pro (`iPhone14,2`, iOS 16.1 build 20B82). What the viewer said:
+
+| | |
+|---|---|
+| the daemon runs as | **root** (`uid 0`) |
+| `CARenderServerRenderDisplay`, `CARenderServerGetFrameCounter`, `SBSGetScreenLockStatus` | **all found** |
+| lock state | `LOCKED, passcode none` (the phone was locked while it was being read) |
+| render frame counter | 193813 |
+| capture | **`IOSurfaceCreate failed`: no picture, `sent 0`** |
+
+So the building blocks the design relies on exist and the daemon has the rights it needs; the first thing in the way is **creating the
+surface** `CARenderServerRenderDisplay` draws into. `IOSurfaceCreate` returns only NULL, so 0.3.1 tries it several ways (a 64x64 one,
+then plain, aligned, with `IOSurfaceIsGlobal`, with `PurpleGfxMem`), and reports which worked, plus what the kernel answers when
+`IOSurfaceRoot` is opened directly (`0x0` reachable; `0xe00002c1`/`0xe00002c2` refused, which would mean a sandbox or an entitlement).
+It also reports how far the render counter moved between two reports, which is what says whether the screen keeps rendering while locked.
+
 ## Trying it on the phone
 
-1. Install `com.albrhi.mirror.probe_0.3.0_iphoneos-arm64e_roothide.deb`. The service starts by itself and **Albrhi Mirror** appears on
+1. Install `com.albrhi.mirror.probe_0.3.1_iphoneos-arm64e_roothide.deb`. The service starts by itself and **Albrhi Mirror** appears on
    the home screen (if the icon does not, say so — `uicache` is the first suspect). **Do not start the daemon by hand.**
 2. Open the app and turn on **Allow mirroring**. (If it says the service is not running: `launchctl list | grep mirrord` and
    `cat /tmp/albrhi-mirrord.log`.)

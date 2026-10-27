@@ -197,8 +197,10 @@ static NSString *DescribeInfo(NSDictionary *info) {
     [s appendFormat:@"LOCK STATE: %@\n", info[@"lock"]];
     for (NSString *line in info[@"symbols"]) [s appendFormat:@"  %@\n", line];
     if (info[@"renderFrameCounter"]) [s appendFormat:@"  render frame counter: %@\n", info[@"renderFrameCounter"]];
-    if (live) [s appendFormat:@"sent %@ · picture differed in %@ · last capture %@ ms · non-black share %.0f%%\n",
-               live[@"framesSent"], live[@"framesThatDiffered"], live[@"lastCaptureMs"], [live[@"nonBlackShare"] doubleValue] * 100];
+    if (info[@"surface"]) [s appendFormat:@"  surface: %@\n", info[@"surface"]];
+    if (info[@"iosurfaceRoot"]) [s appendFormat:@"  %@\n", info[@"iosurfaceRoot"]];
+    if (live) [s appendFormat:@"sent %@ · picture differed in %@ · last capture %@ ms · non-black share %.0f%% · render counter moved %@\n",
+               live[@"framesSent"], live[@"framesThatDiffered"], live[@"lastCaptureMs"], [live[@"nonBlackShare"] doubleValue] * 100, live[@"renderCounterMoved"]];
     return s;
 }
 
@@ -218,11 +220,11 @@ static NSString *DescribeInfo(NSDictionary *info) {
                                                 backing:NSBackingStoreBuffered defer:NO];
     self.window.title = @"Albrhi Mirror — stage 1 (probe)";
     NSView *content = self.window.contentView;
-    self.imageView = [[NSImageView alloc] initWithFrame:NSMakeRect(0, 150, 760, 610)];
+    self.imageView = [[NSImageView alloc] initWithFrame:NSMakeRect(0, 220, 760, 540)];
     self.imageView.imageScaling = NSImageScaleProportionallyUpOrDown;
     self.imageView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     self.status = [NSTextField labelWithString:@"starting…"];
-    self.status.frame = NSMakeRect(8, 4, 744, 142);
+    self.status.frame = NSMakeRect(8, 4, 744, 212);
     self.status.font = [NSFont monospacedSystemFontOfSize:11 weight:NSFontWeightRegular];
     self.status.maximumNumberOfLines = 0;
     self.status.autoresizingMask = NSViewWidthSizable;
