@@ -14,7 +14,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-enum { kMsgInfo = 1, kMsgFrame = 2, kMsgEvent = 3, kMsgCommand = 10 };
+enum { kMsgInfo = 1, kMsgFrame = 2, kMsgEvent = 3, kMsgCommand = 10, kMsgAuth = 20 };
 
 static BOOL ReadAll(int fd, void *buffer, size_t length) {
     uint8_t *p = buffer;
@@ -28,6 +28,12 @@ static int Connect(int port) {
     a.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     if (connect(fd, (struct sockaddr *)&a, sizeof(a)) != 0) { close(fd); return -1; }
     return fd;
+}
+
+static BOOL SendAuth(int fd, NSString *token) {
+    NSData *body = [token dataUsingEncoding:NSUTF8StringEncoding];
+    uint8_t header[5] = { kMsgAuth, 0, 0, 0, (uint8_t)body.length };
+    return send(fd, header, 5, 0) == 5 && send(fd, body.bytes, body.length, 0) == (ssize_t)body.length;
 }
 
 /// Reads one message. Returns NO on a closed connection.
@@ -59,6 +65,7 @@ static NSString *DescribeInfo(NSDictionary *info) {
 @property (nonatomic) NSImageView *imageView;
 @property (nonatomic) NSTextField *status;
 @property (nonatomic) int port;
+@property (nonatomic, copy) NSString *token;
 @end
 
 @implementation Viewer
@@ -79,6 +86,18 @@ static NSString *DescribeInfo(NSDictionary *info) {
     [content addSubview:self.imageView]; [content addSubview:self.status];
     [self.window center]; [self.window makeKeyAndOrderFront:nil];
     [NSApp activateIgnoringOtherApps:YES];
+    if (!self.token.length) {
+        // The daemon prints a token when it starts; without it the daemon sends nothing.
+        NSAlert *alert = [[NSAlert alloc] init];
+        alert.messageText = @"Token";
+        alert.informativeText = @"Type the TOKEN that albrhi-mirrord printed on the phone.";
+        NSTextField *field = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 280, 24)];
+        alert.accessoryView = field;
+        [alert addButtonWithTitle:@"Connect"]; [alert addButtonWithTitle:@"Quit"];
+        alert.window.initialFirstResponder = field;
+        if ([alert runModal] != NSAlertFirstButtonReturn) { [NSApp terminate:nil]; return; }
+        self.token = [field.stringValue stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    }
     [NSThread detachNewThreadSelector:@selector(run) toTarget:self withObject:nil];
 }
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)a { return YES; }
@@ -89,6 +108,7 @@ static NSString *DescribeInfo(NSDictionary *info) {
     while (YES) {
         int fd = Connect(self.port);
         if (fd < 0) { [self show:[NSString stringWithFormat:@"No daemon on 127.0.0.1:%d.\nStart `iproxy %d %d` and run albrhi-mirrord on the phone.", self.port, self.port, self.port]]; sleep(2); continue; }
+        if (!SendAuth(fd, self.token)) { close(fd); sleep(1); continue; }
         NSString *report = @""; NSString *frameLine = @"";
         uint8_t type; NSData *payload;
         while (ReadMessage(fd, &type, &payload)) {
@@ -107,7 +127,7 @@ static NSString *DescribeInfo(NSDictionary *info) {
             [self show:[frameLine stringByAppendingString:report]];
         }
         close(fd);
-        [self show:@"connection closed; retrying…"];
+        [self show:@"connection closed (a wrong token is closed without a reply); retrying…"];
         sleep(1);
     }
 }
@@ -115,15 +135,17 @@ static NSString *DescribeInfo(NSDictionary *info) {
 
 int main(int argc, char **argv) {
     @autoreleasepool {
-        int port = 9777; BOOL selftest = NO; const char *saveTo = "/tmp/albrhi-mirror-frame.jpg";
+        int port = 9777; BOOL selftest = NO; const char *saveTo = "/tmp/albrhi-mirror-frame.jpg"; NSString *token = nil;
         for (int i = 1; i < argc; i++) {
             if (!strcmp(argv[i], "--port") && i + 1 < argc) port = atoi(argv[++i]);
+            else if (!strcmp(argv[i], "--token") && i + 1 < argc) token = @(argv[++i]);
             else if (!strcmp(argv[i], "--selftest")) selftest = YES;
             else if (!strcmp(argv[i], "--save") && i + 1 < argc) saveTo = argv[++i];
         }
         if (selftest) {
             int fd = Connect(port);
             if (fd < 0) { fprintf(stderr, "no daemon on 127.0.0.1:%d\n", port); return 2; }
+            if (!token || !SendAuth(fd, token)) { fprintf(stderr, "selftest needs --token\n"); return 2; }
             int frames = 0, infos = 0; uint8_t type; NSData *payload; NSDictionary *last = nil; BOOL saved = NO; uint32_t firstPrint = 0, differing = 0, lastPrint = 0;
             while (frames < 6 && ReadMessage(fd, &type, &payload)) {
                 if (type == kMsgInfo) { infos++; last = [NSJSONSerialization JSONObjectWithData:payload options:0 error:nil]; }
@@ -142,7 +164,7 @@ int main(int argc, char **argv) {
         }
         NSApplication *app = [NSApplication sharedApplication];
         [app setActivationPolicy:NSApplicationActivationPolicyRegular];
-        Viewer *viewer = [[Viewer alloc] init]; viewer.port = port;
+        Viewer *viewer = [[Viewer alloc] init]; viewer.port = port; viewer.token = token;
         app.delegate = viewer;
         [app run];
     }

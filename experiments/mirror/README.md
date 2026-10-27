@@ -18,8 +18,11 @@ So the other end has to be written here: a program on the phone and a viewer on 
   found, how long a capture took, whether the picture changed since the last frame, how much of it is black).
 - `mac/Viewer.m` — shows the frames and the report.
 - **Nothing else**: no touch injection, no power or brightness change, no persistence, no network exposure. The Mac reaches
-  the phone through `iproxy` over USB, which is why there is no authentication yet. **Authentication and encryption are
-  stage 4 and nothing leaves the loopback before them.**
+  the phone through `iproxy` over USB.
+- **Loopback is not private on a phone: any app on the device can connect to 127.0.0.1.** So each run prints a random
+  **TOKEN**; the first message must carry it, and a connection that does not is closed without a reply. The daemon also
+  stops by itself after 15 minutes (`--lifetime`). This was added after the first version, which said "loopback only" as
+  though that settled it. Pairing and encryption for a network listener are stage 4, and nothing leaves the loopback before them.
 
 The report exists because the hard part is the one thing a Mac cannot answer: **what iOS 16.1 does with the display when
 the phone is locked.** Whether it keeps rendering, goes black, or sends the last frame decides the whole design.
@@ -29,21 +32,24 @@ the phone is locked.** Whether it keeps rendering, goes black, or sends the last
 ```bash
 bash experiments/mirror/device/build.sh roothide   # → ~/Desktop/Albrhi-Mirror/*_roothide.deb  (your phone)
 bash experiments/mirror/device/build.sh rootless   # → ~/Desktop/Albrhi-Mirror/*_rootless.deb
-bash experiments/mirror/mac/build.sh               # → ~/Desktop/Albrhi-Mirror/viewer (+ mirrord-host, a test build)
+bash experiments/mirror/mac/build.sh               # → ~/Desktop/Albrhi-Mirror/viewer   (+ /tmp/albrhi-mirror-test/mirrord-host, a TEST build)
 ```
 
 The build proves the flavour from the staged paths (no `var/jb` in a roothide package), like `tools/build-local.sh`.
-**Tested on the Mac only:** the wire format and the viewer, with the host build of the daemon (`mirrord-host`, which sends
-a moving test picture): 6 distinct frames received, JPEG valid, listener bound to loopback. **Not tested on a phone.**
+**Tested on the Mac only:** the wire format, the token (right, wrong and none) and the lifetime limit, with the host build of the
+daemon, which sends a moving test picture and is **not** the phone's daemon: 6 distinct frames, JPEG valid, listener bound to
+loopback, a wrong or missing token gets nothing. **Not tested on a phone.** If the viewer shows a coloured moving pattern and
+`iOS (host test build, no iPhone)`, it is talking to the Mac test build and not the phone: `pkill mirrord-host`.
 
 ## Trying it on the phone
 
-1. Install `com.albrhi.mirror.probe_0.1.0_iphoneos-arm64e_roothide.deb`.
+1. Install `com.albrhi.mirror.probe_0.1.1_iphoneos-arm64e_roothide.deb`.
 2. On the Mac, with the phone connected by USB and trusted: `iproxy 9777 9777` and leave it running.
-3. On the phone, **as root**, start it by hand (it does not start by itself):
+3. On the phone, **as root**, start it by hand (it does not start by itself) and **read the `TOKEN` line it prints**:
    `sudo albrhi-mirrord` (NewTerm), or over ssh (`iproxy 2222 22`, then `ssh root@127.0.0.1 -p 2222`, `nohup albrhi-mirrord &`).
-   If `albrhi-mirrord` is not on the PATH, `$(jbroot /usr/bin/albrhi-mirrord)`.
-4. On the Mac: `~/Desktop/Albrhi-Mirror/viewer`.
+   If `albrhi-mirrord` is not on the PATH, `$(jbroot /usr/bin/albrhi-mirrord)`. Nothing on the Mac side works without this step:
+   with no daemon on the phone the viewer only says it cannot connect.
+4. On the Mac: `~/Desktop/Albrhi-Mirror/viewer` (it asks for the token; or `viewer --token <TOKEN>`).
 
 ### What to try, and what to send back
 

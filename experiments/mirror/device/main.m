@@ -5,10 +5,12 @@
 //  **can this phone's screen be captured from a root process, and does that keep working while the phone is locked?**
 //
 //  It listens on 127.0.0.1 only (the Mac reaches it through a USB tunnel, `iproxy`), serves one client at a time,
+//  **and loopback is not private on a phone: any app on the device can connect to 127.0.0.1.** So the first message
+//  must carry a random token printed when the daemon starts, and the daemon exits by itself after `--lifetime` seconds.
 //  captures the display as JPEG frames, and reports what it can see about the device: iOS version, lock state,
 //  which private symbols resolved, how long a capture took, and whether the picture changed since the last one.
-//  It does not inject touches, does not change power or brightness, does not start itself, and there is no
-//  authentication because there is no network exposure: that is stage 4, and nothing leaves stage 1 without it.
+//  It does not inject touches, does not change power or brightness and does not start itself. Encryption and pairing
+//  for a network listener are stage 4, and nothing leaves the loopback before them.
 //
 //  Copyright (C) Ibrahim Ismail AL-Rahn. GPLv3.
 //
@@ -30,7 +32,7 @@
 #endif
 
 // ---- wire format: [type:1][length:4 big endian][payload] ---------------------------------------------------------
-enum { kMsgInfo = 1, kMsgFrame = 2, kMsgEvent = 3, kMsgCommand = 10 };
+enum { kMsgInfo = 1, kMsgFrame = 2, kMsgEvent = 3, kMsgCommand = 10, kMsgAuth = 20 };
 
 static BOOL SendAll(int fd, const void *bytes, size_t length) {
     const uint8_t *p = bytes;
@@ -264,35 +266,68 @@ static void Serve(int client, double fps) {
     }
 }
 
+static BOOL Authenticate(int client, NSString *token) {
+    struct timeval limit = { 3, 0 };
+    setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, &limit, sizeof(limit));
+    uint8_t header[5];
+    BOOL ok = NO;
+    if (recv(client, header, 5, MSG_WAITALL) == 5 && header[0] == kMsgAuth) {
+        uint32_t length = ((uint32_t)header[1] << 24) | (header[2] << 16) | (header[3] << 8) | header[4];
+        if (length > 0 && length <= 64) {
+            char body[65] = {0};
+            if (recv(client, body, length, MSG_WAITALL) == (ssize_t)length) {
+                const char *want = token.UTF8String;
+                // constant-time compare: the length is public, the content is not
+                unsigned diff = (strlen(want) == length) ? 0 : 1;
+                for (size_t i = 0; i < length; i++) diff |= (unsigned)(body[i] ^ want[i % strlen(want)]);
+                ok = (diff == 0);
+            }
+        }
+    }
+    struct timeval none = { 0, 0 };
+    setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, &none, sizeof(none));
+    return ok;
+}
+
 int main(int argc, char **argv) {
     @autoreleasepool {
         signal(SIGPIPE, SIG_IGN);
-        int port = 9777; double fps = 4; BOOL once = NO;
+        int port = 9777; double fps = 4, lifetime = 900; BOOL once = NO;
         for (int i = 1; i < argc; i++) {
             if (!strcmp(argv[i], "--port") && i + 1 < argc) port = atoi(argv[++i]);
             else if (!strcmp(argv[i], "--fps") && i + 1 < argc) fps = atof(argv[++i]);
+            else if (!strcmp(argv[i], "--lifetime") && i + 1 < argc) lifetime = atof(argv[++i]);
             else if (!strcmp(argv[i], "--once")) once = YES;
         }
         ResolveSymbols();
+        NSString *token = [NSString stringWithFormat:@"%08x%08x", arc4random(), arc4random()];
 
         int listener = socket(AF_INET, SOCK_STREAM, 0);
         int yes = 1; setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
         struct sockaddr_in address = { .sin_len = sizeof(address), .sin_family = AF_INET, .sin_port = htons((uint16_t)port) };
         address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);          // loopback only: never on the network
         if (bind(listener, (struct sockaddr *)&address, sizeof(address)) != 0 || listen(listener, 1) != 0) {
-            fprintf(stderr, "albrhi-mirrord: cannot listen on 127.0.0.1:%d\n", port);
+            fprintf(stderr, "albrhi-mirrord: cannot listen on 127.0.0.1:%d (is something else, or the Mac test build, using it?)\n", port);
             return 1;
         }
-        printf("albrhi-mirrord stage 1 listening on 127.0.0.1:%d (loopback only; reach it through `iproxy`)\n", port);
+        printf("albrhi-mirrord stage 1 listening on 127.0.0.1:%d\n", port);
+        printf("TOKEN (type it into the viewer, or use --token): %s\n", token.UTF8String);
+        printf("it stops by itself after %.0f seconds\n", lifetime);
         fflush(stdout);
 
-        while (YES) {
+        double deadline = Seconds() + lifetime;
+        while (Seconds() < deadline) {
+            fd_set readable; FD_ZERO(&readable); FD_SET(listener, &readable);
+            struct timeval wait = { 1, 0 };
+            if (select(listener + 1, &readable, NULL, NULL, &wait) <= 0) continue;
             int client = accept(listener, NULL, NULL);
             if (client < 0) continue;
+            if (!Authenticate(client, token)) { close(client); continue; }   // anything that cannot say the token gets nothing
             @autoreleasepool { Serve(client, fps); }
             close(client);
             if (once) break;
         }
+        printf("albrhi-mirrord: stopped\n");
     }
     return 0;
 }
