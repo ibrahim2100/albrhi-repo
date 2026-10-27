@@ -57,7 +57,8 @@ component's `bizData` for a background-info entry, and only if there is one buil
 
 ## Open
 
-- Does the server accept an upload from an account it did not put on the list? Unknown; a device says.
-- `bizData = @{}` is our guess at "a component with nothing in it". The reference hands the setter a different object;
-  what it is was not resolved (a constant at offset 0x1f0 of its data section).
+- **Confirmed on the owner's phone, 2026-10-27 (0.25.0): the editor appears and works.** So `bizData = @{}` is accepted
+  by the editor, and the allow-list flag plus the stand-in component is enough there.
+- Not known: whether the server accepts a change from every account (one phone is one data point), and what the reference
+  hands `setBizData:` instead of a dictionary (a constant at offset 0x1f0 of its data section; no longer needed).
 - `profileBgEnableConsumptionGroup` probably decides whether other people's backgrounds are *shown*; not touched.

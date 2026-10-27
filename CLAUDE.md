@@ -1126,8 +1126,8 @@ there costs colours, never the video).
   server's. `TTKProfileHeaderAdaptor p_setupComponentsWithModel:isCache:isPreload:` reads `hasProfileBackground`/`hasProfileBackgroundData`; `profileBgReduceTransparencyFixEnabled` has no caller. The editor shows its controls
   when `p_resolveProfileBackgroundSnapshot` finds `TTKProfileComponentResponseModel -profileBackground`. Ours (`Features/Profile/SCITTProfileBackground.x`, switch `profile_background`, **off by default** with the cost on the
   row) answers `profileBgInAllowList` with 1 and, only inside the editor's resolve and only on that thread, gives an empty `TTKProfileBaseComponentModel` (`bizData = @{}`) when the response has none. Each of the three hooks
-  installs on its own behind the encoding check; `objc-diff --check` against 47.1.0 passes them. **Not run on a device**: whether the server then accepts the upload for an account, and whether `bizData = @{}` is a shape the
-  editor tolerates (the reference passes something else; what it passes was not resolved), are the two things a report will say. `profileBgEnableConsumptionGroup` is left alone: it concerns *viewing* backgrounds.
+  installs on its own behind the encoding check; `objc-diff --check` against 47.1.0 passes them. **Confirmed on the owner's phone (2026-10-27, 0.25.0): the editor appears and works** ("اشتغل و طلعت الميزه ممتاز"), so `bizData = @{}` is a shape it tolerates and the allow-list flag is enough for his account. **Still not known:** whether
+  the server accepts the change for every account (one phone is one data point), and what the reference passes to `setBizData:` instead (never resolved, and no longer needed). `profileBgEnableConsumptionGroup` is left alone: it concerns *viewing* backgrounds.
   The idea came from `ProfileBanner` (unlicensed, §2); only the places to look were taken.
 - Non-obvious refusals: `PIPOStoreKitHelper -isJailBroken` is not hooked (§2); the `tikwm` path was refused *as the fix, arriving quietly* and shipped as a
   switch once the owner asked knowing the trade — the earlier refusal was a different question, not wrong.
@@ -1287,7 +1287,7 @@ Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
 (0.18.4: the strip and tab hidden, a Space opens); TikTok's button, photo posts, the 1080p60 external route and the cell placement; NextUp on iOS 16.1 (Music, Podcasts,
-YouTube, YT Music, Spotify); Watch pairing and the update hold (watchOS 26.6 refused). **Not confirmed:** Spaces removal at `-setTabViews:` separately; TikTok's
+YouTube, YT Music, Spotify); Watch pairing and the update hold (watchOS 26.6 refused); Instagram copy of a caption (long-press) and of a comment (the Copy button in its menu, 4.8.0); TikTok's profile-background editor (0.25.0). **Not confirmed:** Spaces removal at `-setTabViews:` separately; TikTok's
 comment-media Save row and photo-as-clip on every video type; YouTube's playback-error recovery's reload budget in the wild; the 1.34.0 fallback path to the playlist for
 a login-gated video.
 
