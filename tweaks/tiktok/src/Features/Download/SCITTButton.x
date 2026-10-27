@@ -498,7 +498,7 @@ BOOL SCITTCopyHoldOnDownloadButton(UIView *hit) {
 
         UIViewController *owner = SCITTOwningController(view);
         id model = owner ? ((id (*)(id, SEL))objc_msgSend)(owner, NSSelectorFromString(@"model")) : nil;
-        SCITTShowCopyMenu(model);
+        SCITTShowCopyMenu(model, view);
         return YES;
     }
     return NO;

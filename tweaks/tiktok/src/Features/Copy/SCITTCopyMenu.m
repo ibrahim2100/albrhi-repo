@@ -8,26 +8,33 @@
 #import "SCITTCopyMenu.h"
 #import <objc/runtime.h>
 #import <objc/message.h>
-#import "../../UI/SCITTSheet.h"
 #import "../../UI/SCITTToast.h"
 #import "../../Localization/SCILocalize.h"
 
 ///
-/// **A menu of our own, on the button of our own, because TikTok's long-press panel is not ours to extend.**
+/// **A dropdown from the download button, rows that each copy one thing.**
 ///
-/// A reference tweak adds rows to the feed's own long-press panel (`TTKShareLongPressFeedAdapter` and its registry). That panel is built
-/// from a view model several classes deep and was never read for this file; the download button is this tweak's, its sheet is this
-/// tweak's, and the model behind a video (`AWEAwemeModel`) is already what every other feature here reads. The fields below are read from
-/// 47.1.0's class metadata, each with an `@` return:
+/// The first version was a bottom sheet of four rows, one of which glued the account, the caption and the link into a single block. It
+/// is replaced by six independent rows, drawn as a small menu that hangs from the button the hold began on (to its left when the button
+/// is on the right half of the screen, as TikTok's rail is). Each row shows what it will copy, truncated to a line, so the person checks it
+/// by reading rather than by trusting a label.
 ///
-///   AWEAwemeModel   -author -> AWEUserModel -uniqueIDForShow / -signature
-///   AWEAwemeModel   -music  -> AWEMusicModel -shareInfo -> AWEShareInfoModel -shareUrl
-///   AWEAwemeModel   -descriptionString, -shareURL
+/// Where each value comes from (47.1.0 class metadata, every accessor returns an object):
 ///
-/// **Not run on a device.** A field that comes back empty is a row that is not drawn, and the report counts how often that happened.
+///   video link   AWEAwemeModel -shareURL, else -shareInfo.shareUrl, else built from the account and the post id
+///                (`https://www.tiktok.com/@<name>/video/<id>`, the form TikTok itself resolves)
+///   caption      AWEAwemeModel -descriptionString
+///   sound link   AWEAwemeModel -music -> AWEMusicModel -shareInfo -> AWEShareInfoModel -shareUrl   (no built fallback: a guessed
+///                address for a sound would be a guess)
+///   username     AWEAwemeModel -author -> AWEUserModel -uniqueIDForShow, copied with its `@`
+///   bio          AWEUserModel -signature
+///   profile      built from the username: `https://www.tiktok.com/@<name>`
+///
+/// **Not run on a device.** The report names the source of the last video link, so a wrong one is traceable.
 ///
 
-static NSUInteger sciCopyAsked = 0, sciCopyOffered = 0, sciCopyCopied = 0, sciCopyEmpty = 0;
+static NSUInteger sciCopyAsked = 0, sciCopyOffered = 0, sciCopyEmpty = 0, sciCopyCopied = 0;
+static NSString *sciCopyVideoSource = nil, *sciCopyLastRow = nil;
 
 /// An object-returning accessor, asked only when the object has it and declares it as returning an object.
 static id SCITTObjectFor(id object, NSString *name) {
@@ -47,65 +54,255 @@ static NSString *SCITTTextOf(id value) {
     return text.length ? text : nil;
 }
 
-static void SCITTCopyToPasteboard(NSString *text) {
-    [UIPasteboard generalPasteboard].string = text;
+/// A web address, or nil. A link row must copy a link and nothing that merely sits in a "URL" field.
+static NSString *SCITTLinkOf(id value) {
+    NSString *text = SCITTTextOf(value);
+    NSString *lower = text.lowercaseString;
+    return ([lower hasPrefix:@"https://"] || [lower hasPrefix:@"http://"]) ? text : nil;
+}
+
+#pragma mark - The rows
+
+@interface SCITTCopyRow : NSObject
+@property (nonatomic, copy) NSString *title;
+@property (nonatomic, copy) NSString *symbol;
+@property (nonatomic, copy) NSString *text;     // exactly what is copied, and exactly what is shown beneath the title
+@property (nonatomic, assign) BOOL link;        // shown truncated in the middle
+@property (nonatomic, assign) BOOL groupStart;  // a separator above
+@end
+@implementation SCITTCopyRow
+@end
+
+static SCITTCopyRow *SCITTMakeRow(NSString *titleKey, NSString *symbol, NSString *text, BOOL link) {
+    if (!text.length) return nil;
+    SCITTCopyRow *row = [[SCITTCopyRow alloc] init];
+    row.title = SCILocalized(titleKey);
+    row.symbol = symbol;
+    row.text = text;
+    row.link = link;
+    return row;
+}
+
+static NSArray<SCITTCopyRow *> *SCITTRowsForModel(id model) {
+    id user = SCITTObjectFor(model, @"author") ?: SCITTObjectFor(model, @"getAuthorModel");
+    NSString *name = SCITTTextOf(SCITTObjectFor(user, @"uniqueIDForShow"));
+    NSString *handle = name ? [name hasPrefix:@"@"] ? name : [@"@" stringByAppendingString:name] : nil;
+    NSString *bare = [handle substringFromIndex:MIN((NSUInteger)1, handle.length)];
+
+    // The video's link: TikTok's own share address first, the built one only when TikTok gave none.
+    NSString *video = SCITTLinkOf(SCITTObjectFor(model, @"shareURL"));
+    sciCopyVideoSource = video ? @"shareURL" : nil;
+    if (!video) {
+        video = SCITTLinkOf(SCITTObjectFor(SCITTObjectFor(model, @"shareInfo"), @"shareUrl"));
+        if (video) sciCopyVideoSource = @"shareInfo.shareUrl";
+    }
+    if (!video) {
+        NSString *itemID = SCITTTextOf(SCITTObjectFor(model, @"itemID"));
+        if (bare.length && itemID.length) {
+            video = [NSString stringWithFormat:@"https://www.tiktok.com/@%@/video/%@", bare, itemID];
+            sciCopyVideoSource = @"built from the account and the post id";
+        }
+    }
+    if (!video) sciCopyVideoSource = @"none";
+
+    id music = SCITTObjectFor(model, @"music") ?: SCITTObjectFor(model, @"getMusicModel");
+    NSString *sound = SCITTLinkOf(SCITTObjectFor(SCITTObjectFor(music, @"shareInfo"), @"shareUrl"));
+
+    NSString *caption = SCITTTextOf(SCITTObjectFor(model, @"descriptionString"));
+    NSString *bio = SCITTTextOf(SCITTObjectFor(user, @"signature"));
+    NSString *profile = bare.length ? [@"https://www.tiktok.com/@" stringByAppendingString:bare] : nil;
+
+    NSMutableArray<SCITTCopyRow *> *rows = [NSMutableArray array];
+    void (^add)(SCITTCopyRow *, BOOL) = ^(SCITTCopyRow *row, BOOL groupStart) {
+        if (!row) return;
+        row.groupStart = groupStart && rows.count > 0;
+        [rows addObject:row];
+    };
+
+    add(SCITTMakeRow(@"copy_video_link", @"link", video, YES), NO);
+    add(SCITTMakeRow(@"copy_caption", @"text.quote", caption, NO), NO);
+    add(SCITTMakeRow(@"copy_sound_link", @"music.note", sound, YES), YES);
+    add(SCITTMakeRow(@"copy_username", @"at", handle, NO), YES);
+    add(SCITTMakeRow(@"copy_bio", @"text.alignleft", bio, NO), NO);
+    add(SCITTMakeRow(@"copy_profile_link", @"person.crop.circle", profile, YES), NO);
+    return rows;
+}
+
+#pragma mark - The dropdown
+
+@class SCITTCopyDropdown;
+static __weak SCITTCopyDropdown *sciCopyShowing = nil;
+
+@interface SCITTCopyRowControl : UIControl
+@property (nonatomic, strong) SCITTCopyRow *row;
+@end
+@implementation SCITTCopyRowControl
+- (void)setHighlighted:(BOOL)highlighted {
+    [super setHighlighted:highlighted];
+    self.backgroundColor = highlighted ? [UIColor colorWithWhite:1 alpha:0.14] : [UIColor clearColor];
+}
+@end
+
+@interface SCITTCopyDropdown : UIControl
+- (instancetype)initWithRows:(NSArray<SCITTCopyRow *> *)rows anchor:(CGRect)anchor inWindow:(UIWindow *)window;
+- (void)dismiss;
+@end
+
+@implementation SCITTCopyDropdown {
+    UIVisualEffectView *_panel;
+    CGPoint _anchorPoint;
+}
+
+- (instancetype)initWithRows:(NSArray<SCITTCopyRow *> *)rows anchor:(CGRect)anchor inWindow:(UIWindow *)window {
+    if (!(self = [super initWithFrame:window.bounds])) return nil;
+    self.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.18];
+    [self addTarget:self action:@selector(dismiss) forControlEvents:UIControlEventTouchDown];
+
+    UIEdgeInsets safe = window.safeAreaInsets;
+    CGFloat width = MIN(280, window.bounds.size.width - 32);
+    const CGFloat rowHeight = 56;
+
+    UIVisualEffectView *panel = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterialDark]];
+    panel.layer.cornerRadius = 18;
+    panel.layer.cornerCurve = kCACornerCurveContinuous;
+    panel.clipsToBounds = YES;
+    panel.layer.borderWidth = 0.5;
+    panel.layer.borderColor = [UIColor colorWithWhite:1 alpha:0.22].CGColor;
+    _panel = panel;
+
+    CGFloat y = 0;
+    for (SCITTCopyRow *row in rows) {
+        if (row.groupStart) {
+            UIView *separator = [[UIView alloc] initWithFrame:CGRectMake(0, y, width, 6)];
+            separator.backgroundColor = [UIColor colorWithWhite:0 alpha:0.28];
+            [panel.contentView addSubview:separator];
+            y += 6;
+        }
+
+        SCITTCopyRowControl *control = [[SCITTCopyRowControl alloc] initWithFrame:CGRectMake(0, y, width, rowHeight)];
+        control.row = row;
+        [control addTarget:self action:@selector(chosen:) forControlEvents:UIControlEventTouchUpInside];
+
+        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:16 weight:UIImageSymbolWeightSemibold];
+        UIImageView *icon = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:row.symbol withConfiguration:config]];
+        icon.tintColor = [UIColor whiteColor];
+        icon.contentMode = UIViewContentModeCenter;
+        icon.translatesAutoresizingMaskIntoConstraints = NO;
+
+        UILabel *title = [[UILabel alloc] init];
+        title.text = row.title;
+        title.font = [UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
+        title.textColor = [UIColor whiteColor];
+
+        UILabel *preview = [[UILabel alloc] init];
+        preview.text = [row.text stringByReplacingOccurrencesOfString:@"\n" withString:@" "];
+        preview.font = [UIFont systemFontOfSize:12];
+        preview.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        preview.lineBreakMode = row.link ? NSLineBreakByTruncatingMiddle : NSLineBreakByTruncatingTail;
+
+        UIStackView *text = [[UIStackView alloc] initWithArrangedSubviews:@[title, preview]];
+        text.axis = UILayoutConstraintAxisVertical;
+        text.spacing = 2;
+        text.userInteractionEnabled = NO;
+        text.translatesAutoresizingMaskIntoConstraints = NO;
+
+        icon.userInteractionEnabled = NO;
+        [control addSubview:icon];
+        [control addSubview:text];
+        [NSLayoutConstraint activateConstraints:@[
+            [icon.leadingAnchor constraintEqualToAnchor:control.leadingAnchor constant:14],
+            [icon.centerYAnchor constraintEqualToAnchor:control.centerYAnchor],
+            [icon.widthAnchor constraintEqualToConstant:24],
+            [text.leadingAnchor constraintEqualToAnchor:icon.trailingAnchor constant:10],
+            [text.trailingAnchor constraintEqualToAnchor:control.trailingAnchor constant:-14],
+            [text.centerYAnchor constraintEqualToAnchor:control.centerYAnchor],
+        ]];
+        [panel.contentView addSubview:control];
+        y += rowHeight;
+    }
+
+    // To the left of the button when it is on the right half of the screen (TikTok's rail), to the right otherwise; centred on the button
+    // and clamped inside the safe area so it never runs under the status bar or the home indicator.
+    CGFloat height = y;
+    BOOL buttonOnRight = CGRectGetMidX(anchor) > window.bounds.size.width / 2;
+    CGFloat x = buttonOnRight ? CGRectGetMinX(anchor) - 10 - width : CGRectGetMaxX(anchor) + 10;
+    x = MAX(12, MIN(x, window.bounds.size.width - width - 12));
+    CGFloat top = safe.top + 8, bottom = window.bounds.size.height - safe.bottom - 8;
+    CGFloat originY = MAX(top, MIN(CGRectGetMidY(anchor) - height / 2, bottom - height));
+    panel.frame = CGRectMake(x, originY, width, height);
+    [self addSubview:panel];
+
+    // Grows out of the button: the anchor point is the edge of the menu nearest to it.
+    CGPoint towards = CGPointMake(buttonOnRight ? 1 : 0, MAX(0, MIN(1, (CGRectGetMidY(anchor) - originY) / height)));
+    CGRect frame = panel.frame;
+    panel.layer.anchorPoint = towards;
+    panel.frame = frame;
+    _anchorPoint = towards;
+    return self;
+}
+
+- (void)present {
+    _panel.transform = CGAffineTransformMakeScale(0.82, 0.82);
+    _panel.alpha = 0;
+    self.alpha = 0;
+    [UIView animateWithDuration:0.26 delay:0 usingSpringWithDamping:0.78 initialSpringVelocity:0.4 options:UIViewAnimationOptionAllowUserInteraction
+                     animations:^{
+        self->_panel.transform = CGAffineTransformIdentity;
+        self->_panel.alpha = 1;
+        self.alpha = 1;
+    } completion:nil];
+}
+
+- (void)dismiss {
+    if (sciCopyShowing == self) sciCopyShowing = nil;
+    [UIView animateWithDuration:0.16 animations:^{
+        self->_panel.transform = CGAffineTransformMakeScale(0.9, 0.9);
+        self.alpha = 0;
+    } completion:^(BOOL finished) {
+        [self removeFromSuperview];
+    }];
+}
+
+- (void)chosen:(SCITTCopyRowControl *)control {
+    [UIPasteboard generalPasteboard].string = control.row.text;
     sciCopyCopied++;
+    sciCopyLastRow = control.row.title;
+    UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
+    [haptic impactOccurred];
+    [self dismiss];
     [SCITTToast noticeWithText:SCILocalized(@"copy_done") symbol:@"doc.on.doc.fill"];
 }
 
-void SCITTShowCopyMenu(id awemeModel) {
+@end
+
+void SCITTShowCopyMenu(id awemeModel, UIView *anchor) {
     sciCopyAsked++;
-    if (!awemeModel || ![SCITTSheet canPresent]) {
+    UIWindow *window = anchor.window;
+    if (!awemeModel || !window) {
         sciCopyEmpty++;
         return;
     }
+    if (sciCopyShowing) return;   // already open: the same hold, seen twice
 
-    id user = SCITTObjectFor(awemeModel, @"author") ?: SCITTObjectFor(awemeModel, @"getAuthorModel");
-    NSString *username = SCITTTextOf(SCITTObjectFor(user, @"uniqueIDForShow"));
-    NSString *bio = SCITTTextOf(SCITTObjectFor(user, @"signature"));
-
-    id music = SCITTObjectFor(awemeModel, @"music") ?: SCITTObjectFor(awemeModel, @"getMusicModel");
-    NSString *musicLink = SCITTTextOf(SCITTObjectFor(SCITTObjectFor(music, @"shareInfo"), @"shareUrl"));
-
-    NSString *postLink = SCITTTextOf(SCITTObjectFor(awemeModel, @"shareURL"));
-    if (!postLink) postLink = SCITTTextOf(SCITTObjectFor(SCITTObjectFor(awemeModel, @"shareInfo"), @"shareUrl"));
-    NSString *description = SCITTTextOf(SCITTObjectFor(awemeModel, @"descriptionString"));
-
-    NSMutableArray<SCITTSheetAction *> *actions = [NSMutableArray array];
-    void (^add)(NSString *, NSString *, NSString *) = ^(NSString *titleKey, NSString *symbol, NSString *text) {
-        if (!text) return;
-        [actions addObject:[SCITTSheetAction title:SCILocalized(titleKey) symbol:symbol primary:NO handler:^{
-            SCITTCopyToPasteboard(text);
-        }]];
-    };
-
-    add(@"copy_username", @"person.fill", username);
-    add(@"copy_bio", @"text.alignleft", bio);
-    add(@"copy_music", @"music.note", musicLink);
-
-    if (description || postLink) {
-        NSMutableArray<NSString *> *parts = [NSMutableArray array];
-        if (username) [parts addObject:[@"@" stringByAppendingString:username]];
-        if (description) [parts addObject:description];
-        if (postLink) [parts addObject:postLink];
-        add(@"copy_info", @"doc.text.fill", [parts componentsJoinedByString:@"\n"]);
-    }
-
-    if (!actions.count) {
+    NSArray<SCITTCopyRow *> *rows = SCITTRowsForModel(awemeModel);
+    if (!rows.count) {
         sciCopyEmpty++;
         [SCITTToast noticeWithText:SCILocalized(@"copy_nothing") symbol:@"questionmark.circle"];
         return;
     }
 
+    CGRect anchorFrame = [anchor.superview convertRect:anchor.frame toView:window];
+    SCITTCopyDropdown *menu = [[SCITTCopyDropdown alloc] initWithRows:rows anchor:anchorFrame inWindow:window];
+    if (!menu) return;
     sciCopyOffered++;
-    [SCITTSheet showTitle:SCILocalized(@"copy_title")
-                  message:nil
-                   symbol:@"doc.on.doc"
-                  actions:actions
-                   cancel:SCILocalized(@"photos_cancel")];
+    sciCopyShowing = menu;
+    [window addSubview:menu];
+    [menu present];
 }
 
 NSString *SCITTCopyReport(void) {
-    return [NSString stringWithFormat:@"menus asked %lu, offered %lu, nothing to offer %lu, rows copied %lu",
-            (unsigned long)sciCopyAsked, (unsigned long)sciCopyOffered, (unsigned long)sciCopyEmpty, (unsigned long)sciCopyCopied];
+    return [NSString stringWithFormat:@"menus asked %lu, offered %lu, nothing to offer %lu, rows copied %lu (last: %@); video link source: %@",
+            (unsigned long)sciCopyAsked, (unsigned long)sciCopyOffered, (unsigned long)sciCopyEmpty, (unsigned long)sciCopyCopied,
+            sciCopyLastRow ?: @"—", sciCopyVideoSource ?: @"—"];
 }

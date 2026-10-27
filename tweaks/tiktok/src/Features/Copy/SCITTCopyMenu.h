@@ -9,12 +9,15 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-/// Offers to copy what the video's own model already holds -- the account's name and bio, the sound's link, the post's link and text --
-/// on the tweak's own sheet. Reads accessors only where the object answers them with an object (`@`) return; **nothing is fetched** and
-/// nothing is sent anywhere. Rows with nothing behind them are not drawn. Called from a long press on the download button.
-void SCITTShowCopyMenu(id _Nullable awemeModel);
+/// A dropdown that opens beside the download button and lets the person copy one thing about the video at a time: the video's link, its
+/// caption, the sound's link, the account's name, its bio, its profile link. **Each row copies exactly what it says and nothing else**, and
+/// shows under its title the text it will copy, so a wrong value is visible before it is chosen.
+///
+/// Reads only what the model already holds (accessors that answer with an object); nothing is fetched and nothing is sent. A row with
+/// nothing behind it is not drawn. `anchor` is the button the menu hangs from.
+void SCITTShowCopyMenu(id _Nullable awemeModel, UIView *_Nullable anchor);
 
-/// How many menus were asked for, how many had anything to offer, and how many rows were copied.
+/// How many menus were asked for, how many had anything to offer, how many rows were copied, and where the last links came from.
 NSString *SCITTCopyReport(void);
 
 NS_ASSUME_NONNULL_END
