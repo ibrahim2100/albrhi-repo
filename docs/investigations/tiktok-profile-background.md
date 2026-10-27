@@ -64,3 +64,6 @@ component's `bizData` for a background-info entry, and only if there is one buil
   one of its imports), so `@{}` was not our guess alone. Checked 2026-10-27: it installs exactly three hooks, touches no
   consumption flag, and has no network, upload or storage code.
 - `profileBgEnableConsumptionGroup` probably decides whether other people's backgrounds are *shown*; not touched.
+  **Deferred by the owner (2026-10-27):** first find out whether his background already shows to other people (it may, since
+  the server accepted it). Only if it does not is there anything to try, and the first step is then to read who acts on
+  the flag's value, not to force it.
