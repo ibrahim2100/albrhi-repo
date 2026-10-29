@@ -1278,6 +1278,92 @@ Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for Twitter (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.json
 
+Package: com.albrhi.watch
+Version: 0.6.1
+Architecture: iphoneos-arm64
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 536
+Depends: mobilesubstrate, preferenceloader, firmware (>= 15.0)
+Conflicts: com.albrhi.watch.roothide, com.34306.watched, app.legizmo.moonstone, app.legizmo
+Replaces: com.albrhi.watch.roothide
+Filename: debs/com.albrhi.watch_0.6.1_iphoneos-arm64.deb
+Size: 63212
+MD5sum: d70450d47006214a6116114466a79697
+SHA1: e20a5fcff828dd779edb7e5606e7303d38422555
+SHA256: 6d90a2b871d734cdcf86aba8d4f9ae22dc038c43d45d7e71b6a07d1dcc84e59d
+Section: Tweaks
+Homepage: https://github.com/ibrahim2100/albrhi-repo
+Description: Pair an Apple Watch running a watchOS your iPhone does not officially support.
+ .
+ ▍WHAT IT DOES
+ iOS refuses to pair with a watch whose watchOS is newer than it expects, and refuses to
+ install companion apps onto it. This answers those compatibility questions the way a
+ supported pairing would, so setup completes and apps install.
+ .
+ ▍SWITCHED ON FROM ALBRHI
+ Settings › Albrhi Watch. Nothing is patched until the master switch is on —
+ this touches pairing, so it is never on because it happened to be installed. A respring
+ button sits on the same page, since every change here takes effect at the next launch of
+ the process it lives in.
+ .
+ ▍CREDIT — THE PAIRING CORE IS SOMEONE ELSE'S WORK
+ The pairing gate, the capability answers and the NanoRegistry preference writes come
+ from watched by 34306 (github.com/34306/watched), used under the MIT licence, whose text
+ ships with this package as LICENSE-watched. What this project adds is the master switch,
+ the settings page, the diagnostics and the bilingual interface.
+ .
+ Maintained by Ibrahim Ismail AL-Rahn. Open source; the pairing core is used under
+ the MIT licence, whose text ships with this package.
+Tag: role::enduser
+Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
+Name: Albrhi Watch (rootless)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
+
+Package: com.albrhi.watch.roothide
+Version: 0.6.1
+Architecture: iphoneos-arm64e
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 536
+Depends: mobilesubstrate, preferenceloader, firmware (>= 15.0)
+Conflicts: com.albrhi.watch, com.34306.watched, app.legizmo.moonstone, app.legizmo
+Replaces: com.albrhi.watch
+Filename: debs/com.albrhi.watch.roothide_0.6.1_iphoneos-arm64e.deb
+Size: 63502
+MD5sum: 8d29b787db33fa2ae16c18f4b3bfc583
+SHA1: 2b0ad2ba3896f0644146cfe498f84a119bfc7e78
+SHA256: 92c9cb175db23065c10b077b4a827693ce3801d4715d8f6de1558582fa170dec
+Section: Tweaks
+Homepage: https://github.com/ibrahim2100/albrhi-repo
+Description: Pair an Apple Watch running a watchOS your iPhone does not officially support.
+ .
+ ▍WHAT IT DOES
+ iOS refuses to pair with a watch whose watchOS is newer than it expects, and refuses to
+ install companion apps onto it. This answers those compatibility questions the way a
+ supported pairing would, so setup completes and apps install.
+ .
+ ▍SWITCHED ON FROM ALBRHI
+ Settings › Albrhi Watch. Nothing is patched until the master switch is on —
+ this touches pairing, so it is never on because it happened to be installed. A respring
+ button sits on the same page, since every change here takes effect at the next launch of
+ the process it lives in.
+ .
+ ▍CREDIT — THE PAIRING CORE IS SOMEONE ELSE'S WORK
+ The pairing gate, the capability answers and the NanoRegistry preference writes come
+ from watched by 34306 (github.com/34306/watched), used under the MIT licence, whose text
+ ships with this package as LICENSE-watched. What this project adds is the master switch,
+ the settings page, the diagnostics and the bilingual interface.
+ .
+ Maintained by Ibrahim Ismail AL-Rahn. Open source; the pairing core is used under
+ the MIT licence, whose text ships with this package.
+Tag: role::enduser
+Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
+Name: Albrhi Watch (roothide)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
+
 Package: com.albrhi.youtube
 Version: 1.42.1
 Architecture: iphoneos-arm64
