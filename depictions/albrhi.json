@@ -106,6 +106,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.101.27",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **تيك توك 0.26.11 — الزر ثابت ولا ينزل، التاريخ لا يتداخل مع الاسم، زر بشعار الأداة، وقائمة نسخ بتصميم جديد.**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.101.26",
           "useBoldText": true
         },
@@ -131,20 +145,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.101.24",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **تيك توك 0.26.8 — زر التحميل عنصر أصيل في عمود أيقونات تيك توك بين «حفظ» و«مشاركة»، والعلم أعلى العمود.**",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.101.26"
+          "text": "1.101.27"
         },
         {
           "class": "DepictionTableTextView",
