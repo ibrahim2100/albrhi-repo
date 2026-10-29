@@ -326,6 +326,7 @@ said "29 tests in about a second" — a test nobody runs in CI is a test that ro
 | `make-depiction.py` · `release-notes.py` | Sileo depiction + HTML fallback and GitHub release bodies, **generated from the changelog** so they cannot go stale |
 | `build-local.sh` · `build-dylibs.sh` · `build-dav1d.sh` | local suite, standalone dylibs (their check **fails the build if a `SCILicense` symbol is inside** — the removal stays proved), the AV1 decoder |
 | `inject-dylib.py` · `ipa-inject.html` | put a dylib into an IPA; entitlements are read with `ldid -e` **before** anything is modified and handed back with `ldid -S<file>` (re-signing with `-S` alone erases them — TikTok carries twenty) |
+| `sim-install.sh` · `sim/SimShim.m` | **a decrypted device IPA, with a standalone dylib injected, running in the iOS Simulator** (`bash tools/sim-install.sh <ipa> [<dylib>] [<simulator>]`, about 40 s): every Mach-O is re-stamped from the device platform to the simulator's with `vtool` (an Apple-silicon simulator runs arm64 natively; only the platform stamp stops it), duplicate `LC_RPATH`s are removed (the simulator's dyld refuses them), the bundle is signed ad hoc, and a simulator-only helper swallows the failures a device build does not have (see below) |
 | `run-host-tests.sh` | every host test, by glob (§3.5) |
 | `deb-edit.py` · `deb-edit.html` | edit `.deb` metadata (`label` appends `(rootless)`/`(roothide)`/`(rootful)`; `normalize` converts an xz control archive to gzip — the browser tool carries a hand-written DEFLATE because `DecompressionStream` is iOS 16.4+) |
 | `make-logo.py` · `repo-index.html` | repo icon in pure Python, the source's landing page (built from the live index) |
@@ -336,6 +337,11 @@ its ObjC metadata matches `objc-classes.py` on classes (adds protocols, categori
 its decompiler works through Ghidra and names ObjC methods `Class::selector:` (with the colon; `rea search --kind procedures` lists them) — **the one capability we lacked, not yet used on a real app**: the
 one attempt, YouTube's 225 MB binary, was cancelled after 11 minutes (the whole binary is analysed before the first answer; a persistent MCP session is the right way to ask several questions of it).
 Do not claim it answered something until it has. `rea setup` writes configuration files: ask first.
+
+**The simulator route (2026-10-29), measured on TikTok 47.1.0:** the app starts, runs its launch, draws the For You feed with this tweak's download button on the rail, and the tweak's own welcome screen appears -- so hooks, banners, menus and settings pages can be driven and
+screenshotted from this machine instead of waiting for a phone. Three things a device build needs fixed, each found by running it: the duplicate `LC_RPATH` in `ffmpeg_dashdec`; the app's **Metal libraries are built for the device** ("library was not compiled for the simulator"), whose failed completion handler
+TikTok then feeds a nil `NSString` (`strlen(NULL)`); and a texture made from a non-private buffer, which the simulator's driver asserts on. `SimShim.m` handles the last two and logs each as `[SimShim]`. **What it cannot say:** whether it works on the phone -- no hardware video decoders, no App Attest,
+a different GPU driver, no camera. A failure here is a lead; a success here is not "confirmed on a device" (§7). Accepting TikTok's terms or signing in is the owner's, not something to do on his behalf.
 
 Packages are published as `package_version_architecture.deb`, not under the uploaded filename — a converted
 package keeps its original name and two flavours once collided on one path. Converting rootless into roothide
