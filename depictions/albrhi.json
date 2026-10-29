@@ -106,6 +106,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.101.22",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **تيك توك 0.26.6 — تاريخ النشر صار سطراً هادئاً بجانب اسم الحساب بدل أن يكون فوق زر التحميل.**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.101.21",
           "useBoldText": true
         },
@@ -131,20 +145,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.101.19",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **تيك توك 0.26.3 — قائمة النسخ أُعيد تصميمها: قائمة منسدلة من زر التنزيل، ستة خيارات كلٌّ منها يعمل لوحده (رابط الفيديو، الوصف، رابط الصوت، اسم المستخدم، النبذة، رابط…",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.101.21"
+          "text": "1.101.22"
         },
         {
           "class": "DepictionTableTextView",
