@@ -1167,6 +1167,7 @@ there costs colours, never the video).
   5 MB, tmp to zero, `gurd_cache` untouched; a save wrote a valid 13 s 720x1280 video with sound to Photos. **Not seen:** the cancel button mid-transfer (a local download ends in under a second), the avatar
   Save button and bio copy (a guest's profile header arrives empty). **A feature added to a settings row can break the row**: the new "current choice" value squeezed the title of the Region row to "Re-gio-n"
   until it was limited to short values.
+- **Where NA9 puts its button, seen by running it (2026-10-29, authorised, simulator only, then removed):** an arranged 80 x 66 item of the right-hand column between bookmark and share, a glyph and a caption with no disc; settings in its own full-screen page, which TikTok's menu button opens. Done by giving the dylib stand-ins for `libsubstrate` and `libroothide` (`MSHookMessageEx` is five lines of `method_setImplementation`; `jbroot()` returns its argument), two copies of the stand-in because dyld refuses the same library linked twice, and `install_name_tool -change`. NA9 refuses a debugger (lldb: "lost connection"), so its view tree could not be dumped and its item was measured from screenshots. Our button now has the same shape (0.26.8): TikTok centres its icons at x = 49.67 of the 80-point item, not at 40, which is what the old nudge was imitating.
 - Non-obvious refusals: `PIPOStoreKitHelper -isJailBroken` is not hooked (§2); the `tikwm` path was refused *as the fix, arriving quietly* and shipped as a
   switch once the owner asked knowing the trade — the earlier refusal was a different question, not wrong.
 - **Reviewed against 46.4.0 and 47.1.0 (0.24.0): a hook that "attached" is not a hook that works.** Four findings, all from reading the binary rather than a report. (1) **Class method versus instance method, and a class that
@@ -1319,8 +1320,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.26.7** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.23**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.26.8** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.24**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

@@ -7,6 +7,7 @@
 #import "../Copy/SCITTCopyMenu.h"
 #import "../../TikTokHeaders.h"
 #import "../../Prefs.h"
+#import "../../Localization/SCILocalize.h"
 #import "../../SCILog.h"
 
 ///
@@ -81,7 +82,10 @@ static NSString *sciRailPlacement = nil;
 /// under it — so the stack centres the button on a column that reads slightly left of the artwork
 /// beside it. A translation moves the drawing without touching the layout, so the slot the stack
 /// measured stays exactly the size it measured, and nothing about the arrangement shifts.
-static const CGFloat kSCIRailNudgeX = 5;
+static const CGFloat kSCIRailNudgeX = 0;
+/// Where TikTok centres its own icons and counts inside a rail item that is 80 points wide (measured on the live hierarchy, 47.1.0: the 32-point icon box
+/// of like, comment, bookmark and share starts at 33.7 and the 49-point count label at 25). Not the item's midpoint, which is why a centred glyph looked off.
+static const CGFloat kSCIRailIconCenterX = 49.67;
 
 /// The button's resting transform, in one place because the press animation has to return to it.
 ///
@@ -166,6 +170,8 @@ static NSString *sciDateLast = nil;
 /// What the label was last bound to, so that a bind that found no author row yet can be made again a moment later.
 @property (nonatomic, strong) SCITTMediaItem *sciItem;
 @property (nonatomic, assign) NSInteger sciRetries;
+/// When non-zero: the x, inside the item the label sits above, that the label is centred on (TikTok's icons are not centred in their 80-point items).
+@property (nonatomic, assign) CGFloat sciIconCenterX;
 @end
 
 static void SCITTLayoutDateLabel(UILabel *label, UIView *button);
@@ -241,6 +247,15 @@ static const NSInteger kSCIFlagTag = 0x5345;
 static void SCITTPlaceFlagLabel(UIView *host, UIView *button, NSString *text) {
     SCITTDateLabel *flag = (SCITTDateLabel *)[host viewWithTag:kSCIFlagTag];
     if (!text.length || !host || !button) { flag.hidden = YES; return; }
+
+    // **Above the top of the column, over the profile picture.** The download button is now an item between bookmark and share, so the room
+    // above it belongs to the bookmark's count; the free room is above the first item, centred on the icons' own column.
+    UIView *anchor = button;
+    if ([host isKindOfClass:[UIStackView class]]) {
+        for (UIView *item in ((UIStackView *)host).arrangedSubviews) {
+            if (item.tag != kSCIRailButtonTag && !item.hidden) { anchor = item; break; }
+        }
+    }
     if (![flag isKindOfClass:[SCITTDateLabel class]]) {
         [flag removeFromSuperview];
         flag = [[SCITTDateLabel alloc] initWithFrame:CGRectZero];
@@ -253,9 +268,10 @@ static void SCITTPlaceFlagLabel(UIView *host, UIView *button, NSString *text) {
     }
     flag.text = text;
     flag.hidden = NO;
-    flag.sciButton = button;
+    flag.sciButton = anchor;
     flag.sciAuthor = nil;
-    SCITTLayoutDateLabel(flag, button);
+    flag.sciIconCenterX = kSCIRailIconCenterX;
+    SCITTLayoutDateLabel(flag, anchor);
 }
 
 static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *item) {
@@ -430,14 +446,12 @@ static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *it
         label.minimumScaleFactor = 0.7;
         sciDateAboveName++;
     } else {
-        if (wantStats) text = text.length ? [text stringByAppendingFormat:@"\n%@", item.stats] : item.stats;
-        label.font = [UIFont systemFontOfSize:10 weight:UIFontWeightSemibold];
-        label.textColor = [UIColor whiteColor];
-        label.textAlignment = NSTextAlignmentCenter;
-        label.numberOfLines = 3;
-        label.lineBreakMode = NSLineBreakByWordWrapping;
+        // **No author row: no date.** Over the button it used to sit, and the button now sits between bookmark and share, where a date would
+        // cover the bookmark's count. The row is found on practically every video (retried while TikTok fills it); the miss is counted.
+        text = @"";
+        label.numberOfLines = 1;
         sciDateOnRail++;
-        SCITTPlaceFlagLabel(button.superview, button, nil);   // the combined label over the button already carries it
+        SCITTPlaceFlagLabel(button.superview, button, wantStats ? item.stats : nil);
     }
     label.text = text;
     label.hidden = text.length == 0;
@@ -566,7 +580,10 @@ static void SCITTLayoutDateLabel(UILabel *label, UIView *button) {
     CGFloat width = MIN(MAX(ceil(fits.width) + 8, 60), 150);
     CGFloat height = MAX(ceil(fits.height) + 2, 16);
 
-    CGRect frame = CGRectMake(CGRectGetMidX(b) - width / 2,
+    CGFloat centerX = CGRectGetMidX(b);
+    CGFloat iconX = [label isKindOfClass:[SCITTDateLabel class]] ? ((SCITTDateLabel *)label).sciIconCenterX : 0;
+    if (iconX > 0) centerX = CGRectGetMinX(b) + iconX;
+    CGRect frame = CGRectMake(centerX - width / 2,
                               CGRectGetMinY(b) - height - 2,
                               width, height);
 
@@ -616,7 +633,7 @@ static void SCITTLayoutDateLabel(UILabel *label, UIView *button) {
 /// this cost seconds rather than five minutes.
 NSString *SCITTDateReport(void) {
     return [NSString stringWithFormat:
-            @"%lu call(s) → %lu with no host yet → %lu off → %lu without a date → %lu drawn (%lu on the author row, %lu of the layouts beside the name, %lu over the button%@)%@",
+            @"%lu call(s) → %lu with no host yet → %lu off → %lu without a date → %lu drawn (%lu on the author row, %lu of the layouts beside the name, %lu with no author row found, so no date%@)%@",
             (unsigned long)sciDateCalls, (unsigned long)sciDateNoHost, (unsigned long)sciDateOff,
             (unsigned long)sciDateNoDate, (unsigned long)sciDatePlaced, (unsigned long)sciDateAboveName, (unsigned long)sciDateBeside, (unsigned long)sciDateOnRail,
             sciDateAuthorWhy.length ? [@"; last miss: " stringByAppendingString:sciDateAuthorWhy] : @"",
@@ -802,6 +819,17 @@ static void SCITTRaiseRailButton(UIStackView *stack, UIView *button) {
     if (button.layer.zPosition < 100) button.layer.zPosition = 100;
 }
 
+/// Whether a view is, or holds within a few levels, a view of this class.
+static BOOL SCITTHoldsClass(UIView *view, Class wanted) {
+    if (!view || !wanted) return NO;
+    NSMutableArray<UIView *> *queue = [NSMutableArray arrayWithObject:view];
+    for (NSUInteger i = 0; i < queue.count && i < 40; i++) {
+        if ([queue[i] isKindOfClass:wanted]) return YES;
+        [queue addObjectsFromArray:queue[i].subviews];
+    }
+    return NO;
+}
+
 static void SCITTPlaceRailButton(UIStackView *stack) {
     if (!SCIPrefEnabled(SCIPrefDownloadButton)) return;
 
@@ -875,73 +903,50 @@ static void SCITTPlaceRailButton(UIStackView *stack) {
     UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
     button.tag = kSCIRailButtonTag;
 
-    // **A new design, and it is the download banner's design.** The filled circle glyph was
-    // TikTok's own idiom, which made ours indistinguishable from like and share; the banner this
-    // button summons is a dark blurred capsule, so giving the button the same material makes the
-    // two read as one feature rather than two additions by different hands.
-    //
-    // A fixed 38-point disc centred in the button, not pinned to its edges: the button's own size
-    // comes from a sibling icon and varies, and a corner radius cannot follow a height that is
-    // decided later without another layout hook to keep it in step.
-    UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemThinMaterialDark];
-    UIVisualEffectView *disc = [[UIVisualEffectView alloc] initWithEffect:effect];
-
-    disc.layer.cornerRadius = 19;
-    disc.layer.cornerCurve = kCACornerCurveContinuous;
-    disc.clipsToBounds = YES;
-
-    // The hairline is what holds the shape over a bright frame, where blur alone goes pale.
-    disc.layer.borderWidth = 0.5;
-    disc.layer.borderColor = [UIColor colorWithWhite:1 alpha:0.35].CGColor;
-    disc.userInteractionEnabled = NO;
-    disc.translatesAutoresizingMaskIntoConstraints = NO;
-    [button addSubview:disc];
-
-    [NSLayoutConstraint activateConstraints:@[
-        [disc.centerXAnchor constraintEqualToAnchor:button.centerXAnchor],
-        [disc.centerYAnchor constraintEqualToAnchor:button.centerYAnchor],
-        [disc.widthAnchor constraintEqualToConstant:38],
-        [disc.heightAnchor constraintEqualToConstant:38],
-    ]];
-
+    // **The look of TikTok's own rail items, because that is what was asked for ("as if it came native").** Measured on the live hierarchy
+    // (47.1.0): every item is 80 x 66 with a 32 x 32 icon box at the top (9 pt down), a white glyph with no disc behind it, and a 16-point count
+    // label under it at 41 pt, centred on x = 49.67. The blurred disc this button had made it look like an addition; the item below is the same
+    // shape as like / comment / bookmark / share: a filled white glyph, and a short caption where they have a count.
     UIImageSymbolConfiguration *config =
-        [UIImageSymbolConfiguration configurationWithPointSize:17
-                                                        weight:UIImageSymbolWeightBold];
+        [UIImageSymbolConfiguration configurationWithPointSize:30 weight:UIImageSymbolWeightRegular];
     UIImageView *glyph = [[UIImageView alloc] initWithImage:
-        [UIImage systemImageNamed:@"arrow.down" withConfiguration:config]];
+        [UIImage systemImageNamed:@"arrow.down.circle.fill" withConfiguration:config]];
     glyph.tintColor = [UIColor whiteColor];
+    glyph.contentMode = UIViewContentModeCenter;
     glyph.translatesAutoresizingMaskIntoConstraints = NO;
-    // The glyph must never intercept the tap meant for the button under it.
-    glyph.userInteractionEnabled = NO;
+    glyph.userInteractionEnabled = NO;   // never takes the tap meant for the button
     [button addSubview:glyph];
 
-    //
-    // **Centre constraints alone are what left it looking off to one side.** A button
-    // whose glyph is a *subview* rather than its own image has no intrinsic content
-    // size at all -- so in a stack whose alignment is not `fill`, it is laid out at
-    // zero width, and a glyph centred on a zero-width button hangs off the edge of it.
-    // That is the tilt, and it survived three attempts because every one of them
-    // adjusted the centring rather than the sizing.
-    //
-    // Pinning the glyph to all four edges instead gives the button a real intrinsic
-    // size -- the image's own -- so it measures correctly under any alignment, and
-    // `UIViewContentModeCenter` keeps the artwork unstretched inside whatever the stack
-    // then grants it.
-    //
-    glyph.contentMode = UIViewContentModeCenter;
+    UILabel *caption = [[UILabel alloc] init];
+    caption.text = SCILocalized(@"rail_download");
+    caption.font = [UIFont systemFontOfSize:10.5 weight:UIFontWeightSemibold];   // 'Download' at 13 and at 11.5 ran to the screen edge; TikTok's counts are 3-5 characters
+    caption.textColor = [UIColor whiteColor];
+    caption.textAlignment = NSTextAlignmentCenter;
+    caption.adjustsFontSizeToFitWidth = YES;
+    caption.minimumScaleFactor = 0.75;
+    caption.translatesAutoresizingMaskIntoConstraints = NO;
+    caption.userInteractionEnabled = NO;
+    [button addSubview:caption];
+
+    // `left`, not `leading`: TikTok keeps this column on the right of the screen in Arabic as well, and a leading anchor would mirror.
     [NSLayoutConstraint activateConstraints:@[
-        [glyph.leadingAnchor constraintEqualToAnchor:button.leadingAnchor],
-        [glyph.trailingAnchor constraintEqualToAnchor:button.trailingAnchor],
-        [glyph.topAnchor constraintEqualToAnchor:button.topAnchor],
-        [glyph.bottomAnchor constraintEqualToAnchor:button.bottomAnchor],
+        [glyph.centerXAnchor constraintEqualToAnchor:button.leftAnchor constant:kSCIRailIconCenterX],
+        [glyph.topAnchor constraintEqualToAnchor:button.topAnchor constant:9],
+        [glyph.widthAnchor constraintEqualToConstant:32],
+        [glyph.heightAnchor constraintEqualToConstant:32],
+        [caption.centerXAnchor constraintEqualToAnchor:button.leftAnchor constant:kSCIRailIconCenterX],
+        [caption.topAnchor constraintEqualToAnchor:button.topAnchor constant:41],
+        [caption.widthAnchor constraintEqualToConstant:60],
+        [caption.heightAnchor constraintEqualToConstant:16],
     ]];
 
-    // Same shadow TikTok's own white glyphs carry over bright video, so the button
-    // stays visible on a pale frame rather than disappearing into it.
-    glyph.layer.shadowColor = [UIColor blackColor].CGColor;
-    glyph.layer.shadowOpacity = 0.35;
-    glyph.layer.shadowRadius = 3;
-    glyph.layer.shadowOffset = CGSizeZero;
+    // The same soft shadow TikTok's white glyphs and counts carry over a bright frame.
+    for (UIView *piece in @[glyph, caption]) {
+        piece.layer.shadowColor = [UIColor blackColor].CGColor;
+        piece.layer.shadowOpacity = 0.3;
+        piece.layer.shadowRadius = 2;
+        piece.layer.shadowOffset = CGSizeMake(0, 1);
+    }
 
     [button addTarget:[SCITTButtonTarget shared]
                action:@selector(tapped:)
@@ -1044,9 +1049,19 @@ static void SCITTPlaceRailButton(UIStackView *stack) {
     // — which is also where it was asked to be. The anchor search and its "one before last"
     // fallback are both gone rather than kept as a fallback: a fallback here is a second position,
     // and a second position is the bug.
+    //
+    // **Between bookmark and share, found from the music disc.** NA9 (run in the simulator, 2026-10-29) puts its item exactly there, as an
+    // arranged item of the same 80 x 66 shape. The disc is the one item that holds an `AWEPlayInteractionMusicView`, so "the item before the disc"
+    // is the share item and the button goes in front of it; counting from the end would be a guess about how many items a rail has.
+    NSUInteger insertAt = NSNotFound;
+    Class musicClass = NSClassFromString(@"AWEPlayInteractionMusicView");
+    for (NSUInteger i = 0; musicClass && i < siblings.count; i++) {
+        if (SCITTHoldsClass(siblings[i], musicClass)) { insertAt = i >= 1 ? i - 1 : 0; break; }
+    }
+    if (insertAt == NSNotFound) insertAt = siblings.count >= 2 ? siblings.count - 2 : siblings.count;
     if ([stack respondsToSelector:@selector(insertArrangedSubview:atIndex:)]) {
-        [stack insertArrangedSubview:button atIndex:0];
-        sciRailPlacement = @"arranged at index 0 (above avatar)";
+        [stack insertArrangedSubview:button atIndex:insertAt];
+        sciRailPlacement = [NSString stringWithFormat:@"arranged at index %lu of %lu (before the share item)", (unsigned long)insertAt, (unsigned long)siblings.count];
     } else if ([stack respondsToSelector:@selector(addArrangedSubview:)]) {
         [stack addArrangedSubview:button];
         sciRailPlacement = @"appended (no insertAtIndex:)";
@@ -1114,6 +1129,7 @@ static void SCITTSyncRailButton(UIStackView *stack) {
     // is hidden exactly when its own icons are, and it belongs to one video by construction.
     button.hidden = stack.isHidden;
     button.alpha = stack.alpha;
+    [stack viewWithTag:kSCIFlagTag].alpha = stack.alpha;
 }
 
 
