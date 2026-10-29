@@ -44,6 +44,36 @@ static NSUInteger sciHoldBegan = 0, sciHoldFired = 0, sciHoldOnButton = 0, sciHo
 static NSString *sciHoldLastChain = nil;
 static NSString *sciHoldState = nil;
 
+/// Long-press recognisers switched off for the length of one touch that began on a download button, and how many touches that was.
+/// TikTok's own long-press (the panel with Report, Download and Clear display) recognises at the same half second as ours and opened
+/// under the copy menu; it is not asked to listen while a finger is on our button, and is given its ears back the moment the finger lifts.
+static NSHashTable<UIGestureRecognizer *> *sciSilenced = nil;
+static NSUInteger sciHoldSilenced = 0;
+
+static void SCITTRestoreRecognisers(void) {
+    for (UIGestureRecognizer *recogniser in sciSilenced.allObjects) recogniser.enabled = YES;
+    [sciSilenced removeAllObjects];
+}
+
+static void SCITTSilenceForeignHolds(UIView *hit) {
+    if (!sciSilenced) sciSilenced = [NSHashTable weakObjectsHashTable];
+    for (UIView *view = hit; view; view = view.superview) {
+        for (UIGestureRecognizer *recogniser in view.gestureRecognizers) {
+            if (![recogniser isKindOfClass:[UILongPressGestureRecognizer class]] || !recogniser.enabled) continue;
+            if (((UILongPressGestureRecognizer *)recogniser).numberOfTouchesRequired != 1) continue;   // the two-finger settings hold is ours
+            recogniser.enabled = NO;
+            [sciSilenced addObject:recogniser];
+        }
+    }
+    if (sciSilenced.count) {
+        sciHoldSilenced++;
+        // A lift that never arrives (the app is backgrounded mid-touch) must not leave TikTok's own gesture off for good.
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            SCITTRestoreRecognisers();
+        });
+    }
+}
+
 static NSString *SCITTChainOf(UIView *view) {
     NSMutableArray<NSString *> *names = [NSMutableArray array];
     for (NSInteger i = 0; view && i < 7; i++, view = view.superview) [names addObject:NSStringFromClass([view class])];
@@ -124,6 +154,7 @@ static void SCITTHoldObserve(UIWindow *window, UIEvent *event) {
     NSSet<UITouch *> *all = event.allTouches;
     if (all.count != 1) {
         sciHoldToken++;   // a second finger is a pinch or a swipe, never a hold
+        SCITTRestoreRecognisers();
         return;
     }
 
@@ -134,6 +165,9 @@ static void SCITTHoldObserve(UIWindow *window, UIEvent *event) {
             CGPoint point = [touch locationInView:window];
             UIView *hit = [window hitTest:point withEvent:nil];
             if (!hit) return;
+
+            SCITTRestoreRecognisers();
+            if (SCITTTouchIsOnCopyButton(hit)) SCITTSilenceForeignHolds(hit);
 
             sciHoldBegan++;
             sciHoldStart = point;
@@ -154,6 +188,7 @@ static void SCITTHoldObserve(UIWindow *window, UIEvent *event) {
         case UITouchPhaseEnded:
         case UITouchPhaseCancelled:
             sciHoldToken++;
+            SCITTRestoreRecognisers();
             break;
         default:
             break;
@@ -173,10 +208,10 @@ static void SCITTHoldObserve(UIWindow *window, UIEvent *event) {
 
 NSString *SCITTHoldReport(void) {
     return [NSString stringWithFormat:@"%@; holds begun %lu, reached half a second %lu: on a download button %lu, profile text copied %lu, "
-            @"profile but no text %lu, not a profile %lu%@",
+            @"profile but no text %lu, not a profile %lu; TikTok's own long-press silenced for %lu touches on the button%@",
             sciHoldState ?: @"not installed",
             (unsigned long)sciHoldBegan, (unsigned long)sciHoldFired, (unsigned long)sciHoldOnButton, (unsigned long)sciHoldTextCopied,
-            (unsigned long)sciHoldMissed, (unsigned long)sciHoldNotProfile,
+            (unsigned long)sciHoldMissed, (unsigned long)sciHoldNotProfile, (unsigned long)sciHoldSilenced,
             sciHoldLastChain ? [@"; last miss: " stringByAppendingString:sciHoldLastChain] : @""];
 }
 

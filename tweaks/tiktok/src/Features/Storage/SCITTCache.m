@@ -187,7 +187,8 @@ void SCITTCacheRefreshSize(void) {
 
 NSString *SCITTCacheSummary(void) {
     if (!sciSizeKnown) return @"…";
-    return [NSString stringWithFormat:@"%@ · %@", SCITTBytes(sciCachesBytes), SCITTBytes(sciTempBytes)];
+    // One number: it is what a clean frees at most, and "132.5 MB · 261 KB" read as one size cut in two.
+    return SCITTBytes(sciCachesBytes + sciTempBytes);
 }
 
 void SCITTCacheClearNow(void (^done)(unsigned long long)) {

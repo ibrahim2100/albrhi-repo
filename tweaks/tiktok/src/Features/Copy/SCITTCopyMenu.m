@@ -54,11 +54,29 @@ static NSString *SCITTTextOf(id value) {
     return text.length ? text : nil;
 }
 
+static NSUInteger sciCopyLinksCleaned = 0;
+
+/// TikTok's share address with what the share added taken off: on a TikTok host the path alone names the post or the sound, and
+/// everything after the `?` is the sharer's (`_r`, `u_code`, `sharer_language`, `_d`, `share_item_id`, `source`, ...). Copying it
+/// would hand that to whoever receives the link. Any other host is left exactly as it came.
+static NSString *SCITTCleanedLink(NSString *link) {
+    NSURLComponents *parts = [NSURLComponents componentsWithString:link];
+    NSString *host = parts.host.lowercaseString;
+    if (!host.length || !([host isEqualToString:@"tiktok.com"] || [host hasSuffix:@".tiktok.com"])) return link;
+    if (!parts.query.length && !parts.fragment.length) return link;
+    parts.query = nil;
+    parts.fragment = nil;
+    NSString *clean = parts.string;
+    if (!clean.length) return link;
+    sciCopyLinksCleaned++;
+    return clean;
+}
+
 /// A web address, or nil. A link row must copy a link and nothing that merely sits in a "URL" field.
 static NSString *SCITTLinkOf(id value) {
     NSString *text = SCITTTextOf(value);
     NSString *lower = text.lowercaseString;
-    return ([lower hasPrefix:@"https://"] || [lower hasPrefix:@"http://"]) ? text : nil;
+    return ([lower hasPrefix:@"https://"] || [lower hasPrefix:@"http://"]) ? SCITTCleanedLink(text) : nil;
 }
 
 #pragma mark - The rows
@@ -301,8 +319,13 @@ void SCITTShowCopyMenu(id awemeModel, UIView *anchor) {
     [menu present];
 }
 
+BOOL SCITTCopyMenuIsOpen(void) {
+    return sciCopyShowing != nil;
+}
+
 NSString *SCITTCopyReport(void) {
-    return [NSString stringWithFormat:@"menus asked %lu, offered %lu, nothing to offer %lu, rows copied %lu (last: %@); video link source: %@",
+    return [NSString stringWithFormat:@"menus asked %lu, offered %lu, nothing to offer %lu, rows copied %lu (last: %@); video link source: %@; "
+            @"links with the share's tracking removed: %lu",
             (unsigned long)sciCopyAsked, (unsigned long)sciCopyOffered, (unsigned long)sciCopyEmpty, (unsigned long)sciCopyCopied,
-            sciCopyLastRow ?: @"—", sciCopyVideoSource ?: @"—"];
+            sciCopyLastRow ?: @"—", sciCopyVideoSource ?: @"—", (unsigned long)sciCopyLinksCleaned];
 }

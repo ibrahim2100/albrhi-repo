@@ -269,6 +269,22 @@
                 [NSString stringWithFormat:@"%ld/%ld", (long)on, (long)total]];
             count.font = [UIFont monospacedDigitSystemFontOfSize:15 weight:UIFontWeightRegular];
             [accessories addObject:count];
+        } else {
+            // A section of choices and actions has no "3/5"; with exactly one choice, what is chosen is the useful thing to show.
+            NSDictionary *only = nil;
+            NSInteger choices = 0;
+            for (NSDictionary *row in section[kSCISectionRows]) {
+                if (![row[kSCIRowKind] isEqualToString:kSCIKindChoice]) continue;
+                only = row; choices++;
+            }
+            NSString *current = choices == 1 ? SCITTChoiceCurrentTitle(only[kSCIRowOptions], only[kSCIRowPref]) : nil;
+            // Short values only: a long one ("My real country (nothing changed)") took the row's width and squeezed the title into
+            // "Re-gio-n" (seen in the simulator); the page behind the row shows it in full.
+            if (current.length && current.length <= 16) {
+                UICellAccessoryLabel *value = [[UICellAccessoryLabel alloc] initWithText:current];
+                value.font = [UIFont systemFontOfSize:15 weight:UIFontWeightRegular];
+                [accessories addObject:value];
+            }
         }
         [accessories addObject:[[UICellAccessoryDisclosureIndicator alloc] init]];
         cell.accessories = accessories;
@@ -350,6 +366,10 @@
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
+
+    // TikTok's own pages hide the navigation bar and the setting can outlive them: opened after a profile, this sheet had no title, no
+    // "Done" and no back chevron (seen in the simulator). It is ours, and it is shown.
+    [self.navigationController setNavigationBarHidden:NO animated:NO];
 
     // Rebuilt on return rather than cached: a switch changed on a section page must be reflected by the count on the
     // row that opened it.

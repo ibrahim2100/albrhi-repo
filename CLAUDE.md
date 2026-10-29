@@ -341,7 +341,8 @@ Do not claim it answered something until it has. `rea setup` writes configuratio
 **The simulator route (2026-10-29), measured on TikTok 47.1.0:** the app starts, runs its launch, draws the For You feed with this tweak's download button on the rail, and the tweak's own welcome screen appears -- so hooks, banners, menus and settings pages can be driven and
 screenshotted from this machine instead of waiting for a phone. Three things a device build needs fixed, each found by running it: the duplicate `LC_RPATH` in `ffmpeg_dashdec`; the app's **Metal libraries are built for the device** ("library was not compiled for the simulator"), whose failed completion handler
 TikTok then feeds a nil `NSString` (`strlen(NULL)`); and a texture made from a non-private buffer, which the simulator's driver asserts on. `SimShim.m` handles the last two and logs each as `[SimShim]`. **What it cannot say:** whether it works on the phone -- no hardware video decoders, no App Attest,
-a different GPU driver, no camera. A failure here is a lead; a success here is not "confirmed on a device" (§7). Accepting TikTok's terms or signing in is the owner's, not something to do on his behalf.
+a different GPU driver, no camera. A failure here is a lead; a success here is not "confirmed on a device" (§7). **Accepting TikTok's terms and answering the permission dialogs inside the simulator was authorised by the owner on 2026-10-29** (it is a test copy; the notifications, tracking and personal-question dialogs get the least-sharing answer); signing in is never done on his behalf.
+**How to drive it, learned in one session:** a tap from the control tool is too short for a `UISwitch` (it toggles the row, not the switch: use `duration` 0.15); a screenshot lags a transition by about a second (wait with `sleep`, or a tap lands on the screen that was leaving); prefs can be written with `xcrun simctl spawn <sim> defaults write com.zhiliaoapp.musically <key> -bool YES` (the app reads them at its next launch); `SIM_KEEP_DATA=1` keeps the app's data across a rebuilt dylib (a plain run reinstalls and erases terms, onboarding and prefs); the pasteboard is `xcrun simctl pbpaste`, which is how a copy row is *measured* instead of looked at. **The simulator's software H.264 decoder (`H264SW.videocodec`) crashes the app at random (a stack-guard `EXC_BAD_ACCESS`, seen four times in one hour, once on every launch for several minutes) and videos render black: that is the simulator, not the tweak**, and photo posts and profiles are the stable surfaces to test on.
 
 Packages are published as `package_version_architecture.deb`, not under the uploaded filename — a converted
 package keeps its original name and two flavours once collided on one path. Converting rootless into roothide
@@ -1155,6 +1156,17 @@ there costs colours, never the video).
   code) and dispatches `+[TTKHelperTools clearCache:NO]` to a **global background queue**, concurrent with TikTok starting. `+cachePaths` = `Library/Caches`, `Library/Application Support/gurd_cache`, `tmp`; `clearCache:` lists each and `removeItemAtPath:`s every entry; the flag decides whether `gurd_cache` is skipped
   (launch: skipped; button: not). Its control flow is flattened (`br x9` to the next instruction, targets computed from a table, a word and an XOR key), so the decompiler stops after the first line: the targets were computed by hand from the table and the key. Ours renames entries into one trash folder and empties it afterwards, skips what was written
   after launch, offers a size threshold instead of "every launch" (a wipe also deletes what was just preloaded for the first swipes), and **never touches `gurd_cache`** (what it holds is not known; its size is in the report). **A cache clean cures a full disk and a corrupted cache, not lag and not hook crashes; do not promise more.** Measured in a simulator with fake folders only.
+- **Driven end to end in the simulator (0.26.5) -- six faults a report would have taken rounds to find, each seen on screen.** (1) **The copy menu opened with TikTok's own long-press panel
+  (Report / Download / Clear display) under it**: the window follower never consumes a touch, so TikTok's recogniser recognised at the same half second; at touch-down on one of our buttons the other
+  one-finger long-press recognisers above it are switched off and given back at the lift (`SCITTSilenceForeignHolds`; the two-finger settings hold is exempt; the report counts the touches). (2) **The copied
+  share address carried the sharer's tracking** (`_r`, `u_code`, `_d`, `sharer_language`, `share_item_id`, `source`): on a tiktok.com host everything after the `?` is removed from the video and sound links.
+  (3) **"Start on Following" opened Community after a fresh install**: a cold start asks `segmentControlInitialIndex` with Following as the *first* item and inserts Community in front afterwards, so the live
+  row said 0; the index remembered from the feed's first appearance (the complete row) is preferred and the report shows both. (4) **The settings sheet had no bar, no title and no "Done" after a profile
+  had been visited**: TikTok's pages hide the navigation bar and the hiding outlived them; our pages show it in `-viewWillAppear:`. (5) A cache size read "132.5 MB · 261 KB" (two numbers read as one); it is
+  one number. (6) The auto-advance switch scrolled the feed away under an open copy menu, leaving rows that described a video that had gone. Measured and unchanged: the launch-time clean took Caches 150 MB to
+  5 MB, tmp to zero, `gurd_cache` untouched; a save wrote a valid 13 s 720x1280 video with sound to Photos. **Not seen:** the cancel button mid-transfer (a local download ends in under a second), the avatar
+  Save button and bio copy (a guest's profile header arrives empty). **A feature added to a settings row can break the row**: the new "current choice" value squeezed the title of the Region row to "Re-gio-n"
+  until it was limited to short values.
 - Non-obvious refusals: `PIPOStoreKitHelper -isJailBroken` is not hooked (§2); the `tikwm` path was refused *as the fix, arriving quietly* and shipped as a
   switch once the owner asked knowing the trade — the earlier refusal was a different question, not wrong.
 - **Reviewed against 46.4.0 and 47.1.0 (0.24.0): a hook that "attached" is not a hook that works.** Four findings, all from reading the binary rather than a report. (1) **Class method versus instance method, and a class that
@@ -1307,8 +1319,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.26.4** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.20**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.26.5** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.21**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

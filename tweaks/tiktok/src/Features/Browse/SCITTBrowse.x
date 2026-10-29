@@ -9,6 +9,7 @@
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import "SCITTBrowse.h"
+#import "../Copy/SCITTCopyMenu.h"
 #import "../../Prefs.h"
 #import "../../SCILog.h"
 
@@ -64,7 +65,8 @@ static NSUInteger sciWarningsHidden = 0;
 static NSUInteger sciTikBotRefused = 0;
 static NSUInteger sciUnmuteArmed = 0, sciUnmuteAnswered = 0;
 static NSUInteger sciAdvanceSeen = 0, sciAdvanceDone = 0, sciAdvanceNoFeed = 0, sciAdvanceTooSoon = 0;
-static NSUInteger sciFollowAsked = 0, sciFollowApplied = 0, sciFollowSkippedPending = 0, sciFollowNotFound = 0;
+static NSUInteger sciFollowAsked = 0, sciFollowApplied = 0, sciFollowSkippedPending = 0, sciFollowNotFound = 0, sciFollowStoredWon = 0;
+static NSInteger sciFollowLive = -2;   // what the live tab control said at the last question; -2 = never asked, -1 = nothing to read
 static NSInteger sciFollowLastIndex = -1;
 static NSUInteger sciBioAsked = 0;
 
@@ -194,6 +196,13 @@ static CFAbsoluteTime sciLastAdvance = 0;
         return;
     }
 
+    // A copy menu is open on this video: let it loop; scrolling away would leave the menu describing a video that is gone.
+    if (SCITTCopyMenuIsOpen()) {
+        sciAdvanceTooSoon++;
+        %orig;
+        return;
+    }
+
     // The loop notice can arrive twice for one video while the scroll animates; one swipe is what was asked for.
     CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
     if (now - sciLastAdvance < 1.2) {
@@ -262,12 +271,16 @@ static NSString *const kSCITTFollowTrippedKey = @"albrhi_tt_following_tripped";
         return original;
     }
 
-    NSInteger found = SCITTFollowingIndexIn(self);
-    if (found < 0) {
-        // No tab control yet (a cold start builds the items before the control exists): fall back to where it was last seen.
-        id stored = [defaults objectForKey:kSCITTFollowIndexKey];
-        found = [stored respondsToSelector:@selector(integerValue)] ? [stored integerValue] : -1;
-    }
+    // **Where it was last seen, once the feed had drawn its whole tab row, beats what the control says while it is still being built.**
+    // A cold start asks this question with Following as the first item and puts Community in front of it afterwards, so the live answer
+    // was 0 -- Community -- and the app opened there (simulator, 2026-10-29, after a fresh install; the launch before had it right only
+    // because Community was already in). The stored index is written at the feed's first appearance, from the complete row.
+    NSInteger live = SCITTFollowingIndexIn(self);
+    sciFollowLive = live;
+    id stored = [defaults objectForKey:kSCITTFollowIndexKey];
+    NSInteger last = [stored respondsToSelector:@selector(integerValue)] ? [stored integerValue] : -1;
+    NSInteger found = last >= 0 ? last : live;
+    if (last >= 0 && live >= 0 && live != last) sciFollowStoredWon++;
     if (found < 0 || found > 5) {
         sciFollowNotFound++;
         return original;
@@ -312,14 +325,15 @@ static NSString *const kSCITTFollowTrippedKey = @"albrhi_tt_following_tripped";
 NSString *SCITTBrowseReport(void) {
     return [NSString stringWithFormat:
         @"%@; warnings hidden %lu; TikBot refused %lu; "
-        @"unmute armed %lu, answered %lu; advance: loop notices %lu, scrolled %lu, no feed on screen %lu, too soon %lu; "
-        @"following: asked %lu, applied %lu (index %ld), not found %lu, skipped after an unfinished launch %lu; bio asked %lu",
+        @"unmute armed %lu, answered %lu; advance: loop notices %lu, scrolled %lu, no feed on screen %lu, too soon or a copy menu open %lu; "
+        @"following: asked %lu, applied %lu (index %ld; live row said %ld; remembered index preferred over it %lu times), not found %lu, "
+        @"skipped after an unfinished launch %lu; bio asked %lu",
         sciBrowseState ?: @"not installed",
         (unsigned long)sciWarningsHidden, (unsigned long)sciTikBotRefused,
         (unsigned long)sciUnmuteArmed, (unsigned long)sciUnmuteAnswered,
         (unsigned long)sciAdvanceSeen, (unsigned long)sciAdvanceDone, (unsigned long)sciAdvanceNoFeed, (unsigned long)sciAdvanceTooSoon,
         (unsigned long)sciFollowAsked, (unsigned long)sciFollowApplied, (long)sciFollowLastIndex,
-        (unsigned long)sciFollowNotFound, (unsigned long)sciFollowSkippedPending, (unsigned long)sciBioAsked];
+        (long)sciFollowLive, (unsigned long)sciFollowStoredWon, (unsigned long)sciFollowNotFound, (unsigned long)sciFollowSkippedPending, (unsigned long)sciBioAsked];
 }
 
 void SCITTInstallBrowse(void) {

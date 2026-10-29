@@ -487,6 +487,15 @@ static void SCITTAttachCopyMenu(UIButton *button) {
     objc_setAssociatedObject(button, kSCITTCopyMarkKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
+BOOL SCITTTouchIsOnCopyButton(UIView *hit) {
+    if (!SCIPrefEnabled(SCIPrefCopyMenu)) return NO;
+    UIView *view = hit;
+    for (NSInteger step = 0; view && step < 6; step++, view = view.superview) {
+        if (objc_getAssociatedObject(view, kSCITTCopyMarkKey)) return YES;
+    }
+    return NO;
+}
+
 BOOL SCITTCopyHoldOnDownloadButton(UIView *hit) {
     UIView *view = hit;
     for (NSInteger step = 0; view && step < 6; step++, view = view.superview) {

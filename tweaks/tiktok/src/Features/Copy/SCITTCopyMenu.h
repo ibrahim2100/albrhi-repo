@@ -17,6 +17,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// nothing behind it is not drawn. `anchor` is the button the menu hangs from.
 void SCITTShowCopyMenu(id _Nullable awemeModel, UIView *_Nullable anchor);
 
+/// Whether the dropdown is on screen now. The next-video-at-the-end switch asks, so a menu opened on one video is never left hanging over
+/// another one (seen in the simulator: the feed moved on under an open menu and its rows described the video that had just left).
+BOOL SCITTCopyMenuIsOpen(void);
+
 /// How many menus were asked for, how many had anything to offer, how many rows were copied, and where the last links came from.
 NSString *SCITTCopyReport(void);
 
