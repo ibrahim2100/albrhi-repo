@@ -49,22 +49,39 @@ static NSString *sciHoldState = nil;
 /// under the copy menu; it is not asked to listen while a finger is on our button, and is given its ears back the moment the finger lifts.
 static NSHashTable<UIGestureRecognizer *> *sciSilenced = nil;
 static NSUInteger sciHoldSilenced = 0;
+static NSString *sciHoldRecognisers = nil;   // the gesture recognisers found on the chain at the last touch that began on our button
 
 static void SCITTRestoreRecognisers(void) {
     for (UIGestureRecognizer *recogniser in sciSilenced.allObjects) recogniser.enabled = YES;
     [sciSilenced removeAllObjects];
 }
 
+/// A recogniser that means "hold": a long-press, or any class (TikTok has its own) whose name says press, hold or long.
+static BOOL SCITTIsHoldRecogniser(UIGestureRecognizer *recogniser) {
+    if ([recogniser isKindOfClass:[UILongPressGestureRecognizer class]]) {
+        return ((UILongPressGestureRecognizer *)recogniser).numberOfTouchesRequired == 1;   // the two-finger settings hold is ours
+    }
+    NSString *name = NSStringFromClass([recogniser class]);
+    return [name rangeOfString:@"Press" options:NSCaseInsensitiveSearch].location != NSNotFound
+        || [name rangeOfString:@"Hold" options:NSCaseInsensitiveSearch].location != NSNotFound
+        || [name rangeOfString:@"LongTap" options:NSCaseInsensitiveSearch].location != NSNotFound;
+}
+
 static void SCITTSilenceForeignHolds(UIView *hit) {
     if (!sciSilenced) sciSilenced = [NSHashTable weakObjectsHashTable];
+    NSMutableArray<NSString *> *seen = [NSMutableArray array];
     for (UIView *view = hit; view; view = view.superview) {
         for (UIGestureRecognizer *recogniser in view.gestureRecognizers) {
-            if (![recogniser isKindOfClass:[UILongPressGestureRecognizer class]] || !recogniser.enabled) continue;
-            if (((UILongPressGestureRecognizer *)recogniser).numberOfTouchesRequired != 1) continue;   // the two-finger settings hold is ours
+            BOOL hold = SCITTIsHoldRecogniser(recogniser);
+            // Every recogniser on the chain is named in the report, silenced or not: if TikTok's panel still opens on a phone, the class that
+            // opens it is in that line and nowhere else.
+            if (seen.count < 24) [seen addObject:[NSString stringWithFormat:@"%@%@@%@", NSStringFromClass([recogniser class]), hold ? @"*" : @"", NSStringFromClass([view class])]];
+            if (!hold || !recogniser.enabled) continue;
             recogniser.enabled = NO;
             [sciSilenced addObject:recogniser];
         }
     }
+    sciHoldRecognisers = [seen componentsJoinedByString:@", "];
     if (sciSilenced.count) {
         sciHoldSilenced++;
         // A lift that never arrives (the app is backgrounded mid-touch) must not leave TikTok's own gesture off for good.
@@ -207,12 +224,15 @@ static void SCITTHoldObserve(UIWindow *window, UIEvent *event) {
 %end
 
 NSString *SCITTHoldReport(void) {
-    return [NSString stringWithFormat:@"%@; holds begun %lu, reached half a second %lu: on a download button %lu, profile text copied %lu, "
-            @"profile but no text %lu, not a profile %lu; TikTok's own long-press silenced for %lu touches on the button%@",
-            sciHoldState ?: @"not installed",
-            (unsigned long)sciHoldBegan, (unsigned long)sciHoldFired, (unsigned long)sciHoldOnButton, (unsigned long)sciHoldTextCopied,
-            (unsigned long)sciHoldMissed, (unsigned long)sciHoldNotProfile, (unsigned long)sciHoldSilenced,
-            sciHoldLastChain ? [@"; last miss: " stringByAppendingString:sciHoldLastChain] : @""];
+    NSMutableString *out = [NSMutableString stringWithFormat:
+        @"%@; holds begun %lu, reached half a second %lu: on a download button %lu, profile text copied %lu, "
+        @"profile but no text %lu, not a profile %lu; TikTok's own long-press silenced for %lu touches on the button",
+        sciHoldState ?: @"not installed",
+        (unsigned long)sciHoldBegan, (unsigned long)sciHoldFired, (unsigned long)sciHoldOnButton, (unsigned long)sciHoldTextCopied,
+        (unsigned long)sciHoldMissed, (unsigned long)sciHoldNotProfile, (unsigned long)sciHoldSilenced];
+    if (sciHoldRecognisers.length) [out appendFormat:@"; recognisers under the last touch on the button (* = silenced): %@", sciHoldRecognisers];
+    if (sciHoldLastChain.length) [out appendFormat:@"; last miss: %@", sciHoldLastChain];
+    return out;
 }
 
 void SCITTInstallHold(void) {

@@ -5,6 +5,7 @@
 #import "SCITTMedia.h"
 #import "SCITTDownload.h"
 #import "../Copy/SCITTCopyMenu.h"
+#import "../../UI/SCITTMark.h"
 #import "../../TikTokHeaders.h"
 #import "../../Prefs.h"
 #import "../../Localization/SCILocalize.h"
@@ -117,6 +118,7 @@ static NSUInteger sciDateNoHost = 0;
 static NSUInteger sciDateNoDate = 0;
 static NSUInteger sciDatePlaced = 0;
 static NSUInteger sciDateAboveName = 0;     // drawn above the account name, in the info column
+static NSUInteger sciNameRelayouts = 0;     // the name button resized and the date was measured again
 static NSUInteger sciDateBeside = 0;        // laid out beside the account name (the rest of the author-row draws went above the row)
 static NSUInteger sciDateOnRail = 0;        // no author row found: drawn over the download button, as before
 static BOOL sciDateRetrying = NO;           // inside a retry: its counter must not be reset by its own call
@@ -653,9 +655,9 @@ static void SCITTLayoutDateLabel(UILabel *label, UIView *button) {
 /// this cost seconds rather than five minutes.
 NSString *SCITTDateReport(void) {
     return [NSString stringWithFormat:
-            @"%lu call(s) → %lu with no host yet → %lu off → %lu without a date → %lu drawn (%lu on the author row, %lu of the layouts beside the name, %lu with no author row found, so no date%@)%@",
+            @"%lu call(s) → %lu with no host yet → %lu off → %lu without a date → %lu drawn (%lu on the author row, %lu of the layouts beside the name, %lu re-measured when the name resized, %lu with no author row found, so no date%@)%@",
             (unsigned long)sciDateCalls, (unsigned long)sciDateNoHost, (unsigned long)sciDateOff,
-            (unsigned long)sciDateNoDate, (unsigned long)sciDatePlaced, (unsigned long)sciDateAboveName, (unsigned long)sciDateBeside, (unsigned long)sciDateOnRail,
+            (unsigned long)sciDateNoDate, (unsigned long)sciDatePlaced, (unsigned long)sciDateAboveName, (unsigned long)sciDateBeside, (unsigned long)sciNameRelayouts, (unsigned long)sciDateOnRail,
             sciDateAuthorWhy.length ? [@"; last miss: " stringByAppendingString:sciDateAuthorWhy] : @"",
             sciDateLast.length ? [@" — last: " stringByAppendingString:sciDateLast] : @""];
 }
@@ -885,6 +887,7 @@ static BOOL SCITTHoldsClass(UIView *view, Class wanted) {
 /// Where the button belongs among a rail's arranged items: in front of the item before the music disc (the share item), or NSNotFound while the
 /// disc is not in the rail yet. **TikTok fills the rail after the first layout** (seen in the simulator: the button placed on a half-built rail
 /// stayed at index 0, above the avatar, for the whole video), so this is asked on every layout and the button is moved when it is wrong.
+static NSUInteger sciRailWaiting = 0;   // layouts that found the column still being built and placed nothing
 static NSUInteger SCITTDesiredRailIndex(UIStackView *stack, UIView *button) {
     Class musicClass = NSClassFromString(@"AWEPlayInteractionMusicView");
     if (!musicClass) return NSNotFound;
@@ -954,6 +957,17 @@ static void SCITTPlaceRailButton(UIStackView *stack) {
 
     if (!item) return;
 
+    // **Not until TikTok's column is complete.** Placed on a half-built rail the button went in at one index and was moved to another when the
+    // column filled, and every swipe showed it dropping a little and coming back (owner, 2026-10-29). The column is complete when the music disc
+    // is in it; a rail with six or more items and no disc is a build that draws no disc, and is let through.
+    {
+        NSUInteger ready = SCITTDesiredRailIndex(stack, nil);
+        if (ready == NSNotFound && stack.arrangedSubviews.count < 6) {
+            sciRailWaiting++;
+            return;
+        }
+    }
+
     //
     // **A plain image button was tried three ways and read tilted every time.** Set as
     // the button's own image, `UIButton` positions it through `contentEdgeInsets`,
@@ -980,11 +994,9 @@ static void SCITTPlaceRailButton(UIStackView *stack) {
     // (47.1.0): every item is 80 x 66 with a 32 x 32 icon box at the top (9 pt down), a white glyph with no disc behind it, and a 16-point count
     // label under it at 41 pt, centred on x = 49.67. The blurred disc this button had made it look like an addition; the item below is the same
     // shape as like / comment / bookmark / share: a filled white glyph, and a short caption where they have a count.
-    UIImageSymbolConfiguration *config =
-        [UIImageSymbolConfiguration configurationWithPointSize:30 weight:UIImageSymbolWeightRegular];
-    UIImageView *glyph = [[UIImageView alloc] initWithImage:
-        [UIImage systemImageNamed:@"arrow.down.circle.fill" withConfiguration:config]];
-    glyph.tintColor = [UIColor whiteColor];
+    // The glyph is the tool's own mark (`SCITTMark.h`: an A whose crossbar bends into a download arrow), drawn heavier than on the settings page so it
+    // holds its own beside TikTok's solid icons, in the same white.
+    UIImageView *glyph = [[UIImageView alloc] initWithImage:SCITTMarkImageWeighted(32, [UIColor whiteColor], 0.115)];
     glyph.contentMode = UIViewContentModeCenter;
     glyph.translatesAutoresizingMaskIntoConstraints = NO;
     glyph.userInteractionEnabled = NO;   // never takes the tap meant for the button
@@ -1087,7 +1099,7 @@ static void SCITTPlaceRailButton(UIStackView *stack) {
     //
     // An anchor constraint is resolved at layout time, whatever the order of construction, so
     // there is no moment at which it can read a size that does not exist yet.
-    UIView *reference = siblings.lastObject;
+    UIView *reference = siblings.lastObject;   // replaced below by the item the button goes in front of
 
     // **The constraints used to be activated here, and that is what crashed the app.**
     //
@@ -1126,12 +1138,11 @@ static void SCITTPlaceRailButton(UIStackView *stack) {
     // **Between bookmark and share, found from the music disc.** NA9 (run in the simulator, 2026-10-29) puts its item exactly there, as an
     // arranged item of the same 80 x 66 shape. The disc is the one item that holds an `AWEPlayInteractionMusicView`, so "the item before the disc"
     // is the share item and the button goes in front of it; counting from the end would be a guess about how many items a rail has.
-    NSUInteger insertAt = NSNotFound;
-    Class musicClass = NSClassFromString(@"AWEPlayInteractionMusicView");
-    for (NSUInteger i = 0; musicClass && i < siblings.count; i++) {
-        if (SCITTHoldsClass(siblings[i], musicClass)) { insertAt = i >= 1 ? i - 1 : 0; break; }
-    }
+    NSUInteger insertAt = SCITTDesiredRailIndex(stack, nil);
     if (insertAt == NSNotFound) insertAt = siblings.count >= 2 ? siblings.count - 2 : siblings.count;
+    // **Sized from the share item it sits in front of** (80 x 66), not from whichever item happened to be last: that was the music disc's
+    // wrapper, and a button sized from it was a different height from its neighbours.
+    if (insertAt < siblings.count) reference = siblings[insertAt];
     if ([stack respondsToSelector:@selector(insertArrangedSubview:atIndex:)]) {
         [stack insertArrangedSubview:button atIndex:insertAt];
         sciRailPlacement = [NSString stringWithFormat:@"arranged at index %lu of %lu (before the share item)", (unsigned long)insertAt, (unsigned long)siblings.count];
@@ -1774,7 +1785,38 @@ static void SCITTPlaceBaseButton(UIViewController *controller) {
 
 %end
 
+// **The date is measured again whenever TikTok resizes the name.** The name's text arrives after the row is first laid out and the stack then
+// widens the name button; a date placed beside the narrower name ended up on top of the wider one ("the date eats the name", owner, 2026-10-29)
+// until the video was left and returned to. The button lays out when its size changes, so that is the moment the label is asked again.
+@interface AWEPlayInteractionAuthorUserNameButton : UIButton
+@end
+
+static void SCITTRelayoutDateBesideName(UIView *nameButton) {
+    UIView *row = nameButton.superview;
+    for (NSInteger i = 0; row && i < 6; i++, row = row.superview) {
+        if ([row isKindOfClass:NSClassFromString(@"AWEPlayInteractionAuthorView")]) break;
+    }
+    if (!row) return;
+    SCITTDateLabel *label = (SCITTDateLabel *)[row viewWithTag:kSCIDateTag];
+    if (![label isKindOfClass:[SCITTDateLabel class]] || !label.sciAuthor) return;
+    sciNameRelayouts++;
+    SCITTLayoutDateLabel(label, label.sciButton);
+}
+
+%group AuthorName
+%hook AWEPlayInteractionAuthorUserNameButton
+- (void)layoutSubviews {
+    %orig;
+    SCITTRelayoutDateBesideName(self);
+}
+%end
+%end
+
 void SCITTInstallButton(void) {
+    if (NSClassFromString(@"AWEPlayInteractionAuthorUserNameButton")) {
+        %init(AuthorName);
+    }
+
     // **One owner, chosen here, and the others are never installed at all.**
     //
     // The button appeared twice and three times and came and went, because two surfaces were both
@@ -1905,7 +1947,7 @@ NSString *SCITTButtonReport(void) {
     [out appendFormat:@" | rail %@ — %lu placed",
         sciRailName ?: @"(absent)", (unsigned long)sciRailButtonsPlaced];
 
-    [out appendFormat:@"; %@", sciRailPlacement ?: @"not placed yet"];
+    [out appendFormat:@"; %@; layouts that waited for the column to fill: %lu", sciRailPlacement ?: @"not placed yet", (unsigned long)sciRailWaiting];
 
     if (sciRailContents) [out appendFormat:@"; rail: %@", sciRailContents];
 

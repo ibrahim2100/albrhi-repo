@@ -15,14 +15,15 @@
 /// colour it is asked for (so it sits on the settings page and on the dark welcome card without a second asset). The A is the name; the bent
 /// crossbar is what the tool does; neither is decoration. Proportions are fractions of the side, so any size is the same drawing.
 ///
-static inline UIImage *SCITTMarkImage(CGFloat side, UIColor *color) {
+/// `weight` is the stroke as a fraction of the side: 0.075 on the settings page, heavier where it must sit among TikTok's solid icons.
+static inline UIImage *SCITTMarkImageWeighted(CGFloat side, UIColor *color, CGFloat weightFraction) {
     UIGraphicsImageRendererFormat *format = [UIGraphicsImageRendererFormat preferredFormat];
     format.opaque = NO;
     UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(side, side) format:format];
 
     return [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
         CGFloat u = side;
-        CGFloat weight = u * 0.075;
+        CGFloat weight = u * weightFraction;
         [color setStroke];
 
         // The legs of the A: from the apex to the two feet, joined at the apex with a round join so the top reads as one stroke.
@@ -48,4 +49,8 @@ static inline UIImage *SCITTMarkImage(CGFloat side, UIColor *color) {
         bar.lineJoinStyle = kCGLineJoinRound;
         [bar stroke];
     }];
+}
+
+static inline UIImage *SCITTMarkImage(CGFloat side, UIColor *color) {
+    return SCITTMarkImageWeighted(side, color, 0.075);
 }

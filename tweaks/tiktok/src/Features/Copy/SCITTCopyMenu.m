@@ -5,6 +5,7 @@
 //  Copyright (C) Ibrahim Ismail AL-Rahn. GPLv3.
 //
 
+#import "../../UI/SCITTMark.h"
 #import "SCITTCopyMenu.h"
 #import <objc/runtime.h>
 #import <objc/message.h>
@@ -153,11 +154,16 @@ static __weak SCITTCopyDropdown *sciCopyShowing = nil;
 
 @interface SCITTCopyRowControl : UIControl
 @property (nonatomic, strong) SCITTCopyRow *row;
+@property (nonatomic, weak) UIView *well;
+@property (nonatomic, weak) UIImageView *icon;
+@property (nonatomic, weak) UILabel *preview;
 @end
 @implementation SCITTCopyRowControl
 - (void)setHighlighted:(BOOL)highlighted {
     [super setHighlighted:highlighted];
-    self.backgroundColor = highlighted ? [UIColor colorWithWhite:1 alpha:0.14] : [UIColor clearColor];
+    [UIView animateWithDuration:highlighted ? 0.05 : 0.2 animations:^{
+        self.backgroundColor = highlighted ? [UIColor colorWithWhite:1 alpha:0.12] : [UIColor clearColor];
+    }];
 }
 @end
 
@@ -167,56 +173,90 @@ static __weak SCITTCopyDropdown *sciCopyShowing = nil;
 @end
 
 @implementation SCITTCopyDropdown {
-    UIVisualEffectView *_panel;
-    CGPoint _anchorPoint;
+    UIView *_panel;
+    BOOL _chosen;
 }
 
+/// The look: one dark glass card with the tool's mark and name at the top, then one row per thing that can be copied -- an icon in a small
+/// rounded well, the name of the thing, and under it exactly the text that will be copied. A hairline between rows, a wider gap between the
+/// groups (the video / the account). Choosing a row turns its well green with a check and says "Copied" in place of the preview, and the card
+/// closes a moment later: the confirmation is on the row that was touched, not a banner somewhere else.
 - (instancetype)initWithRows:(NSArray<SCITTCopyRow *> *)rows anchor:(CGRect)anchor inWindow:(UIWindow *)window {
     if (!(self = [super initWithFrame:window.bounds])) return nil;
     self.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.18];
+    self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.28];
     [self addTarget:self action:@selector(dismiss) forControlEvents:UIControlEventTouchDown];
 
     UIEdgeInsets safe = window.safeAreaInsets;
-    CGFloat width = MIN(280, window.bounds.size.width - 32);
-    const CGFloat rowHeight = 56;
+    CGFloat width = MIN(300, window.bounds.size.width - 32);
+    const CGFloat rowHeight = 60, headerHeight = 46, groupGap = 8;
 
-    UIVisualEffectView *panel = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterialDark]];
-    panel.layer.cornerRadius = 18;
-    panel.layer.cornerCurve = kCACornerCurveContinuous;
-    panel.clipsToBounds = YES;
-    panel.layer.borderWidth = 0.5;
-    panel.layer.borderColor = [UIColor colorWithWhite:1 alpha:0.22].CGColor;
-    _panel = panel;
+    UIView *card = [[UIView alloc] init];
+    card.layer.shadowColor = [UIColor blackColor].CGColor;
+    card.layer.shadowOpacity = 0.45;
+    card.layer.shadowRadius = 24;
+    card.layer.shadowOffset = CGSizeMake(0, 10);
+    _panel = card;
 
-    CGFloat y = 0;
+    UIVisualEffectView *glass = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemThickMaterialDark]];
+    glass.layer.cornerRadius = 24;
+    glass.layer.cornerCurve = kCACornerCurveContinuous;
+    glass.clipsToBounds = YES;
+    glass.layer.borderWidth = 0.5;
+    glass.layer.borderColor = [UIColor colorWithWhite:1 alpha:0.18].CGColor;
+    [card addSubview:glass];
+
+    // The header: the mark, the name, and what the card is for.
+    UIImageView *mark = [[UIImageView alloc] initWithImage:SCITTMarkImageWeighted(22, [UIColor colorWithWhite:1 alpha:0.92], 0.1)];
+    mark.frame = CGRectMake(16, (headerHeight - 22) / 2, 22, 22);
+    [glass.contentView addSubview:mark];
+    UILabel *name = [[UILabel alloc] initWithFrame:CGRectMake(44, 0, width - 60, headerHeight)];
+    name.text = [NSString stringWithFormat:@"Albrhi  ·  %@", SCILocalized(@"copy_menu_title")];
+    name.font = [UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
+    name.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+    [glass.contentView addSubview:name];
+
+    CGFloat y = headerHeight;
+    NSUInteger index = 0;
     for (SCITTCopyRow *row in rows) {
         if (row.groupStart) {
-            UIView *separator = [[UIView alloc] initWithFrame:CGRectMake(0, y, width, 6)];
-            separator.backgroundColor = [UIColor colorWithWhite:0 alpha:0.28];
-            [panel.contentView addSubview:separator];
-            y += 6;
+            UIView *gap = [[UIView alloc] initWithFrame:CGRectMake(0, y, width, groupGap)];
+            gap.backgroundColor = [UIColor colorWithWhite:0 alpha:0.25];
+            [glass.contentView addSubview:gap];
+            y += groupGap;
+        } else {
+            UIView *line = [[UIView alloc] initWithFrame:CGRectMake(index == 0 ? 0 : 64, y, index == 0 ? width : width - 64, 0.5)];
+            line.backgroundColor = [UIColor colorWithWhite:1 alpha:0.12];
+            [glass.contentView addSubview:line];
         }
+        index++;
 
         SCITTCopyRowControl *control = [[SCITTCopyRowControl alloc] initWithFrame:CGRectMake(0, y, width, rowHeight)];
         control.row = row;
         [control addTarget:self action:@selector(chosen:) forControlEvents:UIControlEventTouchUpInside];
 
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:16 weight:UIImageSymbolWeightSemibold];
+        UIView *well = [[UIView alloc] initWithFrame:CGRectMake(16, (rowHeight - 34) / 2, 34, 34)];
+        well.backgroundColor = [UIColor colorWithWhite:1 alpha:0.12];
+        well.layer.cornerRadius = 10;
+        well.layer.cornerCurve = kCACornerCurveContinuous;
+        well.userInteractionEnabled = NO;
+        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:15 weight:UIImageSymbolWeightSemibold];
         UIImageView *icon = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:row.symbol withConfiguration:config]];
         icon.tintColor = [UIColor whiteColor];
         icon.contentMode = UIViewContentModeCenter;
-        icon.translatesAutoresizingMaskIntoConstraints = NO;
+        icon.frame = well.bounds;
+        [well addSubview:icon];
+        [control addSubview:well];
 
         UILabel *title = [[UILabel alloc] init];
         title.text = row.title;
-        title.font = [UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
+        title.font = [UIFont systemFontOfSize:15.5 weight:UIFontWeightSemibold];
         title.textColor = [UIColor whiteColor];
 
         UILabel *preview = [[UILabel alloc] init];
         preview.text = [row.text stringByReplacingOccurrencesOfString:@"\n" withString:@" "];
-        preview.font = [UIFont systemFontOfSize:12];
-        preview.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        preview.font = [UIFont systemFontOfSize:12.5];
+        preview.textColor = [UIColor colorWithWhite:1 alpha:0.55];
         preview.lineBreakMode = row.link ? NSLineBreakByTruncatingMiddle : NSLineBreakByTruncatingTail;
 
         UIStackView *text = [[UIStackView alloc] initWithArrangedSubviews:@[title, preview]];
@@ -224,23 +264,20 @@ static __weak SCITTCopyDropdown *sciCopyShowing = nil;
         text.spacing = 2;
         text.userInteractionEnabled = NO;
         text.translatesAutoresizingMaskIntoConstraints = NO;
-
-        icon.userInteractionEnabled = NO;
-        [control addSubview:icon];
         [control addSubview:text];
         [NSLayoutConstraint activateConstraints:@[
-            [icon.leadingAnchor constraintEqualToAnchor:control.leadingAnchor constant:14],
-            [icon.centerYAnchor constraintEqualToAnchor:control.centerYAnchor],
-            [icon.widthAnchor constraintEqualToConstant:24],
-            [text.leadingAnchor constraintEqualToAnchor:icon.trailingAnchor constant:10],
-            [text.trailingAnchor constraintEqualToAnchor:control.trailingAnchor constant:-14],
+            [text.leadingAnchor constraintEqualToAnchor:control.leadingAnchor constant:64],
+            [text.trailingAnchor constraintEqualToAnchor:control.trailingAnchor constant:-16],
             [text.centerYAnchor constraintEqualToAnchor:control.centerYAnchor],
         ]];
-        [panel.contentView addSubview:control];
+        control.well = well;
+        control.icon = icon;
+        control.preview = preview;
+        [glass.contentView addSubview:control];
         y += rowHeight;
     }
 
-    // To the left of the button when it is on the right half of the screen (TikTok's rail), to the right otherwise; centred on the button
+    // To the left of the button when it is on the right half of the screen (TikTok's column), to the right otherwise; centred on the button
     // and clamped inside the safe area so it never runs under the status bar or the home indicator.
     CGFloat height = y;
     BOOL buttonOnRight = CGRectGetMidX(anchor) > window.bounds.size.width / 2;
@@ -248,23 +285,23 @@ static __weak SCITTCopyDropdown *sciCopyShowing = nil;
     x = MAX(12, MIN(x, window.bounds.size.width - width - 12));
     CGFloat top = safe.top + 8, bottom = window.bounds.size.height - safe.bottom - 8;
     CGFloat originY = MAX(top, MIN(CGRectGetMidY(anchor) - height / 2, bottom - height));
-    panel.frame = CGRectMake(x, originY, width, height);
-    [self addSubview:panel];
+    card.frame = CGRectMake(x, originY, width, height);
+    glass.frame = card.bounds;
+    [self addSubview:card];
 
     // Grows out of the button: the anchor point is the edge of the menu nearest to it.
     CGPoint towards = CGPointMake(buttonOnRight ? 1 : 0, MAX(0, MIN(1, (CGRectGetMidY(anchor) - originY) / height)));
-    CGRect frame = panel.frame;
-    panel.layer.anchorPoint = towards;
-    panel.frame = frame;
-    _anchorPoint = towards;
+    CGRect frame = card.frame;
+    card.layer.anchorPoint = towards;
+    card.frame = frame;
     return self;
 }
 
 - (void)present {
-    _panel.transform = CGAffineTransformMakeScale(0.82, 0.82);
+    _panel.transform = CGAffineTransformMakeScale(0.8, 0.8);
     _panel.alpha = 0;
     self.alpha = 0;
-    [UIView animateWithDuration:0.26 delay:0 usingSpringWithDamping:0.78 initialSpringVelocity:0.4 options:UIViewAnimationOptionAllowUserInteraction
+    [UIView animateWithDuration:0.3 delay:0 usingSpringWithDamping:0.76 initialSpringVelocity:0.5 options:UIViewAnimationOptionAllowUserInteraction
                      animations:^{
         self->_panel.transform = CGAffineTransformIdentity;
         self->_panel.alpha = 1;
@@ -276,6 +313,7 @@ static __weak SCITTCopyDropdown *sciCopyShowing = nil;
     if (sciCopyShowing == self) sciCopyShowing = nil;
     [UIView animateWithDuration:0.16 animations:^{
         self->_panel.transform = CGAffineTransformMakeScale(0.9, 0.9);
+        self->_panel.alpha = 0;
         self.alpha = 0;
     } completion:^(BOOL finished) {
         [self removeFromSuperview];
@@ -283,13 +321,28 @@ static __weak SCITTCopyDropdown *sciCopyShowing = nil;
 }
 
 - (void)chosen:(SCITTCopyRowControl *)control {
+    if (_chosen) return;   // a second tap while the confirmation shows copies nothing more
+    _chosen = YES;
     [UIPasteboard generalPasteboard].string = control.row.text;
     sciCopyCopied++;
     sciCopyLastRow = control.row.title;
-    UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
-    [haptic impactOccurred];
-    [self dismiss];
-    [SCITTToast noticeWithText:SCILocalized(@"copy_done") symbol:@"doc.on.doc.fill"];
+
+    UINotificationFeedbackGenerator *haptic = [[UINotificationFeedbackGenerator alloc] init];
+    [haptic notificationOccurred:UINotificationFeedbackTypeSuccess];
+
+    // The confirmation is on the row: its well turns green with a check, and the preview becomes "Copied".
+    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:15 weight:UIImageSymbolWeightBold];
+    [UIView transitionWithView:control.well duration:0.18 options:UIViewAnimationOptionTransitionCrossDissolve animations:^{
+        control.icon.image = [UIImage systemImageNamed:@"checkmark" withConfiguration:config];
+        control.well.backgroundColor = [UIColor colorWithRed:0.20 green:0.78 blue:0.35 alpha:1];
+        control.preview.text = SCILocalized(@"copy_done");
+        control.preview.textColor = [UIColor colorWithRed:0.45 green:0.9 blue:0.55 alpha:1];
+    } completion:nil];
+
+    __weak typeof(self) weakSelf = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.55 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [weakSelf dismiss];
+    });
 }
 
 @end
