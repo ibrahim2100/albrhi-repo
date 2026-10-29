@@ -1,3 +1,4 @@
+#import "SCITTMark.h"
 #import "SCITTWelcome.h"
 #import "../Tweak.h"
 #import "../Prefs.h"
@@ -217,24 +218,12 @@ static BOOL sciWelcomeWaiting = NO;
     card.translatesAutoresizingMaskIntoConstraints = NO;
     [overlay addSubview:card];
 
-    // The mark: the accent square and the down arrow, the same pair the settings header and the feed button use.
-    UIView *mark = [[UIView alloc] init];
-    mark.backgroundColor = SCIAccent();
-    mark.layer.cornerRadius = 16;
-    mark.layer.cornerCurve = kCACornerCurveContinuous;
+    // The mark: the thin ring and arrow (`SCITTMark.h`), in the accent, straight on the card: no tile under it.
+    UIImageView *mark = [[UIImageView alloc] initWithImage:SCITTMarkImage(72, SCIAccent())];
+    mark.contentMode = UIViewContentModeScaleAspectFit;
     mark.translatesAutoresizingMaskIntoConstraints = NO;
-    [mark.widthAnchor constraintEqualToConstant:56].active = YES;
-    [mark.heightAnchor constraintEqualToConstant:56].active = YES;
-
-    UIImageView *markGlyph = [[UIImageView alloc] initWithImage:
-        [UIImage systemImageNamed:@"arrow.down"
-                withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:26
-                                                                                 weight:UIImageSymbolWeightBold]]];
-    markGlyph.tintColor = [UIColor whiteColor];
-    markGlyph.translatesAutoresizingMaskIntoConstraints = NO;
-    [mark addSubview:markGlyph];
-    [markGlyph.centerXAnchor constraintEqualToAnchor:mark.centerXAnchor].active = YES;
-    [markGlyph.centerYAnchor constraintEqualToAnchor:mark.centerYAnchor].active = YES;
+    [mark.widthAnchor constraintEqualToConstant:72].active = YES;
+    [mark.heightAnchor constraintEqualToConstant:72].active = YES;
 
     UIStackView *markRow = [[UIStackView alloc] initWithArrangedSubviews:@[mark]];
     markRow.axis = UILayoutConstraintAxisVertical;

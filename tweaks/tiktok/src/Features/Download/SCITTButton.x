@@ -172,6 +172,10 @@ static NSString *sciDateLast = nil;
 @property (nonatomic, assign) NSInteger sciRetries;
 /// When non-zero: the x, inside the item the label sits above, that the label is centred on (TikTok's icons are not centred in their 80-point items).
 @property (nonatomic, assign) CGFloat sciIconCenterX;
+/// Whether the label has something to show; whether it is shown also depends on TikTok's own icons being shown (`SCITTApplyRailVisibility`).
+@property (nonatomic, assign) BOOL sciWanted;
+/// How many times a layout that found the name button still without a size has been asked again.
+@property (nonatomic, assign) NSInteger sciLayoutTries;
 @end
 
 static void SCITTLayoutDateLabel(UILabel *label, UIView *button);
@@ -244,9 +248,14 @@ static UIView *SCITTFindAuthorView(UIView *button) {
 /// The country flag: its own small label over the download button, in the rail (the one frame this code owns there), centred on the button by the
 /// same layout the date used when it lived there. nil text hides it.
 static const NSInteger kSCIFlagTag = 0x5345;
+static void SCITTApplyRailVisibility(UIStackView *stack);
 static void SCITTPlaceFlagLabel(UIView *host, UIView *button, NSString *text) {
     SCITTDateLabel *flag = (SCITTDateLabel *)[host viewWithTag:kSCIFlagTag];
-    if (!text.length || !host || !button) { flag.hidden = YES; return; }
+    if (!text.length || !host || !button) {
+        flag.sciWanted = NO;
+        flag.hidden = YES;
+        return;
+    }
 
     // **Above the top of the column, over the profile picture.** The download button is now an item between bookmark and share, so the room
     // above it belongs to the bookmark's count; the free room is above the first item, centred on the icons' own column.
@@ -267,11 +276,13 @@ static void SCITTPlaceFlagLabel(UIView *host, UIView *button, NSString *text) {
         [host addSubview:flag];
     }
     flag.text = text;
+    flag.sciWanted = YES;
     flag.hidden = NO;
     flag.sciButton = anchor;
     flag.sciAuthor = nil;
     flag.sciIconCenterX = kSCIRailIconCenterX;
     SCITTLayoutDateLabel(flag, anchor);
+    if ([host isKindOfClass:[UIStackView class]]) SCITTApplyRailVisibility((UIStackView *)host);
 }
 
 static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *item) {
@@ -308,11 +319,15 @@ static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *it
     // **Above the account name when the feed's author row can be found, over the button when it cannot.** The row is TikTok's, so it is only
     // asked where it is and never moved: the label is a sibling of it, in the same container, at a frame this code computes from the row's.
     UIView *author = SCITTFindAuthorView(button);
-    UIView *labelHost = author.superview ?: host;
+    // **Inside TikTok's own author row, not beside it.** TikTok hides and shows the row itself (`hidden = YES` on the row, measured in the
+    // zoomed state: the wrapper around it stays visible), so a label that is a child of the row disappears and returns with the name, by
+    // construction, with nothing to keep in step.
+    UIView *labelHost = author ?: host;
     SCITTDateLabel *label = (SCITTDateLabel *)[labelHost viewWithTag:kSCIDateTag];
     if (author && host != labelHost) {
-        // The one drawn over the button by an earlier bind of this cell would be a second date.
+        // The one drawn beside the row by an earlier bind of this cell would be a second date.
         [[host viewWithTag:kSCIDateTag] removeFromSuperview];
+        [[author.superview viewWithTag:kSCIDateTag] removeFromSuperview];
     }
 
     // The date and the stats line share this label: it is the one frame this code owns over a video, and a second label would be a second
@@ -528,41 +543,46 @@ static UIView *SCITTFindNamedDescendant(UIView *root, NSString *className) {
 static void SCITTLayoutDateLabel(UILabel *label, UIView *button) {
     UIView *host = label.superview;
 
-    // Above the account name: a frame computed from TikTok's author row, in the container that holds it.
+    // Beside the account name, inside the author row: the label is the row's child, so the frame is in the row's own coordinates.
     UIView *author = [label isKindOfClass:[SCITTDateLabel class]] ? ((SCITTDateLabel *)label).sciAuthor : nil;
-    if (author && host && author.superview == host) {
-        CGRect row = author.frame;
+    if (author && host == author) {
+        CGRect row = author.bounds;
         if (CGRectGetWidth(row) < 1 || CGRectGetHeight(row) < 1) return;   // not laid out yet: it calls back when it is
 
-        // **Beside the account name, on its own line: the name's button is found inside the row and the label takes the room after it.**
-        // Above the row it met TikTok's topic chip ("Anime . ONE PIECE") on videos that have one; the row itself is free to the side of the
-        // name. "After" is the trailing side, so an Arabic phone puts it to the left of the name.
-        UIView *nameButton = SCITTFindNamedDescendant(author, @"AWEPlayInteractionAuthorUserNameButton");
-        CGRect name = nameButton ? [host convertRect:nameButton.bounds fromView:nameButton] : CGRectZero;
         // **Which side is measured, not assumed from the phone's language.** On an Arabic phone TikTok mirrors its tab bar and lists but leaves
-        // this info column on the left, name first (seen in the simulator, ar_SA), so the layout direction would have put the date on the wrong
-        // side. The name sits on one half of its row; the date goes to the other side of it.
+        // this info column on the left, name first (seen in the simulator, ar_SA). The name sits on one half of its row; the date goes to the
+        // other side of it.
+        UIView *nameButton = SCITTFindNamedDescendant(author, @"AWEPlayInteractionAuthorUserNameButton");
+        CGRect name = nameButton ? [author convertRect:nameButton.bounds fromView:nameButton] : CGRectZero;
         BOOL nameOnLeft = CGRectGetMidX(name) <= CGRectGetMidX(row);
         CGFloat gap = 8;
         CGFloat x = nameOnLeft ? CGRectGetMaxX(name) + gap : CGRectGetMinX(row);
         CGFloat room = nameOnLeft ? CGRectGetMaxX(row) - x : CGRectGetMinX(name) - gap - CGRectGetMinX(row);
-        CGRect frame;
         if (CGRectGetWidth(name) > 1 && room >= 90) {
             label.textAlignment = nameOnLeft ? NSTextAlignmentLeft : NSTextAlignmentRight;
-            frame = CGRectMake(x, CGRectGetMinY(row), room, CGRectGetHeight(row));
+            CGRect frame = CGRectMake(x, 0, room, CGRectGetHeight(row));
+            if (!CGRectEqualToRect(label.frame, frame)) label.frame = frame;
+            label.hidden = NO;
+            ((SCITTDateLabel *)label).sciLayoutTries = 0;
             sciDateBeside++;
+        } else if (CGRectGetWidth(name) <= 1) {
+            // **The name button has no size yet** (measured: the first bind happens before TikTok lays the row out, and a label hidden then was
+            // never asked again). Hidden meanwhile, and measured again a moment later, a few times at most.
+            label.hidden = YES;
+            SCITTDateLabel *dateLabel = (SCITTDateLabel *)label;
+            if (dateLabel.sciLayoutTries < 6) {
+                dateLabel.sciLayoutTries++;
+                __weak SCITTDateLabel *weakLabel = dateLabel;
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.15 * dateLabel.sciLayoutTries * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                    SCITTDateLabel *current = weakLabel;
+                    if (current && current.sciAuthor) SCITTLayoutDateLabel(current, current.sciButton);
+                });
+            }
         } else {
-            // A long name leaves no room: above the row, as the first version had it.
-            CGFloat height = MAX(ceil([label sizeThatFits:CGSizeMake(CGRectGetWidth(row), 40)].height), 14);
-            label.textAlignment = nameOnLeft ? NSTextAlignmentLeft : NSTextAlignmentRight;
-            frame = CGRectMake(CGRectGetMinX(row), CGRectGetMinY(row) - height - 1, CGRectGetWidth(row), height);
+            // A long name leaves no room, and a line over the row would be outside TikTok's own view: no date on this one.
+            label.hidden = YES;
         }
-        if (!CGRectEqualToRect(label.frame, frame)) label.frame = frame;
-
-        // The info column clips by default in places; this line sits above the row it belongs to, outside its box.
-        UIView *up = host;
-        for (NSInteger i = 0; up && i < 4; i++, up = up.superview) if (up.clipsToBounds) up.clipsToBounds = NO;
-        if (host.subviews.lastObject != label) [host bringSubviewToFront:label];
+        if (author.subviews.lastObject != label) [author bringSubviewToFront:label];
         return;
     }
 
@@ -819,6 +839,38 @@ static void SCITTRaiseRailButton(UIStackView *stack, UIView *button) {
     if (button.layer.zPosition < 100) button.layer.zPosition = 100;
 }
 
+/// **Ours shows when TikTok's own icons show, and only then.** TikTok hides its rail items one by one (`hidden = YES` on each, measured in the
+/// zoomed-in state and in "Clear display"), not the rail, so an item of ours that only follows the rail stayed on screen and sank to the bottom
+/// as the stack collapsed. The truth is read from the neighbours: visible when at least one other arranged item is shown, at the opacity it has.
+/// Run from the rail's layout pass, which TikTok triggers by hiding or showing an arranged item, and from the hide/alpha hooks.
+static void SCITTApplyRailVisibility(UIStackView *stack) {
+    UIButton *button = (UIButton *)[stack viewWithTag:kSCIRailButtonTag];
+    SCITTDateLabel *flag = (SCITTDateLabel *)[stack viewWithTag:kSCIFlagTag];
+    if (!button && !flag) return;
+
+    BOOL any = NO;
+    CGFloat alpha = 0;
+    for (UIView *item in stack.arrangedSubviews) {
+        if (item.tag == kSCIRailButtonTag) continue;
+        if (item.hidden || item.alpha < 0.01) continue;
+        any = YES;
+        alpha = MAX(alpha, item.alpha);
+    }
+    CGFloat shown = stack.alpha * alpha;
+
+    if (button) {
+        BOOL hasItem = objc_getAssociatedObject(button, kSCIItemKey) != nil;
+        BOOL wantHidden = stack.isHidden || !any || !hasItem;
+        if (button.hidden != wantHidden) button.hidden = wantHidden;
+        if (button.alpha != shown && !wantHidden) button.alpha = shown;
+    }
+    if (flag && [flag isKindOfClass:[SCITTDateLabel class]]) {
+        BOOL wantHidden = stack.isHidden || !any || !flag.sciWanted;
+        if (flag.hidden != wantHidden) flag.hidden = wantHidden;
+        if (flag.alpha != shown && !wantHidden) flag.alpha = shown;
+    }
+}
+
 /// Whether a view is, or holds within a few levels, a view of this class.
 static BOOL SCITTHoldsClass(UIView *view, Class wanted) {
     if (!view || !wanted) return NO;
@@ -873,8 +925,8 @@ static void SCITTPlaceRailButton(UIStackView *stack) {
     if (existing) {
         // Visibility follows the rail itself, which is synced separately. Hidden here only when
         // there is genuinely nothing to save.
-        existing.hidden = (item == nil);
-        if (item) objc_setAssociatedObject(existing, kSCIItemKey, item, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(existing, kSCIItemKey, item, OBJC_ASSOCIATION_RETAIN_NONATOMIC);   // nil when there is nothing to save: the button then hides
+        SCITTApplyRailVisibility(stack);
         SCITTRaiseRailButton(stack, existing);
         return;
     }
@@ -1091,6 +1143,7 @@ static void SCITTPlaceRailButton(UIStackView *stack) {
 
     sciRailButtonsPlaced++;
     SCITTRaiseRailButton(stack, button);
+    SCITTApplyRailVisibility(stack);
 
     // **Here, not at the bind.** The date label was placed where the item is attached, which on
     // this path is while the button is still being built -- no superview, no frame, and a label
@@ -1127,9 +1180,7 @@ static void SCITTSyncRailButton(UIStackView *stack) {
     // window's centre — the same guess that made the button come and go — so a fade that TikTok
     // then reversed left the button behind at whatever alpha it had. The rail is the authority: it
     // is hidden exactly when its own icons are, and it belongs to one video by construction.
-    button.hidden = stack.isHidden;
-    button.alpha = stack.alpha;
-    [stack viewWithTag:kSCIFlagTag].alpha = stack.alpha;
+    SCITTApplyRailVisibility(stack);
 }
 
 

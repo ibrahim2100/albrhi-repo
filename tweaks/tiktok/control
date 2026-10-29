@@ -1,6 +1,6 @@
 Package: com.albrhi.tiktok
 Name: Albrhi for TikTok (rootless)
-Version: 0.26.8
+Version: 0.26.9
 Architecture: iphoneos-arm64
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
  unmodified phone would.

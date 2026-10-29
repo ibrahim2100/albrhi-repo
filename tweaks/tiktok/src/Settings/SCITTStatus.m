@@ -5,6 +5,7 @@
 //  Copyright (C) Ibrahim Ismail AL-Rahn. GPLv3.
 //
 
+#import "../UI/SCITTMark.h"
 #import "SCITTStatus.h"
 #import "SCITTSectionRegistry.h"
 #import "SCITTChoiceList.h"
@@ -39,19 +40,11 @@
 - (instancetype)initWithFrame:(CGRect)frame {
     if (!(self = [super initWithFrame:frame])) return nil;
 
-    // The mark is the download glyph on the accent: the arrow on the feed button and on the banner, so the
-    // identity is the same in three places, and not TikTok's own music note, which would be borrowing a mark.
-    UIView *mark = [[UIView alloc] init];
-    mark.backgroundColor = SCIAccent();
-    mark.layer.cornerRadius = 17;
-    mark.layer.cornerCurve = kCACornerCurveContinuous;
-    UIImageView *glyph = [[UIImageView alloc] initWithImage:
-        [UIImage systemImageNamed:@"arrow.down"
-                withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:28 weight:UIImageSymbolWeightBold]]];
-    glyph.tintColor = [UIColor whiteColor];
-    glyph.translatesAutoresizingMaskIntoConstraints = NO;
-    [mark addSubview:glyph];
-
+    // The mark: a thin ring with a down arrow, drawn in the accent and with no tile behind it (`SCITTMark.h`). The heavy filled tile it
+    // replaced carried all the weight and used the system's own arrow, which is why it read as a placeholder.
+    UIImageView *mark = [[UIImageView alloc] initWithImage:SCITTMarkImage(64, SCIAccent())];
+    mark.contentMode = UIViewContentModeScaleAspectFit;
+    mark.isAccessibilityElement = NO;
     self.name = [[UILabel alloc] init];
     self.name.font = [UIFont systemFontOfSize:20 weight:UIFontWeightBold];
     self.name.textColor = [UIColor labelColor];
@@ -78,10 +71,8 @@
     [self.contentView addSubview:stack];
 
     [NSLayoutConstraint activateConstraints:@[
-        [mark.widthAnchor constraintEqualToConstant:68],
-        [mark.heightAnchor constraintEqualToConstant:68],
-        [glyph.centerXAnchor constraintEqualToAnchor:mark.centerXAnchor],
-        [glyph.centerYAnchor constraintEqualToAnchor:mark.centerYAnchor],
+        [mark.widthAnchor constraintEqualToConstant:64],
+        [mark.heightAnchor constraintEqualToConstant:64],
         [stack.topAnchor constraintEqualToAnchor:self.contentView.topAnchor constant:8],
         [stack.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor constant:-12],
         [stack.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:24],
