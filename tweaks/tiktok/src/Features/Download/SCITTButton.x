@@ -235,6 +235,29 @@ static UIView *SCITTFindAuthorView(UIView *button) {
     return nil;
 }
 
+/// The country flag: its own small label over the download button, in the rail (the one frame this code owns there), centred on the button by the
+/// same layout the date used when it lived there. nil text hides it.
+static const NSInteger kSCIFlagTag = 0x5345;
+static void SCITTPlaceFlagLabel(UIView *host, UIView *button, NSString *text) {
+    SCITTDateLabel *flag = (SCITTDateLabel *)[host viewWithTag:kSCIFlagTag];
+    if (!text.length || !host || !button) { flag.hidden = YES; return; }
+    if (![flag isKindOfClass:[SCITTDateLabel class]]) {
+        [flag removeFromSuperview];
+        flag = [[SCITTDateLabel alloc] initWithFrame:CGRectZero];
+        flag.tag = kSCIFlagTag;
+        flag.textAlignment = NSTextAlignmentCenter;
+        flag.font = [UIFont systemFontOfSize:20];
+        flag.numberOfLines = 1;
+        flag.userInteractionEnabled = NO;
+        [host addSubview:flag];
+    }
+    flag.text = text;
+    flag.hidden = NO;
+    flag.sciButton = button;
+    flag.sciAuthor = nil;
+    SCITTLayoutDateLabel(flag, button);
+}
+
 static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *item) {
     //
     // **Counted first, because a counter behind a guard counts successes and not calls.**
@@ -286,12 +309,14 @@ static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *it
     if (!dateOn && !statsOn) {
         sciDateOff++;
         label.hidden = YES;
+        SCITTPlaceFlagLabel(button.superview, button, nil);
         return;
     }
 
     if (!wantDate && !wantStats) {
         sciDateNoDate++;
         label.hidden = YES;
+        SCITTPlaceFlagLabel(button.superview, button, nil);
         return;
     }
 
@@ -326,23 +351,32 @@ static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *it
     static NSDateFormatter *timeOnly = nil;
     static dispatch_once_t once;
     dispatch_once(&once, ^{
+        // The phone's language and region, but the Gregorian calendar and Western digits: an Arabic phone in Saudi Arabia answers with the
+        // Hijri calendar and Arabic-Indic digits ("٦ جمادى الأولى، ١٤٤٨"), a date nobody compares with the post counts TikTok draws in Western
+        // digits beside it, and the long form was cut off before the time. Language stays Arabic: "6 مايو 2026".
+        NSString *base = [[NSLocale currentLocale].localeIdentifier componentsSeparatedByString:@"@"].firstObject;
+        NSLocale *dateLocale = [NSLocale localeWithLocaleIdentifier:[base stringByAppendingString:@"@calendar=gregorian;numbers=latn"]];
+        NSCalendar *gregorian = [NSCalendar calendarWithIdentifier:NSCalendarIdentifierGregorian];
         formatter = [[NSDateFormatter alloc] init];
         formatter.dateStyle = NSDateFormatterMediumStyle;
         formatter.timeStyle = NSDateFormatterShortStyle;
         // The phone's own locale, so an Arabic device reads an Arabic date without this file
         // deciding what a date looks like.
-        formatter.locale = [NSLocale currentLocale];
+        formatter.locale = dateLocale;
+        formatter.calendar = gregorian;
 
         // The same two halves on their own, which is how the join between them is found below.
         dateOnly = [[NSDateFormatter alloc] init];
         dateOnly.dateStyle = NSDateFormatterMediumStyle;
         dateOnly.timeStyle = NSDateFormatterNoStyle;
-        dateOnly.locale = [NSLocale currentLocale];
+        dateOnly.locale = dateLocale;
+        dateOnly.calendar = gregorian;
 
         timeOnly = [[NSDateFormatter alloc] init];
         timeOnly.dateStyle = NSDateFormatterNoStyle;
         timeOnly.timeStyle = NSDateFormatterShortStyle;
-        timeOnly.locale = [NSLocale currentLocale];
+        timeOnly.locale = dateLocale;
+        timeOnly.calendar = gregorian;
     });
 
     //
@@ -379,10 +413,11 @@ static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *it
             if (head.length && tail.length && [text hasPrefix:head]) { [pieces addObject:head]; [pieces addObject:tail]; }
             else if (text.length) [pieces addObject:[formatter stringFromDate:item.posted]];
         }
-        if (wantStats) [pieces addObject:item.stats];
         NSMutableArray<NSString *> *isolated = [NSMutableArray array];
         for (NSString *piece in pieces) [isolated addObject:[NSString stringWithFormat:@"\u2068%@\u2069", piece]];
         text = [isolated componentsJoinedByString:@"  ·  "];
+        // The country is not part of this line: it is its own flag over the download button.
+        SCITTPlaceFlagLabel(button.superview, button, wantStats ? item.stats : nil);
 
         BOOL rtl = labelHost.effectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirectionRightToLeft;
         label.font = [UIFont systemFontOfSize:12 weight:UIFontWeightMedium];
@@ -390,6 +425,9 @@ static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *it
         label.textAlignment = rtl ? NSTextAlignmentRight : NSTextAlignmentLeft;
         label.numberOfLines = 1;
         label.lineBreakMode = NSLineBreakByTruncatingTail;
+        // Shrunk a little before it is cut: the time at the end is the part that must not go.
+        label.adjustsFontSizeToFitWidth = YES;
+        label.minimumScaleFactor = 0.7;
         sciDateAboveName++;
     } else {
         if (wantStats) text = text.length ? [text stringByAppendingFormat:@"\n%@", item.stats] : item.stats;
@@ -399,9 +437,10 @@ static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *it
         label.numberOfLines = 3;
         label.lineBreakMode = NSLineBreakByWordWrapping;
         sciDateOnRail++;
+        SCITTPlaceFlagLabel(button.superview, button, nil);   // the combined label over the button already carries it
     }
     label.text = text;
-    label.hidden = NO;
+    label.hidden = text.length == 0;
     sciDatePlaced++;
     sciDateLast = label.text;
 
@@ -486,19 +525,22 @@ static void SCITTLayoutDateLabel(UILabel *label, UIView *button) {
         // name. "After" is the trailing side, so an Arabic phone puts it to the left of the name.
         UIView *nameButton = SCITTFindNamedDescendant(author, @"AWEPlayInteractionAuthorUserNameButton");
         CGRect name = nameButton ? [host convertRect:nameButton.bounds fromView:nameButton] : CGRectZero;
-        BOOL rtl = host.effectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirectionRightToLeft;
+        // **Which side is measured, not assumed from the phone's language.** On an Arabic phone TikTok mirrors its tab bar and lists but leaves
+        // this info column on the left, name first (seen in the simulator, ar_SA), so the layout direction would have put the date on the wrong
+        // side. The name sits on one half of its row; the date goes to the other side of it.
+        BOOL nameOnLeft = CGRectGetMidX(name) <= CGRectGetMidX(row);
         CGFloat gap = 8;
-        CGFloat x = rtl ? CGRectGetMinX(row) : CGRectGetMaxX(name) + gap;
-        CGFloat room = rtl ? CGRectGetMinX(name) - gap - CGRectGetMinX(row) : CGRectGetMaxX(row) - x;
+        CGFloat x = nameOnLeft ? CGRectGetMaxX(name) + gap : CGRectGetMinX(row);
+        CGFloat room = nameOnLeft ? CGRectGetMaxX(row) - x : CGRectGetMinX(name) - gap - CGRectGetMinX(row);
         CGRect frame;
         if (CGRectGetWidth(name) > 1 && room >= 90) {
-            label.textAlignment = rtl ? NSTextAlignmentRight : NSTextAlignmentLeft;
+            label.textAlignment = nameOnLeft ? NSTextAlignmentLeft : NSTextAlignmentRight;
             frame = CGRectMake(x, CGRectGetMinY(row), room, CGRectGetHeight(row));
             sciDateBeside++;
         } else {
             // A long name leaves no room: above the row, as the first version had it.
             CGFloat height = MAX(ceil([label sizeThatFits:CGSizeMake(CGRectGetWidth(row), 40)].height), 14);
-            label.textAlignment = rtl ? NSTextAlignmentRight : NSTextAlignmentLeft;
+            label.textAlignment = nameOnLeft ? NSTextAlignmentLeft : NSTextAlignmentRight;
             frame = CGRectMake(CGRectGetMinX(row), CGRectGetMinY(row) - height - 1, CGRectGetWidth(row), height);
         }
         if (!CGRectEqualToRect(label.frame, frame)) label.frame = frame;

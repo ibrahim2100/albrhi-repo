@@ -985,14 +985,6 @@ static NSURL *SCITTAudioURLFromModel(id model) {
 //
 // Cleared first, so a model that cannot answer leaves nothing rather than the previous answer.
 //
-/// 1234 -> "1.2K", 1500000 -> "1.5M". The count TikTok itself would round the same way.
-static NSString *SCITTCompactCount(double value) {
-    if (value >= 1e9) return [NSString stringWithFormat:@"%.1fB", value / 1e9];
-    if (value >= 1e6) return [NSString stringWithFormat:@"%.1fM", value / 1e6];
-    if (value >= 1e3) return [NSString stringWithFormat:@"%.1fK", value / 1e3];
-    return [NSString stringWithFormat:@"%.0f", value];
-}
-
 /// A two-letter country code as the flag it draws (regional-indicator letters), or the code itself when it is not two letters.
 static NSString *SCITTFlagFor(NSString *code) {
     if (code.length != 2) return code;
@@ -1006,20 +998,13 @@ static NSString *SCITTFlagFor(NSString *code) {
     return flag;
 }
 
-/// The like count and the region, from `-statistics` -> `-diggCount` and `-region` (both confirmed on 46.4.0). Never throws a missing selector.
+/// The video's region as a flag, from `-region` (confirmed on 46.4.0). Never throws a missing selector. (The like count that used to be read
+/// beside it was removed on the owner's word: nothing here reads `-statistics` any more.)
 static void SCITTCaptureStats(id model) {
     sciPendingStats = nil;
     if (!model) return;
 
     NSMutableArray<NSString *> *parts = [NSMutableArray array];
-    SEL statisticsSel = NSSelectorFromString(@"statistics");
-    id statistics = [model respondsToSelector:statisticsSel] ? ((id (*)(id, SEL))objc_msgSend)(model, statisticsSel) : nil;
-    SEL diggSel = NSSelectorFromString(@"diggCount");
-    id likes = [statistics respondsToSelector:diggSel] ? ((id (*)(id, SEL))objc_msgSend)(statistics, diggSel) : nil;
-    if ([likes respondsToSelector:@selector(doubleValue)] && [likes doubleValue] >= 0) {
-        [parts addObject:[@"♥ " stringByAppendingString:SCITTCompactCount([likes doubleValue])]];
-    }
-
     SEL regionSel = NSSelectorFromString(@"region");
     id region = [model respondsToSelector:regionSel] ? ((id (*)(id, SEL))objc_msgSend)(model, regionSel) : nil;
     if ([region isKindOfClass:[NSString class]] && [region length]) [parts addObject:SCITTFlagFor(region)];

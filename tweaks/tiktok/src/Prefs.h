@@ -180,8 +180,8 @@ static inline BOOL SCIPrefEnabled(NSString *key) {
 #define SCIPrefReadAlert        @"read_alert"
 
 
-/// Likes and country under the publish date: `AWEAwemeModel -statistics` -> `-diggCount`, and `-region`. Drawn in the label the date already
-/// owns, so there is no new view to place. Off by default.
+/// The video's country as a flag (`AWEAwemeModel -region`), above the download button. Off by default. The key keeps the name it had when the
+/// switch also showed the like count, so a setting already made carries over.
 #define SCIPrefVideoStats       @"video_stats"
 
 /// Lift a comment box's length limit to 500 where it was 100 or more (`AWETextInputController -maxLength`, `Q16@0:8`). The server has the last

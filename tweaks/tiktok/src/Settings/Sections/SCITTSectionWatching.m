@@ -71,7 +71,7 @@
                     kSCIRowPref: SCIPrefVideoStats,
                     kSCIRowTitle: SCILocalized(@"row_video_stats"),
                     kSCIRowNote: SCILocalized(@"row_video_stats_note"),
-                    kSCIRowIcon: @"heart.text.square",
+                    kSCIRowIcon: @"flag",
                     kSCIRowColor: [UIColor systemBlueColor],
                 },
             ],

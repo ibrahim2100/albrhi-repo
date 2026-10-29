@@ -11,11 +11,11 @@
 [![Rootless](https://img.shields.io/badge/rootless-supported-success.svg)](#-compatibility)
 [![roothide](https://img.shields.io/badge/roothide-supported-success.svg)](#-compatibility)
 
-[![Albrhi](https://img.shields.io/badge/Albrhi-1.101.22-blueviolet.svg)](suite/CHANGELOG.md)
+[![Albrhi](https://img.shields.io/badge/Albrhi-1.101.23-blueviolet.svg)](suite/CHANGELOG.md)
 [![Instagram](https://img.shields.io/badge/Instagram-4.8.1-orange.svg)](tweaks/instagram/CHANGELOG.md)
 [![YouTube](https://img.shields.io/badge/YouTube-1.42.1-red.svg)](tweaks/youtube/CHANGELOG.md)
 [![X](https://img.shields.io/badge/X-0.22.0-black.svg)](tweaks/twitter/CHANGELOG.md)
-[![TikTok](https://img.shields.io/badge/TikTok-0.26.6-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
+[![TikTok](https://img.shields.io/badge/TikTok-0.26.7-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
 [![YT Music](https://img.shields.io/badge/YT%20Music-0.10.0-FF0000.svg)](tweaks/ytmusic/CHANGELOG.md)
 [![Spotify](https://img.shields.io/badge/Spotify-0.2.5-1DB954.svg)](tweaks/spotify/CHANGELOG.md)
 [![Panel](https://img.shields.io/badge/Panel-0.10.0-8E8E93.svg)](tweaks/panel/CHANGELOG.md)
@@ -125,7 +125,7 @@ Developed by **Ibrahim Ismail AL-Rahn** ([@ibrahim2100](https://github.com/ibrah
 | **[Instagram](#-albrhi-for-instagram)** | Instagram | 4.8.1 | ✅ | downloads, AV1 reels transcoded on the device, a quieter feed, watching stories without a receipt, unsent messages kept and marked |
 | **[YouTube](#-albrhi-for-youtube)** | YouTube | 1.42.1 | ✅ | downloads that survive app updates, their own Download Centre tab, no ads, SponsorBlock, background playback |
 | **[X](#-albrhi-for-x)** | X / Twitter | 0.22.0 | ✅ | media downloads with a button you can place yourself, and fifteen-plus switches for what X does |
-| **[TikTok](#-albrhi-for-tiktok)** | TikTok | 0.26.6 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |
+| **[TikTok](#-albrhi-for-tiktok)** | TikTok | 0.26.7 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |
 | **[YouTube Music](#-albrhi-for-youtube-music)** | YouTube Music | 0.10.0 | ✅ | synced lyrics, saving tracks, no ads, background playback |
 | **[Panel](#-albrhi-panel)** | Settings | 0.10.0 | ✅ | the Albrhi page: a switch per app, a guide, backup |
 | **[Spotify](#-albrhi-for-spotify)** | Spotify | 0.2.5 | — | no ads, no Premium popups, sponsored podcast segments skipped |
