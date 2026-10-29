@@ -236,6 +236,10 @@ static inline BOOL SCIPrefEnabled(NSString *key) {
 /// Reads only what the model already holds. Off by default.
 #define SCIPrefCopyMenu         @"copy_menu"
 
+/// Clean `Library/Caches` and `tmp` when the app starts, as a threshold in megabytes: **absent is off**, 1 is every launch, a larger number
+/// cleans only when the two folders together are over it. See SCITTCache.m for what a pass does, what it leaves and why `gurd_cache` is never touched.
+#define SCIPrefCacheAuto        @"cache_auto_mb"
+
 /// A Save button on the enlarged profile picture (`TTKEnlargeAvatarViewController`). Off by default.
 #define SCIPrefSaveAvatar       @"save_avatar"
 

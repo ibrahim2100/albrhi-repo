@@ -14,6 +14,7 @@
 #import "../Tweak.h"
 #import "../Prefs.h"
 #import "../Localization/SCILocalize.h"
+#import "../Features/Storage/SCITTCache.h"
 #import "shared/src/SCIPanelGate.h"
 
 // MARK: - The identity header
@@ -176,6 +177,16 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
 
+    // A live number in a row's note (the cache size) arrives after the page is drawn; the sections are rebuilt and the list redrawn when it does.
+    __weak typeof(self) weakCache = self;
+    [[NSNotificationCenter defaultCenter] addObserverForName:SCITTCacheDidChange object:nil queue:[NSOperationQueue mainQueue]
+                                                  usingBlock:^(NSNotification *note) {
+        typeof(self) strong = weakCache;
+        if (!strong || !strong.isViewLoaded) return;
+        strong.sections = SCITTSections();
+        [strong.collection reloadData];
+    }];
+
     self.sections = SCITTSections();
     self.title = self.focus ? self.focus[kSCISectionTitle] : SCILocalized(@"title");
     self.view.backgroundColor = [UIColor systemGroupedBackgroundColor];
@@ -288,8 +299,14 @@
         NSString *kind = row[kSCIRowKind];
         BOOL isChoice = [kind isEqualToString:kSCIKindChoice];
         BOOL isLink = [kind isEqualToString:kSCIKindLink];
+        BOOL isAction = [kind isEqualToString:kSCIKindAction];
 
-        if (isChoice) {
+        if (isAction) {
+            // Nothing at the end: a row that acts is told apart by its tint and its note, not by a control that would invite a second kind of tap.
+            content.textProperties.color = SCIAccent();
+            cell.contentConfiguration = content;
+            cell.accessories = @[];
+        } else if (isChoice) {
             // The current value leads the second line, in the label colour: what is chosen is the first thing anybody
             // opening this row wants to know. (As a trailing label it squeezed the text beside it into a narrow column.)
             NSString *current = SCITTChoiceCurrentTitle(row[kSCIRowOptions], row[kSCIRowPref]);
@@ -338,6 +355,7 @@
     // row that opened it.
     self.sections = SCITTSections();
     [self.collection reloadData];
+    SCITTCacheRefreshSize();
 }
 
 - (void)dismissSelf {
@@ -413,6 +431,12 @@
 
     NSDictionary *row = rows[(NSUInteger)indexPath.item];
     NSString *kind = row[kSCIRowKind];
+
+    if ([kind isEqualToString:kSCIKindAction]) {
+        void (^action)(void) = row[kSCIRowAction];
+        if (action) action();
+        return;
+    }
 
     if ([kind isEqualToString:kSCIKindChoice]) {
         SCITTChoiceList *list = [[SCITTChoiceList alloc] initWithTitle:row[kSCIRowTitle] pref:row[kSCIRowPref]

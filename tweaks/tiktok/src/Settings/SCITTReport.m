@@ -12,6 +12,7 @@
 #import "../Features/Browse/SCITTLinks.h"
 #import "../Features/Copy/SCITTCopyMenu.h"
 #import "../Features/Copy/SCITTHold.h"
+#import "../Features/Storage/SCITTCache.h"
 #import "../Features/Speed/SCITTSpeed.h"
 #import "../Features/Lock/SCITTAppLock.h"
 #import "../Features/Feed/SCITTFeedFilters.h"
@@ -129,6 +130,8 @@ static NSDictionary *SCIHeavyRow(NSString *title, NSString *value, NSString *ico
                        @"photo.on.rectangle", [UIColor systemTealColor]),
                 SCIRow(SCILocalized(@"status_browse"), SCITTBrowseReport(),
                        @"safari", [UIColor systemBlueColor]),
+                SCIRow(SCILocalized(@"status_cache"), SCITTCacheReport(),
+                       @"internaldrive", [UIColor systemGreenColor]),
                 SCIRow(SCILocalized(@"status_links"), SCITTLinksReport(),
                        @"safari", [UIColor systemBlueColor]),
                 SCIRow(SCILocalized(@"status_copy"), [NSString stringWithFormat:@"%@ | %@", SCITTCopyReport(), SCITTHoldReport()],

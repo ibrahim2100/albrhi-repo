@@ -35,6 +35,10 @@ extern NSString *const kSCIKindLink;
 /// A row that opens a list of values and keeps the one picked (`kSCIRowPref`, `kSCIRowOptions`). The first option is the
 /// default: it removes the key, so "nothing chosen" and "the default chosen" are the same state on disk.
 extern NSString *const kSCIKindChoice;
+/// A row that does something when tapped and keeps no value: `kSCIRowAction` is a block called on the main thread. Its note is rebuilt every time
+/// the sections are (so it can show a live number), and it takes no part in the section's on/off count.
+extern NSString *const kSCIKindAction;
+extern NSString *const kSCIRowAction;
 extern NSString *const kSCIRowOptions;
 extern NSString *const kSCIRowChoiceFooter;
 extern NSString *const kSCIRowKind;

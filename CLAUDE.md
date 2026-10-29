@@ -1142,6 +1142,13 @@ there costs colours, never the video).
   `ttwstatic.com`, `ibytedtos.com`, `tiktokglobalshop.com`, `capcut.com`), to which `tiktok.com` is added here. **Which door a bio or comment link takes is not known from this machine** (the router's callers are live-room components and `TPPieceParser handleClickableStringPiece:`), so every door counts
   (**one door is measured, though**: `AWE3rdWebContainerService -openURL:dataflowId:` is called three times by `TTKWebRouterUniversalThirdInterceptorV2 -handleBeforeAspect:error:`, the web router's "universal third-party" interceptor, and by `TTKAttributionLinkStickerDisplayHandler -p_openURLWithUniversalLinkOrIAB:linkName:` -- the path a third-party address takes)
   and a foreign address a web view loads with no door having caught it is named with its class chain on the Status screen. Not run on a device.
+- **The download banner has a cancel button (0.26.4), and the banner still takes no touch except that button's.** `SCITTBannerView -hitTest:` answers for the button's circle plus 8 pt and returns nil elsewhere, so the feed keeps scrolling under it (measured in a simulator harness: a tap on the banner body reached the control beneath). Cancelling is
+  an **epoch**: every operation (`+save:`, `+savePhotos:`, `+saveClipFromPicture:…`) notes it at the start and asks "is it still mine?" after every wait; `+cancelAll` bumps it, cancels every request registered in a weak table (`SCITTTrack`, the four shared-session requests) and invalidates the video sessions. Measured against a throttled local server: the
+  connection was dropped on the tap. A late callback must never put the banner back (`-report:ok:since:`, the `cancelled` flag on `SCITTDownload`). What stays: pictures already saved, and the Photos import once the file has fully arrived. Not run on a device.
+- **Cache cleaning (0.26.4, section «Storage») -- what NA9 does, read with REA 2026-10-29, and what this tweak does differently.** NA9's `na9_autoclear_cache` is read in a **constructor** (`__init_offsets` entry `0x7d7a0`, so it runs when the dylib loads, before TikTok's own
+  code) and dispatches `+[TTKHelperTools clearCache:NO]` to a **global background queue**, concurrent with TikTok starting. `+cachePaths` = `Library/Caches`, `Library/Application Support/gurd_cache`, `tmp`; `clearCache:` lists each and `removeItemAtPath:`s every entry; the flag decides whether `gurd_cache` is skipped
+  (launch: skipped; button: not). Its control flow is flattened (`br x9` to the next instruction, targets computed from a table, a word and an XOR key), so the decompiler stops after the first line: the targets were computed by hand from the table and the key. Ours renames entries into one trash folder and empties it afterwards, skips what was written
+  after launch, offers a size threshold instead of "every launch" (a wipe also deletes what was just preloaded for the first swipes), and **never touches `gurd_cache`** (what it holds is not known; its size is in the report). **A cache clean cures a full disk and a corrupted cache, not lag and not hook crashes; do not promise more.** Measured in a simulator with fake folders only.
 - Non-obvious refusals: `PIPOStoreKitHelper -isJailBroken` is not hooked (§2); the `tikwm` path was refused *as the fix, arriving quietly* and shipped as a
   switch once the owner asked knowing the trade — the earlier refusal was a different question, not wrong.
 - **Reviewed against 46.4.0 and 47.1.0 (0.24.0): a hook that "attached" is not a hook that works.** Four findings, all from reading the binary rather than a report. (1) **Class method versus instance method, and a class that
@@ -1294,8 +1301,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.26.3** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.19**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.26.4** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.101.20**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

@@ -19,6 +19,10 @@
 /// than only the last.
 @property (nonatomic, assign) NSUInteger candidateIndex;
 @property (nonatomic, strong) NSMutableArray<NSString *> *rejected;
+
+/// Set by `+cancelAll` and read by every callback that could still arrive: a cancelled transfer must never fetch a next candidate,
+/// import a file or put the banner back.
+@property (nonatomic, assign) BOOL cancelled;
 @end
 
 /// Kept alive by hand while it runs -- an NSURLSession retains its delegate, but
@@ -62,7 +66,64 @@ NSString *SCITTDownloadReport(void) {
     return [NSString stringWithFormat:@"%@ (%.0fs ago)", sciLastDownloadState, ago];
 }
 
+///
+/// **Cancelling a download.**
+///
+/// There is one banner, so there is one thing to cancel: everything that is running. Each operation (a video, a photo post, a clip) notes
+/// the *epoch* when it begins; cancelling bumps the epoch, and every stage that comes after a wait -- the permission prompt, a measuring
+/// request, a fetched picture, the end of a transfer -- asks whether the epoch it began in is still the current one before it goes on.
+/// That is what makes the cancel real rather than a banner that says "cancelled" over a transfer that finishes and saves anyway.
+///
+/// The network is stopped as well as ignored: every request this file makes on a shared session is registered in a weak table, and the
+/// transfers of the video path own their session, which is invalidated. A request cancelled this way completes with an error, which is
+/// what wakes the semaphore a background loop is waiting on.
+static NSUInteger sciCancelEpoch = 0;
+static NSHashTable<NSURLSessionTask *> *sciTrackedTasks = nil;
+
+static NSUInteger SCITTEpoch(void) {
+    @synchronized ([SCITTDownload class]) { return sciCancelEpoch; }
+}
+
+static BOOL SCITTCancelledSince(NSUInteger epoch) {
+    return SCITTEpoch() != epoch;
+}
+
+static void SCITTTrack(NSURLSessionTask *task) {
+    @synchronized ([SCITTDownload class]) {
+        if (!sciTrackedTasks) sciTrackedTasks = [NSHashTable weakObjectsHashTable];
+        [sciTrackedTasks addObject:task];
+    }
+}
+
 @implementation SCITTDownload
+
+/// Stops everything that is running, and tells the banner. Called from the banner's cancel button, on the main thread.
++ (void)cancelAll {
+    NSArray<NSURLSessionTask *> *tasks = nil;
+    NSArray<SCITTDownload *> *running = nil;
+
+    @synchronized ([SCITTDownload class]) {
+        sciCancelEpoch++;
+        tasks = sciTrackedTasks.allObjects;
+        [sciTrackedTasks removeAllObjects];
+    }
+    if (_running) {
+        @synchronized (_running) {
+            running = [_running allObjects];
+            [_running removeAllObjects];
+        }
+    }
+
+    for (SCITTDownload *download in running) {
+        download.cancelled = YES;
+        [download.session invalidateAndCancel];
+    }
+    for (NSURLSessionTask *task in tasks) [task cancel];
+
+    SCITTRecordDownload([NSString stringWithFormat:@"cancelled by the person (%lu transfer(s), %lu request(s) stopped)",
+                         (unsigned long)running.count, (unsigned long)tasks.count]);
+    [SCITTToast finishCancelledWithText:SCILocalized(@"save_cancelled")];
+}
 
 /// Saves every picture of a photo post, in order.
 ///
@@ -165,6 +226,11 @@ NSString *SCITTDownloadReport(void) {
 /// Every previous attempt at quality compared *names* -- which chain, which gear, which
 /// accessor -- and a name is a claim about a file. `Content-Length` is the file.
 ///
+/// Hands the banner its cancel button's action. Idempotent; called as an operation begins so the button never shows without one.
+static void SCITTArmCancel(void) {
+    [SCITTToast setCancelHandler:^{ [SCITTDownload cancelAll]; }];
+}
+
 /// Headers a plain `NSURLSession` request does not send.
 ///
 /// The external HD service answered neither `HEAD` nor a range `GET` and measured 0.0 MB twice
@@ -229,6 +295,7 @@ static NSURL *SCITTExternalHDLink(NSString *identifier) {
         }
         dispatch_semaphore_signal(wait);
     }];
+    SCITTTrack(task);
     [task resume];
 
     dispatch_semaphore_wait(wait, dispatch_time(DISPATCH_TIME_NOW, 15ull * NSEC_PER_SEC));
@@ -263,6 +330,7 @@ static long long SCITTMeasure(NSURL *url, NSString **outKind) {
         }
         dispatch_semaphore_signal(wait);
     }];
+    SCITTTrack(task);
     [task resume];
 
     dispatch_semaphore_wait(wait, dispatch_time(DISPATCH_TIME_NOW, 10ull * NSEC_PER_SEC));
@@ -310,6 +378,7 @@ static long long SCITTMeasureByRange(NSURL *url, NSString **outKind) {
         }
         dispatch_semaphore_signal(wait);
     }];
+    SCITTTrack(task);
     [task resume];
 
     dispatch_semaphore_wait(wait, dispatch_time(DISPATCH_TIME_NOW, 12ull * NSEC_PER_SEC));
@@ -579,6 +648,7 @@ static NSData *SCITTFetchPhoto(NSURL *url, NSString **outNote) {
         dispatch_semaphore_signal(wait);
     }];
 
+    SCITTTrack(task);
     [task resume];
     dispatch_semaphore_wait(wait, dispatch_time(DISPATCH_TIME_NOW, 25ull * NSEC_PER_SEC));
 
@@ -727,13 +797,17 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
 + (void)saveClipFromPicture:(NSArray<NSURL *> *)picture
                        item:(SCITTMediaItem *)item
                     seconds:(NSTimeInterval)seconds {
+    SCITTArmCancel();
+    NSUInteger epoch = SCITTEpoch();
     [PHPhotoLibrary requestAuthorizationForAccessLevel:PHAccessLevelAddOnly
                                                handler:^(PHAuthorizationStatus status) {
         if (status != PHAuthorizationStatusAuthorized && status != PHAuthorizationStatusLimited) {
             SCITTRecordDownload(@"Photos access refused");
-            [self report:SCILocalized(@"save_no_permission") ok:NO];
+            [self report:SCILocalized(@"save_no_permission") ok:NO since:epoch];
             return;
         }
+
+        if (SCITTCancelledSince(epoch)) return;
 
         // Indeterminate rather than a percentage: the work here is a download, a render and an
         // export, and a bar that only knows about the first of the three tells the user the save is
@@ -748,6 +822,7 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
             NSMutableArray<NSString *> *tried = [NSMutableArray array];
 
             for (NSURL *candidate in picture) {
+                if (SCITTCancelledSince(epoch)) return;
                 NSData *stillData = SCITTFetchPhoto(candidate, &note);
                 if (!stillData.length) {
                     [tried addObject:note ?: @"nothing arrived"];
@@ -763,11 +838,16 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
             if (!still) {
                 SCITTRecordDownload([NSString stringWithFormat:@"clip — no readable picture (%@)",
                     [tried componentsJoinedByString:@", "]]);
-                [self report:SCILocalized(@"save_failed") ok:NO];
+                [self report:SCILocalized(@"save_failed") ok:NO since:epoch];
                 return;
             }
 
+            if (SCITTCancelledSince(epoch)) return;
             NSURL *audioFile = SCITTStageAudio(item.audioURL);
+            if (SCITTCancelledSince(epoch)) {
+                if (audioFile) [[NSFileManager defaultManager] removeItemAtURL:audioFile error:NULL];
+                return;
+            }
 
             [SCITTStillVideo renderImage:still
                                 audioURL:audioFile
@@ -778,7 +858,12 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
                 if (!file) {
                     SCITTRecordDownload([NSString stringWithFormat:@"clip — %@",
                         failure ?: @"not written"]);
-                    [self report:SCILocalized(@"save_failed") ok:NO];
+                    [self report:SCILocalized(@"save_failed") ok:NO since:epoch];
+                    return;
+                }
+
+                if (SCITTCancelledSince(epoch)) {
+                    [[NSFileManager defaultManager] removeItemAtURL:file error:NULL];
                     return;
                 }
 
@@ -793,7 +878,7 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
                         : [NSString stringWithFormat:@"clip refused by Photos: %@",
                             error.localizedDescription ?: @"no reason given"]);
 
-                    [self report:SCILocalized(success ? @"audio_done" : @"save_failed") ok:success];
+                    [self report:SCILocalized(success ? @"audio_done" : @"save_failed") ok:success since:epoch];
                 }];
             }];
         });
@@ -814,17 +899,20 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
 /// "saving is broken".
 ///
 + (void)savePhotos:(NSArray<NSArray<NSURL *> *> *)groups {
+    SCITTArmCancel();
+    NSUInteger epoch = SCITTEpoch();
     [PHPhotoLibrary requestAuthorizationForAccessLevel:PHAccessLevelAddOnly
                                                handler:^(PHAuthorizationStatus status) {
         if (status != PHAuthorizationStatusAuthorized &&
             status != PHAuthorizationStatusLimited) {
             SCITTRecordDownload(@"Photos access refused");
             dispatch_async(dispatch_get_main_queue(), ^{
-                [self report:SCILocalized(@"save_no_permission") ok:NO];
+                [self report:SCILocalized(@"save_no_permission") ok:NO since:epoch];
             });
             return;
         }
 
+        if (SCITTCancelledSince(epoch)) return;
         [SCITTToast showText:SCILocalized(@"save_working") symbol:@"photo" progress:0];
 
         dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
@@ -833,6 +921,7 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
             NSMutableSet<NSString *> *ways = [NSMutableSet set];
 
             for (NSArray<NSURL *> *group in groups) {
+                if (SCITTCancelledSince(epoch)) break;
                 //
                 // **For one picture, the biggest readable variant; for a whole album, the first.**
                 //
@@ -869,6 +958,7 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
                     NSMutableDictionary<NSString *, NSNumber *> *sizes = [NSMutableDictionary dictionary];
 
                     for (NSURL *candidate in group) {
+                        if (SCITTCancelledSince(epoch)) break;
                         long long bytes = SCITTMeasure(candidate, NULL);
                         if (bytes <= 0) bytes = SCITTMeasureByRange(candidate, NULL);
                         // A link that will not answer keeps its place rather than sinking: refusing
@@ -898,6 +988,7 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
                 NSString *lastError = nil;
 
                 for (NSURL *url in ordered) {
+                    if (SCITTCancelledSince(epoch)) break;
                     NSString *fetchNote = nil;
                     NSData *data = SCITTFetchPhoto(url, &fetchNote);
                     if (!data.length) {
@@ -942,6 +1033,8 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
                     lastError = error;
                 }
 
+                if (SCITTCancelledSince(epoch)) break;
+
                 if (!done) {
                     // Counted by what actually happened: nothing readable is a different problem
                     // from nothing arriving, and both used to land in one number.
@@ -958,6 +1051,12 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
                 [SCITTToast showText:SCILocalized(@"save_working")
                               symbol:@"photo"
                             progress:(CGFloat)finished / (CGFloat)groups.count];
+            }
+
+            if (SCITTCancelledSince(epoch)) {
+                SCITTRecordDownload([NSString stringWithFormat:@"photo post — cancelled after %lu of %lu saved",
+                                     (unsigned long)saved, (unsigned long)groups.count]);
+                return;
             }
 
             // Counted apart, because a download that never arrived and a library that refused
@@ -980,7 +1079,7 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
                     ? [NSString stringWithFormat:SCILocalized(@"photos_saved_count"),
                        (unsigned long)finalSaved, (unsigned long)groups.count]
                     : SCILocalized(finalSaved ? @"save_done" : @"save_failed");
-                [self report:message ok:(finalSaved == groups.count)];
+                [self report:message ok:(finalSaved == groups.count) since:epoch];
             });
         });
     }];
@@ -1007,6 +1106,8 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
     // the download -- it was the Photos permission callback plus a `HEAD` for every candidate
     // link, up to ten seconds each, all of it ahead of the first pixel of feedback. The work was
     // running; nothing said so. **A button must answer the finger, not the network.**
+    SCITTArmCancel();
+    NSUInteger epoch = SCITTEpoch();
     [SCITTToast showText:SCILocalized(@"save_working") symbol:@"arrow.down.circle" progress:-1];
 
     [PHPhotoLibrary requestAuthorizationForAccessLevel:PHAccessLevelAddOnly
@@ -1014,10 +1115,11 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
         if (status != PHAuthorizationStatusAuthorized &&
             status != PHAuthorizationStatusLimited) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                [self report:SCILocalized(@"save_no_permission") ok:NO];
+                [self report:SCILocalized(@"save_no_permission") ok:NO since:epoch];
             });
             return;
         }
+        if (SCITTCancelledSince(epoch)) return;
 
         // Measured off the main thread: it is one HEAD per link and the feed keeps scrolling.
         dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
@@ -1049,20 +1151,24 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
                 }
             }
 
+            if (SCITTCancelledSince(epoch)) return;
             NSArray<NSURL *> *ordered = [self orderByMeasuredSize:links origins:origins];
+            if (SCITTCancelledSince(epoch)) return;
             if (ordered.count) {
                 item.candidates = ordered;
                 item.url = ordered.firstObject;
             }
 
             dispatch_async(dispatch_get_main_queue(), ^{
-                [self start:item];
+                [self start:item epoch:epoch];
             });
         });
     }];
 }
 
-+ (void)start:(SCITTMediaItem *)item {
++ (void)start:(SCITTMediaItem *)item epoch:(NSUInteger)epoch {
+    if (SCITTCancelledSince(epoch)) return;
+
     static dispatch_once_t once;
     dispatch_once(&once, ^{ _running = [NSMutableSet set]; });
 
@@ -1082,6 +1188,14 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
 
     @synchronized (_running) { [_running addObject:download]; }
 
+    // Cancelled in the moment between the check above and the line above: the sweep may have missed this one, so it is stopped here.
+    if (SCITTCancelledSince(epoch)) {
+        download.cancelled = YES;
+        [download.session invalidateAndCancel];
+        @synchronized (_running) { [_running removeObject:download]; }
+        return;
+    }
+
     [download fetchCurrentCandidate];
 }
 
@@ -1092,6 +1206,7 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
 }
 
 - (void)fetchCurrentCandidate {
+    if (self.cancelled) return;
     NSArray<NSURL *> *links = [self links];
     if (self.candidateIndex >= links.count) {
         // Every candidate fetched and every one of them turned out to be something
@@ -1111,6 +1226,7 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
 
 /// Records why this candidate was not it, then fetches the next one.
 - (void)rejectCandidate:(NSString *)reason {
+    if (self.cancelled) return;
     NSArray<NSURL *> *links = [self links];
     NSURL *url = self.candidateIndex < links.count ? links[self.candidateIndex] : nil;
 
@@ -1138,7 +1254,7 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
                        didWriteData:(int64_t)wrote
                   totalBytesWritten:(int64_t)written
           totalBytesExpectedToWrite:(int64_t)expected {
-    if (expected <= 0) return;
+    if (expected <= 0 || self.cancelled) return;
     double fraction = (double)written / (double)expected;
     dispatch_async(dispatch_get_main_queue(), ^{
         [SCITTToast showText:SCILocalized(@"save_working")
@@ -1150,6 +1266,12 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
 - (void)URLSession:(NSURLSession *)session
       downloadTask:(NSURLSessionDownloadTask *)task
 didFinishDownloadingToURL:(NSURL *)location {
+    // Cancelled while the last bytes were landing: the file is dropped, not imported.
+    if (self.cancelled) {
+        [[NSFileManager defaultManager] removeItemAtURL:location error:NULL];
+        return;
+    }
+
     // An HTTP error answers with a body like any other response, and NSURLSession
     // hands that body over as a perfectly successful download -- so a 403 on the
     // resolved link arrives here as an error page saved with a .mp4 name, which
@@ -1248,7 +1370,7 @@ didFinishDownloadingToURL:(NSURL *)location {
 - (void)URLSession:(NSURLSession *)session
                     task:(NSURLSessionTask *)task
     didCompleteWithError:(NSError *)error {
-    if (!error) return;
+    if (!error || self.cancelled) return;
     // A transfer that failed outright is a rejected candidate like any other -- the
     // next link in the list may well be reachable when this one was not.
     [self rejectCandidate:[NSString stringWithFormat:@"transfer failed: %@",
@@ -1256,7 +1378,9 @@ didFinishDownloadingToURL:(NSURL *)location {
 }
 
 - (void)finish:(BOOL)success message:(NSString *)message {
+    if (self.cancelled) return;
     dispatch_async(dispatch_get_main_queue(), ^{
+        if (self.cancelled) return;
         // Left to `+report:` below, which turns the banner into its finished state rather than
         // taking it away and putting a second one back.
 
@@ -1269,6 +1393,12 @@ didFinishDownloadingToURL:(NSURL *)location {
 }
 
 + (void)report:(NSString *)message ok:(BOOL)ok {
+    [SCITTToast finishWithText:message ok:ok];
+}
+
+/// The same, unless the person cancelled after the operation began: a result that arrives late must not replace the "cancelled" banner.
++ (void)report:(NSString *)message ok:(BOOL)ok since:(NSUInteger)epoch {
+    if (SCITTCancelledSince(epoch)) return;
     [SCITTToast finishWithText:message ok:ok];
 }
 
