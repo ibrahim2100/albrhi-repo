@@ -4,6 +4,7 @@
 #
 #   bash tools/sim-install.sh <decrypted.ipa> [<dylib>] [<simulator name or UDID>]
 #   bash tools/sim-install.sh ~/Downloads/com.zhiliaoapp.musically_47.1.0_und3fined.ipa ~/Desktop/Albrhi-Dylibs/TikTok_AlbrhiTT_0.26.4.dylib
+#   SIM_KEEP_DATA=1 bash tools/sim-install.sh ...    # install over the existing copy: its terms, onboarding and preferences stay
 #
 # **Why this works at all.** An Apple-silicon simulator runs arm64 code natively. What stops a device build loading in it is only the
 # *platform* stamped in each Mach-O (`LC_BUILD_VERSION`: iOS vs iOS Simulator), so every Mach-O in the bundle is re-stamped with `vtool` and
@@ -109,7 +110,9 @@ codesign -f -s - "$APP" >/dev/null 2>&1
 
 echo "==> installing and launching on $SIM"
 xcrun simctl terminate "$SIM" "$BUNDLE_ID" >/dev/null 2>&1 || true
-xcrun simctl uninstall "$SIM" "$BUNDLE_ID" >/dev/null 2>&1 || true
+# A fresh install erases the app's data: its terms, its onboarding, every preference the tweak wrote. SIM_KEEP_DATA=1 installs over
+# the existing copy instead, which keeps the data container -- the way to try a rebuilt dylib without clicking through them again.
+[ -n "${SIM_KEEP_DATA:-}" ] || xcrun simctl uninstall "$SIM" "$BUNDLE_ID" >/dev/null 2>&1 || true
 xcrun simctl install "$SIM" "$APP"
 xcrun simctl launch "$SIM" "$BUNDLE_ID"
 cat <<MSG
