@@ -112,6 +112,11 @@ static NSUInteger sciDateOff = 0;
 static NSUInteger sciDateNoHost = 0;
 static NSUInteger sciDateNoDate = 0;
 static NSUInteger sciDatePlaced = 0;
+static NSUInteger sciDateAboveName = 0;     // drawn above the account name, in the info column
+static NSUInteger sciDateBeside = 0;        // laid out beside the account name (the rest of the author-row draws went above the row)
+static NSUInteger sciDateOnRail = 0;        // no author row found: drawn over the download button, as before
+static BOOL sciDateRetrying = NO;           // inside a retry: its counter must not be reset by its own call
+static NSString *sciDateAuthorWhy = nil;    // why the last search for the author row found nothing
 static NSString *sciDateLast = nil;
 
 ///
@@ -156,9 +161,15 @@ static NSString *sciDateLast = nil;
 //
 @interface SCITTDateLabel : UILabel
 @property (nonatomic, weak) UIView *sciButton;
+/// The feed's author row (`AWEPlayInteractionAuthorView`) when the label is drawn above the account name; nil when it is drawn over the button.
+@property (nonatomic, weak) UIView *sciAuthor;
+/// What the label was last bound to, so that a bind that found no author row yet can be made again a moment later.
+@property (nonatomic, strong) SCITTMediaItem *sciItem;
+@property (nonatomic, assign) NSInteger sciRetries;
 @end
 
 static void SCITTLayoutDateLabel(UILabel *label, UIView *button);
+static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *item);
 
 @implementation SCITTDateLabel
 
@@ -177,6 +188,52 @@ static void SCITTLayoutDateLabel(UILabel *label, UIView *button);
 }
 
 @end
+
+/// The view controller a view is drawn by: the first one up its responder chain.
+static UIViewController *SCITTControllerOfView(UIView *view) {
+    UIResponder *responder = view;
+    for (NSInteger i = 0; responder && i < 30; i++, responder = responder.nextResponder) {
+        if ([responder isKindOfClass:[UIViewController class]]) return (UIViewController *)responder;
+    }
+    return nil;
+}
+
+/// TikTok's author row for the video this button belongs to: the nearest ancestor of the button that holds one, searched downward and bounded
+/// (a cell is a few hundred views). The row is `AWEPlayInteractionAuthorView`, its container `TTKFeedPassthroughStackView`, in the info column
+/// at the bottom left that also holds the caption (read off the live hierarchy in the simulator, 47.1.0). Nil when it is not there.
+static UIView *SCITTFindAuthorView(UIView *button) {
+    static Class authorClass = Nil;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ authorClass = NSClassFromString(@"AWEPlayInteractionAuthorView"); });
+    if (!authorClass || !button) { sciDateAuthorWhy = @"the author row class is not in this build"; return nil; }
+
+    // **Only the row that belongs to the same controller as the button.** Climbing far enough reaches a container that also holds the
+    // next and the previous video's cells, and the first row found there could be a neighbour's: a date over somebody else's name.
+    UIViewController *owner = SCITTControllerOfView(button);
+    if (!owner) { sciDateAuthorWhy = @"the button has no view controller above it"; return nil; }
+
+    NSUInteger mismatched = 0, visited = 0;
+    UIView *ancestor = button.superview;
+    for (NSInteger up = 0; ancestor && up < 8; up++, ancestor = ancestor.superview) {
+        NSMutableArray<UIView *> *queue = [NSMutableArray arrayWithObject:ancestor];
+        NSUInteger seen = 0;
+        for (NSUInteger i = 0; i < queue.count && seen < 4000; i++, seen++) {
+            UIView *view = queue[i];
+            visited++;
+            if ([view isKindOfClass:authorClass]) {
+                if (SCITTControllerOfView(view) == owner) return view;
+                mismatched++;
+                continue;   // another video's row: not this button's, and nothing below it is either
+            }
+            // The sticker layers fill the whole screen with views that never hold an account name.
+            NSString *name = NSStringFromClass([view class]);
+            if ([name hasPrefix:@"ACCSticker"] || [name hasPrefix:@"TTKSticker"] || [name isEqualToString:@"TTKFeedRightInteractionStackView"]) continue;
+            for (UIView *child in view.subviews) [queue addObject:child];
+        }
+    }
+    sciDateAuthorWhy = [NSString stringWithFormat:@"not found after %lu views (%lu belonged to another controller)", (unsigned long)visited, (unsigned long)mismatched];
+    return nil;
+}
 
 static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *item) {
     //
@@ -209,7 +266,15 @@ static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *it
         return;
     }
 
-    SCITTDateLabel *label = (SCITTDateLabel *)[host viewWithTag:kSCIDateTag];
+    // **Above the account name when the feed's author row can be found, over the button when it cannot.** The row is TikTok's, so it is only
+    // asked where it is and never moved: the label is a sibling of it, in the same container, at a frame this code computes from the row's.
+    UIView *author = SCITTFindAuthorView(button);
+    UIView *labelHost = author.superview ?: host;
+    SCITTDateLabel *label = (SCITTDateLabel *)[labelHost viewWithTag:kSCIDateTag];
+    if (author && host != labelHost) {
+        // The one drawn over the button by an earlier bind of this cell would be a second date.
+        [[host viewWithTag:kSCIDateTag] removeFromSuperview];
+    }
 
     // The date and the stats line share this label: it is the one frame this code owns over a video, and a second label would be a second
     // thing to place against the same button.
@@ -251,7 +316,7 @@ static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *it
         label.layer.shadowOpacity = 0.6;
         label.layer.shadowRadius = 2;
 
-        [host addSubview:label];
+        [labelHost addSubview:label];
     }
 
     // One formatter, kept: building an NSDateFormatter is expensive and this runs on every cell
@@ -306,7 +371,35 @@ static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *it
         }
     }
 
-    if (wantStats) text = text.length ? [text stringByAppendingFormat:@"\n%@", item.stats] : item.stats;
+    if (author) {
+        // One quiet line: "22 Oct 2026 · 3:50 PM · ♥ 86.7K 🇸🇦". Each piece is wrapped in a bidi isolate so a Latin date or a count beside an
+        // Arabic one cannot merge into one run and read backwards (CLAUDE.md 4.5).
+        NSMutableArray<NSString *> *pieces = [NSMutableArray array];
+        if (wantDate) {
+            if (head.length && tail.length && [text hasPrefix:head]) { [pieces addObject:head]; [pieces addObject:tail]; }
+            else if (text.length) [pieces addObject:[formatter stringFromDate:item.posted]];
+        }
+        if (wantStats) [pieces addObject:item.stats];
+        NSMutableArray<NSString *> *isolated = [NSMutableArray array];
+        for (NSString *piece in pieces) [isolated addObject:[NSString stringWithFormat:@"\u2068%@\u2069", piece]];
+        text = [isolated componentsJoinedByString:@"  ·  "];
+
+        BOOL rtl = labelHost.effectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirectionRightToLeft;
+        label.font = [UIFont systemFontOfSize:12 weight:UIFontWeightMedium];
+        label.textColor = [UIColor colorWithWhite:1 alpha:0.82];
+        label.textAlignment = rtl ? NSTextAlignmentRight : NSTextAlignmentLeft;
+        label.numberOfLines = 1;
+        label.lineBreakMode = NSLineBreakByTruncatingTail;
+        sciDateAboveName++;
+    } else {
+        if (wantStats) text = text.length ? [text stringByAppendingFormat:@"\n%@", item.stats] : item.stats;
+        label.font = [UIFont systemFontOfSize:10 weight:UIFontWeightSemibold];
+        label.textColor = [UIColor whiteColor];
+        label.textAlignment = NSTextAlignmentCenter;
+        label.numberOfLines = 3;
+        label.lineBreakMode = NSLineBreakByWordWrapping;
+        sciDateOnRail++;
+    }
     label.text = text;
     label.hidden = NO;
     sciDatePlaced++;
@@ -338,14 +431,85 @@ static void SCITTPlaceDateLabel(UIView *host, UIView *button, SCITTMediaItem *it
     // The button it belongs to, re-read on every bind because a recycled cell hands this label a
     // different button than the one it was created for.
     label.sciButton = button;
+    label.sciAuthor = author;
+    label.sciItem = item;
     SCITTLayoutDateLabel(label, button);
+
+    // **TikTok fills the author row after it hands the button its model**, so the first search at a bind can find an empty column (68 views, none of
+    // them the row: seen with the live hierarchy). A miss is asked again a moment later, three times at most, and a bind that came in meanwhile
+    // (a recycled cell, another video) cancels the old attempt because the label no longer carries the item the attempt was for.
+    if (!sciDateRetrying) label.sciRetries = 0;
+    if (!author && label.sciRetries < 3) {
+        static const double delays[3] = {0.15, 0.5, 1.2};
+        double wait = delays[label.sciRetries];
+        label.sciRetries++;
+        __weak SCITTDateLabel *weakLabel = label;
+        __weak UIView *weakButton = button;
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(wait * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            SCITTDateLabel *current = weakLabel;
+            UIView *liveButton = weakButton;
+            if (!current || !liveButton || current.sciItem != item || current.sciAuthor || !liveButton.superview) return;
+            sciDateRetrying = YES;
+            SCITTPlaceDateLabel(liveButton.superview, liveButton, item);
+            sciDateRetrying = NO;
+        });
+    }
 }
 
 //
 // **The measurement itself, in one place, callable whenever the numbers become true.**
 //
+/// The first descendant of `root` whose class has this name, breadth first and bounded; nil when there is none.
+static UIView *SCITTFindNamedDescendant(UIView *root, NSString *className) {
+    Class wanted = NSClassFromString(className);
+    if (!wanted || !root) return nil;
+    NSMutableArray<UIView *> *queue = [NSMutableArray arrayWithObject:root];
+    for (NSUInteger i = 0; i < queue.count && i < 60; i++) {
+        UIView *view = queue[i];
+        if ([view isKindOfClass:wanted]) return view;
+        [queue addObjectsFromArray:view.subviews];
+    }
+    return nil;
+}
+
 static void SCITTLayoutDateLabel(UILabel *label, UIView *button) {
     UIView *host = label.superview;
+
+    // Above the account name: a frame computed from TikTok's author row, in the container that holds it.
+    UIView *author = [label isKindOfClass:[SCITTDateLabel class]] ? ((SCITTDateLabel *)label).sciAuthor : nil;
+    if (author && host && author.superview == host) {
+        CGRect row = author.frame;
+        if (CGRectGetWidth(row) < 1 || CGRectGetHeight(row) < 1) return;   // not laid out yet: it calls back when it is
+
+        // **Beside the account name, on its own line: the name's button is found inside the row and the label takes the room after it.**
+        // Above the row it met TikTok's topic chip ("Anime . ONE PIECE") on videos that have one; the row itself is free to the side of the
+        // name. "After" is the trailing side, so an Arabic phone puts it to the left of the name.
+        UIView *nameButton = SCITTFindNamedDescendant(author, @"AWEPlayInteractionAuthorUserNameButton");
+        CGRect name = nameButton ? [host convertRect:nameButton.bounds fromView:nameButton] : CGRectZero;
+        BOOL rtl = host.effectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirectionRightToLeft;
+        CGFloat gap = 8;
+        CGFloat x = rtl ? CGRectGetMinX(row) : CGRectGetMaxX(name) + gap;
+        CGFloat room = rtl ? CGRectGetMinX(name) - gap - CGRectGetMinX(row) : CGRectGetMaxX(row) - x;
+        CGRect frame;
+        if (CGRectGetWidth(name) > 1 && room >= 90) {
+            label.textAlignment = rtl ? NSTextAlignmentRight : NSTextAlignmentLeft;
+            frame = CGRectMake(x, CGRectGetMinY(row), room, CGRectGetHeight(row));
+            sciDateBeside++;
+        } else {
+            // A long name leaves no room: above the row, as the first version had it.
+            CGFloat height = MAX(ceil([label sizeThatFits:CGSizeMake(CGRectGetWidth(row), 40)].height), 14);
+            label.textAlignment = rtl ? NSTextAlignmentRight : NSTextAlignmentLeft;
+            frame = CGRectMake(CGRectGetMinX(row), CGRectGetMinY(row) - height - 1, CGRectGetWidth(row), height);
+        }
+        if (!CGRectEqualToRect(label.frame, frame)) label.frame = frame;
+
+        // The info column clips by default in places; this line sits above the row it belongs to, outside its box.
+        UIView *up = host;
+        for (NSInteger i = 0; up && i < 4; i++, up = up.superview) if (up.clipsToBounds) up.clipsToBounds = NO;
+        if (host.subviews.lastObject != label) [host bringSubviewToFront:label];
+        return;
+    }
+
     if (!host || !button || button.superview != host) return;
 
     CGRect b = button.frame;
@@ -410,9 +574,10 @@ static void SCITTLayoutDateLabel(UILabel *label, UIView *button) {
 /// this cost seconds rather than five minutes.
 NSString *SCITTDateReport(void) {
     return [NSString stringWithFormat:
-            @"%lu call(s) → %lu with no host yet → %lu off → %lu without a date → %lu drawn%@",
+            @"%lu call(s) → %lu with no host yet → %lu off → %lu without a date → %lu drawn (%lu on the author row, %lu of the layouts beside the name, %lu over the button%@)%@",
             (unsigned long)sciDateCalls, (unsigned long)sciDateNoHost, (unsigned long)sciDateOff,
-            (unsigned long)sciDateNoDate, (unsigned long)sciDatePlaced,
+            (unsigned long)sciDateNoDate, (unsigned long)sciDatePlaced, (unsigned long)sciDateAboveName, (unsigned long)sciDateBeside, (unsigned long)sciDateOnRail,
+            sciDateAuthorWhy.length ? [@"; last miss: " stringByAppendingString:sciDateAuthorWhy] : @"",
             sciDateLast.length ? [@" — last: " stringByAppendingString:sciDateLast] : @""];
 }
 
