@@ -882,6 +882,20 @@ static BOOL SCITTHoldsClass(UIView *view, Class wanted) {
     return NO;
 }
 
+/// Where the button belongs among a rail's arranged items: in front of the item before the music disc (the share item), or NSNotFound while the
+/// disc is not in the rail yet. **TikTok fills the rail after the first layout** (seen in the simulator: the button placed on a half-built rail
+/// stayed at index 0, above the avatar, for the whole video), so this is asked on every layout and the button is moved when it is wrong.
+static NSUInteger SCITTDesiredRailIndex(UIStackView *stack, UIView *button) {
+    Class musicClass = NSClassFromString(@"AWEPlayInteractionMusicView");
+    if (!musicClass) return NSNotFound;
+    NSMutableArray<UIView *> *others = [NSMutableArray array];
+    for (UIView *item in stack.arrangedSubviews) if (item != button) [others addObject:item];
+    for (NSUInteger i = 0; i < others.count; i++) {
+        if (SCITTHoldsClass(others[i], musicClass)) return i >= 1 ? i - 1 : 0;
+    }
+    return NSNotFound;
+}
+
 static void SCITTPlaceRailButton(UIStackView *stack) {
     if (!SCIPrefEnabled(SCIPrefDownloadButton)) return;
 
@@ -926,6 +940,13 @@ static void SCITTPlaceRailButton(UIStackView *stack) {
         // Visibility follows the rail itself, which is synced separately. Hidden here only when
         // there is genuinely nothing to save.
         objc_setAssociatedObject(existing, kSCIItemKey, item, OBJC_ASSOCIATION_RETAIN_NONATOMIC);   // nil when there is nothing to save: the button then hides
+        NSUInteger wanted = SCITTDesiredRailIndex(stack, existing);
+        NSUInteger now = [stack.arrangedSubviews indexOfObject:existing];
+        if (wanted != NSNotFound && now != NSNotFound && now != wanted) {
+            [stack removeArrangedSubview:existing];
+            [stack insertArrangedSubview:existing atIndex:MIN(wanted, stack.arrangedSubviews.count)];
+            sciRailPlacement = [NSString stringWithFormat:@"moved to index %lu (the rail had filled in)", (unsigned long)wanted];
+        }
         SCITTApplyRailVisibility(stack);
         SCITTRaiseRailButton(stack, existing);
         return;
