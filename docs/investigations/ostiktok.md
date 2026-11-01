@@ -104,3 +104,11 @@ sensitive).
 4. The unanswered question that would decide how much of the above can be trusted: what each replacement *returns*. That needs the
    decompiler, which needs a Ghidra run that finishes (headless, with `Decompiler Switch Analysis` and `Decompiler Parameter ID` off,
    as noted in §7) or a hook table recovered the way NA9's was (§5.4). Both would read protected code and should be asked about first.
+
+## What was built from it (TikTok 0.27.0, 2026-11-01), and what was not
+
+Nine of the ten rows the owner picked, plus the confirmation, are in `tweaks/tiktok/src/Features/{Clean,Search,Comments}` and `Confirm`: surveys, Tako, floating promotions, bulletin-board cards, search history, the sensitive-content overlay, comment search, comment translation, and comment like and dislike confirmations. Each is the *decision* TikTok's own code asks, read from 47.4.0, and each is a switch that is off by default. How each was found, who asks it and what was seen in the simulator is CLAUDE.md §5.4 and the 0.27.0 changelog; none of OSTikTok's protected code was read for it.
+
+- **Already ours, and not the same thing:** "Hide TikBot" removes the AI *chat button* on the feed rail (`TTKPlayInteractionTikBotElement`); Tako is the assistant behind it (entrance above the avatars, a bar under videos, search, comments). `TTKFeedTikBotHelper -shouldShowTikBotButtonWithModel:context:` calls the Tako gate, so hiding Tako also removes the TikBot button.
+- **Not built:** comment-sticker download. `+[TTKCommentStickerInteractionHandler handleStickerLongPressWithBuilder:]` takes a builder block and its body goes through `objc_msgSend$` stubs with no names, so how the menu is made is unread; `+stickerItemFromCommentModel:` is the one thing known (it turns a comment model into the sticker item, `AWECommentStickerData` with `animatedUrl` and `staticUrl`). PiP was left out at the owner's word.
+- **Left alone on purpose:** the messages-search, profile-search and inbox-search histories (their getters are what their own saves merge into); the inbox variant of the board banner question (it returns an object, not a BOOL); the bulletin-board invitation list in the inbox (real notifications, a user-opened page).

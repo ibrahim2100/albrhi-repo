@@ -15,6 +15,9 @@
 #import "Features/Profile/SCITTProfileBackground.h"
 #import "Features/Profile/SCITTAvatarSave.h"
 #import "Features/Browse/SCITTBrowse.h"
+#import "Features/Clean/SCITTClean.h"
+#import "Features/Search/SCITTSearchHistory.h"
+#import "Features/Comments/SCITTComments.h"
 #import "Features/Browse/SCITTLinks.h"
 #import "Features/Copy/SCITTHold.h"
 #import "Features/Storage/SCITTCache.h"
@@ -25,7 +28,7 @@
 #import "Settings/SCITTSettingsEntry.h"
 #import "Settings/SCITTGesture.h"
 
-NSString *SCIVersionString = @"v0.26.11";  // AlbrhiTT
+NSString *SCIVersionString = @"v0.27.0";  // AlbrhiTT
 
 ///
 /// TESTED ON TikTok 46.4.0. Every class here was confirmed present in that build's own
@@ -86,6 +89,18 @@ NSString *SCIVersionString = @"v0.26.11";  // AlbrhiTT
         SCIPrefLongBio: @NO,
         SCIPrefCopyMenu: @NO,
         SCIPrefSaveAvatar: @NO,
+        // The ten things this release adds are all off: each refuses a question TikTok asks or turns on something TikTok keeps behind a flag,
+        // and nobody asked for any of it until they turn it on.
+        SCIPrefNoSurveys: @NO,
+        SCIPrefHideTako: @NO,
+        SCIPrefHidePendants: @NO,
+        SCIPrefHideBoards: @NO,
+        SCIPrefNoSensitiveMask: @NO,
+        SCIPrefHideSearchHistory: @NO,
+        SCIPrefConfirmCommentLike: @NO,
+        SCIPrefConfirmCommentDislike: @NO,
+        SCIPrefCommentSearch: @NO,
+        SCIPrefCommentTranslate: @NO,
     }];
 
     NSLog(@"[AlbrhiTT] %@ loaded into %@", SCIVersionString,
@@ -115,6 +130,9 @@ NSString *SCIVersionString = @"v0.26.11";  // AlbrhiTT
     SCITTInstallProfileBackground();
     SCITTInstallCache();
     SCITTInstallBrowse();
+    SCITTInstallClean();
+    SCITTInstallSearchHistory();
+    SCITTInstallComments();
     SCITTInstallLinks();
     SCITTInstallHold();
     SCITTInstallAvatarSave();

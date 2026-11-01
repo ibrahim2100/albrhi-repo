@@ -1,4 +1,5 @@
 #import <UIKit/UIKit.h>
+#import <objc/runtime.h>
 #import "SCITTConfirm.h"
 #import "../../Prefs.h"
 #import "../../SCILog.h"
@@ -42,6 +43,18 @@
 
 @interface AWEIMProfileRelationView : UIView
 - (void)p_didTapFollowButton;
+@end
+
+// A comment's heart and thumbs-down. Both are target-actions of the cell (`-onLikeAction:` / `-onDislikeAction:`, `v24@0:8@16`, read
+// from TikTok 47.4.0); the model is the cell's `-commentModel` and says whether the heart is already on (`-userDigged`, `B16@0:8`).
+@interface AWECommentModel : NSObject
+- (BOOL)userDigged;
+@end
+
+@interface AWECommentPanelBaseCell : UITableViewCell
+- (void)onLikeAction:(id)sender;
+- (void)onDislikeAction:(id)sender;
+- (id)commentModel;
 @end
 
 /// Raised only while a confirmed action is being replayed.
@@ -183,6 +196,49 @@ static void SCITTAsk(NSString *title, NSString *symbol, void (^proceed)(void)) {
 %end
 
 
+%group ConfirmComments
+
+%hook AWECommentPanelBaseCell
+
+- (void)onLikeAction:(id)sender {
+    if (sciReplaying || !SCIPrefEnabled(SCIPrefConfirmCommentLike)) {
+        %orig;
+        return;
+    }
+
+    // Taking a heart back is never asked about -- the same rule as an unlike or an unfollow on the video. When the model cannot say
+    // (a build that renamed the getter), the tap is asked about: a question too many is better than a heart nobody meant.
+    id model = [self respondsToSelector:@selector(commentModel)] ? [self commentModel] : nil;
+    BOOL alreadyLiked = model && [model respondsToSelector:@selector(userDigged)] && [(AWECommentModel *)model userDigged];
+    if (alreadyLiked) {
+        %orig;
+        return;
+    }
+
+    SCITTAsk(SCILocalized(@"confirm_comment_like_title"), @"heart.fill", ^{
+        sciReplaying = YES;
+        [self onLikeAction:sender];
+        sciReplaying = NO;
+    });
+}
+
+- (void)onDislikeAction:(id)sender {
+    if (sciReplaying || !SCIPrefEnabled(SCIPrefConfirmCommentDislike)) {
+        %orig;
+        return;
+    }
+
+    SCITTAsk(SCILocalized(@"confirm_comment_dislike_title"), @"hand.thumbsdown.fill", ^{
+        sciReplaying = YES;
+        [self onDislikeAction:sender];
+        sciReplaying = NO;
+    });
+}
+
+%end
+%end
+
+
 void SCITTInstallConfirm(void) {
     sciAttached = [NSMutableArray array];
 
@@ -193,6 +249,17 @@ void SCITTInstallConfirm(void) {
     if (NSClassFromString(@"AWEPlayInteractionUserAvatarElement")) [sciAttached addObject:@"follow (feed)"];
     if (NSClassFromString(@"AWEIMProfileRelationView")) [sciAttached addObject:@"follow (profile)"];
 
+    // The comment cell is its own group: a build whose cell lacks either action must not cost the video's like and follow.
+    Class cell = NSClassFromString(@"AWECommentPanelBaseCell");
+    Method like = cell ? class_getInstanceMethod(cell, sel_registerName("onLikeAction:")) : NULL;
+    Method dislike = cell ? class_getInstanceMethod(cell, sel_registerName("onDislikeAction:")) : NULL;
+    const char *likeTypes = like ? method_getTypeEncoding(like) : NULL;
+    const char *dislikeTypes = dislike ? method_getTypeEncoding(dislike) : NULL;
+    if (likeTypes && dislikeTypes && strcmp(likeTypes, "v24@0:8@16") == 0 && strcmp(dislikeTypes, "v24@0:8@16") == 0) {
+        %init(ConfirmComments);
+        [sciAttached addObject:@"comment like/dislike"];
+    }
+
     %init(Confirm);
     SCILogV(@"confirmations installed: %@", [sciAttached componentsJoinedByString:@", "]);
 }
@@ -202,9 +269,11 @@ NSString *SCITTConfirmReport(void) {
         ? [sciAttached componentsJoinedByString:@", "]
         : @"no confirmation class in this build";
 
-    NSString *on = [NSString stringWithFormat:@"like %@ · follow %@",
+    NSString *on = [NSString stringWithFormat:@"like %@ · follow %@ · comment like %@ · comment dislike %@",
         SCIPrefEnabled(SCIPrefConfirmLike) ? @"on" : @"off",
-        SCIPrefEnabled(SCIPrefConfirmFollow) ? @"on" : @"off"];
+        SCIPrefEnabled(SCIPrefConfirmFollow) ? @"on" : @"off",
+        SCIPrefEnabled(SCIPrefConfirmCommentLike) ? @"on" : @"off",
+        SCIPrefEnabled(SCIPrefConfirmCommentDislike) ? @"on" : @"off"];
 
     // Three counters, not one. "It never asked" and "it asked and I cancelled every time" are the
     // same number of likes and completely different findings -- the tally-versus-snapshot rule from

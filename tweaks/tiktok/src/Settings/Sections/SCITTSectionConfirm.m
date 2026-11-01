@@ -53,6 +53,22 @@
                     kSCIRowIcon: @"person.badge.plus",
                     kSCIRowColor: [UIColor systemPinkColor],
                 },
+                @{
+                    kSCIRowKind: kSCIKindSwitch,
+                    kSCIRowPref: SCIPrefConfirmCommentLike,
+                    kSCIRowTitle: SCILocalized(@"row_confirm_comment_like"),
+                    kSCIRowNote: SCILocalized(@"row_confirm_comment_like_note"),
+                    kSCIRowIcon: @"text.bubble.fill",
+                    kSCIRowColor: [UIColor systemRedColor],
+                },
+                @{
+                    kSCIRowKind: kSCIKindSwitch,
+                    kSCIRowPref: SCIPrefConfirmCommentDislike,
+                    kSCIRowTitle: SCILocalized(@"row_confirm_comment_dislike"),
+                    kSCIRowNote: SCILocalized(@"row_confirm_comment_dislike_note"),
+                    kSCIRowIcon: @"hand.thumbsdown.fill",
+                    kSCIRowColor: [UIColor systemOrangeColor],
+                },
             ],
         };
     });

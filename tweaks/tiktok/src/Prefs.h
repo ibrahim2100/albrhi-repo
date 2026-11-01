@@ -243,3 +243,38 @@ static inline BOOL SCIPrefEnabled(NSString *key) {
 /// A Save button on the enlarged profile picture (`TTKEnlargeAvatarViewController`). Off by default.
 #define SCIPrefSaveAvatar       @"save_avatar"
 
+/// Refuse the feed surveys: `TIKTOKFeedSurveyManager -canShowSurvey:preModel:playInteractionContext:` and the preload variant, the three
+/// survey configs, and the shop's `TTKCommerceSurveyService -canShowSurvey:` answer NO. Off by default.
+#define SCIPrefNoSurveys        @"no_surveys"
+
+/// Hide TikTok's AI assistant (Tako): its button above the avatars, its prompt bubble and bottom bar and banner in the feed, its entrance
+/// on the search tab bar and its answer card in results, and its place in the comments. Each is a "should this be shown" question answered NO.
+/// Off by default.
+#define SCIPrefHideTako         @"hide_tako"
+
+/// Refuse every floating promotion badge: `TTKPendantUIManager -tryAddPendantWithController:inContainer:` (both variants) adds nothing and
+/// `TTKCampaignPendantManager -couldShowPendantBubbleWithType:` answers NO. Off by default.
+#define SCIPrefHidePendants     @"hide_pendants"
+
+/// Hide the bulletin-board card under a video (`TTKFeedBottomBarBulletinBoardViewManager -shouldShowWithData:`) and the "create a board" banner
+/// on a profile. Boards the person follows and the invitations in the inbox are not touched. Off by default.
+#define SCIPrefHideBoards       @"hide_boards"
+
+/// Do not build the sensitive-content overlay: `AWEPlayInteractionServerDerivedMaskViewManager -updateServerDerivedMaskView` and
+/// `-handleUpdateServerDerivedMaskView:` do nothing. What the server withholds stays withheld. Off by default.
+#define SCIPrefNoSensitiveMask  @"no_sensitive_mask"
+
+/// Hide the search history: `TTKSearchHistoryManager`'s public `fetch…` reads and `TTKECSearchHistoryManager -getHistoryKeywords…` answer an
+/// empty array. Nothing is deleted and saving is untouched. Off by default.
+#define SCIPrefHideSearchHistory @"hide_search_history"
+
+/// Ask before liking / before disliking a comment (`AWECommentPanelBaseCell -onLikeAction:` / `-onDislikeAction:`). A like already on is never
+/// asked about. Off by default, both.
+#define SCIPrefConfirmCommentLike    @"confirm_comment_like"
+#define SCIPrefConfirmCommentDislike @"confirm_comment_dislike"
+
+/// Turn on TikTok's own comment search icon (`+[TTKABTest searchCommentIconEnabled]` answers YES) and its translate-all button
+/// (`AWECommentsTranslationController -isTranslationButtonDisplayEnabled` answers YES). Whether the server then serves them is TikTok's. Off by default.
+#define SCIPrefCommentSearch    @"comment_search"
+#define SCIPrefCommentTranslate @"comment_translate"
+

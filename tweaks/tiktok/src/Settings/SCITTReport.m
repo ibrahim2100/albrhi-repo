@@ -10,6 +10,9 @@
 #import "../Features/Profile/SCITTAvatarSave.h"
 #import "../Features/Browse/SCITTBrowse.h"
 #import "../Features/Browse/SCITTLinks.h"
+#import "../Features/Clean/SCITTClean.h"
+#import "../Features/Search/SCITTSearchHistory.h"
+#import "../Features/Comments/SCITTComments.h"
 #import "../Features/Copy/SCITTCopyMenu.h"
 #import "../Features/Copy/SCITTHold.h"
 #import "../Features/Storage/SCITTCache.h"
@@ -130,6 +133,12 @@ static NSDictionary *SCIHeavyRow(NSString *title, NSString *value, NSString *ico
                        @"photo.on.rectangle", [UIColor systemTealColor]),
                 SCIRow(SCILocalized(@"status_browse"), SCITTBrowseReport(),
                        @"safari", [UIColor systemBlueColor]),
+                SCIRow(SCILocalized(@"status_clean"), SCITTCleanReport(),
+                       @"sparkles", [UIColor systemPurpleColor]),
+                SCIRow(SCILocalized(@"status_search_history"), SCITTSearchHistoryReport(),
+                       @"magnifyingglass", [UIColor systemIndigoColor]),
+                SCIRow(SCILocalized(@"status_comments"), SCITTCommentsReport(),
+                       @"text.bubble", [UIColor systemTealColor]),
                 SCIRow(SCILocalized(@"status_cache"), SCITTCacheReport(),
                        @"internaldrive", [UIColor systemGreenColor]),
                 SCIRow(SCILocalized(@"status_links"), SCITTLinksReport(),
