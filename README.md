@@ -11,11 +11,11 @@
 [![Rootless](https://img.shields.io/badge/rootless-supported-success.svg)](#-compatibility)
 [![roothide](https://img.shields.io/badge/roothide-supported-success.svg)](#-compatibility)
 
-[![Albrhi](https://img.shields.io/badge/Albrhi-1.102.0-blueviolet.svg)](suite/CHANGELOG.md)
+[![Albrhi](https://img.shields.io/badge/Albrhi-1.103.0-blueviolet.svg)](suite/CHANGELOG.md)
 [![Instagram](https://img.shields.io/badge/Instagram-4.8.1-orange.svg)](tweaks/instagram/CHANGELOG.md)
 [![YouTube](https://img.shields.io/badge/YouTube-1.42.1-red.svg)](tweaks/youtube/CHANGELOG.md)
 [![X](https://img.shields.io/badge/X-0.22.0-black.svg)](tweaks/twitter/CHANGELOG.md)
-[![TikTok](https://img.shields.io/badge/TikTok-0.27.0-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
+[![TikTok](https://img.shields.io/badge/TikTok-0.28.0-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
 [![YT Music](https://img.shields.io/badge/YT%20Music-0.10.0-FF0000.svg)](tweaks/ytmusic/CHANGELOG.md)
 [![Spotify](https://img.shields.io/badge/Spotify-0.2.5-1DB954.svg)](tweaks/spotify/CHANGELOG.md)
 [![Panel](https://img.shields.io/badge/Panel-0.10.0-8E8E93.svg)](tweaks/panel/CHANGELOG.md)
@@ -125,7 +125,7 @@ Developed by **Ibrahim Ismail AL-Rahn** ([@ibrahim2100](https://github.com/ibrah
 | **[Instagram](#-albrhi-for-instagram)** | Instagram | 4.8.1 | ✅ | downloads, AV1 reels transcoded on the device, a quieter feed, watching stories without a receipt, unsent messages kept and marked |
 | **[YouTube](#-albrhi-for-youtube)** | YouTube | 1.42.1 | ✅ | downloads that survive app updates, their own Download Centre tab, no ads, SponsorBlock, background playback |
 | **[X](#-albrhi-for-x)** | X / Twitter | 0.22.0 | ✅ | media downloads with a button you can place yourself, and fifteen-plus switches for what X does |
-| **[TikTok](#-albrhi-for-tiktok)** | TikTok | 0.27.0 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |
+| **[TikTok](#-albrhi-for-tiktok)** | TikTok | 0.28.0 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |
 | **[YouTube Music](#-albrhi-for-youtube-music)** | YouTube Music | 0.10.0 | ✅ | synced lyrics, saving tracks, no ads, background playback |
 | **[Panel](#-albrhi-panel)** | Settings | 0.10.0 | ✅ | the Albrhi page: a switch per app, a guide, backup |
 | **[Spotify](#-albrhi-for-spotify)** | Spotify | 0.2.5 | — | no ads, no Premium popups, sponsored podcast segments skipped |
@@ -327,8 +327,13 @@ watching).
   single picture can also be saved **as a short video with the post's own sound**.
 - **The publish date** sits above the download button — the day, the month by name, the year, and the
   time beneath.
-- **Save media from a comment** — a *Save* row in TikTok's own long-press sheet when a comment carries
-  a picture, sticker or animation.
+- **Save a comment's sticker** *(off until you turn it on)* — a *Save to Photos* row in TikTok's own long-press
+  menu on a comment that carries a sticker (an animated one is kept moving, as a GIF). TikTok's own row for a sticker
+  only adds it to your favourite stickers. A comment with a *photo* is not touched: its author's choice still decides.
+- **Copy a comment without the name** *(off until you turn it on)* — *Copy* puts the words on the clipboard, without
+  `@name:` in front of them.
+- When a feed shows TikTok's own date (the search results do), only ours is drawn — the full date and the time — instead of
+  the two being written over each other.
 
 ### 🚫 Ads · ✋ Confirmations · 🔒 Privacy
 An item TikTok's own server marked as an ad is refused as the object is built — and the launch splash
@@ -662,7 +667,7 @@ The accumulated reasoning — what broke, why, and what was learned — lives in
 - [x] **Instagram:** story-seen hiding fixed on 439, unsent messages kept **and marked**
 - [x] **YouTube:** arrangeable tab bar, History tab, playback-error recovery, extra ad gates
 - [x] **X:** fifteen features, a draggable in-video button, Face ID cover
-- [x] **TikTok:** Albrhi as a native section of TikTok's own Settings, an update screen that shows once per release, save media from comments
+- [x] **TikTok:** Albrhi as a native section of TikTok's own Settings, an update screen that shows once per release, save a comment's sticker, copy a comment without the name
 - [x] **Instagram:** copy a caption by long-press, and a *Copy* button in the comment menu
 - [x] **Tests that run on the build machine** for six tweaks — and CI runs them before it builds a release
 

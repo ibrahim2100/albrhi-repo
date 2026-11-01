@@ -690,6 +690,62 @@ static NSURL *SCITTStageAudio(NSURL *remote) {
 }
 
 ///
+/// An animated WebP as an animated GIF, or nil when the bytes are one picture (or cannot be read).
+///
+/// **Photos takes neither an animated WebP nor, from a WebP of any kind, a promise to keep it moving**, and the JPEG re-encode below
+/// keeps frame 0 only: a sticker that was a two-second loop arrived as its first frame. ImageIO reads every frame of an animated WebP
+/// (iOS 14 and later, `kCGImagePropertyWebPDictionary` carries each frame's delay) and writes a GIF, which Photos stores and plays.
+/// A GIF has 256 colours, so this is a real loss of colour and the report says that the picture was converted.
+// host-test:begin animatedgif
+static NSData *SCITTAnimatedGIFFromWebP(NSData *data) {
+    CGImageSourceRef source = CGImageSourceCreateWithData((__bridge CFDataRef)data, NULL);
+    if (!source) return nil;
+
+    size_t frames = CGImageSourceGetCount(source);
+    if (frames < 2) {
+        CFRelease(source);
+        return nil;
+    }
+
+    NSMutableData *out = [NSMutableData data];
+    CGImageDestinationRef destination = CGImageDestinationCreateWithData((__bridge CFMutableDataRef)out,
+                                                                          CFSTR("com.compuserve.gif"), frames, NULL);
+    if (!destination) {
+        CFRelease(source);
+        return nil;
+    }
+
+    CGImageDestinationSetProperties(destination, (__bridge CFDictionaryRef)@{
+        (__bridge NSString *)kCGImagePropertyGIFDictionary: @{ (__bridge NSString *)kCGImagePropertyGIFLoopCount: @0 },
+    });
+
+    BOOL any = NO;
+    for (size_t i = 0; i < frames; i++) {
+        CGImageRef frame = CGImageSourceCreateImageAtIndex(source, i, NULL);
+        if (!frame) continue;
+
+        double delay = 0.1;
+        NSDictionary *properties = CFBridgingRelease(CGImageSourceCopyPropertiesAtIndex(source, i, NULL));
+        NSDictionary *webp = properties[(__bridge NSString *)kCGImagePropertyWebPDictionary];
+        NSNumber *given = webp[(__bridge NSString *)kCGImagePropertyWebPUnclampedDelayTime] ?: webp[(__bridge NSString *)kCGImagePropertyWebPDelayTime];
+        // A browser treats a delay under 20 ms as 100 ms, and so does every GIF player: a frame at 0 would be skipped or race.
+        if ([given isKindOfClass:[NSNumber class]] && given.doubleValue >= 0.02) delay = given.doubleValue;
+
+        CGImageDestinationAddImage(destination, frame, (__bridge CFDictionaryRef)@{
+            (__bridge NSString *)kCGImagePropertyGIFDictionary: @{ (__bridge NSString *)kCGImagePropertyGIFDelayTime: @(delay) },
+        });
+        CGImageRelease(frame);
+        any = YES;
+    }
+
+    BOOL finished = any && CGImageDestinationFinalize(destination);
+    CFRelease(destination);
+    CFRelease(source);
+    return finished && out.length ? out : nil;
+}
+// host-test:end animatedgif
+
+///
 /// Saves one downloaded picture, trying three ways and naming the one that worked.
 ///
 /// **`PHPhotosErrorDomain 3302` is Photos refusing the *format*, not the bytes** — it arrived
@@ -721,6 +777,23 @@ static BOOL SCITTSavePhotoData(NSData *data, UIImage *image, NSURL *source,
         : (source.lastPathComponent.length ? source.lastPathComponent : @"photo");
 
     NSString *error = nil;
+
+    // An animated WebP is kept moving: as a GIF, because Photos takes neither the WebP itself nor a re-encode that keeps more than frame 0.
+    if ([kind isEqualToString:@"WebP"]) {
+        NSData *gif = SCITTAnimatedGIFFromWebP(data);
+        if (gif.length) {
+            PHAssetResourceCreationOptions *asGIF = [[PHAssetResourceCreationOptions alloc] init];
+            asGIF.originalFilename = @"sticker.gif";
+
+            if (SCITTPerformPhotoChange(^{
+                PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
+                [request addResourceWithType:PHAssetResourceTypePhoto data:gif options:asGIF];
+            }, &error)) {
+                if (outHow) *outHow = @"animated, converted to GIF";
+                return YES;
+            }
+        }
+    }
 
     if (SCITTPerformPhotoChange(^{
         PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];

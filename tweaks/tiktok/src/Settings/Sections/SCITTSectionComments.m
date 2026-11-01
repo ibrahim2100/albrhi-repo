@@ -2,7 +2,7 @@
 //  SCITTSectionComments.m
 //  Albrhi for TikTok
 //
-//  TikTok's own comment search and translation, switched on.
+//  TikTok's own comment search and translation, switched on; copying a comment without the name; saving a comment's sticker.
 //
 //  Copyright (C) Ibrahim Ismail AL-Rahn. GPLv3.
 //
@@ -40,6 +40,8 @@
             kSCISectionRows: @[
                 row(SCIPrefCommentSearch, SCILocalized(@"row_comment_search"), SCILocalized(@"row_comment_search_note"), @"magnifyingglass", [UIColor systemTealColor]),
                 row(SCIPrefCommentTranslate, SCILocalized(@"row_comment_translate"), SCILocalized(@"row_comment_translate_note"), @"character.bubble.fill", [UIColor systemBlueColor]),
+                row(SCIPrefCommentCleanCopy, SCILocalized(@"row_comment_clean_copy"), SCILocalized(@"row_comment_clean_copy_note"), @"doc.on.doc.fill", [UIColor systemIndigoColor]),
+                row(SCIPrefCommentSaveSticker, SCILocalized(@"row_comment_save_sticker"), SCILocalized(@"row_comment_save_sticker_note"), @"arrow.down.to.line", [UIColor systemGreenColor]),
             ],
         };
     });

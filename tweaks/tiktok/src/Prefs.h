@@ -278,3 +278,11 @@ static inline BOOL SCIPrefEnabled(NSString *key) {
 #define SCIPrefCommentSearch    @"comment_search"
 #define SCIPrefCommentTranslate @"comment_translate"
 
+/// Copy a comment without the commenter's name in front of it: `+[TTKCommentCopyOperation copyContent:tokenText:identifier:]` is handed `@<nickname>: <text>`
+/// while the Copy row of the long-press panel runs, and the prefix is removed when it is exactly the author's known nickname. Off by default.
+#define SCIPrefCommentCleanCopy @"comment_clean_copy"
+
+/// A "Save" row in the long-press panel of a comment that carries a **sticker**, saved to Photos (an animated one as a GIF). TikTok's own row for a sticker
+/// adds it to the account's favourites and saves nothing. A comment with a *photo* is not touched. Off by default.
+#define SCIPrefCommentSaveSticker @"comment_save_sticker"
+

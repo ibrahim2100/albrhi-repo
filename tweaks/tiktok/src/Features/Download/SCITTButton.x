@@ -10,6 +10,7 @@
 #import "../../Prefs.h"
 #import "../../Localization/SCILocalize.h"
 #import "../../SCILog.h"
+#import "shared/src/SCIKVC.h"
 
 ///
 /// A button in the feed itself, beside like/comment/share -- and only one at a time.
@@ -123,6 +124,10 @@ static NSUInteger sciDateBeside = 0;        // laid out beside the account name 
 static NSUInteger sciDateOnRail = 0;        // no author row found: drawn over the download button, as before
 static BOOL sciDateRetrying = NO;           // inside a retry: its counter must not be reset by its own call
 static NSString *sciDateAuthorWhy = nil;    // why the last search for the author row found nothing
+static NSUInteger sciDateNeighbours = 0;    // layouts that started past something else TikTok shows in the row (its own timestamp)
+static NSUInteger sciStampAsked = 0;        // TikTok asked whether its own timestamp label is shown
+static NSUInteger sciStampWanted = 0;       // ... and its own answer was yes
+static NSUInteger sciStampHeld = 0;         // ... and the answer was changed to no, because this tweak draws the date in that row
 static NSString *sciDateLast = nil;
 
 ///
@@ -542,6 +547,27 @@ static UIView *SCITTFindNamedDescendant(UIView *root, NSString *className) {
     return nil;
 }
 
+/// How far the visible leaves of the author row reach, measured in the row's own coordinates: the left-most and right-most edge among labels
+/// that hold text and pictures that hold an image, hidden views and their children skipped, and `skip` (our own label) not counted. A container is
+/// never a leaf: the row's inner stack spans the whole row and says nothing about what is in it.
+static void SCITTCollectRowExtent(UIView *view, UIView *skip, UIView *row, CGFloat *minX, CGFloat *maxX, NSUInteger *visited) {
+    if (!view || view == skip || view.hidden || view.alpha < 0.01 || ++(*visited) > 200) return;
+
+    BOOL visibleChild = NO;
+    for (UIView *child in view.subviews) {
+        if (child != skip && !child.hidden && child.alpha >= 0.01) { visibleChild = YES; break; }
+    }
+
+    BOOL shows = ([view isKindOfClass:[UILabel class]] && (((UILabel *)view).text.length || ((UILabel *)view).attributedText.length))
+              || ([view isKindOfClass:[UIImageView class]] && ((UIImageView *)view).image);
+    CGRect frame = [row convertRect:view.bounds fromView:view];
+    if (shows && !visibleChild && CGRectGetWidth(frame) > 1 && CGRectGetHeight(frame) > 1) {
+        *minX = MIN(*minX, CGRectGetMinX(frame));
+        *maxX = MAX(*maxX, CGRectGetMaxX(frame));
+    }
+    for (UIView *child in view.subviews) SCITTCollectRowExtent(child, skip, row, minX, maxX, visited);
+}
+
 static void SCITTLayoutDateLabel(UILabel *label, UIView *button) {
     UIView *host = label.superview;
 
@@ -558,8 +584,26 @@ static void SCITTLayoutDateLabel(UILabel *label, UIView *button) {
         CGRect name = nameButton ? [author convertRect:nameButton.bounds fromView:nameButton] : CGRectZero;
         BOOL nameOnLeft = CGRectGetMidX(name) <= CGRectGetMidX(row);
         CGFloat gap = 8;
-        CGFloat x = nameOnLeft ? CGRectGetMaxX(name) + gap : CGRectGetMinX(row);
-        CGFloat room = nameOnLeft ? CGRectGetMaxX(row) - x : CGRectGetMinX(name) - gap - CGRectGetMinX(row);
+
+        // **Past whatever else TikTok shows beside the name, not only past the name.** TikTok draws its own timestamp ("2023-12-7") in this row
+        // in some feeds (the search results; `AWEPlayInteractionAuthorElement.timeStampLabel`), directly after the name and exactly where this
+        // label started, so the two were written over each other. Only what sits close to the name counts (within 120 points of it): a far-off
+        // view is not a neighbour, and counting it would push the date out of its own row.
+        CGFloat lowest = CGFLOAT_MAX, highest = -CGFLOAT_MAX;
+        NSUInteger visited = 0;
+        SCITTCollectRowExtent(author, label, author, &lowest, &highest, &visited);
+        CGFloat nameEdge = nameOnLeft ? CGRectGetMaxX(name) : CGRectGetMinX(name);
+        if (CGRectGetWidth(name) > 1) {
+            if (nameOnLeft && highest > nameEdge && lowest < nameEdge + 120) {
+                nameEdge = highest;
+                sciDateNeighbours++;
+            } else if (!nameOnLeft && lowest < nameEdge && highest > nameEdge - 120) {
+                nameEdge = lowest;
+                sciDateNeighbours++;
+            }
+        }
+        CGFloat x = nameOnLeft ? nameEdge + gap : CGRectGetMinX(row);
+        CGFloat room = nameOnLeft ? CGRectGetMaxX(row) - x : nameEdge - gap - CGRectGetMinX(row);
         if (CGRectGetWidth(name) > 1 && room >= 90) {
             label.textAlignment = nameOnLeft ? NSTextAlignmentLeft : NSTextAlignmentRight;
             CGRect frame = CGRectMake(x, 0, room, CGRectGetHeight(row));
@@ -655,11 +699,12 @@ static void SCITTLayoutDateLabel(UILabel *label, UIView *button) {
 /// this cost seconds rather than five minutes.
 NSString *SCITTDateReport(void) {
     return [NSString stringWithFormat:
-            @"%lu call(s) → %lu with no host yet → %lu off → %lu without a date → %lu drawn (%lu on the author row, %lu of the layouts beside the name, %lu re-measured when the name resized, %lu with no author row found, so no date%@)%@",
+            @"%lu call(s) → %lu with no host yet → %lu off → %lu without a date → %lu drawn (%lu on the author row, %lu of the layouts beside the name, %lu re-measured when the name resized, %lu with no author row found, so no date%@)%@ | TikTok's own timestamp: asked %lu, wanted %lu, held back for ours %lu; layouts that stepped past a neighbour %lu",
             (unsigned long)sciDateCalls, (unsigned long)sciDateNoHost, (unsigned long)sciDateOff,
             (unsigned long)sciDateNoDate, (unsigned long)sciDatePlaced, (unsigned long)sciDateAboveName, (unsigned long)sciDateBeside, (unsigned long)sciNameRelayouts, (unsigned long)sciDateOnRail,
             sciDateAuthorWhy.length ? [@"; last miss: " stringByAppendingString:sciDateAuthorWhy] : @"",
-            sciDateLast.length ? [@" — last: " stringByAppendingString:sciDateLast] : @""];
+            sciDateLast.length ? [@" — last: " stringByAppendingString:sciDateLast] : @"",
+            (unsigned long)sciStampAsked, (unsigned long)sciStampWanted, (unsigned long)sciStampHeld, (unsigned long)sciDateNeighbours];
 }
 
 @interface SCITTButtonTarget : NSObject
@@ -1812,9 +1857,50 @@ static void SCITTRelayoutDateBesideName(UIView *nameButton) {
 %end
 %end
 
+// MARK: - TikTok's own timestamp, in the row this date is drawn in
+
+@interface AWEPlayInteractionAuthorElement : NSObject
+@end
+
+///
+/// **TikTok draws its own date in the account row in some feeds, and this tweak draws a fuller one in the same place.** The element
+/// (`AWEPlayInteractionAuthorElement`) decides through `-shouldShowTimeStampLabel` whether its `timeStampLabel` is shown at all; it is hidden in
+/// the For You feed and shown in others (the search results, found by the two dates being written over each other). Two dates in one row are
+/// one too many, and ours has the time as well, so while this tweak draws the date for a video TikTok's is not shown for that video -- **the
+/// decision answered, not a view hidden**, and only when the video carries a date to draw (`createTime`), so a video without one keeps TikTok's.
+/// With the date switch off nothing here changes. The layout of our own label also steps past any neighbour (`SCITTCollectRowExtent`), so a build
+/// whose gate has another name still does not overlap.
+///
+%group NativeStamp
+%hook AWEPlayInteractionAuthorElement
+
+- (BOOL)shouldShowTimeStampLabel {
+    BOOL original = %orig;
+    sciStampAsked++;
+    if (!original) return original;
+    sciStampWanted++;
+    if (!SCIPrefEnabled(SCIPrefVideoDate)) return original;
+
+    NSNumber *created = SCISafeNumberForKey(SCISafeValueForKey(self, @"model"), @"createTime");
+    if (!created || created.doubleValue <= 0) return original;
+
+    sciStampHeld++;
+    return NO;
+}
+
+%end
+%end
+
 void SCITTInstallButton(void) {
     if (NSClassFromString(@"AWEPlayInteractionAuthorUserNameButton")) {
         %init(AuthorName);
+    }
+
+    Class element = NSClassFromString(@"AWEPlayInteractionAuthorElement");
+    Method stamp = element ? class_getInstanceMethod(element, sel_registerName("shouldShowTimeStampLabel")) : NULL;
+    const char *stampTypes = stamp ? method_getTypeEncoding(stamp) : NULL;
+    if (stampTypes && strcmp(stampTypes, "B16@0:8") == 0) {
+        %init(NativeStamp);
     }
 
     // **One owner, chosen here, and the others are never installed at all.**

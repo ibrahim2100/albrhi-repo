@@ -25,12 +25,46 @@ def region(name):
     assert a < b
     return src[a:b]
 open(sys.argv[1] + '/region.inc', 'w').write(region('kindrank') + '\n' + region('demoted'))
+
+# The animated-WebP-to-GIF converter (in the same file) and the copy-without-the-name cut (in the comments file).
+def region_of(path, name):
+    text = open(path).read()
+    a = text.index('// host-test:begin ' + name)
+    b = text.index('// host-test:end ' + name)
+    assert a < b
+    return text[a:b]
+open(sys.argv[1] + '/gif.inc', 'w').write(region_of('../../src/Features/Download/SCITTDownload.m', 'animatedgif'))
+open(sys.argv[1] + '/copyname.inc', 'w').write(region_of('../../src/Features/Comments/SCITTComments.x', 'copyname'))
 PY
 
 cat > "$OUT/Test.m" <<'EOM'
 #import <Foundation/Foundation.h>
+#import <ImageIO/ImageIO.h>
+#import "shared/src/SCIKVC.h"
 
 #include "region.inc"
+#include "gif.inc"
+#include "copyname.inc"
+
+// Stand-ins for the app's own models: a comment with an author, exactly as far as the cut reads them.
+@interface FakeAuthor : NSObject
+@property (nonatomic, copy) NSString *nickname;
+@end
+@implementation FakeAuthor
+@end
+@interface FakeComment : NSObject
+@property (nonatomic, strong) FakeAuthor *author;
+@property (nonatomic, copy) NSString *content;
+@end
+@implementation FakeComment
+@end
+static FakeComment *MakeComment(NSString *nick, NSString *text) {
+    FakeComment *c = [FakeComment new];
+    c.author = [FakeAuthor new];
+    c.author.nickname = nick;
+    c.content = text;
+    return c;
+}
 
 static int fails = 0;
 #define CHECK(c) do { if (!(c)) { printf("FAIL line %d: %s\n", __LINE__, #c); fails++; } else printf("ok   %s\n", #c); } while (0)
@@ -65,11 +99,59 @@ int main(void) {
         CHECK(!SCITTOriginIsDemoted(@"tikwm HD"));
         CHECK(!SCITTOriginIsDemoted(nil));
 
+        // --- A comment copied without the name in front of it -------------------------------------------------
+        // The text TikTok hands to its copy operation is "@<nickname>: <comment>" (measured on 47.1.0), and a nickname is not a word.
+        BOOL tail = NO;
+        CHECK([SCITTCopyWithoutName(@"@Sophie_rose \U0001F940: imagine it's a mom spider \U0001F62D",
+                                   MakeComment(@"Sophie_rose \U0001F940", @"imagine it's a mom spider \U0001F62D"), &tail)
+               isEqualToString:@"imagine it's a mom spider \U0001F62D"] && !tail);
+        // An Arabic nickname with two flags and a space, which the first attempt's pattern could not match.
+        NSString *arabic = @"\u0627\u0628\u0648\u0644\u064A\u0646 \u0648\u0644\u064A\u0627\u0646\U0001F1FE\U0001F1EA\U0001F1E6\U0001F1EA \u0627\u0644\u0639\u0627\u0645\u0631\u064A";
+        CHECK([SCITTCopyWithoutName([NSString stringWithFormat:@"@%@: \u0632\u0639\u064A\u0645", arabic], MakeComment(arabic, @"\u0632\u0639\u064A\u0645"), NULL)
+               isEqualToString:@"\u0632\u0639\u064A\u0645"]);
+        // A full-width colon, and no space after it.
+        CHECK([SCITTCopyWithoutName(@"@A\uFF1Ahello", MakeComment(@"A", @"hello"), NULL) isEqualToString:@"hello"]);
+        // A comment that is itself a mention keeps it.
+        CHECK([SCITTCopyWithoutName(@"@a: @b hi", MakeComment(@"a", @"@b hi"), NULL) isEqualToString:@"@b hi"]);
+        // A multi-line comment is cut only at the front.
+        CHECK([SCITTCopyWithoutName(@"@a: one\ntwo: three", MakeComment(@"a", @"one\ntwo: three"), NULL) isEqualToString:@"one\ntwo: three"]);
+        // The nickname is not the one on the model (renamed since): the comment's own text, found at the end after a colon, is used.
+        tail = NO;
+        CHECK([SCITTCopyWithoutName(@"@Old name: the words", MakeComment(@"New name", @"the words"), &tail) isEqualToString:@"the words"] && tail);
+        // Left alone, never guessed at: no name on the model and no text to find, nothing after the colon, no colon, no comment, not a string.
+        CHECK(SCITTCopyWithoutName(@"@x: hello", MakeComment(nil, nil), NULL) == nil);
+        CHECK(SCITTCopyWithoutName(@"@a: ", MakeComment(@"a", @""), NULL) == nil);
+        CHECK(SCITTCopyWithoutName(@"@a hello", MakeComment(@"a", @"hello"), NULL) == nil);
+        CHECK(SCITTCopyWithoutName(@"@a: hello", nil, NULL) == nil);
+        CHECK(SCITTCopyWithoutName((NSString *)@42, MakeComment(@"a", @"b"), NULL) == nil);
+        // A suffix that is not set apart by a colon is not "the name in front".
+        CHECK(SCITTCopyWithoutName(@"look at hello", MakeComment(@"zzz", @"hello"), NULL) == nil);
+
+        // --- An animated WebP, kept moving as a GIF ------------------------------------------------------------
+        NSData *animated = [NSData dataWithContentsOfFile:@"fixtures/animated-3-frames.webp"];
+        NSData *still = [NSData dataWithContentsOfFile:@"fixtures/still.webp"];
+        CHECK(animated.length > 0 && still.length > 0);
+        NSData *gif = SCITTAnimatedGIFFromWebP(animated);
+        CHECK(gif.length > 0 && !memcmp(gif.bytes, "GIF8", 4));
+        CGImageSourceRef out = CGImageSourceCreateWithData((__bridge CFDataRef)gif, NULL);
+        CHECK(out && CGImageSourceGetCount(out) == 3);
+        if (out) {
+            NSDictionary *props = CFBridgingRelease(CGImageSourceCopyPropertiesAtIndex(out, 1, NULL));
+            double delay = [props[(__bridge NSString *)kCGImagePropertyGIFDictionary][(__bridge NSString *)kCGImagePropertyGIFDelayTime] doubleValue];
+            CHECK(delay > 0.09 && delay < 0.11);   // the 100 ms the WebP asked for
+            CFRelease(out);
+        }
+        // One picture is not an animation, and what is not a picture is nothing.
+        CHECK(SCITTAnimatedGIFFromWebP(still) == nil);
+        CHECK(SCITTAnimatedGIFFromWebP([@"not an image" dataUsingEncoding:NSUTF8StringEncoding]) == nil);
+        CHECK(SCITTAnimatedGIFFromWebP([NSData data]) == nil);
+
         printf(fails ? "\n%d FAILED\n" : "\nall passed\n", fails);
         return fails ? 1 : 0;
     }
 }
 EOM
 
-clang -fobjc-arc -Wall -Wno-unused-function -framework Foundation "$OUT/Test.m" -o "$OUT/test"
+ROOT="$(cd ../../../.. && pwd)"
+clang -fobjc-arc -Wall -Wno-unused-function -I"$ROOT" -framework Foundation -framework ImageIO -framework CoreGraphics "$OUT/Test.m" "$ROOT/shared/src/SCIKVC.m" -o "$OUT/test"
 "$OUT/test"
