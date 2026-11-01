@@ -19,9 +19,15 @@ each other. Three rules keep it honest:
 3. **A rule that lives only in prose gets broken by whoever did not read it.** If a rule can be
    checked by a machine, it belongs in `tools/check.py` (see *Source checks*).
 
+**Before writing or reviewing any Logos file (`.x`, `.xm`), read `.claude/skills/ios-logos-tweak/SKILL.md`.**
+It is PoomSmart's `ios-logos-tweak` (MIT) with a block of this project's rules on top, and §4.8 below
+says which of its rules are enforced here, which are overridden and why. It is the foundation for how
+hooking code is written in this repository, not an optional reference.
+
 Contents: **1** what this is · **2** the lines this project draws · **3** repository mechanics
-(build, check, CI, publishing) · **4** engineering rules that apply everywhere · **5** per-app
-knowledge · **6** licensing (removed — what stayed behind) · **7** known state and open work.
+(build, check, CI, publishing) · **4** engineering rules that apply everywhere (**4.8** the Logos house
+style) · **5** per-app knowledge · **6** licensing (removed — what stayed behind) · **7** known state
+and open work.
 
 ---
 
@@ -257,7 +263,7 @@ third is a device. That is what the Diagnostics pages are for — and why host t
 
 `python3 tools/check.py` runs in CI before Theos, so a typo fails in seconds, not after a five-minute compile.
 Run from the root it re-executes once per `tweaks/*` directory (a failing tweak is named, the others still run).
-**Twenty-six rules, each from something that actually broke** (plus the repository-wide ones, below):
+**Twenty-eight rules, each from something that actually broke or from the Logos skill (§4.8)** (plus the repository-wide ones, below):
 
 1. duplicate `@interface` — compared per **translation unit** (transitive quoted-import closure), not per file
 2. brace balance and `%hook`/`%group`/`%subclass`…`%end` pairing — one **scanner** that knows comments, strings and
@@ -289,6 +295,8 @@ Run from the root it re-executes once per `tweaks/*` directory (a failing tweak 
 24. a `PSTitleValueCell` that sets a `value` and has no getter (a title-only cell of that kind is an ordinary row)
 25. a second copy of the "find the key window" walk in a tweak that already has `SCI<..>KeyWindow(void)` (YouTube wrote it ten times, each a little different, and a fix to one reached none of the others); a deliberate different question says `sci-allow-keywindow` on its line
 26. a `SCIPref…` macro that nothing reads — a switch that does nothing is a screen that lies (found by deleting `h264_only`, which had a macro, a default and a row and no reader once the filter was gone)
+27. **a bare `%new`** — always `%new(typeencoding)` (the `ios-logos-tweak` skill; a bare one makes Logos build the encoding at run time from `@encode(T)`, which is where rule 19 comes from). `tools/logos-new-encodings.py --apply` fills it in and `--check` proves a written encoding is the one Logos would have computed. NextUp, a verbatim port that must stay diffable, is exempt
+28. **`MSFindSymbol(NULL, …)`** — a global symbol search through every loaded image; name the image that owns the symbol (same skill). Nothing here called it when the rule was added
 
 **Repository-wide checks** (`tools/check-repo.py`, run first by `check.py`) are the rules that were paragraphs: no `+N` in anything **staged** (a local build's `+N` sits in the tree and is none of its business; CI checks the tree);
 a changelog's newest entry equals the `control` version, for every tweak and the suite; README badges, the README table and *Known state* equal the `control` version; **the suite is bumped whenever a tweak in it
@@ -319,6 +327,7 @@ said "29 tests in about a second" — a test nobody runs in CI is a test that ro
 | `check.py` · `check-repo.py` | the rules above · the repository-wide ones |
 | `objc-classes.py` | a class's real method list, **declared property types**, ivars, class methods and **type encodings** out of a Mach-O's ObjC metadata; `--find-method` / `--find-ivar` answer "who answers this selector / owns this field" |
 | `objc-diff.py` | **what changed between two builds, among the classes a tweak names** (`<old> <new> --tweak tweaks/x`), and `--check <build> --tweak tweaks/x` for one build: every `%hook` on a class the build lacks or on a selector nothing in the class chain declares (rule 4.2, automated; chain read through chained-fixup **binds**, so `UIView` is a name and not `?`; generated protobuf getters are reported as unknowable, not as missing). Fed by `objc-classes.py <binary> --dump` (YouTube 21.34.3: 33,263 classes in 17 s). 9 self-tests on two compiled dylibs |
+| `logos-new-encodings.py` | `%new(typeencoding)`: **`--apply`** writes the encoding into every bare `%new` from what Logos itself generates, **`--check <dir>`** runs Logos on the file as written and again with every `%new(…)` reduced to a bare `%new` and compares method by method (group, class, selector). Found its own `--apply` wrong once: Logos emits the default group before named ones, so filling in by source order swapped two encodings in `SCSettingsMenuEntry.x` — the check said so, which is why `--apply` is never trusted without it |
 | `ref-leads.py` | **the app-side selectors a reference tweak names** (Apple's SDK vocabulary and the reference's own selectors subtracted; `--tweak` splits off what our sources already name; licence/store selectors listed apart as *not examined*). Rocket: 1,376 raw → 106 leads, 13 already ours. A lead is unverified until the app's own binary is asked |
 | `doctor.sh` | readiness: Theos, SDK, GNU make, ldid, dpkg, roothide Theos, Xcode, node, `gh`, the hook, and (optional) Java and Ghidra — each with the fix. Read-only. The shape is REA's `rea doctor` |
 | `make-suite.sh` · `merge-control.py` | merge the staged trees into `com.albrhi`; refuse a tree that does not match the scheme; **keep the fields Theos computed and override only your own** (replacing `DEBIAN/control` wholesale once threw away what Theos had written) |
@@ -822,6 +831,38 @@ Every line here comes from something that actually broke. They are grouped by th
   `expectJSONMode` became `json_object` for OpenAI and `responseMimeType` for Gemini but was ignored by the Anthropic client, whose Messages API has only `output_config.format` with a schema; callers now pass a schema through `YTMULLMCompleteJSON`, sent to Anthropic's own
   host only because the base URL is user-configurable, and the tolerant parser stays while any path reaches it). Prompts that shout ten
   times in twenty lines say nothing ten times; what stays is the guidance only the author knows and "never write or complete lyrics".
+
+### 4.8 Logos house style — the `ios-logos-tweak` skill
+
+`.claude/skills/ios-logos-tweak/` holds PoomSmart's skill (github.com/PoomSmart/ios-logos-tweak, MIT, commit `8d9f6e1`, 2026-10-31)
+**copied unchanged** under an Albrhi block that says what applies here. It is generic Substrate/Logos style and says nothing about
+rootless or roothide — there is no flavour-specific rule in it to adopt, and none in this repository's hook code either (§4.6: the
+flavour is Theos's choice at stage time and `dladdr` at run time, never a path in a source file). **Read it before writing a hook.**
+
+- **Taken as written and enforced.** `%new(typeencoding)` always written out (rule 27, `tools/logos-new-encodings.py`; 55 methods in
+  Instagram, YouTube Music and YouTube were bare until 2026-11-01);
+  `MSFindSymbol(MSGetImageByName(path), …)` and never `NULL` (rule 28); Logos for every hook whose class and selector are fixed;
+  `.x` unless C++ is needed; one `%hook` per class per group; `%property` for new state.
+- **`%init(Class = objc_getClass(…))` for classes whose name moved is how this repository already worked** — Instagram's
+  `SCIResolveClass` finds the Swift-mangled name and the hook is `%group`ed and `%init`-ed with the resolved class
+  (`%init(Group, IGFoo = resolved)`), and the plain name is asked first, so a build that still has it behaves exactly as before.
+  The 450 check (`docs/investigations/instagram-450-check.md`) listed 31 renamed classes as unbound; **25 were already bound**, because
+  `objc-diff --check` reads `%hook X` and cannot see a `%init` rebinding. Measure with the alias applied before believing a list of
+  "unbound" hooks.
+- **Overridden, each for a measured reason** (the skill's own text stays unedited below our block): runtime `class_getInstanceMethod`
+  **and encoding** checks instead of "the OS floor guarantees it" (the floor is the *app build*); `objc_msgSend` casts taken from the
+  runtime encoding where the signature is a guess about builds; `SCISafeValueForKey` / `object_getIvar` instead of `MSHookIvar` (§4.2);
+  a few hand-written `MSHookMessageEx` installs that Logos cannot make conditional on an encoding.
+- **Binding a renamed class is not the same as supporting it.** Of the five Instagram classes still unresolved (`IGDirectMessageCell`,
+  `IGDirectVisualMessageReplayService`, `IGDirectVisualMessageViewerSession`, `IGFollowController`, `IGStoryAdsOptInTextView`) the 450
+  binary has the Swift class and **not the selector we hook** (`IGFollowController` has `didPressFollowButtonFromControlEvent` and
+  `didPressFollowButtonWith:`, not `_didPressFollowButton`; the message cell lacks `configureWithViewModel:ringViewSpecFactory:launcherSet:`).
+  Binding them would only make Logos *add* a method nobody calls, so nothing was bound; what is missing is a reading of what the new
+  selectors do (a decompiler pass, §7), not a lookup.
+- **Everything the skill asks for that a machine can read is in `tools/check.py` (27, 28) or `tools/logos-new-encodings.py`; the rest is
+  this paragraph.** A reviewer of a hooking change runs the skill's checklist, then `python3 tools/check.py`,
+  `python3 tools/logos-new-encodings.py --check tweaks`, `bash tools/run-host-tests.sh`, and for a new app build
+  `python3 tools/objc-diff.py --check <build> --tweak tweaks/<x>`.
 
 ---
 

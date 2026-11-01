@@ -1292,6 +1292,30 @@ for _hp in HDR:
             report('%s defines %s and nothing in this tweak reads it — a switch that does nothing is a '
                    'screen that lies (delete the macro, its default and its row together)' % (_hp, _name))
 
+# 27. A bare `%new`, and 28. `MSFindSymbol(NULL, ...)` -- the two rules of the `ios-logos-tweak` skill that a
+#     machine can read (`.claude/skills/ios-logos-tweak/`, CLAUDE.md §4.8).
+#
+#     27. `%new(typeencoding)` is always written out. A bare `%new` makes Logos build the encoding at run
+#         time out of `@encode(T)` per parameter -- and that generated string is where rule 19 (a `__unused`
+#         pasted into `@encode()`) comes from. `tools/logos-new-encodings.py --check` proves a written
+#         encoding is what Logos would have computed. Only a `%new` that opens a line is a directive (a
+#         comment may name one). NextUp is a verbatim port that has to stay diffable against upstream and
+#         is the one tweak not asked for this.
+#     28. A global symbol search runs through every loaded image, and some injection setups crash in it;
+#         the image that owns the symbol is named instead. Nothing here calls it today.
+_VERBATIM_PORTS = ('nextup',)
+if os.path.basename(os.getcwd()) not in _VERBATIM_PORTS:
+    for path in LOGOS:
+        for _n, _line in enumerate(open(path, encoding='utf-8'), 1):
+            if re.match(r'\s*%new(?!\()(?=\s*(?:$|-|\+))', _line):
+                report('%s:%d is a bare %%new — write %%new(typeencoding); `python3 tools/logos-new-encodings.py '
+                       '--apply %s` fills it in from what Logos computes' % (path, _n, path))
+for path in SRC:
+    for _n, _line in enumerate(open(path, encoding='utf-8'), 1):
+        if re.search(r'MSFindSymbol\s*\(\s*(NULL|nil|0)\s*,', _line.split('//')[0]):
+            report('%s:%d searches every loaded image with MSFindSymbol(NULL, …) — name the image that owns the '
+                   'symbol: MSFindSymbol(MSGetImageByName("/path/to/Image"), "_symbol")' % (path, _n))
+
 print('keys: %d EN / %d AR   orphans: %d' % (len(en_keys), len(ar_keys), len(en_keys - used)))
 print('version: %s' % control_version)
 print()
