@@ -169,7 +169,7 @@
     return;
 }
 
-%new - (IGDirectComposerConfig *)patchConfig:(IGDirectComposerConfig *)config {
+%new(@@:@) - (IGDirectComposerConfig *)patchConfig:(IGDirectComposerConfig *)config {
     if ([SCIUtils getBoolPref:@"hide_meta_ai"]) {
 
         SCILogV(@"[SCInsta] Hiding meta ai: reconfiguring direct composer");
@@ -489,7 +489,7 @@
     return;
 }
 
-%new - (IGSearchBarConfig *)sanitizePlaceholderForConfig:(IGSearchBarConfig *)config {
+%new(@@:@) - (IGSearchBarConfig *)sanitizePlaceholderForConfig:(IGSearchBarConfig *)config {
     if ([SCIUtils getBoolPref:@"hide_meta_ai"]) {
 
         SCILogV(@"[SCInsta] Hiding meta ai: reconfiguring search bar");

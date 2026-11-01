@@ -197,7 +197,7 @@ static char targetStaticRef[] = "target";
     });
 }
 
-%new - (void)presentColorPicker:(NSString *)target {
+%new(v@:@) - (void)presentColorPicker:(NSString *)target {
     UIColorPickerViewController *colorPickerController = [[UIColorPickerViewController alloc] init];
 
     colorPickerController.delegate = (id<UIColorPickerViewControllerDelegate>)self; // cast to suppress warnings
@@ -229,7 +229,7 @@ static char targetStaticRef[] = "target";
 }
 
 // UIColorPickerViewControllerDelegate Protocol
-%new - (void)colorPickerViewController:(UIColorPickerViewController *)viewController
+%new(v@:@@B) - (void)colorPickerViewController:(UIColorPickerViewController *)viewController
                         didSelectColor:(UIColor *)color
                           continuously:(BOOL)continuously
 {
@@ -249,7 +249,7 @@ static char targetStaticRef[] = "target";
     [self applySCICustomTheme:target];
 };
 
-%new - (void)applySCICustomTheme:(NSString *)target {
+%new(v@:@) - (void)applySCICustomTheme:(NSString *)target {
     // Get notes composer vc
     _TtC20IGDirectNotesUISwift39IGDirectNotesBubbleEditorViewController *parentVC = [SCIUtils nearestViewControllerForView:self];
     if (!parentVC) return;

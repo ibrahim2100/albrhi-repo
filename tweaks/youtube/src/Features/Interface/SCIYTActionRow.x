@@ -399,7 +399,7 @@ static UIView *SCIFindActionsRow(UIView *root) {
     }
 }
 
-%new
+%new(v@:@)
 - (void)sciBarSaveTapped:(UIButton *)sender {
     UIViewController *host = SCIControllerForView(sender);
     if (host) {
@@ -473,7 +473,7 @@ static UIView *SCIFindActionsRow(UIView *root) {
     }
 }
 
-%new
+%new(v@:@)
 - (void)sciBarSaveTapped:(UIButton *)sender {
     UIViewController *host = SCIControllerForView(sender);
     if (host) {

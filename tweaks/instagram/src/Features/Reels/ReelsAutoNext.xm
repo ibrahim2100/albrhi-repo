@@ -177,7 +177,7 @@ static void SCIStyleAutoScrollButton(UIButton *button) {
     ]];
 }
 
-%new - (void)sciToggleAutoScroll:(UIButton *)sender {
+%new(v@:@) - (void)sciToggleAutoScroll:(UIButton *)sender {
     BOOL next = !SCIWantsAutoScroll();
     [[NSUserDefaults standardUserDefaults] setBool:next forKey:@"reels_auto_next"];
 

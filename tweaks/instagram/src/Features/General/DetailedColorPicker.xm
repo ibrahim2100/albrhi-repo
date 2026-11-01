@@ -12,7 +12,7 @@
     return;
 }
 
-%new - (void)addLongPressGestureRecognizer {
+%new(v@:) - (void)addLongPressGestureRecognizer {
     if ([self.gestureRecognizers count] == 0) {
         SCILogV(@"[SCInsta] Adding color eyedroppper long press gesture recognizer");
 
@@ -21,7 +21,7 @@
         [self addGestureRecognizer:longPress];
     }
 }
-%new - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
+%new(v@:@) - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateBegan) return;
     
     UIColorPickerViewController *colorPickerController = [[UIColorPickerViewController alloc] init];
@@ -40,7 +40,7 @@
 }
 
 // UIColorPickerViewControllerDelegate Protocol
-%new - (void)colorPickerViewController:(UIColorPickerViewController *)viewController
+%new(v@:@@B) - (void)colorPickerViewController:(UIColorPickerViewController *)viewController
                         didSelectColor:(UIColor *)color
                           continuously:(BOOL)continuously
 {

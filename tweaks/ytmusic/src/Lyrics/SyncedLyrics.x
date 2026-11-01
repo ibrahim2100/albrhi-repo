@@ -805,7 +805,7 @@ static void YTMUInstallDynamicHooks(void) {
     [self.ytmuSyncedLyricsView updatePlaybackTimeMs:timeMs];
 }
 
-%new
+%new(v@:)
 - (void)ytmu_attachSyncedLyricsViewIfNeeded {
     if (!YTMUArtworkLyricsOverlayEnabled()) {
         if (self.ytmuSyncedLyricsView) {
@@ -830,7 +830,7 @@ static void YTMUInstallDynamicHooks(void) {
     }
 }
 
-%new
+%new(v@:)
 - (void)ytmu_layoutSyncedLyricsView {
     if (!self.ytmuSyncedLyricsView) return;
     UIEdgeInsets safe = self.view.safeAreaInsets;

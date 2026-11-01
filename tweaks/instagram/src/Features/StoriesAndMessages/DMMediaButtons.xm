@@ -73,7 +73,7 @@ threadSubscriptionService:(id)threadSubscriptionService {
     if (button) [((IGDirectMediaViewerViewController *)self).view bringSubviewToFront:button];
 }
 
-%new - (void)sciAddDMSaveButton {
+%new(v@:) - (void)sciAddDMSaveButton {
     if ([((IGDirectMediaViewerViewController *)self).view viewWithTag:kSCIDMSaveButtonTag]) return;
 
     UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -100,7 +100,7 @@ threadSubscriptionService:(id)threadSubscriptionService {
     ]];
 }
 
-%new - (void)sciSaveDMMedia:(UIButton *)sender {
+%new(v@:@) - (void)sciSaveDMMedia:(UIButton *)sender {
     [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] impactOccurred];
 
     id video = objc_getAssociatedObject(self, kSCIDMVideoKey);

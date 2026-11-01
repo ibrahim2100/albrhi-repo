@@ -93,7 +93,7 @@ static CGFloat YTMUSponsorBlockCurrentVideoTime(YTPlayerViewController *player) 
     [self skipSegment];
 }
 
-%new
+%new(v@:)
 - (void)skipSegment {
     if (YTMU(@"sponsorBlock") && [NSJSONSerialization isValidJSONObject:self.sponsorBlockValues]) {
         NSString *videoID = YTMUSponsorBlockCurrentVideoID(self);

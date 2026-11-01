@@ -89,14 +89,14 @@ static NSInteger seekTime() {
 //     YTMU(@"YTMUltimateIsEnabled") && YTMU(@"seekButtons") ? [self didTapSeekForwardButton] : %orig;
 // }
 
-%new
+%new(v@:@)
 - (void)longPressPrev:(UILongPressGestureRecognizer *)gesture {
     if (gesture.state == UIGestureRecognizerStateBegan) {
         [self didTapPrevButton];
     }
 }
 
-%new
+%new(v@:@)
 - (void)longPressNext:(UILongPressGestureRecognizer *)gesture {
     if (gesture.state == UIGestureRecognizerStateBegan) {
         [self didTapNextButton];

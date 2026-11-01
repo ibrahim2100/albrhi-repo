@@ -39,7 +39,7 @@ static void initDownloaders (void) {
 
     return;
 }
-%new - (void)addLongPressGestureRecognizer {
+%new(v@:) - (void)addLongPressGestureRecognizer {
     // Once per view, not once per move.
     //
     // -didMoveToSuperview fires every time the view is re-parented, and the profile-picture
@@ -59,7 +59,7 @@ static void initDownloaders (void) {
     UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
     [self addGestureRecognizer:longPress];
 }
-%new - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
+%new(v@:@) - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateBegan) return;
 
     NSURL *imageUrl = nil;

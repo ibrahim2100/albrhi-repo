@@ -833,7 +833,7 @@ shouldPersistLastBugReportId:(id)arg6
     longPress.numberOfTouchesRequired = 5;
     [self.view addGestureRecognizer:longPress];
 }
-%new - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
+%new(v@:@) - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateBegan) return;
 
     if ([SCIUtils getBoolPref:@"flex_instagram"]) {

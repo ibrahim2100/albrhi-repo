@@ -53,7 +53,7 @@ static UIViewController *YTMULyricsPageTopPresenter(UIViewController *controller
     [self ytmu_updateLyricsTabOverlay];
 }
 
-%new
+%new(v@:)
 - (void)ytmu_updateLyricsTabOverlay {
     if (![NSThread isMainThread]) {
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -563,7 +563,7 @@ static char YTMULyricsActionBarSavedOffsetKey;
     [self ytmu_updateLyricsEntryButton];
 }
 
-%new
+%new(v@:)
 - (void)ytmu_updateLyricsEntryButton {
     if (!YTMULyricsPageCustomSourceEnabled()) {
         if ([self.ytmuLyricsEntryButton.superview isKindOfClass:[UIScrollView class]]) {
@@ -773,7 +773,7 @@ static char YTMULyricsActionBarSavedOffsetKey;
     }
 }
 
-%new
+%new(v@:)
 - (void)ytmu_scheduleLyricsEntryButtonRefresh {
     NSUInteger token = self.ytmuLyricsEntryRefreshToken.unsignedIntegerValue + 1;
     self.ytmuLyricsEntryRefreshToken = @(token);
@@ -790,7 +790,7 @@ static char YTMULyricsActionBarSavedOffsetKey;
     }
 }
 
-%new
+%new(v@:@)
 - (void)ytmu_handleLyricsEntryRefreshNotification:(NSNotification *)notification {
     if (![NSThread isMainThread]) {
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -814,7 +814,7 @@ static char YTMULyricsActionBarSavedOffsetKey;
     [self ytmu_scheduleLyricsEntryButtonRefresh];
 }
 
-%new
+%new(v@:@)
 - (void)ytmu_openLyricsPanel:(id)sender {
     if (!YTMULyricsPageCustomSourceEnabled()) return;
     UIViewController *presenter = YTMULyricsPageTopPresenter(self);
@@ -1014,7 +1014,7 @@ static BOOL YTMULyricsPageTapLooksLikeOfficialLyrics(id handler, YTMNowPlayingVi
     [self ytmu_hideOfficialLyricsActions];
 }
 
-%new
+%new(v@:)
 - (void)ytmu_ensureLyricsReplacementViews {
     UIView *container = nil;
     @try {
@@ -1082,7 +1082,7 @@ static BOOL YTMULyricsPageTapLooksLikeOfficialLyrics(id handler, YTMNowPlayingVi
     [self ytmu_updateSourceButtons];
 }
 
-%new
+%new(v@:)
 - (void)ytmu_renderLyricsPage {
     if (!YTMULyricsPageReplacementEnabled()) return;
     [self ytmu_ensureLyricsReplacementViews];
@@ -1127,7 +1127,7 @@ static BOOL YTMULyricsPageTapLooksLikeOfficialLyrics(id handler, YTMNowPlayingVi
                   (unsigned long)manager.translatedLines.count);
 }
 
-%new
+%new(v@:)
 - (void)ytmu_layoutSourceButtons {
     CGFloat x = 0.0;
     for (UIButton *button in self.ytmuSourceButtons) {
@@ -1139,13 +1139,13 @@ static BOOL YTMULyricsPageTapLooksLikeOfficialLyrics(id handler, YTMNowPlayingVi
     self.ytmuSourceScrollView.contentSize = CGSizeMake(MAX(x, self.ytmuSourceScrollView.bounds.size.width + 1), self.ytmuSourceScrollView.bounds.size.height);
 }
 
-%new
+%new(v@:@B)
 - (void)ytmu_scrollSourceButtonIntoView:(UIButton *)button animated:(BOOL)animated {
     if (!button || !self.ytmuSourceScrollView) return;
     [self.ytmuSourceScrollView scrollRectToVisible:CGRectInset(button.frame, -18.0, 0.0) animated:animated];
 }
 
-%new
+%new(v@:)
 - (void)ytmu_updateSourceButtons {
     NSString *selected = YTMULyricsPageString(@"lyricsPreferredSource", @"auto");
     for (UIButton *button in self.ytmuSourceButtons) {
@@ -1158,7 +1158,7 @@ static BOOL YTMULyricsPageTapLooksLikeOfficialLyrics(id handler, YTMNowPlayingVi
     }
 }
 
-%new
+%new(v@:@)
 - (void)ytmu_selectLyricsSource:(UIButton *)sender {
     NSArray *options = YTMULyricsPageSourceOptions();
     if (sender.tag >= options.count) return;
@@ -1169,7 +1169,7 @@ static BOOL YTMULyricsPageTapLooksLikeOfficialLyrics(id handler, YTMNowPlayingVi
     YTMULyricsLog(@"lyrics page source selected=%@", YTMULyricsPageSourceTitle(key));
 }
 
-%new
+%new(v@:@)
 - (void)ytmu_cycleLyricsSource:(UISwipeGestureRecognizer *)gesture {
     NSArray *options = YTMULyricsPageSourceOptions();
     if (!options.count) return;
@@ -1190,7 +1190,7 @@ static BOOL YTMULyricsPageTapLooksLikeOfficialLyrics(id handler, YTMNowPlayingVi
     YTMULyricsLog(@"lyrics page source swiped=%@", YTMULyricsPageSourceTitle(key));
 }
 
-%new
+%new(v@:)
 - (void)ytmu_hideOfficialLyricsActions {
     static const void *kLastHideTimeKey = &kLastHideTimeKey;
     NSNumber *last = objc_getAssociatedObject(self, kLastHideTimeKey);

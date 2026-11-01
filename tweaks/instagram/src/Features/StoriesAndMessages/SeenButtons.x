@@ -31,7 +31,7 @@
 }
 
 // Messages seen button
-%new - (void)seenButtonHandler:(UIBarButtonItem *)sender {
+%new(v@:@) - (void)seenButtonHandler:(UIBarButtonItem *)sender {
     UIViewController *nearestVC = [SCIUtils nearestViewControllerForView:self];
     if ([nearestVC isKindOfClass:%c(IGDirectThreadViewController)]) {
         [(IGDirectThreadViewController *)nearestVC markLastMessageAsSeen];
@@ -260,7 +260,7 @@ static void SCIUpdateVisualSeenIcon(UIButton *button) {
     if (save) [self.view bringSubviewToFront:save];
 }
 
-%new - (void)sciAddVisualSeenButton {
+%new(v@:) - (void)sciAddVisualSeenButton {
     if ([self.view viewWithTag:SCIVisualSeenButtonTag]) return;
 
     UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -282,7 +282,7 @@ static void SCIUpdateVisualSeenIcon(UIButton *button) {
     ]];
 }
 
-%new - (void)sciToggleVisualSeen:(UIButton *)sender {
+%new(v@:@) - (void)sciToggleVisualSeen:(UIButton *)sender {
     if (sciSeenMarkedCurrent) {
         [SCIUtils showToastForDuration:2.0 title:SCILocalized(@"p_dm_seen_already")];
         return;
@@ -299,7 +299,7 @@ static void SCIUpdateVisualSeenIcon(UIButton *button) {
                              title:SCILocalized(marked ? @"p_dm_seen_done" : @"p_dm_seen_failed")];
 }
 
-%new - (void)sciAddVisualSaveButton {
+%new(v@:) - (void)sciAddVisualSaveButton {
     if ([self.view viewWithTag:SCIVisualSaveButtonTag]) return;
 
     UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -324,7 +324,7 @@ static void SCIUpdateVisualSeenIcon(UIButton *button) {
     ]];
 }
 
-%new - (void)sciSaveVisualMessage:(UIButton *)sender {
+%new(v@:@) - (void)sciSaveVisualMessage:(UIButton *)sender {
     [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] impactOccurred];
 
     id message = objc_getAssociatedObject(self, kSCIVisualMsgKey);

@@ -678,7 +678,7 @@ static void SCIBuildExtraButtons(YTMainAppControlsOverlayView *overlay, BOOL qua
     SCIRecordOverlayPlacement(self);
 }
 
-%new
+%new(v@:@)
 - (void)sciSaveTapped:(UIButton *)sender {
     sciOverlayTaps++;
     SCIReportOverlayState([objc_getAssociatedObject(self, &kSCIOverlayJoined) boolValue]);
@@ -691,7 +691,7 @@ static void SCIBuildExtraButtons(YTMainAppControlsOverlayView *overlay, BOOL qua
     [SCIYTDownload presentFrom:host];
 }
 
-%new
+%new(v@:@)
 - (void)sciQualityTapped:(UIButton *)sender {
     sciQualityTaps++;
     SCIReportOverlayState([objc_getAssociatedObject(self, &kSCIOverlayJoined) boolValue]);
@@ -703,7 +703,7 @@ static void SCIBuildExtraButtons(YTMainAppControlsOverlayView *overlay, BOOL qua
     }
 }
 
-%new
+%new(v@:@)
 - (void)sciPiPTapped:(UIButton *)sender {
     sciPiPTaps++;
 

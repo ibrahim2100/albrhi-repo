@@ -143,7 +143,7 @@ BOOL isTabSelected = NO;
 
 // Stub for server-side request (Search results)
 %hook YTMLightweightOfflineTrackingSectionController
-%new
+%new(q@:@q)
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
     return 1;
 }

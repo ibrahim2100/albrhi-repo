@@ -615,7 +615,7 @@ static void SCIRefreshInlineButton(UIView *bar, id target) {
     SCIRefreshInlineButton((UIView *)self, self);
 }
 
-%new - (void)sciInlineDownloadPressed:(UIButton *)sender {
+%new(v@:@) - (void)sciInlineDownloadPressed:(UIButton *)sender {
     [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] impactOccurred];
 
     SCIHandleDownloadForBar((UIView *)self, sender);
@@ -632,7 +632,7 @@ static void SCIRefreshInlineButton(UIView *bar, id target) {
     SCIRefreshInlineButton((UIView *)self, self);
 }
 
-%new - (void)sciInlineDownloadPressed:(UIButton *)sender {
+%new(v@:@) - (void)sciInlineDownloadPressed:(UIButton *)sender {
     [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] impactOccurred];
 
     SCIHandleDownloadForBar((UIView *)self, sender);
@@ -649,7 +649,7 @@ static void SCIRefreshInlineButton(UIView *bar, id target) {
     SCIRefreshInlineButton((UIView *)self, self);
 }
 
-%new - (void)sciInlineDownloadPressed:(UIButton *)sender {
+%new(v@:@) - (void)sciInlineDownloadPressed:(UIButton *)sender {
     [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] impactOccurred];
 
     SCIHandleDownloadForBar((UIView *)self, sender);

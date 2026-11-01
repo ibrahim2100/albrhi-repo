@@ -256,7 +256,7 @@
     [likeButton addSubview:overlay];
 }
 
-%new - (void)overlayTapped:(UIButton *)overlay {
+%new(v@:@) - (void)overlayTapped:(UIButton *)overlay {
     UIButton *likeButton = (UIButton *)overlay.superview;
 
     [SCIUtils showConfirmation:^{

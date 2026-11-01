@@ -100,7 +100,7 @@ static id SCICurrentStorySection(UIViewController *viewer) {
     [self sciEnsureStoryDownloadButton];
 }
 
-%new - (void)sciEnsureStorySeenButton {
+%new(v@:) - (void)sciEnsureStorySeenButton {
     if (![SCIUtils getBoolPref:@"story_seen_button"]) return;
     if (![SCIUtils getBoolPref:@"no_seen_receipt"]) return;  // nothing to override
 
@@ -134,7 +134,7 @@ static id SCICurrentStorySection(UIViewController *viewer) {
     ]];
 }
 
-%new - (void)sciEnsureStoryDownloadButton {
+%new(v@:) - (void)sciEnsureStoryDownloadButton {
     if (![SCIUtils getBoolPref:@"story_download_button"]) return;
 
     if ([self.view viewWithTag:SCIStoryDownloadButtonTag]) return;
@@ -165,7 +165,7 @@ static id SCICurrentStorySection(UIViewController *viewer) {
     ]];
 }
 
-%new - (void)sciSeenReceiptWasSent:(NSNotification *)note {
+%new(v@:@) - (void)sciSeenReceiptWasSent:(NSNotification *)note {
     UIButton *button = (UIButton *)[self.view viewWithTag:SCIStorySeenButtonTag];
     if (!button) return;
 
@@ -181,7 +181,7 @@ static id SCICurrentStorySection(UIViewController *viewer) {
     });
 }
 
-%new - (void)sciToggleStorySeen:(UIButton *)sender {
+%new(v@:@) - (void)sciToggleStorySeen:(UIButton *)sender {
     [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] impactOccurred];
 
     // Let the receipt for the story on screen through, then move on. The flag is
@@ -218,7 +218,7 @@ static id SCICurrentStorySection(UIViewController *viewer) {
     });
 }
 
-%new - (void)sciDownloadStory:(UIButton *)sender {
+%new(v@:@) - (void)sciDownloadStory:(UIButton *)sender {
     [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] impactOccurred];
 
     [SCIMediaDownloader downloadVisibleStoryInView:self.view anchor:sender];
