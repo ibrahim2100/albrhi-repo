@@ -106,6 +106,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.104.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **يوتيوب 1.43.0 — مشغّل مركز التحميلات: إصلاح الفيديو الأسود بعد الإشعارات ومركز التحكم، وإيماءات (ضغط مطوّل ×2، سحب للتقديم، إضاءة وصوت من الحافتين، تقريب، لمستان…",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.103.0",
           "useBoldText": true
         },
@@ -131,20 +145,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.101.27",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **تيك توك 0.26.11 — الزر ثابت ولا ينزل، التاريخ لا يتداخل مع الاسم، زر بشعار الأداة، وقائمة نسخ بتصميم جديد.**",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.103.0"
+          "text": "1.104.0"
         },
         {
           "class": "DepictionTableTextView",
