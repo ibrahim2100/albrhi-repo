@@ -115,3 +115,47 @@ It does not say what any of these hooks *return*, or which of the 463 names are 
 device; **the binary was never run**. The count of *app-side* names is an over-count (ivars, UIKit). YouTube 21.41.5 is the build
 asked; the changelog says 6.0 was adapted for 21.43, so a name absent from 21.41.5 may exist there. Nothing in this report has been
 tried in this repository's own code.
+
+## The built-in player, read from its class metadata (2026-11-03, second pass)
+
+**What it is: a thin shell over one shared `AVPlayer`, and the interesting part is how AVPlayer is fed.** Nothing here is a decoder of
+its own (FFmpegKit is linked for *converting* saved files, not for playing). Read from `YTPPlayerEngine`, `YTPFlatAsset`, `YTPFormatModel`
+and the dylib's imports; the method bodies were not read.
+
+- **`YTPPlayerEngine`** (singleton, wraps `AVPlayer`; queue, repeat/shuffle, rate, resume position, Now Playing and remote commands,
+  `AVPlayerItemLegibleOutput` so subtitles can be drawn by the tweak, `YTPSegmentSkipper` for SponsorBlock). Its streaming entry is
+  `-playAdaptiveVideo:asset:audio:asset:caption:asset:switching:` with `_adaptiveVideo`/`_adaptiveAudio`/`_adaptiveCaption`
+  (`YTPFormatModel`: itag, codec, container, bitrate, fps, **`isDRC`, `isAutoDubbed`, `isDefaultTrack`, `requiresReencoding`**) and
+  `AVMutableComposition` among its imports: **separate video and audio streams of YouTube's adaptive formats are composed into one
+  item, so quality, audio track and caption are chosen independently and switched mid-playback** (`switching:`).
+- **`YTPFlatAsset` is the part that matters.** An `AVAssetResourceLoader` delegate (`resourceLoader:shouldWaitForLoadingOfRequestedResource:`)
+  that presents **a fragmented MP4 (DASH: `sidx`, `moof`, `trun`, `tfdt`, `trex`) as an ordinary "flat" MP4**. It reads the fragments
+  (`fetchMoofs:count:`), **builds the sample tables itself** (`fillTablesOf:stsd:samples:chunks:`, `setDuration:ofBox:offsets::`; the box
+  names `stts ctts stss stsc stsz stco co64` sit together in its strings), keeps the synthesised header (`_header`, `_dataStart`,
+  `_length`), and answers AVFoundation's byte-range requests by **mapping the virtual file's ranges onto ranges of the real URL**
+  (`streamURL:from:to:transfer:status:`, `runTransfer:from:to:mayRefresh:`, one `YTPFlatTransfer` per pending request, cancellable),
+  with **`urlRefresher`**: YouTube's URLs expire, and a stream that outlives its URL gets a fresh one *inside the loader*, where
+  AVPlayer never sees it (`adaptiveURLsExpireSoon`, `refreshStreamMedia:`). `YTPMP4Box` parses and **serialises** boxes.
+- **Why it exists is something this repository already measured:** AVFoundation reads YouTube's fragmented files with wrong timing
+  (CLAUDE.md §5.2: every timestamp doubled), which is why `SCIYTFragments` parses the boxes itself and writes with `AVAssetWriter`. YTLite
+  makes the same parse and, instead of writing a file, serves the result **on demand**, so playback starts at once and nothing is
+  saved first.
+- **The screen** (`YTPPlayerVC`, 152 methods): own overlay, double-tap and pan seeking, a side gesture (brightness/volume through
+  `MPVolumeController`), speed hold, **pinch and two-finger zoom with a remembered scale**, lock, queue panel, ambient mode, orientation
+  control, a custom transition; **PiP** through `AVPictureInPictureController` on the player layer with
+  `restoreUserInterfaceForPictureInPictureStop…`; **`YTPMiniPlayer`**, a window of its own with the same PiP plumbing; **`attachVideoLayer` /
+  `detachVideoLayerIfBackground`** (the picture is taken off the player when the app is in the background so the sound survives: the
+  same trick our player uses); **`YTPSystemPlayerVC`**, an `AVPlayerViewController` for plain URL playback; two small audio files
+  in the bundle (`silence.m4a`, `SponsorAudio.m4a`) and an `AVAudioPlayer` import.
+- **Where the streams come from** (`YTPAPIHelper`): `fetchVideo:forPlayback:completion:`, `requestVideo:authorized:forPlayback:`,
+  `webVisitorDataForPlayback:`, `invalidateWebVisitorDataForPlayback:`, `scrapeVisitorData`, a response cache per video id, playlist
+  paging. **The names say it asks YouTube itself, with a visitor id, as a playback request; they do not say as which client, nor
+  whether any proof-of-origin is attached, and that was not looked into.**
+
+**Against this repository's player** (`SCIYTPlayer`, 1,498 lines): the same shell (one `AVPlayer`, queue, lock screen, mini bar, resume, sleep
+timer, PiP, the layer taken off in the background). **What it does not have is the streaming half:** "Watch here" fetches the video
+through the direct route and opens the saved file, so playback waits for a download, shows one fixed quality, and has no audio-track or
+caption choice. The pieces to stream already exist here (`SCIYTDirect` for URLs with `&range=` chunks, `SCIYTFragments` for the boxes);
+the missing piece is the **virtual flat file behind `AVAssetResourceLoader`** and the composition of a video and an audio asset. What
+YTLite shows is that this is *possible on AVPlayer*; it does not show how well it behaves on this phone (iOS 16, hardware decoder state
+of the `-12913` episode), and nothing here has been tried.
