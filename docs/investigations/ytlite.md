@@ -159,3 +159,33 @@ caption choice. The pieces to stream already exist here (`SCIYTDirect` for URLs 
 the missing piece is the **virtual flat file behind `AVAssetResourceLoader`** and the composition of a video and an audio asset. What
 YTLite shows is that this is *possible on AVPlayer*; it does not show how well it behaves on this phone (iOS 16, hardware decoder state
 of the `-12913` episode), and nothing here has been tried.
+
+## The player for *saved* videos, which is the one that was meant (third pass)
+
+The section above was about its streaming half. What was asked is the player a **downloaded** file opens in: `YTPPlayerVC` +
+`YTPPlayerEngine` fed from `YTPDownloadRecord`s (`playRecords:startingAt:`), configured by `YTPPlayerSettings` (98 accessors) and
+the English strings (958 read, protection set aside). **Read from names only; nothing was run.**
+
+What a saved file carries and the player offers (record fields in bold): **several audio tracks** (`audioItag`, `originalLanguage`;
+"Audios", "Audio track", "Ignore auto-dubbed", "Prefer stable volume"), **captions** (embedded; "Embed captions", auto-generated and
+translated ones too; `AVPlayerItemLegibleOutput` so the tweak draws them, `drawsSubtitlesExternally`; "Captions if no preferred
+audio"), an embedded thumbnail and editable metadata, **`sourceCodec`/`finalCodec`/`container`** (a file in a format the phone cannot
+play says so: *"This format is not supported by your device. Re-encode to H.264?"*, with **Re-encode**, or **Play in… VLC / Infuse /
+System player**), `segmentsRemoved` (SponsorBlock cut at download time) and `playbackPosition` (resume, with a minimum position and an end margin).
+
+Gestures, each a switch with its own parameters: swipe to seek (method and sensitivity), tap the bar to seek, a side gesture per half
+(brightness/volume), two-finger pan for brightness, two-finger tap to pause, **hold to speed** (standard 0.25-5x, extended to 10x in
+0.05 steps, "lock speed" after a gesture), **pinch and two-finger zoom** (maximum scale, snap, fling, safe-area allowance, remembered
+per video), swipe down to dismiss (ratio and velocity), a split "player and list" layout. Layouts: default, adaptive, landscape,
+portrait fullscreen, a fullscreen direction that rotates the other way **even with rotation lock on**. Queue: a panel with
+thumbnails, reorder, shuffle, repeat modes, a "when finished" action, progress remembered inside playlists. Also: ambient glow,
+a floating mini window with PiP, PiP that starts itself, a loop button, mute button, lock button, sleep timer by chapter, buttons
+in two rows that can be reordered, Control Center integration.
+
+**Against `SCIYTPlayer` (same shell: one AVPlayer, queue, lock screen, mini bar, resume, sleep timer, PiP, layer detached in the
+background).** Ours has: play/pause/previous/next, a scrubber, double-tap to jump 10 s, a speed menu (0.75-2x), cover-coloured audio
+screen, rotation, PiP, resume. **Ours lacks, as read from the source:** any caption or audio-track choice (the label under the title is
+the quality text), brightness/volume gestures, hold-to-speed, swipe seek, zoom, orientation choices, shuffle/repeat/reorder, a way
+out for an unplayable file other than a share sheet (the dav1d conversion exists but only as a download-time switch), external players.
+The player has not been touched since 1.16.0. **Which of these is what hurts was not said, and the list is of differences, not of
+faults.** Two of them need the *downloader* to change first (captions, a second audio track): the file has to contain them.
