@@ -7,7 +7,7 @@
 #import "Diagnostics/SCIYTDiagnostics.h"
 #import "Features/Display/SCIYTDimmer.h"
 
-NSString *SCIVersionString = @"v1.42.1";  // AlbrhiYT
+NSString *SCIVersionString = @"v1.43.0";  // AlbrhiYT
 
 ///
 /// Capture, so the diagnostics page has something true to report.
@@ -97,6 +97,7 @@ NSString *SCIVersionString = @"v1.42.1";  // AlbrhiYT
         // this app already knows how to fill once permitted, and a display link asking
         // for less than the screen already gives for free is not a trade anyone wants.
         SCIPrefNativePIP: @YES,
+        SCIPrefPlayerGestures: @YES,
 
         SCIPrefVerboseLogging: @NO,
 

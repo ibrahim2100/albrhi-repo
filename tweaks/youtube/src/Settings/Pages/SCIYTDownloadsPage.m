@@ -198,6 +198,10 @@ static NSString *SCIHiResLabel(SCIHiRes value) {
                        detail:SCILocalized(@"set_lock_skip_note")
                        symbol:@"lock.iphone"
                       prefKey:SCIPrefLockScreenSkip],
+            [SCIRow switchRow:SCILocalized(@"set_player_gestures")
+                       detail:SCILocalized(@"set_player_gestures_note")
+                       symbol:@"hand.draw"
+                      prefKey:SCIPrefPlayerGestures],
         ];
 
         return @[start, size, after, library];

@@ -1057,6 +1057,15 @@ during launch (§4.3). The library and player (`SCIYTLibrary`, mini bar, lock-sc
 player when ours starts (two videos at once: an audio session only arbitrates between *apps*, and both players are in one process — the other has to be told, by name); files are named by extension; simultaneous downloads is a setting; a finished save of the same kind is
 reported as already saved rather than refetched.
 
+**The Centre's own player (`SCIYTPlayer`, 1.43.0) — what a player-only study and a simulator harness found.** YTLite 6.0's saved-video player (`docs/investigations/ytlite.md`) was read from its metadata
+only and nothing of it was copied: closed, stripped, no licence, and the owner's consent is not its author's. The behaviours were written here from scratch. **Resigning active is not leaving:** the layer was detached on `WillResignActive` and reattached only on `WillEnterForeground`,
+so the notification shade, Control Center, a Face ID sheet or a call banner (none enters the background) left sound under a black picture — reproduced in the harness (black at 0:25, audio running) and fixed by reattaching on `DidBecomeActive` too. Other faults found by reading it:
+lock-screen Play dropped the chosen speed (`-play` resets the rate), the "unreadable" title stuck after the file opened, the time labels froze during a scrub, Play at the end of the last item did nothing, and the lock-screen artwork was redrawn on every update.
+Gestures (`SCIPrefPlayerGestures`, default on, decided *when a recogniser would begin* so the switch is live): hold 2×, sideways drag seeks (a full width is 90 s or the file), the outer quarters drag brightness and volume, the middle is left to swipe-down-to-close, pinch fill/fit, two-finger tap pauses; the arithmetic is in
+`SCIYTPlayerMath.h` and host-tested. Seek follows the *physical* right like the double-tap zones, not the mirrored scrubber. An audio/caption picker appears only when the file carries alternatives (captions are drawn by the layer itself once selected: seen "Caption 9" on screen), and a repeat button cycles off / all / one.
+**Measured in the simulator only:** a hold of 5.3 s moved a 90 s test clip 10 s in 5.8 s of wall time (about 1.7× average; without the hold 5.8). The system volume slider does not exist in the simulator, so volume is unseen working. **Not built:** shuffle, a reorderable queue panel, the unplayable-file path, inverted fullscreen.
+Nothing here has run on a device.
+
 **The app stopped launching in 1.29–1.31 and the lessons are in §4.3** (three hooks asking for layout from inside layout; `-topControls`
 doing work per call; icon repaints; dead code woken by the `SCISafeValueForKey` fix; `_ASDisplayView`). The launch guard and `NOHOOKS`
 exist because of it. One failure was cured by clearing the app's data, and on a second phone by deleting the app (1.31.1 added two guards on the tab bar for it).
@@ -1377,8 +1386,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.42.1** · X **0.22.0** · TikTok **0.28.0** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.103.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.43.0** · X **0.22.0** · TikTok **0.28.0** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.104.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

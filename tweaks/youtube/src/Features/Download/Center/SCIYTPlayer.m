@@ -4,6 +4,7 @@
 #import "SCIYTLibrary.h"
 #import "SCIYTIcon.h"
 #import "SCIYTPalette.h"
+#import "SCIYTPlayerMath.h"
 #import "SCIYTHostPlayer.h"
 #import "../../../Diagnostics/SCIYTDiagnostics.h"
 #import "../../../SCILog.h"
@@ -79,6 +80,33 @@ static const double kSCINudge = 10;
 
 /// Half-seconds spent with a file that will not say how long it is.
 @property (nonatomic) NSInteger blindTicks;
+
+/// The title line is showing the "unreadable" notice instead of the name.
+@property (nonatomic) BOOL showingUnreadable;
+
+/// The lock screen picture for the current row, built once per row, not per description
+/// (the entry is rewritten on every pause, seek and return from the background).
+@property (nonatomic, strong) UIImage *lockArtwork;
+@property (nonatomic, copy) NSString *lockArtworkFile;
+
+// Gestures (SCIPrefPlayerGestures). Recognisers are always installed and decide at the moment
+// they would begin, so the switch takes effect the next touch rather than the next launch.
+@property (nonatomic, strong) UIPanGestureRecognizer *seekPan;
+@property (nonatomic, strong) UIPanGestureRecognizer *edgePan;
+@property (nonatomic, strong) UIPanGestureRecognizer *dismissPan;
+@property (nonatomic, strong) UILabel *hud;
+@property (nonatomic, strong) NSTimer *hudTimer;
+@property (nonatomic, strong) MPVolumeView *volumeView;
+@property (nonatomic) double dragStart;
+@property (nonatomic) double dragTarget;
+@property (nonatomic) SCIPlayerDrag dragKind;
+@property (nonatomic) BOOL holdingFast;
+
+// What a file carries besides its picture and its first sound: other languages, captions.
+@property (nonatomic, strong) UIButton *tracksButton;
+@property (nonatomic, strong) UIButton *repeatButton;
+/// 0 off, 1 the whole queue, 2 this one.
+@property (nonatomic) NSInteger repeatMode;
 
 /// Whether the audio session is already ours, so it is not taken twice.
 @property (nonatomic) BOOL claimed;
@@ -217,6 +245,16 @@ static SCIYTPlayer *sciCurrent = nil;
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(cameBack)
                                                  name:UIApplicationWillEnterForegroundNotification
+                                               object:nil];
+
+    // Resigning active is not leaving: the notification shade, Control Center, a Face ID
+    // sheet and a call banner all resign without ever entering the background, so
+    // WillEnterForeground never follows them and the layer detached above stayed empty --
+    // sound carrying on under a black picture until the screen was closed and reopened.
+    // Becoming active is the one event every one of those ends with.
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(cameBack)
+                                                 name:UIApplicationDidBecomeActiveNotification
                                                object:nil];
 
     // Not loaded here. Presentation does it, and only when the row being opened is not the
@@ -493,6 +531,8 @@ static SCIYTPlayer *sciCurrent = nil;
     [self.scrubber setThumbImage:[self thumbOfSize:12] forState:UIControlStateNormal];
     [self.scrubber setThumbImage:[self thumbOfSize:20] forState:UIControlStateHighlighted];
 
+    [self.scrubber addTarget:self action:@selector(scrubMoved)
+            forControlEvents:UIControlEventValueChanged];
     [self.scrubber addTarget:self action:@selector(scrubStarted)
             forControlEvents:UIControlEventTouchDown];
     [self.scrubber addTarget:self action:@selector(scrubEnded)
@@ -592,8 +632,14 @@ static SCIYTPlayer *sciCurrent = nil;
     route.activeTintColor = SCIAccent();
     route.tintColor = [UIColor colorWithWhite:1 alpha:0.75];
 
+    self.repeatButton = [self control:@"repeat" size:17 action:@selector(cycleRepeat)];
+    self.repeatButton.accessibilityLabel = SCILocalized(@"player_repeat_off");
+    self.tracksButton = [self control:@"captions.bubble" size:17 action:@selector(pickTracks)];
+    self.tracksButton.accessibilityLabel = SCILocalized(@"player_captions");
+    self.tracksButton.hidden = YES;
+
     UIStackView *extras = [[UIStackView alloc] initWithArrangedSubviews:
-        @[self.speedButton, route, self.sleepButton]];
+        @[self.speedButton, self.repeatButton, route, self.tracksButton, self.sleepButton]];
     extras.axis = UILayoutConstraintAxisHorizontal;
     extras.distribution = UIStackViewDistributionEqualCentering;
     extras.alignment = UIStackViewAlignmentCenter;
@@ -650,6 +696,224 @@ static SCIYTPlayer *sciCurrent = nil;
         [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleDismissPan:)];
     dismiss.delegate = self;
     [self.view addGestureRecognizer:dismiss];
+    self.dismissPan = dismiss;
+
+    // The rest, on the picture only (the controls below it keep their own touches).
+    self.seekPan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleSeekPan:)];
+    self.seekPan.delegate = self;
+    [self.stage addGestureRecognizer:self.seekPan];
+
+    self.edgePan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleEdgePan:)];
+    self.edgePan.delegate = self;
+    [self.stage addGestureRecognizer:self.edgePan];
+
+    UILongPressGestureRecognizer *hold =
+        [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleHold:)];
+    hold.minimumPressDuration = 0.45;
+    hold.delegate = self;
+    [self.stage addGestureRecognizer:hold];
+
+    UIPinchGestureRecognizer *pinch =
+        [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(handlePinch:)];
+    pinch.delegate = self;
+    [self.stage addGestureRecognizer:pinch];
+
+    UITapGestureRecognizer *two =
+        [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(twoFingerTapped:)];
+    two.numberOfTouchesRequired = 2;
+    two.delegate = self;
+    [self.stage addGestureRecognizer:two];
+
+    self.hud = [[UILabel alloc] init];
+    self.hud.font = [UIFont monospacedDigitSystemFontOfSize:17 weight:UIFontWeightSemibold];
+    self.hud.textColor = [UIColor whiteColor];
+    self.hud.textAlignment = NSTextAlignmentCenter;
+    self.hud.backgroundColor = [UIColor colorWithWhite:0 alpha:0.55];
+    self.hud.layer.cornerRadius = 14;
+    self.hud.layer.cornerCurve = kCACornerCurveContinuous;
+    self.hud.clipsToBounds = YES;
+    self.hud.alpha = 0;
+    self.hud.isAccessibilityElement = NO;
+    self.hud.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.stage addSubview:self.hud];
+    [NSLayoutConstraint activateConstraints:@[
+        [self.hud.centerXAnchor constraintEqualToAnchor:self.stage.centerXAnchor],
+        [self.hud.topAnchor constraintEqualToAnchor:self.stage.safeAreaLayoutGuide.topAnchor constant:64],
+        [self.hud.heightAnchor constraintEqualToConstant:34],
+        [self.hud.widthAnchor constraintGreaterThanOrEqualToConstant:84],
+    ]];
+
+    // The volume slider of the system lives in this view, and reads back only while the view
+    // is in a window. Parked off screen and invisible rather than hidden (a hidden one is
+    // ignored), and created once.
+    self.volumeView = [[MPVolumeView alloc] initWithFrame:CGRectMake(-200, -200, 10, 10)];
+    self.volumeView.alpha = 0.01;
+    self.volumeView.userInteractionEnabled = NO;
+    [self.view addSubview:self.volumeView];
+}
+
+// MARK: - Gestures on the picture
+
+- (BOOL)gesturesOn { return SCIPrefEnabled(SCIPrefPlayerGestures); }
+
+/// A word over the picture, for about a second.
+- (void)say:(NSString *)text {
+    self.hud.text = [NSString stringWithFormat:@"  %@  ", text];
+    [self.hudTimer invalidate];
+    [UIView animateWithDuration:0.12 animations:^{ self.hud.alpha = 1; }];
+    self.hudTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 repeats:NO block:^(NSTimer *t) {
+        [UIView animateWithDuration:0.25 animations:^{ self.hud.alpha = 0; }];
+    }];
+}
+
+- (UISlider *)systemVolumeSlider {
+    for (UIView *view in self.volumeView.subviews) {
+        if ([view isKindOfClass:[UISlider class]]) return (UISlider *)view;
+    }
+    return nil;
+}
+
+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gesture {
+    if (gesture == self.dismissPan) {
+        // Down, and not at an edge where the same drag means brightness or volume. Sideways
+        // and upward drags were already ignored in the handler; refusing them here as well
+        // leaves the touch to the recogniser that wants it.
+        UIPanGestureRecognizer *pan = (UIPanGestureRecognizer *)gesture;
+        CGPoint v = [pan velocityInView:self.view];
+        if (v.y <= 0 || fabs(v.x) > fabs(v.y)) return NO;
+        if ([self gesturesOn]) {
+            CGPoint at = [pan locationInView:self.stage];
+            if (CGRectContainsPoint(self.stage.bounds, at)
+                && SCIPlayerClassifyDrag(v.x, v.y, at.x, self.stage.bounds.size.width) != SCIPlayerDragNone) {
+                return NO;
+            }
+        }
+        return YES;
+    }
+
+    if (gesture == self.seekPan || gesture == self.edgePan) {
+        if (![self gesturesOn]) return NO;
+        UIPanGestureRecognizer *pan = (UIPanGestureRecognizer *)gesture;
+        CGPoint v = [pan velocityInView:self.stage];
+        CGPoint at = [pan locationInView:self.stage];
+        SCIPlayerDrag kind = SCIPlayerClassifyDrag(v.x, v.y, at.x, self.stage.bounds.size.width);
+        if (gesture == self.seekPan) return kind == SCIPlayerDragSeek && self.player.currentItem;
+        return kind == SCIPlayerDragBrightness || kind == SCIPlayerDragVolume;
+    }
+
+    return [self gesturesOn];
+}
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)a shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)b {
+    // A pinch and a two-finger tap are made of the same two fingers.
+    return [a isKindOfClass:[UIPinchGestureRecognizer class]] || [b isKindOfClass:[UIPinchGestureRecognizer class]];
+}
+
+- (void)handleSeekPan:(UIPanGestureRecognizer *)pan {
+    double length = CMTimeGetSeconds(self.player.currentItem.duration);
+    CGFloat width = self.stage.bounds.size.width;
+
+    switch (pan.state) {
+        case UIGestureRecognizerStateBegan:
+            self.dragStart = CMTimeGetSeconds(self.player.currentTime);
+            self.dragTarget = self.dragStart;
+            self.scrubbing = YES;
+            [self.linger invalidate];
+            break;
+
+        case UIGestureRecognizerStateChanged: {
+            self.dragTarget = SCIPlayerSeekTarget(self.dragStart, [pan translationInView:self.stage].x, width, length);
+            if (isfinite(length) && length > 0) {
+                self.scrubber.value = (float)(self.dragTarget / length);
+                self.elapsed.text = [SCIYTThumbnails clock:self.dragTarget];
+                self.remaining.text = [@"-" stringByAppendingString:[SCIYTThumbnails clock:length - self.dragTarget]];
+            }
+            double delta = self.dragTarget - self.dragStart;
+            [self say:[NSString stringWithFormat:@"%@%@  ·  %@", delta < 0 ? @"−" : @"+",
+                       [SCIYTThumbnails clock:fabs(delta)], [SCIYTThumbnails clock:self.dragTarget]]];
+            break;
+        }
+
+        case UIGestureRecognizerStateEnded:
+            self.scrubbing = NO;
+            [self seekTo:self.dragTarget];
+            [self restartLinger];
+            break;
+
+        default:
+            // Cancelled or failed: nothing was committed, so nothing moves.
+            self.scrubbing = NO;
+            [self restartLinger];
+            break;
+    }
+}
+
+- (void)handleEdgePan:(UIPanGestureRecognizer *)pan {
+    CGFloat height = self.stage.bounds.size.height;
+
+    switch (pan.state) {
+        case UIGestureRecognizerStateBegan: {
+            CGPoint at = [pan locationInView:self.stage];
+            CGPoint v = [pan velocityInView:self.stage];
+            self.dragKind = SCIPlayerClassifyDrag(v.x, v.y, at.x, self.stage.bounds.size.width);
+            self.dragStart = (self.dragKind == SCIPlayerDragBrightness)
+                ? UIScreen.mainScreen.brightness
+                : [self systemVolumeSlider].value;
+            break;
+        }
+
+        case UIGestureRecognizerStateChanged: {
+            double level = SCIPlayerEdgeLevel(self.dragStart, [pan translationInView:self.stage].y, height);
+            BOOL bright = (self.dragKind == SCIPlayerDragBrightness);
+            if (bright) {
+                UIScreen.mainScreen.brightness = level;
+            } else {
+                [self systemVolumeSlider].value = (float)level;
+            }
+            [self say:[NSString stringWithFormat:@"%@  %d%%", bright ? @"☀︎" : @"🔊", (int)lround(level * 100)]];
+            break;
+        }
+
+        default: break;
+    }
+}
+
+/// Held, the picture plays at 2×; let go and it is back to what it was. The chosen speed is
+/// never overwritten, only overridden for as long as the finger is down.
+- (void)handleHold:(UILongPressGestureRecognizer *)hold {
+    if (hold.state == UIGestureRecognizerStateBegan) {
+        if (self.player.rate <= 0) return;
+        self.holdingFast = YES;
+        self.player.rate = 2;
+        [self lightHaptic];
+        [self say:[NSString stringWithFormat:SCILocalized(@"player_hud_speed"), @"2"]];
+        return;
+    }
+
+    if (hold.state == UIGestureRecognizerStateEnded
+        || hold.state == UIGestureRecognizerStateCancelled
+        || hold.state == UIGestureRecognizerStateFailed) {
+        if (!self.holdingFast) return;
+        self.holdingFast = NO;
+        if (self.player.rate > 0) self.player.rate = self.speed;
+        [self describeToLockScreen];
+    }
+}
+
+- (void)handlePinch:(UIPinchGestureRecognizer *)pinch {
+    if (pinch.state != UIGestureRecognizerStateEnded) return;
+    if ([self current].kind != SCIYTJobKindVideo) return;
+
+    int choice = SCIPlayerZoomChoice(pinch.scale);
+    if (choice == 0) return;
+
+    self.layer.videoGravity = (choice > 0) ? AVLayerVideoGravityResizeAspectFill : AVLayerVideoGravityResizeAspect;
+    [self lightHaptic];
+    [self say:SCILocalized(choice > 0 ? @"player_hud_zoom_fill" : @"player_hud_zoom_fit")];
+}
+
+- (void)twoFingerTapped:(__unused UITapGestureRecognizer *)tap {
+    [self togglePlay];
 }
 
 // Left alone for the slider, the transport buttons and the route picker -- a pan
@@ -1026,6 +1290,8 @@ static SCIYTPlayer *sciCurrent = nil;
     self.scrubber.value = 0;
     self.publishedLength = NO;
     self.blindTicks = 0;
+    self.showingUnreadable = NO;
+    self.tracksButton.hidden = YES;
 
     [self preparePiP:isVideo];
 
@@ -1096,7 +1362,101 @@ static SCIYTPlayer *sciCurrent = nil;
         [self describeToLockScreen];
         return;
     }
+
+    if (self.repeatMode == 2) {
+        __weak __typeof(self) weakSelf = self;
+        [self.player seekToTime:kCMTimeZero toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero
+              completionHandler:^(__unused BOOL finished) {
+            weakSelf.player.rate = weakSelf.speed;
+            [weakSelf showPlaying:YES];
+            [weakSelf describeToLockScreen];
+        }];
+        return;
+    }
+
+    if (self.repeatMode == 1 && self.index + 1 >= self.jobs.count) {
+        self.index = 0;
+        [self load];
+        return;
+    }
     [self next];
+}
+
+/// Off, the whole queue, this one. The symbol says which; the accessibility label says it
+/// in words, because a glyph that changes by a dot is not something VoiceOver can describe.
+- (void)cycleRepeat {
+    self.repeatMode = (self.repeatMode + 1) % 3;
+    NSString *symbol = self.repeatMode == 2 ? @"repeat.1" : @"repeat";
+    NSString *key = self.repeatMode == 0 ? @"player_repeat_off"
+                  : self.repeatMode == 1 ? @"player_repeat_all" : @"player_repeat_one";
+
+    UIImageSymbolConfiguration *weight =
+        [UIImageSymbolConfiguration configurationWithPointSize:17 weight:UIImageSymbolWeightMedium];
+    [self.repeatButton setImage:[UIImage systemImageNamed:symbol withConfiguration:weight]
+                       forState:UIControlStateNormal];
+    self.repeatButton.tintColor = self.repeatMode == 0 ? [UIColor colorWithWhite:1 alpha:0.75] : SCIAccent();
+    self.repeatButton.accessibilityLabel = SCILocalized(key);
+    [self lightHaptic];
+    [self say:SCILocalized(key)];
+}
+
+// MARK: - Other languages and captions
+
+/// Shown only when the file has something to choose: a second sound, or captions.
+- (void)refreshTracksButton {
+    AVAsset *asset = self.player.currentItem.asset;
+    __weak __typeof(self) weakSelf = self;
+    [asset loadValuesAsynchronouslyForKeys:@[@"availableMediaCharacteristics"] completionHandler:^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            __typeof(self) strongSelf = weakSelf;
+            if (!strongSelf || strongSelf.player.currentItem.asset != asset) return;
+            AVMediaSelectionGroup *audio = [asset mediaSelectionGroupForMediaCharacteristic:AVMediaCharacteristicAudible];
+            AVMediaSelectionGroup *text = [asset mediaSelectionGroupForMediaCharacteristic:AVMediaCharacteristicLegible];
+            strongSelf.tracksButton.hidden = !(audio.options.count > 1 || text.options.count > 0);
+        });
+    }];
+}
+
+- (void)pickTracks {
+    AVPlayerItem *item = self.player.currentItem;
+    AVAsset *asset = item.asset;
+    AVMediaSelectionGroup *audio = [asset mediaSelectionGroupForMediaCharacteristic:AVMediaCharacteristicAudible];
+    AVMediaSelectionGroup *text = [asset mediaSelectionGroupForMediaCharacteristic:AVMediaCharacteristicLegible];
+
+    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:nil message:nil
+                                                            preferredStyle:UIAlertControllerStyleActionSheet];
+
+    if (audio.options.count > 1) {
+        AVMediaSelectionOption *chosen = [item.currentMediaSelection selectedMediaOptionInMediaSelectionGroup:audio];
+        for (AVMediaSelectionOption *option in audio.options) {
+            NSString *title = [NSString stringWithFormat:@"%@ · %@%@", SCILocalized(@"player_audio"),
+                               option.displayName, option == chosen ? @"  ✓" : @""];
+            [sheet addAction:[UIAlertAction actionWithTitle:title style:UIAlertActionStyleDefault
+                                                    handler:^(__unused UIAlertAction *action) {
+                [item selectMediaOption:option inMediaSelectionGroup:audio];
+            }]];
+        }
+    }
+
+    if (text.options.count > 0) {
+        AVMediaSelectionOption *chosen = [item.currentMediaSelection selectedMediaOptionInMediaSelectionGroup:text];
+        NSString *off = [NSString stringWithFormat:@"%@ · %@%@", SCILocalized(@"player_captions"),
+                         SCILocalized(@"player_captions_off"), chosen ? @"" : @"  ✓"];
+        [sheet addAction:[UIAlertAction actionWithTitle:off style:UIAlertActionStyleDefault
+                                                handler:^(__unused UIAlertAction *action) {
+            [item selectMediaOption:nil inMediaSelectionGroup:text];
+        }]];
+        for (AVMediaSelectionOption *option in text.options) {
+            NSString *title = [NSString stringWithFormat:@"%@ · %@%@", SCILocalized(@"player_captions"),
+                               option.displayName, option == chosen ? @"  ✓" : @""];
+            [sheet addAction:[UIAlertAction actionWithTitle:title style:UIAlertActionStyleDefault
+                                                    handler:^(__unused UIAlertAction *action) {
+                [item selectMediaOption:option inMediaSelectionGroup:text];
+            }]];
+        }
+    }
+
+    [self offer:sheet from:self.tracksButton];
 }
 
 - (void)togglePlay {
@@ -1106,6 +1466,12 @@ static SCIYTPlayer *sciCurrent = nil;
         [self.player pause];
         [self rememberPosition];
     } else {
+        // At the very end of the last item AVPlayer will not play: it has nothing left. Back
+        // to the start, as every player does when Play is pressed on a finished video.
+        double length = CMTimeGetSeconds(self.player.currentItem.duration);
+        if (isfinite(length) && length > 0 && CMTimeGetSeconds(self.player.currentTime) >= length - 0.25) {
+            [self.player seekToTime:kCMTimeZero toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
+        }
         self.player.rate = self.speed;
     }
     [self showPlaying:!playing];
@@ -1194,6 +1560,16 @@ static SCIYTPlayer *sciCurrent = nil;
     [self.linger invalidate];
 }
 
+/// The time labels follow the thumb. They used to freeze while it was held, because -tick
+/// leaves them alone during a scrub and nothing else wrote them.
+- (void)scrubMoved {
+    double length = CMTimeGetSeconds(self.player.currentItem.duration);
+    if (!isfinite(length) || length <= 0) return;
+    double at = self.scrubber.value * length;
+    self.elapsed.text = [SCIYTThumbnails clock:at];
+    self.remaining.text = [@"-" stringByAppendingString:[SCIYTThumbnails clock:length - at]];
+}
+
 - (void)scrubEnded {
     self.scrubbing = NO;
 
@@ -1243,14 +1619,23 @@ static SCIYTPlayer *sciCurrent = nil;
                     reason ?: @"no error given"]];
 
             self.name.text = SCILocalized(@"player_unreadable");
+            self.showingUnreadable = YES;
         }
         return;
     }
 
     self.blindTicks = 0;
 
+    // A file that turned out readable after all (a slow disk, a download finishing) must
+    // not keep wearing the notice written while it looked dead.
+    if (self.showingUnreadable) {
+        self.showingUnreadable = NO;
+        self.name.text = [self current].title;
+    }
+
     if (!self.publishedLength) {
         self.publishedLength = YES;
+        [self refreshTracksButton];
         [self describeToLockScreen];
         [self restartLinger];
     }
@@ -1349,7 +1734,11 @@ static SCIYTPlayer *sciCurrent = nil;
 }
 
 - (void)cameBack {
-    if ([self current].kind == SCIYTJobKindVideo) self.layer.player = self.player;
+    // Reached by two notifications now; handing the layer the player it already has would
+    // be a needless re-attach (a visible flicker), so only a detached layer is given one.
+    if ([self current].kind == SCIYTJobKindVideo && self.layer.player != self.player) {
+        self.layer.player = self.player;
+    }
 }
 
 // MARK: - Buffering
@@ -1435,7 +1824,10 @@ static SCIYTPlayer *sciCurrent = nil;
 }
 
 - (MPRemoteCommandHandlerStatus)remotePlay:(__unused MPRemoteCommandEvent *)event {
+    // -play resumes at the default rate; the chosen speed is put back, as every other
+    // way of starting playback here does, or the lock screen's Play drops 1.5x to 1x.
     [self.player play];
+    self.player.rate = self.speed;
     [self showPlaying:YES];
     [self describeToLockScreen];
     return MPRemoteCommandHandlerStatusSuccess;
@@ -1482,8 +1874,12 @@ static SCIYTPlayer *sciCurrent = nil;
         // The handler is called on iOS's schedule and more than once, so the result is built
         // once here rather than redrawn per request: the lock screen, Control Centre and the
         // car all ask, and drawing a gradient three times for one track is work nobody sees.
-        CGFloat side = MAX(still.size.width, still.size.height);
-        UIImage *square = [SCIYTPalette squareArtwork:still side:side];
+        if (!self.lockArtwork || ![self.lockArtworkFile isEqualToString:job.fileName]) {
+            CGFloat side = MAX(still.size.width, still.size.height);
+            self.lockArtwork = [SCIYTPalette squareArtwork:still side:side];
+            self.lockArtworkFile = job.fileName;
+        }
+        UIImage *square = self.lockArtwork;
 
         now[MPMediaItemPropertyArtwork] =
             [[MPMediaItemArtwork alloc] initWithBoundsSize:square.size

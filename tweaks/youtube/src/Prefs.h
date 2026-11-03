@@ -23,6 +23,14 @@
 /// `-playableInBackground` is already hooked on.
 #define SCIPrefNativePIP        @"native_picture_in_picture"
 
+/// Gestures on the Download Centre's own player: hold for 2x, drag sideways to seek, drag the
+/// left or right edge for brightness or volume, pinch to fill the screen, two fingers to pause.
+///
+/// **On**, because a player that only answers buttons is the thing people compare against. It is
+/// a switch because the edges and the hold are the first thing a stray thumb meets, and a
+/// player that does something unasked is worse than one that does less.
+#define SCIPrefPlayerGestures   @"player_gestures"
+
 #define SCIPrefVerboseLogging   @"verbose_logging"
 
 /// Downloads.
