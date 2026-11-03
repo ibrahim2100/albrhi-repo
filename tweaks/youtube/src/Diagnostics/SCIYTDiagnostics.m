@@ -1,4 +1,5 @@
 #import "SCIYTDiagnostics.h"
+#import "../Features/Download/Center/SCIYTArbiter.h"
 #import "SCIYTDiagnosticsInternal.h"
 #import "../SCIYTLaunchGuard.h"
 #import "shared/src/SCIKVC.h"
@@ -1123,6 +1124,8 @@ static NSMutableArray<NSString *> *sciStreamAttempts = nil;
     [out appendFormat:@"%@\n  %@\n\n", SCILocalized(@"diag_shorts_ads"), [self shortsAdState]];
 
     [out appendFormat:@"%@\n  %@\n\n", SCILocalized(@"diag_ad_gates"), [self adGateState]];
+
+    [out appendFormat:@"%@\n  %@\n\n", SCILocalized(@"diag_arbiter"), [SCIYTArbiter report]];
 
     [out appendFormat:@"%@\n  %@\n  %@\n\n", SCILocalized(@"diag_playback_fix"), [self playbackFixState], [SCIYTWatch report]];
     [out appendFormat:@"%@\n", SCIYTPoProbeReport()];

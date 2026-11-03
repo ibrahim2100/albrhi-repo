@@ -6,6 +6,7 @@
 #import "SCIYTPalette.h"
 #import "SCIYTPlayerMath.h"
 #import "SCIYTHostPlayer.h"
+#import "SCIYTArbiter.h"
 #import "../../../Diagnostics/SCIYTDiagnostics.h"
 #import "../../../SCILog.h"
 #import "../../../Prefs.h"
@@ -180,6 +181,32 @@ static SCIYTPlayer *sciCurrent = nil;
         postNotificationName:SCIYTPlaybackDidChangeNotification object:nil];
 }
 
+/// YouTube's player started audibly: ours stops talking, and says so only on its own screen.
+/// Not described to the lock screen -- that entry is YouTube's now.
++ (void)pauseForHost {
+    SCIYTPlayer *player = sciCurrent;
+    if (!player || player.player.rate <= 0) return;
+
+    [player.player pause];
+    [player rememberPosition];
+    [player showPlaying:NO];
+    [[NSNotificationCenter defaultCenter]
+        postNotificationName:SCIYTPlaybackDidChangeNotification object:nil];
+}
+
+/// YouTube's code just let go of the audio session. When it is our player that is playing, the
+/// session is taken back -- forced, because the flag that says it is already ours is now stale.
++ (BOOL)reclaimAudioIfPlaying {
+    SCIYTPlayer *player = sciCurrent;
+    if (!player || player.player.rate <= 0 || [SCIYTArbiter owner] != SCIOwnerOurs) return NO;
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        player.claimed = NO;
+        [player claimAudio];
+    });
+    return YES;
+}
+
 + (double)progress {
     SCIYTPlayer *player = sciCurrent;
     double at = CMTimeGetSeconds(player.player.currentTime);
@@ -304,18 +331,26 @@ static SCIYTPlayer *sciCurrent = nil;
     MPRemoteCommandCenter *centre = [MPRemoteCommandCenter sharedCommandCenter];
     [centre.playCommand removeTarget:self];
     [centre.pauseCommand removeTarget:self];
+    [centre.togglePlayPauseCommand removeTarget:self];
     if (self.nextToken) { [centre.nextTrackCommand removeTarget:self.nextToken]; self.nextToken = nil; }
     if (self.previousToken) { [centre.previousTrackCommand removeTarget:self.previousToken]; self.previousToken = nil; }
     if (self.positionToken) { [centre.changePlaybackPositionCommand removeTarget:self.positionToken]; self.positionToken = nil; }
     if (self.forwardToken) { [centre.skipForwardCommand removeTarget:self.forwardToken]; self.forwardToken = nil; }
     if (self.backwardToken) { [centre.skipBackwardCommand removeTarget:self.backwardToken]; self.backwardToken = nil; }
 
-    [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nil;
+    [SCIYTArbiter oursEnded];
 
+    // Letting go of the entry and the session is for when nobody else holds them. If YouTube's
+    // player has taken over, the entry on the lock screen is its own and the session is under
+    // its playback -- clearing the first blanks the lock screen and deactivating the second
+    // silences the video that is playing.
     self.claimed = NO;
-    [[AVAudioSession sharedInstance] setActive:NO
-                                   withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation
-                                         error:nil];
+    if ([SCIYTArbiter owner] != SCIOwnerHost) {
+        [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nil;
+        [[AVAudioSession sharedInstance] setActive:NO
+                                       withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation
+                                             error:nil];
+    }
 }
 
 /// The picture, and what stands in for it when there is none.
@@ -1237,8 +1272,10 @@ static SCIYTPlayer *sciCurrent = nil;
     }
 
     // YouTube's own player, stopped before ours starts. Same process, so the audio session
-    // will not do this for us and both would play at once.
-    [SCIYTHostPlayer pauseHost];
+    // will not do this for us and both would play at once. Ownership is taken with it, so the
+    // lock screen's buttons and the "now playing" entry follow this player and not YouTube's.
+    [SCIYTArbiter oursStarted];
+    [SCIYTArbiter pauseHostPlayers];
 
     // The one being left, before it is replaced.
     if (self.player) [self rememberPosition];
@@ -1472,6 +1509,8 @@ static SCIYTPlayer *sciCurrent = nil;
         if (isfinite(length) && length > 0 && CMTimeGetSeconds(self.player.currentTime) >= length - 0.25) {
             [self.player seekToTime:kCMTimeZero toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
         }
+        [SCIYTArbiter oursStarted];
+        [SCIYTArbiter pauseHostPlayers];
         self.player.rate = self.speed;
     }
     [self showPlaying:!playing];
@@ -1726,7 +1765,11 @@ static SCIYTPlayer *sciCurrent = nil;
     NSUInteger options = [note.userInfo[AVAudioSessionInterruptionOptionKey] unsignedIntegerValue];
     if (!(options & AVAudioSessionInterruptionOptionShouldResume)) return;
 
+    // An interruption that ended while YouTube's player has the floor is not ours to resume.
+    if ([SCIYTArbiter owner] == SCIOwnerHost) return;
+
     [self claimAudio];
+    [SCIYTArbiter oursStarted];
     [self.player play];
     self.player.rate = self.speed;
     [self showPlaying:YES];
@@ -1790,8 +1833,15 @@ static SCIYTPlayer *sciCurrent = nil;
     [centre.playCommand addTarget:self action:@selector(remotePlay:)];
     [centre.pauseCommand addTarget:self action:@selector(remotePause:)];
 
+    // The headphone button and CarPlay's single press. Not wired before, so with YouTube's
+    // handler standing back it would have reached nothing at all.
+    centre.togglePlayPauseCommand.enabled = YES;
+    [centre.togglePlayPauseCommand addTarget:self action:@selector(remoteToggle:)];
+
     self.positionToken = [centre.changePlaybackPositionCommand
         addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
+            if (![SCIYTArbiter oursMayAct]) return MPRemoteCommandHandlerStatusNoActionableNowPlayingItem;
+            [SCIYTArbiter oursCommanded];
             MPChangePlaybackPositionCommandEvent *moved =
                 (MPChangePlaybackPositionCommandEvent *)event;
             [weakSelf seekTo:moved.positionTime];
@@ -1800,30 +1850,44 @@ static SCIYTPlayer *sciCurrent = nil;
 
     self.nextToken = [centre.nextTrackCommand
         addTargetWithHandler:^MPRemoteCommandHandlerStatus(__unused MPRemoteCommandEvent *event) {
+            if (![SCIYTArbiter oursMayAct]) return MPRemoteCommandHandlerStatusNoActionableNowPlayingItem;
+            [SCIYTArbiter oursCommanded];
             [weakSelf next];
             return MPRemoteCommandHandlerStatusSuccess;
         }];
 
     self.previousToken = [centre.previousTrackCommand
         addTargetWithHandler:^MPRemoteCommandHandlerStatus(__unused MPRemoteCommandEvent *event) {
+            if (![SCIYTArbiter oursMayAct]) return MPRemoteCommandHandlerStatusNoActionableNowPlayingItem;
+            [SCIYTArbiter oursCommanded];
             [weakSelf previous];
             return MPRemoteCommandHandlerStatusSuccess;
         }];
 
     self.forwardToken = [centre.skipForwardCommand
         addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
+            if (![SCIYTArbiter oursMayAct]) return MPRemoteCommandHandlerStatusNoActionableNowPlayingItem;
+            [SCIYTArbiter oursCommanded];
             [weakSelf skipBy:((MPSkipIntervalCommandEvent *)event).interval];
             return MPRemoteCommandHandlerStatusSuccess;
         }];
 
     self.backwardToken = [centre.skipBackwardCommand
         addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
+            if (![SCIYTArbiter oursMayAct]) return MPRemoteCommandHandlerStatusNoActionableNowPlayingItem;
+            [SCIYTArbiter oursCommanded];
             [weakSelf skipBy:-((MPSkipIntervalCommandEvent *)event).interval];
             return MPRemoteCommandHandlerStatusSuccess;
         }];
 }
 
 - (MPRemoteCommandHandlerStatus)remotePlay:(__unused MPRemoteCommandEvent *)event {
+    // The lock screen's button reaches every handler on the shared command centre, YouTube's
+    // included. Only the owner of playback answers; the other says so and does nothing.
+    if (![SCIYTArbiter oursMayAct]) return MPRemoteCommandHandlerStatusNoActionableNowPlayingItem;
+    [SCIYTArbiter oursStarted];
+    [SCIYTArbiter pauseHostPlayers];
+
     // -play resumes at the default rate; the chosen speed is put back, as every other
     // way of starting playback here does, or the lock screen's Play drops 1.5x to 1x.
     [self.player play];
@@ -1833,7 +1897,14 @@ static SCIYTPlayer *sciCurrent = nil;
     return MPRemoteCommandHandlerStatusSuccess;
 }
 
+- (MPRemoteCommandHandlerStatus)remoteToggle:(MPRemoteCommandEvent *)event {
+    if (![SCIYTArbiter oursMayAct]) return MPRemoteCommandHandlerStatusNoActionableNowPlayingItem;
+    return self.player.rate > 0 ? [self remotePause:event] : [self remotePlay:event];
+}
+
 - (MPRemoteCommandHandlerStatus)remotePause:(__unused MPRemoteCommandEvent *)event {
+    if (![SCIYTArbiter oursMayAct]) return MPRemoteCommandHandlerStatusNoActionableNowPlayingItem;
+    [SCIYTArbiter oursCommanded];
     [self.player pause];
     [self showPlaying:NO];
     [self describeToLockScreen];
@@ -1843,6 +1914,10 @@ static SCIYTPlayer *sciCurrent = nil;
 - (void)describeToLockScreen {
     SCIYTJob *job = [self current];
     if (!job) return;
+
+    // A paused mini bar must not write over what YouTube is playing: that was "the lock screen
+    // shows a different video from the one playing".
+    if (![SCIYTArbiter oursMayDescribe]) return;
 
     NSMutableDictionary *now = [NSMutableDictionary dictionary];
     now[MPMediaItemPropertyTitle] = job.title;

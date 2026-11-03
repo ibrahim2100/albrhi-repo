@@ -1066,6 +1066,12 @@ Gestures (`SCIPrefPlayerGestures`, default on, decided *when a recogniser would 
 **Measured in the simulator only:** a hold of 5.3 s moved a 90 s test clip 10 s in 5.8 s of wall time (about 1.7× average; without the hold 5.8). The system volume slider does not exist in the simulator, so volume is unseen working. **Not built:** shuffle, a reorderable queue panel, the unplayable-file path, inverted fullscreen.
 Nothing here has run on a device.
 
+**One player at a time (1.44.0, `SCIYTArbiter`, read from 21.41.5's own binary — `tools/objc-classes.py --dump`, 33,809 classes).** Two players share a process and the audio session only separates *apps*; worse, **a lock-screen button is delivered to every handler on the shared
+`MPRemoteCommandCenter`**, so Play started both. The old `SCIYTHostPlayer.pauseHost` worked in one direction only and knew only the watch-page controller. The rule (`SCIYTArbiterCore.h`, host-tested): one *owner*, the last to start audibly; YouTube's start within 1.5 s of one of our commands is the echo of the same
+button and is vetoed, any other is real and pauses ours. Enforced at: `YTSingleVideoController -play` (every YouTube player; `-isMuted`/`-volume` tell a muted feed preview from a video), `YTRemoteCommandHandler` and `YTReelRemoteCommandHandler` (answer `NoActionableNowPlayingItem` while we own), the seven writers of
+`YTNowPlayingInfoCenterPlaybackObserverImpl` (the entry is written by the owner only; a paused mini bar had been overwriting YouTube's, and `+stop` had been clearing it and deactivating YouTube's session), and `MLAudioSession` release paths (take the session back if ours is the one playing). Each hook is installed at runtime behind the class **and the exact encoding**, counted, and listed on the
+diagnostics page; the 26 signatures were compared mechanically with the 21.41.5 dump. **Verified in the simulator** on stand-in classes with those signatures (the real hooks install on them; muted preview ignored, echo vetoed, YouTube's handler refused while we own and answering while it owns, takeover both ways) and background audio ran 10 s on the home screen; **not run inside YouTube or on a device.**
+
 **The app stopped launching in 1.29–1.31 and the lessons are in §4.3** (three hooks asking for layout from inside layout; `-topControls`
 doing work per call; icon repaints; dead code woken by the `SCISafeValueForKey` fix; `_ASDisplayView`). The launch guard and `NOHOOKS`
 exist because of it. One failure was cured by clearing the app's data, and on a second phone by deleting the app (1.31.1 added two guards on the tab bar for it).
@@ -1386,8 +1392,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.43.0** · X **0.22.0** · TikTok **0.28.0** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.104.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.44.0** · X **0.22.0** · TikTok **0.28.0** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.105.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

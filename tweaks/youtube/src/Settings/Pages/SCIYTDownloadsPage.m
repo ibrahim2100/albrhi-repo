@@ -202,6 +202,10 @@ static NSString *SCIHiResLabel(SCIHiRes value) {
                        detail:SCILocalized(@"set_player_gestures_note")
                        symbol:@"hand.draw"
                       prefKey:SCIPrefPlayerGestures],
+            [SCIRow switchRow:SCILocalized(@"set_one_player")
+                       detail:SCILocalized(@"set_one_player_note")
+                       symbol:@"speaker.slash"
+                      prefKey:SCIPrefOnePlayer],
         ];
 
         return @[start, size, after, library];

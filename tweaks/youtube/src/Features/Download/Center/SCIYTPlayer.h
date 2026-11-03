@@ -68,6 +68,12 @@ extern NSNotificationName const SCIYTPlaybackDidChangeNotification;
 /// Ends playback and lets everything go.
 + (void)stop;
 
+/// YouTube's player started audibly: pause ours (SCIYTArbiter decides when).
++ (void)pauseForHost;
+
+/// Takes the audio session back if our player is the one playing. Returns whether it was.
++ (BOOL)reclaimAudioIfPlaying;
+
 /// How far through, from 0 to 1, or 0 when that is not known yet.
 ///
 /// A number rather than the AVPlayer itself. The mini bar needs one fact and handing it the

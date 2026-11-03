@@ -31,6 +31,15 @@
 /// player that does something unasked is worse than one that does less.
 #define SCIPrefPlayerGestures   @"player_gestures"
 
+/// One player at a time: YouTube's and the Download Centre's never play together, and the lock
+/// screen's buttons and "now playing" entry follow whichever the person last started.
+///
+/// **On.** Two players in one process are not arbitrated by the audio session, and the failure --
+/// both talking at once, a Play button that starts both -- is not something anyone wants a choice
+/// about. It is a switch for the same reason every hook here is: if it ever misjudges, there is a
+/// way to take the old behaviour back without removing the tweak.
+#define SCIPrefOnePlayer        @"one_player_at_a_time"
+
 #define SCIPrefVerboseLogging   @"verbose_logging"
 
 /// Downloads.
