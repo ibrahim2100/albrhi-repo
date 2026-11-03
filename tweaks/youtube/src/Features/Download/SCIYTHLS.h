@@ -32,6 +32,20 @@
 @property (nonatomic, assign) long long directAudioBytes;
 @property (nonatomic, copy) NSString *directVideoID;
 
+/// What else the direct route found for this video, shared by every quality of it.
+///
+/// `directAudioTracks`: every sound track served (one per language, the original first), each
+/// `@{@"id", @"lang", @"name", @"url", @"bytes", @"default"}` -- empty when there is only one, because
+/// then there is nothing to choose. `directCaptionTracks`: each `@{@"id", @"lang", @"name", @"url",
+/// @"auto"}`, `url` being the address to which `&fmt=vtt` is appended.
+@property (nonatomic, copy) NSArray<NSDictionary *> *directAudioTracks;
+@property (nonatomic, copy) NSArray<NSDictionary *> *directCaptionTracks;
+
+/// What the person ticked before pressing Download: the sound tracks beyond the original, and the
+/// captions. Set by the choice sheet on the one variant it hands back; empty means "as before".
+@property (nonatomic, copy) NSArray<NSDictionary *> *chosenExtraAudios;
+@property (nonatomic, copy) NSArray<NSDictionary *> *chosenCaptions;
+
 /// "1080p · H.264", for the quality sheet.
 - (NSString *)label;
 @end

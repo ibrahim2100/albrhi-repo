@@ -1484,6 +1484,9 @@ static SCIYTPlayer *sciCurrent = nil;
             [item selectMediaOption:nil inMediaSelectionGroup:text];
         }]];
         for (AVMediaSelectionOption *option in text.options) {
+            // AVFoundation adds a "Forced" twin to every caption track; it only ever shows the
+            // lines meant for foreign speech, which is not what anyone opening this list wants.
+            if ([option hasMediaCharacteristic:AVMediaCharacteristicContainsOnlyForcedSubtitles]) continue;
             NSString *title = [NSString stringWithFormat:@"%@ · %@%@", SCILocalized(@"player_captions"),
                                option.displayName, option == chosen ? @"  ✓" : @""];
             [sheet addAction:[UIAlertAction actionWithTitle:title style:UIAlertActionStyleDefault

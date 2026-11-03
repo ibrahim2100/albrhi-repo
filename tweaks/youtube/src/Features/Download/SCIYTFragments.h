@@ -25,6 +25,8 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface SCIYTFragments : NSObject
 
 /// H.264 or AV1 video and AAC audio, each in its own fragmented file, written as one .mp4.
@@ -37,8 +39,23 @@
              audio:(NSURL *)audio
         completion:(void (^)(NSURL *output, NSString *failure))completion;
 
+/// The same, with further sound tracks (other languages) and caption tracks inside the one file.
+///
+/// `extraAudios`: `@{@"file": NSURL, @"lang": BCP-47}`; `subtitles`: `@{@"lang": ..., @"cues": ...}`
+/// with cues as SCIYTSubtitles produces them. The extra sound and the captions are alternatives a
+/// player offers and none plays unasked; a track that cannot be read is left out and the rest is
+/// written. `audioLanguage` labels the main sound.
++ (void)mergeVideo:(NSURL *)video
+             audio:(NSURL *)audio
+     audioLanguage:(nullable NSString *)audioLanguage
+       extraAudios:(NSArray<NSDictionary *> *)extraAudios
+         subtitles:(NSArray<NSDictionary *> *)subtitles
+        completion:(void (^)(NSURL *output, NSString *failure))completion;
+
 /// AAC in a fragmented file, written as an ordinary .m4a.
 + (void)rewriteAudio:(NSURL *)audio
           completion:(void (^)(NSURL *output, NSString *failure))completion;
 
 @end
+
+NS_ASSUME_NONNULL_END

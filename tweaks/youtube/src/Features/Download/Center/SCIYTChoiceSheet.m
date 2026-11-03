@@ -27,6 +27,79 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
     SCISheetSectionWatch
 };
 
+// MARK: - A list of tracks to tick
+
+/// Languages of the sound, or captions: a searchable list, because a video can offer sixty-five of
+/// them and a sheet is the wrong place to scroll through that. Ticks are kept in a set the sheet owns,
+/// so closing this screen loses nothing and the sheet's summary line is always read from the truth.
+@interface SCIYTTrackPicker : UITableViewController <UISearchResultsUpdating>
+@property (nonatomic, copy) NSArray<NSDictionary *> *items;
+@property (nonatomic, copy) NSArray<NSDictionary *> *shown;
+@property (nonatomic, strong) NSMutableSet<NSString *> *ticked;
+@property (nonatomic) BOOL multiple;
+@property (nonatomic, copy) NSString *footer;
+@property (nonatomic, copy) void (^changed)(void);
+@end
+
+@implementation SCIYTTrackPicker
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.tableView.rowHeight = 52;
+    self.shown = self.items;
+
+    if (self.items.count > 8) {
+        UISearchController *search = [[UISearchController alloc] initWithSearchResultsController:nil];
+        search.searchResultsUpdater = self;
+        search.obscuresBackgroundDuringPresentation = NO;
+        search.searchBar.placeholder = SCILocalized(@"dl_search");
+        self.navigationItem.searchController = search;
+        self.navigationItem.hidesSearchBarWhenScrolling = NO;
+        self.definesPresentationContext = YES;
+    }
+}
+
+- (void)updateSearchResultsForSearchController:(UISearchController *)search {
+    NSString *query = [search.searchBar.text stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
+    if (!query.length) { self.shown = self.items; }
+    else {
+        NSPredicate *match = [NSPredicate predicateWithBlock:^BOOL(NSDictionary *item, id _) {
+            return [item[@"name"] rangeOfString:query options:NSCaseInsensitiveSearch | NSDiacriticInsensitiveSearch].location != NSNotFound
+                || [item[@"lang"] rangeOfString:query options:NSCaseInsensitiveSearch].location != NSNotFound;
+        }];
+        self.shown = [self.items filteredArrayUsingPredicate:match];
+    }
+    [self.tableView reloadData];
+}
+
+- (NSInteger)tableView:(UITableView *)t numberOfRowsInSection:(NSInteger)section { return (NSInteger)self.shown.count; }
+- (NSString *)tableView:(UITableView *)t titleForFooterInSection:(NSInteger)section { return self.footer; }
+
+- (UITableViewCell *)tableView:(UITableView *)t cellForRowAtIndexPath:(NSIndexPath *)path {
+    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:nil];
+    NSDictionary *item = self.shown[(NSUInteger)path.row];
+    cell.textLabel.text = item[@"name"];
+    cell.detailTextLabel.text = item[@"detail"];
+    cell.detailTextLabel.textColor = [UIColor secondaryLabelColor];
+    BOOL on = [self.ticked containsObject:item[@"id"]];
+    cell.accessoryType = on ? UITableViewCellAccessoryCheckmark : UITableViewCellAccessoryNone;
+    cell.tintColor = SCIAccent();
+    cell.accessibilityTraits |= on ? UIAccessibilityTraitSelected : 0;
+    return cell;
+}
+
+- (void)tableView:(UITableView *)t didSelectRowAtIndexPath:(NSIndexPath *)path {
+    NSString *identifier = self.shown[(NSUInteger)path.row][@"id"];
+    if (self.multiple) {
+        if ([self.ticked containsObject:identifier]) [self.ticked removeObject:identifier]; else [self.ticked addObject:identifier];
+    } else {
+        [self.ticked removeAllObjects]; [self.ticked addObject:identifier];
+    }
+    [t reloadData];
+    if (self.changed) self.changed();
+    if (!self.multiple) [self.navigationController popViewControllerAnimated:YES];
+}
+@end
+
 @interface SCIYTChoiceSheet () <UITableViewDataSource, UITableViewDelegate>
 @property (nonatomic, strong) NSArray<SCIHLSVariant *> *variants;
 /// The video choices as the sections they are drawn in -- see -buildGroups.
@@ -44,6 +117,14 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
 @property (nonatomic) BOOL savingThumbnail;
 @property (nonatomic, strong) UITableView *table;
 @property (nonatomic, strong) UISegmentedControl *picker;
+
+/// What is ticked. Nothing starts until the Download button, so there is room to choose first.
+@property (nonatomic, strong) SCIHLSVariant *selected;
+@property (nonatomic, strong) NSMutableSet<NSString *> *extraSound;
+@property (nonatomic, strong) NSMutableSet<NSString *> *captionIDs;
+@property (nonatomic, strong) NSMutableSet<NSString *> *soundOnlyLanguage;
+@property (nonatomic, strong) UIView *bar;
+@property (nonatomic, strong) UIButton *action;
 @end
 
 @implementation SCIYTChoiceSheet
@@ -74,6 +155,11 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
     sheet.kind = SCIYTJobKindVideo;
     sheet.section = SCISheetSectionVideo;
     [sheet buildGroups];
+    sheet.extraSound = [NSMutableSet set];
+    sheet.captionIDs = [NSMutableSet set];
+    sheet.soundOnlyLanguage = [NSMutableSet set];
+    // The best ordinary quality: what most people mean by "just download it".
+    sheet.selected = [sheet.groups.lastObject[@"variants"] firstObject] ?: variants.firstObject;
 
     UINavigationController *host = [[UINavigationController alloc] initWithRootViewController:sheet];
 
@@ -88,7 +174,8 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
         // Open tall when there is a lot to choose from. At the medium detent a list of eight
         // qualities plus a header showed three rows and left the rest to be discovered by
         // scrolling -- which read as the 1440p and 4K rows being missing.
-        if (variants.count > 4) {
+        BOOL hasChoices = variants.firstObject.directAudioTracks.count || variants.firstObject.directCaptionTracks.count;
+        if (variants.count > 4 || hasChoices) {
             presentation.selectedDetentIdentifier = UISheetPresentationControllerDetentIdentifierLarge;
         }
         presentation.preferredCornerRadius = 22;
@@ -189,10 +276,158 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
         [self.table.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
         [self.table.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [self.table.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [self.table.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]
     ]];
 
+    [self buildBar];
     [self buildHeader];
+    [self refreshAction];
+}
+
+/// The Download button, pinned under the list on a material so rows scroll beneath it. One
+/// control, one place: the choices above only ever change what it will do.
+- (void)buildBar {
+    self.bar = [[UIView alloc] init];
+    self.bar.translatesAutoresizingMaskIntoConstraints = NO;
+    self.bar.backgroundColor = [UIColor systemBackgroundColor];
+    [self.view addSubview:self.bar];
+
+    UIView *line = [[UIView alloc] init];
+    line.backgroundColor = [UIColor separatorColor];
+    line.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.bar addSubview:line];
+
+    self.action = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.action.translatesAutoresizingMaskIntoConstraints = NO;
+    self.action.backgroundColor = SCIAccent();
+    self.action.tintColor = [UIColor whiteColor];
+    self.action.titleLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightSemibold];
+    [self.action setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    self.action.layer.cornerRadius = 14;
+    self.action.layer.cornerCurve = kCACornerCurveContinuous;
+    [self.action addTarget:self action:@selector(startDownload) forControlEvents:UIControlEventTouchUpInside];
+    [self.bar addSubview:self.action];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.bar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+        [self.bar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+        [self.bar.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
+        [self.table.bottomAnchor constraintEqualToAnchor:self.bar.topAnchor],
+
+        [line.topAnchor constraintEqualToAnchor:self.bar.topAnchor],
+        [line.leadingAnchor constraintEqualToAnchor:self.bar.leadingAnchor],
+        [line.trailingAnchor constraintEqualToAnchor:self.bar.trailingAnchor],
+        [line.heightAnchor constraintEqualToConstant:1 / UIScreen.mainScreen.scale],
+
+        [self.action.topAnchor constraintEqualToAnchor:self.bar.topAnchor constant:12],
+        [self.action.leadingAnchor constraintEqualToAnchor:self.bar.leadingAnchor constant:20],
+        [self.action.trailingAnchor constraintEqualToAnchor:self.bar.trailingAnchor constant:-20],
+        [self.action.heightAnchor constraintEqualToConstant:50],
+        [self.action.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-8],
+    ]];
+}
+
+// MARK: - What is ticked
+
+- (NSArray<NSDictionary *> *)soundTracks { return self.variants.firstObject.directAudioTracks ?: @[]; }
+- (NSArray<NSDictionary *> *)captionTracks { return self.variants.firstObject.directCaptionTracks ?: @[]; }
+
+- (NSDictionary *)originalSound {
+    for (NSDictionary *t in [self soundTracks]) if ([t[@"default"] boolValue]) return t;
+    return [self soundTracks].firstObject;
+}
+
+- (NSArray<NSDictionary *> *)tickedExtraSound {
+    NSMutableArray *out = [NSMutableArray array];
+    for (NSDictionary *t in [self soundTracks]) {
+        if (![t[@"default"] boolValue] && [self.extraSound containsObject:t[@"id"]]) [out addObject:t];
+    }
+    return out;
+}
+
+- (NSArray<NSDictionary *> *)tickedCaptions {
+    NSMutableArray *out = [NSMutableArray array];
+    for (NSDictionary *t in [self captionTracks]) if ([self.captionIDs containsObject:t[@"id"]]) [out addObject:t];
+    return out;
+}
+
+/// What the Download button will fetch, in bytes, when the direct route knows (zero otherwise).
+- (long long)plannedBytes {
+    SCIHLSVariant *v = self.selected;
+    if (self.section == SCISheetSectionAudio) {
+        NSString *chosen = self.soundOnlyLanguage.anyObject;
+        for (NSDictionary *t in [self soundTracks]) if ([t[@"id"] isEqualToString:chosen]) return [t[@"bytes"] longLongValue];
+        return v.directAudioBytes;
+    }
+    long long total = v.directVideoBytes + v.directAudioBytes;
+    for (NSDictionary *t in [self tickedExtraSound]) total += [t[@"bytes"] longLongValue];
+    return total;
+}
+
+- (void)refreshAction {
+    BOOL showing = (self.section == SCISheetSectionVideo || self.section == SCISheetSectionAudio);
+    self.bar.hidden = !showing;
+    if (!showing) return;
+
+    long long bytes = [self plannedBytes];
+    NSString *title = SCILocalized(@"dl_action_download");
+    if (bytes > 0) {
+        title = [NSString stringWithFormat:SCILocalized(@"dl_action_download_size"),
+                 [NSByteCountFormatter stringFromByteCount:bytes countStyle:NSByteCountFormatterCountStyleFile]];
+    }
+    [self.action setTitle:title forState:UIControlStateNormal];
+    self.action.accessibilityLabel = title;
+}
+
+- (void)startDownload {
+    SCIHLSVariant *variant = (self.section == SCISheetSectionAudio)
+        ? ([self.groups.lastObject[@"variants"] firstObject] ?: self.variants.firstObject)
+        : self.selected;
+    if (!variant) return;
+
+    if (self.section == SCISheetSectionAudio) {
+        // Sound only: the language chosen replaces the original as the one fetched. No extras.
+        NSString *chosen = self.soundOnlyLanguage.anyObject;
+        for (NSDictionary *t in [self soundTracks]) {
+            if ([t[@"id"] isEqualToString:chosen] && ![t[@"default"] boolValue]) {
+                variant.directAudioURL = t[@"url"];
+                variant.directAudioBytes = [t[@"bytes"] longLongValue];
+            }
+        }
+        variant.chosenExtraAudios = @[];
+        variant.chosenCaptions = @[];
+    } else {
+        variant.chosenExtraAudios = [self tickedExtraSound];
+        variant.chosenCaptions = [self tickedCaptions];
+    }
+
+    void (^chosen)(SCIHLSVariant *, SCIYTJobKind) = self.chosen;
+    SCIYTJobKind kind = self.kind;
+    [self dismissViewControllerAnimated:YES completion:^{ if (chosen) chosen(variant, kind); }];
+}
+
+- (NSString *)soundSummary {
+    NSUInteger n = [self tickedExtraSound].count;
+    return n ? [NSString stringWithFormat:@"%@ + %lu", SCILocalized(@"dl_original"), (unsigned long)n] : SCILocalized(@"dl_original");
+}
+
+- (NSString *)captionSummary {
+    NSArray *ticked = [self tickedCaptions];
+    if (!ticked.count) return SCILocalized(@"dl_none");
+    NSString *first = ticked[0][@"name"];
+    return ticked.count == 1 ? first : [NSString stringWithFormat:@"%@ +%lu", first, (unsigned long)(ticked.count - 1)];
+}
+
+- (void)pushPickerFor:(NSArray<NSDictionary *> *)items title:(NSString *)title ticked:(NSMutableSet<NSString *> *)ticked
+             multiple:(BOOL)multiple footer:(NSString *)footer {
+    SCIYTTrackPicker *picker = [[SCIYTTrackPicker alloc] initWithStyle:UITableViewStyleInsetGrouped];
+    picker.title = title;
+    picker.items = items;
+    picker.ticked = ticked;
+    picker.multiple = multiple;
+    picker.footer = footer;
+    __weak __typeof(self) weakSelf = self;
+    picker.changed = ^{ [weakSelf.table reloadData]; [weakSelf refreshAction]; };
+    [self.navigationController pushViewController:picker animated:YES];
 }
 
 /// The kind picker and the video's name, above the list.
@@ -239,6 +474,7 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
     else if (self.section == SCISheetSectionVideo) self.kind = SCIYTJobKindVideo;
 
     [self.table reloadData];
+    [self refreshAction];
 }
 
 - (void)dismissSheet {
@@ -248,8 +484,10 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
 // MARK: - The list
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return (self.section == SCISheetSectionVideo) ? (NSInteger)self.groups.count : 1;
+    // Video: the quality groups, then one section of choices (languages, captions) when there are any.
     // (Watch is a single section: the ordinary qualities.)
+    if (self.section == SCISheetSectionVideo) return (NSInteger)self.groups.count + ([self extrasRowCount] ? 1 : 0);
+    return 1;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
@@ -257,11 +495,19 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
     // identical rows of it would be a menu pretending to be a decision. A thumbnail has
     // one picture, for the same reason.
     if (self.section == SCISheetSectionWatch) return (NSInteger)[self.groups.lastObject[@"variants"] count];
+    if (self.section == SCISheetSectionAudio) return 1 + ([self soundTracks].count ? 1 : 0);
     if (self.section != SCISheetSectionVideo) return 1;
+    if ((NSUInteger)section >= self.groups.count) return [self extrasRowCount];
     return (NSInteger)[self.groups[(NSUInteger)section][@"variants"] count];
 }
 
+/// Rows in the choices section of the video tab: languages of the sound, and captions.
+- (NSInteger)extrasRowCount {
+    return ([self soundTracks].count ? 1 : 0) + ([self captionTracks].count ? 1 : 0);
+}
+
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+    if (self.section == SCISheetSectionVideo && (NSUInteger)section >= self.groups.count) return SCILocalized(@"dl_also_save");
     switch (self.section) {
         case SCISheetSectionAudio:     return SCILocalized(@"dl_sound_header");
         case SCISheetSectionThumbnail: return SCILocalized(@"dl_thumb_header");
@@ -273,6 +519,7 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
     if (self.section == SCISheetSectionWatch) return SCILocalized(@"watch_footer");
+    if (self.section == SCISheetSectionVideo && (NSUInteger)section >= self.groups.count) return SCILocalized(@"dl_tracks_footer");
     return self.section == SCISheetSectionVideo ? self.groups[(NSUInteger)section][@"footer"] : nil;
 }
 
@@ -300,9 +547,30 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
     }
 
     if (self.section == SCISheetSectionAudio) {
-        cell.textLabel.text = SCILocalized(@"dl_sound_only");
-        cell.detailTextLabel.text = SCILocalized(@"dl_sound_small");
-        cell.imageView.image = [UIImage systemImageNamed:@"music.note"];
+        if (indexPath.row == 0) {
+            cell.textLabel.text = SCILocalized(@"dl_sound_only");
+            cell.detailTextLabel.text = SCILocalized(@"dl_sound_small");
+            cell.imageView.image = [UIImage systemImageNamed:@"music.note"];
+            cell.imageView.tintColor = SCIAccent();
+            cell.accessoryType = UITableViewCellAccessoryNone;
+            cell.selectionStyle = UITableViewCellSelectionStyleNone;
+        } else {
+            NSString *chosen = self.soundOnlyLanguage.anyObject;
+            NSDictionary *track = nil;
+            for (NSDictionary *t in [self soundTracks]) if ([t[@"id"] isEqualToString:chosen]) track = t;
+            cell.textLabel.text = SCILocalized(@"dl_language");
+            cell.detailTextLabel.text = track[@"name"] ?: SCILocalized(@"dl_original");
+            cell.imageView.image = [UIImage systemImageNamed:@"globe"];
+            cell.imageView.tintColor = SCIAccent();
+        }
+        return cell;
+    }
+
+    if (self.section == SCISheetSectionVideo && (NSUInteger)indexPath.section >= self.groups.count) {
+        BOOL soundRow = ([self soundTracks].count && indexPath.row == 0);
+        cell.textLabel.text = SCILocalized(soundRow ? @"dl_audio_languages" : @"dl_captions");
+        cell.detailTextLabel.text = soundRow ? [self soundSummary] : [self captionSummary];
+        cell.imageView.image = [UIImage systemImageNamed:(soundRow ? @"waveform" : @"captions.bubble")];
         cell.imageView.tintColor = SCIAccent();
         return cell;
     }
@@ -311,6 +579,14 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
     cell.textLabel.text = [variant label];
     cell.imageView.image = [UIImage systemImageNamed:(self.section == SCISheetSectionWatch ? @"play.rectangle.fill" : @"film")];
     cell.imageView.tintColor = SCIAccent();
+
+    // A quality is chosen, not started: the tick says which one the button below will fetch.
+    if (self.section == SCISheetSectionVideo) {
+        BOOL on = (variant == self.selected);
+        cell.accessoryType = on ? UITableViewCellAccessoryCheckmark : UITableViewCellAccessoryNone;
+        cell.tintColor = SCIAccent();
+        if (on) cell.accessibilityTraits |= UIAccessibilityTraitSelected;
+    }
 
     // How big it will be: exact when the direct route knows the byte counts YouTube declared,
     // and otherwise roughly, from the bitrate a playlist states. "About 190 MB" is the
@@ -344,18 +620,47 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
         return;
     }
 
-    // The soundtrack is the same whichever quality row it hangs off, so audio takes the first
-    // ordinary variant rather than whatever happens to be on top (which may be a 4K one).
-    SCIHLSVariant *variant = (self.section == SCISheetSectionAudio)
-        ? ([self.groups.lastObject[@"variants"] firstObject] ?: self.variants.firstObject)
-        : [self variantAtIndexPath:indexPath];
+    if (self.section == SCISheetSectionAudio) {
+        if (indexPath.row == 1) {
+            // One language for the sound-only file, the original unless another is picked.
+            if (!self.soundOnlyLanguage.count && [self originalSound]) [self.soundOnlyLanguage addObject:[self originalSound][@"id"]];
+            NSMutableArray *items = [NSMutableArray array];
+            for (NSDictionary *t in [self soundTracks]) {
+                [items addObject:@{@"id": t[@"id"], @"lang": t[@"lang"], @"name": t[@"name"],
+                    @"detail": [NSByteCountFormatter stringFromByteCount:[t[@"bytes"] longLongValue] countStyle:NSByteCountFormatterCountStyleFile]}];
+            }
+            [self pushPickerFor:items title:SCILocalized(@"dl_language") ticked:self.soundOnlyLanguage multiple:NO footer:nil];
+        }
+        return;
+    }
 
-    void (^chosen)(SCIHLSVariant *, SCIYTJobKind) = self.chosen;
-    SCIYTJobKind kind = self.kind;
+    // The choices section: languages of the sound and captions, each in its own list.
+    if ((NSUInteger)indexPath.section >= self.groups.count) {
+        BOOL soundRow = ([self soundTracks].count && indexPath.row == 0);
+        NSMutableArray *items = [NSMutableArray array];
+        if (soundRow) {
+            NSDictionary *original = [self originalSound];
+            for (NSDictionary *t in [self soundTracks]) {
+                if ([t isEqual:original]) continue;   // always kept, so not a choice
+                [items addObject:@{@"id": t[@"id"], @"lang": t[@"lang"], @"name": t[@"name"],
+                    @"detail": [NSByteCountFormatter stringFromByteCount:[t[@"bytes"] longLongValue] countStyle:NSByteCountFormatterCountStyleFile]}];
+            }
+            [self pushPickerFor:items title:SCILocalized(@"dl_audio_languages") ticked:self.extraSound multiple:YES
+                         footer:[NSString stringWithFormat:SCILocalized(@"dl_original_kept"), original[@"name"] ?: @""]];
+        } else {
+            for (NSDictionary *t in [self captionTracks]) {
+                [items addObject:@{@"id": t[@"id"], @"lang": t[@"lang"], @"name": t[@"name"],
+                    @"detail": [t[@"auto"] boolValue] ? SCILocalized(@"dl_auto_generated") : @""}];
+            }
+            [self pushPickerFor:items title:SCILocalized(@"dl_captions") ticked:self.captionIDs multiple:YES footer:nil];
+        }
+        return;
+    }
 
-    [self dismissViewControllerAnimated:YES completion:^{
-        if (chosen) chosen(variant, kind);
-    }];
+    // A quality row selects; the button starts.
+    self.selected = [self variantAtIndexPath:indexPath];
+    [tableView reloadData];
+    [self refreshAction];
 }
 
 // MARK: - The thumbnail

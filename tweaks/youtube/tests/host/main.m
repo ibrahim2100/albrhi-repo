@@ -7,6 +7,8 @@ void Test_Transport(void);
 void Test_Direct(void);
 void Test_PlayerMath(void);
 void Test_Arbiter(void);
+void Test_Subtitles(void);
+void Test_Mux(void);
 
 int main(void) {
     @autoreleasepool {
@@ -14,6 +16,8 @@ int main(void) {
         Test_Direct();
         Test_PlayerMath();
         Test_Arbiter();
+        Test_Subtitles();
+        Test_Mux();
         printf("\n%ld passed, %ld failed\n", (long)AlbrhiTestsPassed, (long)AlbrhiTestsFailed);
         return AlbrhiTestsFailed == 0 ? 0 : 1;
     }

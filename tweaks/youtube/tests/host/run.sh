@@ -40,8 +40,10 @@ xcrun clang \
   -iframework "$IOS_FW" -F "$IOS_FW" \
   -I src -I src/Features/Download -I tests/host -I "$OUT" \
   -DALBRHI_HOST_TESTS=1 \
-  -framework Foundation -framework UIKit -framework AVFoundation -framework CoreMedia \
+  -framework Foundation -framework UIKit -framework AVFoundation -framework CoreMedia -framework CoreVideo -framework UniformTypeIdentifiers \
   src/Features/Download/SCIYTTransport.m \
+  src/Features/Download/SCIYTSubtitles.m \
+  src/Features/Download/SCIYTFragments.m \
   src/Localization/SCILocalize.m \
   tests/host/*.m \
   -o "$OUT/albrhi-yt-host-tests"

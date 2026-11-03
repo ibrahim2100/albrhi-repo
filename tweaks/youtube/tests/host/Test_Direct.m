@@ -20,6 +20,8 @@
 
 @interface SCIYTDirect : NSObject
 + (void)sortFormats:(NSArray *)all video:(NSMutableArray<NSDictionary *> *)videos av1:(NSMutableArray<NSDictionary *> *)av1 audio:(NSDictionary **)audio;
++ (NSArray<NSDictionary *> *)audioTracksFromFormats:(NSArray *)all;
++ (NSArray<NSDictionary *> *)captionTracksFromRenderer:(NSDictionary *)renderer;
 + (NSArray<SCIHLSVariant *> *)ladderForVideos:(NSMutableArray<NSDictionary *> *)videos audio:(NSDictionary *)audio videoID:(NSString *)videoID;
 @end
 
@@ -117,5 +119,56 @@ void Test_Direct(void) {
     ALBRHI_TEST(ladder_of_nothing_is_empty, {
         NSArray *ladder = [SCIYTDirect ladderForVideos:[NSMutableArray array] audio:Audio(@"mp4a.40.2", 1, nil) videoID:@"x"];
         ALBRHI_ASSERT(ladder.count == 0, @"empty, never nil");
+    });
+
+    ALBRHI_TEST(dubbed_sound_tracks_one_per_language_original_first, {
+        NSDictionary *(^dub)(NSString *, NSString *, BOOL, NSInteger) = ^NSDictionary *(NSString *tid, NSString *name, BOOL isDefault, NSInteger bitrate) {
+            NSMutableDictionary *f = [Audio(@"mp4a.40.2", bitrate, nil) mutableCopy];
+            f[@"audioTrack"] = @{@"id": tid, @"displayName": name, @"audioIsDefault": @(isDefault)};
+            return f;
+        };
+        NSArray *all = @[dub(@"ar.3", @"Arabic", NO, 128000), dub(@"ar.3", @"Arabic", NO, 48000),
+                         dub(@"en-US.4", @"English (United States) original", YES, 130000), dub(@"de.3", @"German", NO, 128000)];
+        NSArray *tracks = [SCIYTDirect audioTracksFromFormats:all];
+        ALBRHI_ASSERT(tracks.count == 3, @"one per language");
+        ALBRHI_ASSERT([tracks[0][@"id"] isEqualToString:@"en-US.4"] && [tracks[0][@"default"] boolValue], @"the original is first");
+        ALBRHI_ASSERT([tracks[0][@"lang"] isEqualToString:@"en-US"], @"language is the id before the dot");
+        NSDictionary *arabic = tracks[1][@"id"] ? ([tracks[1][@"id"] isEqualToString:@"ar.3"] ? tracks[1] : tracks[2]) : nil;
+        ALBRHI_ASSERT([arabic[@"bytes"] longLongValue] == 500000, @"a copy of each language is kept");
+    });
+
+    ALBRHI_TEST(one_sound_track_is_nothing_to_choose, {
+        NSMutableDictionary *only = [Audio(@"mp4a.40.2", 128000, nil) mutableCopy];
+        only[@"audioTrack"] = @{@"id": @"en.4", @"displayName": @"English", @"audioIsDefault": @YES};
+        ALBRHI_ASSERT([SCIYTDirect audioTracksFromFormats:@[only]].count == 0, @"a single track");
+        ALBRHI_ASSERT([SCIYTDirect audioTracksFromFormats:@[Audio(@"mp4a.40.2", 128000, nil)]].count == 0, @"no audioTrack at all");
+        ALBRHI_ASSERT([SCIYTDirect audioTracksFromFormats:@[]].count == 0, @"nothing");
+    });
+
+    ALBRHI_TEST(drc_and_non_aac_copies_are_not_tracks, {
+        NSDictionary *(^dub)(NSString *, NSString *, NSDictionary *) = ^NSDictionary *(NSString *tid, NSString *codec, NSDictionary *extra) {
+            NSMutableDictionary *f = [Audio(codec, 128000, extra) mutableCopy];
+            f[@"audioTrack"] = @{@"id": tid, @"displayName": tid, @"audioIsDefault": @NO};
+            return f;
+        };
+        NSArray *all = @[dub(@"a.1", @"mp4a.40.2", nil), dub(@"b.1", @"mp4a.40.2", @{@"isDrc": @YES}), dub(@"c.1", @"mp4a.40.5", nil)];
+        ALBRHI_ASSERT([SCIYTDirect audioTracksFromFormats:all].count == 0, @"only a.1 qualifies, and one is not a choice");
+    });
+
+    ALBRHI_TEST(caption_tracks_manual_before_automatic_names_from_runs_or_text, {
+        NSDictionary *renderer = @{@"captionTracks": @[
+            @{@"baseUrl": @"https://example.invalid/t?v=1&lang=en", @"languageCode": @"en", @"kind": @"asr", @"name": @{@"runs": @[@{@"text": @"English"}, @{@"text": @" (auto-generated)"}]}},
+            @{@"baseUrl": @"https://example.invalid/t?v=1&lang=ar", @"languageCode": @"ar", @"name": @{@"simpleText": @"Arabic"}},
+            @{@"baseUrl": @"https://example.invalid/t?v=1&lang=en", @"languageCode": @"en", @"name": @{@"runs": @[@{@"text": @"English"}]}},
+            @{@"baseUrl": @"https://example.invalid/t?v=1&lang=ar", @"languageCode": @"ar", @"name": @{@"simpleText": @"Arabic again"}},
+            @{@"languageCode": @"xx"},
+            @"junk"]};
+        NSArray *tracks = [SCIYTDirect captionTracksFromRenderer:renderer];
+        ALBRHI_ASSERT(tracks.count == 3, @"duplicates and entries without an address dropped");
+        ALBRHI_ASSERT([tracks[0][@"id"] isEqualToString:@"ar"] && [tracks[0][@"name"] isEqualToString:@"Arabic"], @"manual first, simpleText name");
+        ALBRHI_ASSERT([tracks[1][@"id"] isEqualToString:@"en"], @"then the other manual one");
+        ALBRHI_ASSERT([tracks[2][@"id"] isEqualToString:@"en-auto"] && [tracks[2][@"auto"] boolValue]
+                      && [tracks[2][@"name"] isEqualToString:@"English (auto-generated)"], @"automatic last, name joined from runs");
+        ALBRHI_ASSERT([SCIYTDirect captionTracksFromRenderer:nil].count == 0 && [SCIYTDirect captionTracksFromRenderer:@{}].count == 0, @"none");
     });
 }

@@ -1072,6 +1072,11 @@ button and is vetoed, any other is real and pauses ours. Enforced at: `YTSingleV
 `YTNowPlayingInfoCenterPlaybackObserverImpl` (the entry is written by the owner only; a paused mini bar had been overwriting YouTube's, and `+stop` had been clearing it and deactivating YouTube's session), and `MLAudioSession` release paths (take the session back if ours is the one playing). Each hook is installed at runtime behind the class **and the exact encoding**, counted, and listed on the
 diagnostics page; the 26 signatures were compared mechanically with the 21.41.5 dump. **Verified in the simulator** on stand-in classes with those signatures (the real hooks install on them; muted preview ignored, echo vetoed, YouTube's handler refused while we own and answering while it owns, takeover both ways) and background audio ran 10 s on the home screen; **not run inside YouTube or on a device.**
 
+**Languages and captions in the saved file (1.45.0, from the direct route's own `/player` response).** A dubbed video serves one AAC per `audioTrack.id` (`en-US.4`, `ar.3`, `de.3`…, measured on `0e3GPea1Tyg`) and `captions.playerCaptionsTracklistRenderer.captionTracks` carries a `baseUrl` that answers `&fmt=vtt` with a plain 200 and no token (measured). The choice sheet now *selects*
+and a bottom button downloads (the old sheet started on the first tap, leaving no room to choose); languages and captions open searchable lists because a video can offer 65 of them. `SCIYTFragments` writes extra AAC tracks and `tx3g` caption tracks into the one `.mp4` and then sets `alternate_group` in each `tkhd` **in the finished file** — AVAssetWriter has no setting for it (`addInputGroup:` hung) and
+without it AVFoundation offers no audio or caption group at all (the host test fails with the call removed). Caption samples carry the silences between cues, because an MP4 text sample lasts until the next begins. **YouTube's automatic captions are "rolling"**: each cue repeats the previous line and a block opens with a line holding one *space*, which is content and not a blank line (trimming it lost every new line — found by the test).
+AVFoundation adds a "Forced" twin to every caption track; the player's picker hides them. Fragmented sources for the test are made with AVAssetWriter's HLS segment profile (`movieFragmentInterval` did not produce `moof`). Run once on real files (25 min, 3 languages, 2 caption tracks): 146 MB, 2.4 s. **Not run from inside YouTube, nor saved to Photos, nor on a device.** AV1→HEVC conversion ignores the extras (said in the report).
+
 **The app stopped launching in 1.29–1.31 and the lessons are in §4.3** (three hooks asking for layout from inside layout; `-topControls`
 doing work per call; icon repaints; dead code woken by the `SCISafeValueForKey` fix; `_ASDisplayView`). The launch guard and `NOHOOKS`
 exist because of it. One failure was cured by clearing the app's data, and on a second phone by deleting the app (1.31.1 added two guards on the tab bar for it).
@@ -1392,8 +1397,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.44.0** · X **0.22.0** · TikTok **0.28.0** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.105.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.45.0** · X **0.22.0** · TikTok **0.28.0** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.106.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

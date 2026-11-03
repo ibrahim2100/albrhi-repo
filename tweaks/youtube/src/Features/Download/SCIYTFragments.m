@@ -1,5 +1,6 @@
 #import "SCIYTFragments.h"
 #import "SCIYTFragmentsInternal.h"
+#import "SCIYTSubtitles.h"
 #import "../../SCILog.h"
 #import "../../Localization/SCILocalize.h"
 #import "../../Diagnostics/SCIYTDiagnostics.h"
@@ -516,14 +517,123 @@ static void SCIFReadSampleEntry(SCIFTrack *track, const uint8_t *bytes, SCIFBox 
     return format;
 }
 
+/// A language on an input, if the writer will take it. A tag it dislikes is an exception, and a
+/// language label is not worth a download.
+static void SCISetInputLanguage(AVAssetWriterInput *input, NSString *tag) {
+    if (!tag.length) return;
+    @try { input.extendedLanguageTag = tag; }
+    @catch (NSException *exception) { SCILogV(@"fragments: language tag %@ refused — %@", tag, exception.reason); }
+}
+
+// MARK: - Alternatives inside one file
+
+/// Marks the sound tracks as alternatives of one another, and the caption tracks too.
+///
+/// A second audio track in an .mp4 is only a *choice* -- something a player offers in its audio
+/// menu -- when it shares a non-zero `alternate_group` in its `tkhd` with the others. AVAssetWriter
+/// writes the field as zero and has no setting for it (`addInputGroup:` is its answer, and it hung
+/// when tried), so the finished file is opened and the two bytes are set in place. Nothing changes
+/// size, so no offset anywhere in the file moves.
+///
+/// Best effort and silent: a file this cannot read is left exactly as the writer made it.
+static void SCIFMarkAlternatives(NSURL *url) {
+    NSFileHandle *handle = [NSFileHandle fileHandleForUpdatingURL:url error:nil];
+    if (!handle) return;
+
+    @try {
+        unsigned long long total = [handle seekToEndOfFile];
+        unsigned long long at = 0, moovAt = 0, moovSize = 0;
+
+        while (at + 8 <= total) {
+            [handle seekToFileOffset:at];
+            NSData *head = [handle readDataOfLength:16];
+            if (head.length < 8) break;
+            const uint8_t *b = head.bytes;
+            uint64_t size = ((uint64_t)b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3];
+            if (size == 1 && head.length >= 16) {
+                size = 0; for (int i = 8; i < 16; i++) size = (size << 8) | b[i];
+            } else if (size == 0) {
+                size = total - at;
+            }
+            if (size < 8) break;
+            if (!memcmp(b + 4, "moov", 4)) { moovAt = at; moovSize = size; break; }
+            at += size;
+        }
+        if (!moovSize || moovSize > 64 * 1024 * 1024) { [handle closeFile]; return; }
+
+        [handle seekToFileOffset:moovAt];
+        NSMutableData *moov = [[handle readDataOfLength:(NSUInteger)moovSize] mutableCopy];
+        uint8_t *bytes = moov.mutableBytes;
+        uint64_t length = moov.length;
+
+        uint64_t cursor = 8;
+        SCIFBox trak;
+        BOOL changed = NO;
+        int audioSeen = 0;
+
+        while (SCIFNextBox(bytes, length, &cursor, &trak)) {
+            if (strcmp(trak.type, "trak")) continue;
+
+            uint64_t tkhdBody = 0; BOOL haveTkhd = NO;
+            char handler[5] = {0};
+            uint64_t inner = trak.start + trak.header, innerEnd = trak.start + trak.size;
+            SCIFBox child;
+            while (SCIFNextBox(bytes, innerEnd, &inner, &child)) {
+                if (!strcmp(child.type, "tkhd")) { tkhdBody = child.start + child.header; haveTkhd = YES; }
+                if (!strcmp(child.type, "mdia")) {
+                    uint64_t m = child.start + child.header, mEnd = child.start + child.size;
+                    SCIFBox media;
+                    while (SCIFNextBox(bytes, mEnd, &m, &media)) {
+                        if (!strcmp(media.type, "hdlr") && media.start + media.header + 12 <= length) {
+                            memcpy(handler, bytes + media.start + media.header + 8, 4);
+                        }
+                    }
+                }
+            }
+            if (!haveTkhd) continue;
+
+            int group = 0;
+            if (!strcmp(handler, "soun")) group = 1;
+            else if (!strcmp(handler, "sbtl") || !strcmp(handler, "text") || !strcmp(handler, "subt")) group = 2;
+            if (!group) continue;
+
+            uint8_t version = bytes[tkhdBody];
+            uint64_t layerAt = tkhdBody + (version == 1 ? (4 + 8 + 8 + 4 + 4 + 8 + 8) : (4 + 4 + 4 + 4 + 4 + 4 + 8));
+            if (layerAt + 4 > length) continue;
+            bytes[layerAt + 2] = 0; bytes[layerAt + 3] = (uint8_t)group;   // alternate_group, big-endian
+
+            // Only the first sound track is the one that plays unasked; captions are all opt-in.
+            BOOL first = (group == 1 && audioSeen++ == 0);
+            if (group == 1 && !first) bytes[tkhdBody + 3] &= (uint8_t)~0x01;
+            if (group == 2) bytes[tkhdBody + 3] &= (uint8_t)~0x01;
+            changed = YES;
+        }
+
+        if (changed) {
+            [handle seekToFileOffset:moovAt];
+            [handle writeData:moov];
+        }
+    } @catch (NSException *exception) {
+        SCILogV(@"fragments: could not mark alternatives — %@", exception.reason);
+    }
+    [handle closeFile];
+}
+
 /// Writes the tracks given, interleaved, and calls back with the finished file.
 ///
-/// **Both inputs are fed from the writer's own requests, not one after the other.** Feeding all
+/// **Every input is fed from the writer's own requests, not one after the other.** Feeding all
 /// of the video and then all of the sound waits, on a long file, for room the writer will not
 /// make until the other track has caught up -- a deadlock that looks like a download stuck at
 /// ninety per cent. `requestMediaDataWhenReady` lets each side take what the writer asks for.
+///
+/// `extras` are further sound tracks (other languages) and `subtitles` are caption tracks, each
+/// `@{@"lang": ..., @"cues": ...}`; both are written after the picture and the main sound, so a
+/// player that knows nothing of them plays exactly what it always did.
 + (void)writeVideo:(SCIFTrack *)video
              audio:(SCIFTrack *)audio
+     audioLanguage:(NSString *)audioLanguage
+            extras:(NSArray<NSDictionary *> *)extras
+         subtitles:(NSArray<NSDictionary *> *)subtitles
           fileType:(AVFileType)fileType
          extension:(NSString *)extension
         completion:(void (^)(NSURL *, NSString *))completion {
@@ -532,28 +642,30 @@ static void SCIFReadSampleEntry(SCIFTrack *track, const uint8_t *bytes, SCIFBox 
         dispatch_async(dispatch_get_main_queue(), ^{ completion(output, failure); });
     };
 
-    NSString *failure = nil;
-    CMFormatDescriptionRef videoFormat = video ? [self videoFormat:video failure:&failure] : NULL;
-    if (video && !videoFormat) { finish(nil, failure); return; }
+    NSMutableArray *formats = [NSMutableArray array];   // CF objects, released together at the end
+    void (^releaseAll)(void) = ^{
+        for (id format in formats) CFRelease((__bridge CFTypeRef)format);
+        [formats removeAllObjects];
+    };
+    // Retains for the lifetime of the write and hands the same reference back.
+    CMFormatDescriptionRef (^keep)(CMFormatDescriptionRef) = ^CMFormatDescriptionRef(CMFormatDescriptionRef f) {
+        if (f) [formats addObject:(__bridge id)f];
+        return f;
+    };
 
-    CMFormatDescriptionRef audioFormat = audio ? [self audioFormat:audio failure:&failure] : NULL;
-    if (audio && !audioFormat) {
-        if (videoFormat) CFRelease(videoFormat);
-        finish(nil, failure);
-        return;
-    }
+    NSString *failure = nil;
+    CMFormatDescriptionRef videoFormat = video ? keep([self videoFormat:video failure:&failure]) : NULL;
+    if (video && !videoFormat) { releaseAll(); finish(nil, failure); return; }
+
+    CMFormatDescriptionRef audioFormat = audio ? keep([self audioFormat:audio failure:&failure]) : NULL;
+    if (audio && !audioFormat) { releaseAll(); finish(nil, failure); return; }
 
     NSURL *output = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:
         [[[NSUUID UUID] UUIDString] stringByAppendingPathExtension:extension]]];
 
     NSError *error = nil;
     AVAssetWriter *writer = [AVAssetWriter assetWriterWithURL:output fileType:fileType error:&error];
-    if (!writer) {
-        if (videoFormat) CFRelease(videoFormat);
-        if (audioFormat) CFRelease(audioFormat);
-        finish(nil, SCILocalized(@"dl_direct_write_failed"));
-        return;
-    }
+    if (!writer) { releaseAll(); finish(nil, SCILocalized(@"dl_direct_write_failed")); return; }
 
     AVAssetWriterInput *videoInput = nil, *audioInput = nil;
     if (videoFormat) {
@@ -566,14 +678,47 @@ static void SCIFReadSampleEntry(SCIFTrack *track, const uint8_t *bytes, SCIFBox 
         audioInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeAudio
                                                         outputSettings:nil sourceFormatHint:audioFormat];
         audioInput.expectsMediaDataInRealTime = NO;
+        SCISetInputLanguage(audioInput, audioLanguage);
         if ([writer canAddInput:audioInput]) [writer addInput:audioInput]; else audioInput = nil;
     }
 
     if ((videoFormat && !videoInput) || (audioFormat && !audioInput) || (!videoInput && !audioInput)) {
-        if (videoFormat) CFRelease(videoFormat);
-        if (audioFormat) CFRelease(audioFormat);
+        releaseAll();
         finish(nil, SCILocalized(@"dl_direct_write_failed"));
         return;
+    }
+
+    // Further sound: each its own track and language, off until chosen.
+    NSMutableArray<NSDictionary *> *extraWork = [NSMutableArray array];
+    for (NSDictionary *extra in extras) {
+        SCIFTrack *track = extra[@"track"];
+        CMFormatDescriptionRef format = track ? keep([self audioFormat:track failure:nil]) : NULL;
+        if (!format) { SCILogV(@"fragments: an extra sound track was unreadable, left out"); continue; }
+        AVAssetWriterInput *input = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeAudio
+                                                                       outputSettings:nil sourceFormatHint:format];
+        input.expectsMediaDataInRealTime = NO;
+        input.marksOutputTrackAsEnabled = NO;
+        SCISetInputLanguage(input, extra[@"lang"]);
+        if (![writer canAddInput:input]) continue;
+        [writer addInput:input];
+        [extraWork addObject:@{@"input": input, @"track": track, @"format": (__bridge id)format}];
+    }
+
+    // Captions: one text track each, its samples built as the writer asks for them.
+    NSMutableArray<NSDictionary *> *textWork = [NSMutableArray array];
+    CMFormatDescriptionRef textFormat = subtitles.count ? keep([SCIYTSubtitles newFormatDescription]) : NULL;
+    for (NSDictionary *sub in subtitles) {
+        if (!textFormat) break;
+        NSArray *schedule = [SCIYTSubtitles scheduleForCues:sub[@"cues"]];
+        if (!schedule.count) continue;
+        AVAssetWriterInput *input = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeSubtitle
+                                                                       outputSettings:nil sourceFormatHint:textFormat];
+        input.expectsMediaDataInRealTime = NO;
+        input.marksOutputTrackAsEnabled = NO;
+        SCISetInputLanguage(input, sub[@"lang"]);
+        if (![writer canAddInput:input]) continue;
+        [writer addInput:input];
+        [textWork addObject:@{@"input": input, @"schedule": schedule}];
     }
 
     writer.shouldOptimizeForNetworkUse = YES;   // index first, so it plays from a share sheet and Photos
@@ -624,19 +769,49 @@ static void SCIFReadSampleEntry(SCIFTrack *track, const uint8_t *bytes, SCIFBox 
     pump(videoInput, video, videoFormat, @"com.albrhi.youtube.fragments.video");
     pump(audioInput, audio, audioFormat, @"com.albrhi.youtube.fragments.audio");
 
+    NSUInteger n = 0;
+    for (NSDictionary *work in extraWork) {
+        pump(work[@"input"], work[@"track"], (__bridge CMFormatDescriptionRef)work[@"format"],
+             [NSString stringWithFormat:@"com.albrhi.youtube.fragments.extra%lu", (unsigned long)n++]);
+    }
+
+    for (NSDictionary *work in textWork) {
+        AVAssetWriterInput *input = work[@"input"];
+        NSArray *schedule = work[@"schedule"];
+        dispatch_group_enter(group);
+        dispatch_queue_t queue = dispatch_queue_create("com.albrhi.youtube.fragments.text", DISPATCH_QUEUE_SERIAL);
+        __block NSUInteger next = 0;
+
+        [input requestMediaDataWhenReadyOnQueue:queue usingBlock:^{
+            while (input.isReadyForMoreMediaData) {
+                if (broke || writer.status != AVAssetWriterStatusWriting || next >= schedule.count) {
+                    [input markAsFinished];
+                    dispatch_group_leave(group);
+                    return;
+                }
+                CMSampleBufferRef sample = [SCIYTSubtitles newSampleForEntry:schedule[next] format:textFormat];
+                next++;
+                if (!sample) { SCILogV(@"fragments: a caption sample could not be built"); continue; }   // a lost line is not a lost video
+                if (![input appendSampleBuffer:sample]) broke = YES;
+                CFRelease(sample);
+            }
+        }];
+    }
+
+    NSUInteger audioCount = (audioInput ? 1 : 0) + extraWork.count;
+    NSUInteger textCount = textWork.count;
+
     dispatch_group_notify(group, dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
         if (broke) {
             [writer cancelWriting];
-            if (videoFormat) CFRelease(videoFormat);
-            if (audioFormat) CFRelease(audioFormat);
+            releaseAll();
             [[NSFileManager defaultManager] removeItemAtURL:output error:nil];
             finish(nil, SCILocalized(@"dl_direct_write_failed"));
             return;
         }
 
         [writer finishWritingWithCompletionHandler:^{
-            if (videoFormat) CFRelease(videoFormat);
-            if (audioFormat) CFRelease(audioFormat);
+            releaseAll();
 
             if (writer.status != AVAssetWriterStatusCompleted) {
                 SCILogV(@"fragments: writer refused — %@", writer.error.localizedDescription);
@@ -647,6 +822,8 @@ static void SCIFReadSampleEntry(SCIFTrack *track, const uint8_t *bytes, SCIFBox 
                 return;
             }
 
+            if (audioCount > 1 || textCount > 0) SCIFMarkAlternatives(output);
+
             // What came out, asked of the finished file. An ordinary .mp4 has no fragment tables
             // to misread, so this is the one place AVFoundation's answer can be believed -- and it
             // is set against what the source said it held.
@@ -654,13 +831,23 @@ static void SCIFReadSampleEntry(SCIFTrack *track, const uint8_t *bytes, SCIFBox 
             double wrote = CMTimeGetSeconds(made.duration);
             double claimed = MAX(video ? [video seconds] : 0, audio ? [audio seconds] : 0);
             [SCIYTDiagnostics recordStreamAttempt:[NSString stringWithFormat:
-                @"direct: wrote %.1fs (sources say %.1fs) — video %lu frames, audio %lu packets%@",
+                @"direct: wrote %.1fs (sources say %.1fs) — video %lu frames, audio %lu packets, %lu more sound track(s), %lu caption track(s)%@",
                 wrote, claimed, (unsigned long)[video count], (unsigned long)[audio count],
+                (unsigned long)extraWork.count, (unsigned long)textCount,
                 (claimed > 0 && fabs(wrote - claimed) / claimed > 0.1) ? @" — LENGTH DISAGREES" : @""]];
 
             finish(output, nil);
         }];
     });
+}
+
++ (void)writeVideo:(SCIFTrack *)video
+             audio:(SCIFTrack *)audio
+          fileType:(AVFileType)fileType
+         extension:(NSString *)extension
+        completion:(void (^)(NSURL *, NSString *))completion {
+    [self writeVideo:video audio:audio audioLanguage:nil extras:@[] subtitles:@[]
+            fileType:fileType extension:extension completion:completion];
 }
 
 // MARK: - The two jobs
@@ -689,6 +876,43 @@ static void SCIFReadSampleEntry(SCIFTrack *track, const uint8_t *bytes, SCIFBox 
             audio.codec, (unsigned long)[audio count], audio.timescale]];
 
         [self writeVideo:video audio:audio fileType:AVFileTypeMPEG4 extension:@"mp4" completion:completion];
+    });
+}
+
++ (void)mergeVideo:(NSURL *)videoURL
+             audio:(NSURL *)audioURL
+     audioLanguage:(NSString *)audioLanguage
+       extraAudios:(NSArray<NSDictionary *> *)extraAudios
+         subtitles:(NSArray<NSDictionary *> *)subtitles
+        completion:(void (^)(NSURL *, NSString *))completion {
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+        NSString *why = nil;
+        SCIFTrack *video = [self trackFromFile:videoURL failure:&why];
+        if (!video) {
+            [SCIYTDiagnostics recordStreamAttempt:[@"direct: video unreadable — " stringByAppendingString:why ?: @"?"]];
+            dispatch_async(dispatch_get_main_queue(), ^{ completion(nil, SCILocalized(@"dl_direct_unreadable")); });
+            return;
+        }
+        SCIFTrack *audio = [self trackFromFile:audioURL failure:&why];
+        if (!audio) {
+            [SCIYTDiagnostics recordStreamAttempt:[@"direct: audio unreadable — " stringByAppendingString:why ?: @"?"]];
+            dispatch_async(dispatch_get_main_queue(), ^{ completion(nil, SCILocalized(@"dl_direct_unreadable")); });
+            return;
+        }
+
+        // An extra sound track that cannot be read costs that track, not the download.
+        NSMutableArray<NSDictionary *> *tracks = [NSMutableArray array];
+        for (NSDictionary *extra in extraAudios) {
+            SCIFTrack *track = [self trackFromFile:extra[@"file"] failure:&why];
+            if (!track) {
+                [SCIYTDiagnostics recordStreamAttempt:[NSString stringWithFormat:@"direct: sound track %@ unreadable — %@", extra[@"lang"], why ?: @"?"]];
+                continue;
+            }
+            [tracks addObject:@{@"track": track, @"lang": extra[@"lang"] ?: @""}];
+        }
+
+        [self writeVideo:video audio:audio audioLanguage:audioLanguage extras:tracks subtitles:subtitles
+                fileType:AVFileTypeMPEG4 extension:@"mp4" completion:completion];
     });
 }
 
