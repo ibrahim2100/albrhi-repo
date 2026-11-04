@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleIdentifier</key><string>com.albrhi.playerharness</string><key>CFBundleName</key><string>PlayerHarness</string>
+<key>CFBundleExecutable</key><string>PlayerHarness</string><key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleVersion</key><string>1</string><key>CFBundleShortVersionString</key><string>1</string>
+<key>UIBackgroundModes</key><array><string>audio</string></array>
+<key>UILaunchScreen</key><dict/>
+<key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
+<key>NSPhotoLibraryAddUsageDescription</key><string>test</string>
+</dict></plist>
