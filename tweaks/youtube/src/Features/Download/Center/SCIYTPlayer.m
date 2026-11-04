@@ -347,6 +347,7 @@ static SCIYTPlayer *sciCurrent = nil;
     self.claimed = NO;
     if ([SCIYTArbiter owner] != SCIOwnerHost) {
         [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nil;
+        if (@available(iOS 13.0, *)) [MPNowPlayingInfoCenter defaultCenter].playbackState = MPNowPlayingPlaybackStateStopped;
         [[AVAudioSession sharedInstance] setActive:NO
                                        withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation
                                              error:nil];
@@ -1363,12 +1364,14 @@ static SCIYTPlayer *sciCurrent = nil;
     NSDictionary *published = [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo;
     [SCIYTDiagnostics recordLockScreenState:
         [NSString stringWithFormat:
-            @"%@ · title %@ · artwork %@ · category %@ · session claimed %@",
+            @"%@ · title %@ · artwork %@ · category %@ · session claimed %@ · state %ld (1 playing, 2 paused) · owner %d",
             isVideo ? @"video" : @"audio",
             published[MPMediaItemPropertyTitle] ? @"set" : @"MISSING",
             published[MPMediaItemPropertyArtwork] ? @"set" : @"none",
             [AVAudioSession sharedInstance].category ?: @"?",
-            self.claimed ? @"yes" : @"NO"]];
+            self.claimed ? @"yes" : @"NO",
+            (long)[MPNowPlayingInfoCenter defaultCenter].playbackState,
+            (int)[SCIYTArbiter owner]]];
 }
 
 - (void)next {
@@ -1967,6 +1970,16 @@ static SCIYTPlayer *sciCurrent = nil;
     }
 
     [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = now;
+
+    // The state the system reads the card by. Measured in the harness: with the entry written and
+    // this left unset, MediaRemote named this app as the now-playing client, with the title and a
+    // rate of 1, and still answered "is the now-playing app playing" with NO -- and a card whose app is
+    // not playing is not drawn on the lock screen or in Control Center. The audio session is meant to
+    // supply it; inside an app that also owns another player (YouTube's) it does not reliably.
+    if (@available(iOS 13.0, *)) {
+        [MPNowPlayingInfoCenter defaultCenter].playbackState =
+            self.player.rate > 0 ? MPNowPlayingPlaybackStatePlaying : MPNowPlayingPlaybackStatePaused;
+    }
 }
 
 @end

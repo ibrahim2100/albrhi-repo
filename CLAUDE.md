@@ -340,6 +340,7 @@ said "29 tests in about a second" — a test nobody runs in CI is a test that ro
 | `inject-dylib.py` · `ipa-inject.html` | put a dylib into an IPA; entitlements are read with `ldid -e` **before** anything is modified and handed back with `ldid -S<file>` (re-signing with `-S` alone erases them — TikTok carries twenty) |
 | `sim-install.sh` · `sim/SimShim.m` | **a decrypted device IPA, with a standalone dylib injected, running in the iOS Simulator** (`bash tools/sim-install.sh <ipa> [<dylib>] [<simulator>]`, about 40 s): every Mach-O is re-stamped from the device platform to the simulator's with `vtool` (an Apple-silicon simulator runs arm64 natively; only the platform stamp stops it), duplicate `LC_RPATH`s are removed (the simulator's dyld refuses them), the bundle is signed ad hoc, and a simulator-only helper swallows the failures a device build does not have (see below) |
 | `run-host-tests.sh` | every host test, by glob (§3.5) |
+| `sim-player/` | the Download Centre player (the real sources) in a throwaway simulator app, with flags for the resign/become-active case, the arbiter against stand-in YouTube classes, **what the system believes is now playing** (`-nptest`) and the download choice sheet; `bash tools/sim-player/build.sh` |
 | `deb-edit.py` · `deb-edit.html` | edit `.deb` metadata (`label` appends `(rootless)`/`(roothide)`/`(rootful)`; `normalize` converts an xz control archive to gzip — the browser tool carries a hand-written DEFLATE because `DecompressionStream` is iOS 16.4+) |
 | `make-logo.py` · `repo-index.html` | repo icon in pure Python, the source's landing page (built from the live index) |
 
@@ -1077,6 +1078,10 @@ and a bottom button downloads (the old sheet started on the first tap, leaving n
 without it AVFoundation offers no audio or caption group at all (the host test fails with the call removed). Caption samples carry the silences between cues, because an MP4 text sample lasts until the next begins. **YouTube's automatic captions are "rolling"**: each cue repeats the previous line and a block opens with a line holding one *space*, which is content and not a blank line (trimming it lost every new line — found by the test).
 AVFoundation adds a "Forced" twin to every caption track; the player's picker hides them. Fragmented sources for the test are made with AVAssetWriter's HLS segment profile (`movieFragmentInterval` did not produce `moof`). Run once on real files (25 min, 3 languages, 2 caption tracks): 146 MB, 2.4 s. **Not run from inside YouTube, nor saved to Photos, nor on a device.** AV1→HEVC conversion ignores the extras (said in the report).
 
+**The lock-screen card did not appear at all (1.45.1) — a missing `playbackState`, found by asking the system rather than the tweak.** `SCIYTPlayer` wrote `nowPlayingInfo` and never set `MPNowPlayingInfoCenter.playbackState`. In the simulator harness MediaRemote (private `MRMediaRemoteGetNowPlayingClient` / `…ApplicationIsPlaying`, called from the harness only) named our app as the now-playing client with the title and rate 1
+and answered **is-playing = 0**; the lock screen showed no card. With `playbackState` set on every write (and `Stopped` at teardown, unless YouTube owns playback), is-playing = 1 and the card appears (screenshot). The audio session is supposed to supply that state and does not reliably in an app that also hosts YouTube's player. **A card can be fully populated and still invisible: check
+what the system believes, not what the app wrote.** Not seen: the transport buttons and time labels (the simulator's card draws neither), YouTube's behaviour over our card, any device. `tools/sim-player/` is the harness (the REAL player sources in a throwaway app; media from `~/Desktop/Albrhi-PlayerMedia`; flags `-resigntest -hosttest -nptest -sheettest`) — it had lived in a temp folder that is emptied each day.
+
 **The app stopped launching in 1.29–1.31 and the lessons are in §4.3** (three hooks asking for layout from inside layout; `-topControls`
 doing work per call; icon repaints; dead code woken by the `SCISafeValueForKey` fix; `_ASDisplayView`). The launch guard and `NOHOOKS`
 exist because of it. One failure was cured by clearing the app's data, and on a second phone by deleting the app (1.31.1 added two guards on the tab bar for it).
@@ -1397,8 +1402,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.45.0** · X **0.22.0** · TikTok **0.28.0** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.106.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.8.1** · YouTube **1.45.1** · X **0.22.0** · TikTok **0.28.0** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.106.1**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
