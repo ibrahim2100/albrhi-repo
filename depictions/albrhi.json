@@ -106,6 +106,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.106.1",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **يوتيوب 1.45.1 — بطاقة «يُشغَّل الآن» لمشغّل مركز التحميلات تظهر على شاشة القفل وفي مركز التحكم (كانت حالة التشغيل لا تُضبط، فيراها النظام غير مشغِّل).**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.106.0",
           "useBoldText": true
         },
@@ -131,20 +145,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.104.0",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **يوتيوب 1.43.0 — مشغّل مركز التحميلات: إصلاح الفيديو الأسود بعد الإشعارات ومركز التحكم، وإيماءات (ضغط مطوّل ×2، سحب للتقديم، إضاءة وصوت من الحافتين، تقريب، لمستان…",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.106.0"
+          "text": "1.106.1"
         },
         {
           "class": "DepictionTableTextView",
