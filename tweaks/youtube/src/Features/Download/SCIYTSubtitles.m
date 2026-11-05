@@ -188,6 +188,15 @@ static BOOL SCIHasWordTiming(NSString *line) {
     return [[NSString alloc] initWithBytes:bytes + 2 length:length encoding:NSUTF8StringEncoding];
 }
 
++ (NSString *)bilingualPrimary:(NSString *)primary secondary:(NSString *)secondary {
+    NSString *a = [primary stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    NSString *b = [secondary stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    if (!a.length && !b.length) return nil;
+    if (!a.length) return b;
+    if (!b.length || [a isEqualToString:b]) return a;
+    return [NSString stringWithFormat:@"%@\n%@", a, b];
+}
+
 + (NSString *)srtTimestamp:(double)seconds {
     if (!isfinite(seconds) || seconds < 0) seconds = 0;
     long long ms = (long long)llround(seconds * 1000.0);

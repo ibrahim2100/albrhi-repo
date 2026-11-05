@@ -98,3 +98,18 @@ static inline void SCIShuffleOrder(int *out, int count, int first, unsigned int 
         int t = out[i]; out[i] = out[j]; out[j] = t;
     }
 }
+
+// MARK: - Chapters
+
+/// The chapter a time falls in: the last start at or before `at`, or -1 before the first. `starts` is
+/// in time order. Chapters are drawn from the community's named stretches of a video; a time before
+/// the first one belongs to none of them.
+static inline int SCIChapterIndex(const double *starts, int count, double at) {
+    if (!isfinite(at) || count <= 0) return -1;
+    int found = -1;
+    for (int i = 0; i < count; i++) {
+        if (!isfinite(starts[i])) continue;
+        if (starts[i] <= at) found = i; else break;
+    }
+    return found;
+}

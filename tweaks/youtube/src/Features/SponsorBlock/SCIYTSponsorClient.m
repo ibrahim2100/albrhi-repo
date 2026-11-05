@@ -111,6 +111,12 @@ static NSString *SCIHashPrefix(NSString *videoID) {
 /// done on the server has to happen.
 + (SCISponsorSegment *)segmentFromJSON:(NSDictionary *)json
                     enabledCategories:(NSArray<NSString *> *)enabled {
+    return [self segmentFromJSON:json enabledCategories:enabled annotations:NO];
+}
+
++ (SCISponsorSegment *)segmentFromJSON:(NSDictionary *)json
+                    enabledCategories:(NSArray<NSString *> *)enabled
+                           annotations:(BOOL)annotations {
     if (![json isKindOfClass:[NSDictionary class]]) return nil;
 
     NSString *category = json[@"category"];
@@ -121,7 +127,9 @@ static NSString *SCIHashPrefix(NSString *videoID) {
     // single highlight point) and "full" (the whole video is one category); acting on
     // those as if they were skips would jump to the end of a video.
     id actionType = json[@"actionType"];
-    if ([actionType isKindOfClass:[NSString class]] && ![actionType isEqualToString:@"skip"]) {
+    NSString *action = [actionType isKindOfClass:[NSString class]] ? actionType : @"skip";
+    BOOL isNote = [action isEqualToString:@"chapter"] || [action isEqualToString:@"poi"];
+    if (![action isEqualToString:@"skip"] && !(annotations && isNote)) {
         return nil;
     }
 
@@ -145,10 +153,15 @@ static NSString *SCIHashPrefix(NSString *videoID) {
     // isfinite, because a NaN would compare false against everything and a segment that
     // never matches is invisible rather than obviously broken.
     if (!isfinite(start) || !isfinite(end)) return nil;
-    if (start < 0 || end <= start) return nil;
+    // A point of interest is one instant (start == end); everything else has a length.
+    BOOL point = [action isEqualToString:@"poi"];
+    if (start < 0 || end < start || (!point && end <= start)) return nil;
 
     SCISponsorSegment *segment = [[SCISponsorSegment alloc] init];
     segment.category = category;
+    segment.actionType = action;
+    id description = json[@"description"];
+    segment.title = [description isKindOfClass:[NSString class]] ? description : @"";
     segment.start = start;
     segment.end = end;
     segment.uuid = [json[@"UUID"] isKindOfClass:[NSString class]] ? json[@"UUID"]
@@ -165,6 +178,13 @@ static NSString *SCIHashPrefix(NSString *videoID) {
 + (NSArray<SCISponsorSegment *> *)parse:(id)json
                              forVideoID:(NSString *)videoID
                      enabledCategories:(NSArray<NSString *> *)enabled {
+    return [self parse:json forVideoID:videoID enabledCategories:enabled annotations:NO];
+}
+
++ (NSArray<SCISponsorSegment *> *)parse:(id)json
+                             forVideoID:(NSString *)videoID
+                     enabledCategories:(NSArray<NSString *> *)enabled
+                            annotations:(BOOL)annotations {
     if (![json isKindOfClass:[NSArray class]]) return @[];
 
     NSMutableArray<SCISponsorSegment *> *out = [NSMutableArray array];
@@ -181,12 +201,12 @@ static NSString *SCIHashPrefix(NSString *videoID) {
                 continue;
             }
             for (id raw in segments) {
-                SCISponsorSegment *segment = [self segmentFromJSON:raw enabledCategories:enabled];
+                SCISponsorSegment *segment = [self segmentFromJSON:raw enabledCategories:enabled annotations:annotations];
                 if (segment) [out addObject:segment];
             }
         } else {
             // Flat shape.
-            SCISponsorSegment *segment = [self segmentFromJSON:entry enabledCategories:enabled];
+            SCISponsorSegment *segment = [self segmentFromJSON:entry enabledCategories:enabled annotations:annotations];
             if (segment) [out addObject:segment];
         }
     }
@@ -214,16 +234,26 @@ static NSString *SCIHashPrefix(NSString *videoID) {
     if (!completion) return;
     if (!SCIEnabledCategories().count) { completion(@[]); return; }
     [self segmentsForVideo:videoID categories:[SCICategoryPrefs().allKeys sortedArrayUsingSelector:@selector(compare:)]
-                completion:completion];
+               annotations:NO completion:completion];
+}
+
++ (void)annotatedSegmentsForSavedVideo:(NSString *)videoID
+                            completion:(void (^)(NSArray<SCISponsorSegment *> *))completion {
+    if (!completion) return;
+    if (![self anyCategoryEnabled]) { completion(@[]); return; }
+    NSMutableArray<NSString *> *all = [[SCICategoryPrefs().allKeys sortedArrayUsingSelector:@selector(compare:)] mutableCopy];
+    [all addObjectsFromArray:@[@"chapter", @"poi_highlight"]];
+    [self segmentsForVideo:videoID categories:all annotations:YES completion:completion];
 }
 
 + (void)segmentsForVideo:(NSString *)videoID
               completion:(void (^)(NSArray<SCISponsorSegment *> *))completion {
-    [self segmentsForVideo:videoID categories:SCIEnabledCategories() completion:completion];
+    [self segmentsForVideo:videoID categories:SCIEnabledCategories() annotations:NO completion:completion];
 }
 
 + (void)segmentsForVideo:(NSString *)videoID
               categories:(NSArray<NSString *> *)enabled
+             annotations:(BOOL)annotations
               completion:(void (^)(NSArray<SCISponsorSegment *> *))completion {
     if (!completion) return;
 
@@ -235,8 +265,8 @@ static NSString *SCIHashPrefix(NSString *videoID) {
         return;
     }
 
-    NSString *key = [NSString stringWithFormat:@"%@|%@",
-        videoID, [enabled componentsJoinedByString:@","]];
+    NSString *key = [NSString stringWithFormat:@"%@|%@%@",
+        videoID, [enabled componentsJoinedByString:@","], annotations ? @"|annotated" : @""];
 
     NSArray *cached = [[self cache] objectForKey:key];
     if (cached) {
@@ -259,6 +289,12 @@ static NSString *SCIHashPrefix(NSString *videoID) {
     NSMutableArray<NSURLQueryItem *> *query = [NSMutableArray array];
     for (NSString *category in enabled) {
         [query addObject:[NSURLQueryItem queryItemWithName:@"category" value:category]];
+    }
+    // By default the server answers skips only; chapters and highlights are asked for by name.
+    if (annotations) {
+        for (NSString *action in @[@"skip", @"poi", @"chapter"]) {
+            [query addObject:[NSURLQueryItem queryItemWithName:@"actionType" value:action]];
+        }
     }
     components.queryItems = query;
 
@@ -287,7 +323,7 @@ static NSString *SCIHashPrefix(NSString *videoID) {
                 NSError *parseError = nil;
                 id json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&parseError];
                 if (json) {
-                    segments = [self parse:json forVideoID:videoID enabledCategories:enabled];
+                    segments = [self parse:json forVideoID:videoID enabledCategories:enabled annotations:annotations];
                 } else {
                     SCILogV(@"sponsorblock: unreadable reply — %@", parseError.localizedDescription);
                 }

@@ -97,6 +97,8 @@ extern NSNotificationName const SCIYTPlaybackDidChangeNotification;
 /// timing offset (seconds the captions are shown later than the file says; negative = earlier), and
 /// a .srt of one language with that offset applied.
 + (NSArray<NSDictionary *> *)captionLanguages;
++ (nullable NSString *)secondCaptionLanguage;
++ (void)setSecondCaptionLanguage:(nullable NSString *)language;   ///< nil = none
 + (double)captionScale;
 + (void)setCaptionScale:(double)scale;
 + (double)captionDelay;

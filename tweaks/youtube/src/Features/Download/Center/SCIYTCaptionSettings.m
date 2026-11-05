@@ -11,7 +11,7 @@
 #import "../../../Prefs.h"
 #import "../../../Localization/SCILocalize.h"
 
-typedef NS_ENUM(NSInteger, SCICaptionSection) { SCICaptionSectionSize, SCICaptionSectionTiming, SCICaptionSectionExport, SCICaptionSectionCount };
+typedef NS_ENUM(NSInteger, SCICaptionSection) { SCICaptionSectionSize, SCICaptionSectionTiming, SCICaptionSectionSecond, SCICaptionSectionExport, SCICaptionSectionCount };
 
 static const double kSCITimingStep = 0.5;
 
@@ -47,19 +47,23 @@ static const double kSCITimingStep = 0.5;
 - (NSInteger)numberOfSectionsInTableView:(__unused UITableView *)tableView { return SCICaptionSectionCount; }
 
 - (NSInteger)tableView:(__unused UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return section == SCICaptionSectionExport ? (NSInteger)self.languages.count : 1;
+    if (section == SCICaptionSectionExport) return (NSInteger)self.languages.count;
+    if (section == SCICaptionSectionSecond) return (NSInteger)self.languages.count + 1;      // "Off" and each language
+    return 1;
 }
 
 - (NSString *)tableView:(__unused UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
     switch (section) {
         case SCICaptionSectionSize: return SCILocalized(@"cap_size");
         case SCICaptionSectionTiming: return SCILocalized(@"cap_timing");
+        case SCICaptionSectionSecond: return SCILocalized(@"cap_second");
         default: return SCILocalized(@"cap_export");
     }
 }
 
 - (NSString *)tableView:(__unused UITableView *)tableView titleForFooterInSection:(NSInteger)section {
     if (section == SCICaptionSectionTiming) return SCILocalized(@"cap_timing_note");
+    if (section == SCICaptionSectionSecond) return SCILocalized(@"cap_second_note");
     if (section == SCICaptionSectionExport) return SCILocalized(@"cap_export_note");
     return nil;
 }
@@ -134,6 +138,21 @@ static const double kSCITimingStep = 0.5;
         return cell;
     }
 
+    if (path.section == SCICaptionSectionSecond) {
+        cell.selectionStyle = UITableViewCellSelectionStyleDefault;
+        NSString *chosen = [SCIYTPlayer secondCaptionLanguage];
+        if (path.row == 0) {
+            cell.textLabel.text = SCILocalized(@"player_captions_off");
+            cell.accessoryType = chosen.length ? UITableViewCellAccessoryNone : UITableViewCellAccessoryCheckmark;
+        } else {
+            NSDictionary *entry = self.languages[(NSUInteger)path.row - 1];
+            cell.textLabel.text = entry[@"name"];
+            cell.accessoryType = [entry[@"lang"] isEqualToString:chosen] ? UITableViewCellAccessoryCheckmark : UITableViewCellAccessoryNone;
+        }
+        cell.tintColor = SCIAccent();
+        return cell;
+    }
+
     NSDictionary *language = self.languages[(NSUInteger)path.row];
     cell.selectionStyle = UITableViewCellSelectionStyleDefault;
     cell.textLabel.text = [NSString stringWithFormat:SCILocalized(@"cap_export_lang"), language[@"name"]];
@@ -157,6 +176,12 @@ static const double kSCITimingStep = 0.5;
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)path {
     [tableView deselectRowAtIndexPath:path animated:YES];
+    if (path.section == SCICaptionSectionSecond) {
+        NSString *lang = path.row == 0 ? nil : self.languages[(NSUInteger)path.row - 1][@"lang"];
+        [SCIYTPlayer setSecondCaptionLanguage:lang];
+        [tableView reloadSections:[NSIndexSet indexSetWithIndex:SCICaptionSectionSecond] withRowAnimation:UITableViewRowAnimationNone];
+        return;
+    }
     if (path.section != SCICaptionSectionExport || self.exporting) return;
     NSDictionary *language = self.languages[(NSUInteger)path.row];
     self.exporting = language[@"lang"];

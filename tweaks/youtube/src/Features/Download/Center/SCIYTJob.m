@@ -94,8 +94,10 @@
     self.isShort    = [coder decodeBoolForKey:@"short"];
     self.sponsorSegments = [coder decodeObjectOfClasses:[NSSet setWithObjects:[NSArray class], [NSDictionary class], [NSString class], [NSNumber class], nil] forKey:@"sponsorSegments"];
     self.sponsorCheckedAt = [coder decodeDoubleForKey:@"sponsorCheckedAt"];
+    self.sponsorRevision = [coder decodeIntegerForKey:@"sponsorRevision"];
     self.audioChoice = [coder decodeObjectOfClass:[NSString class] forKey:@"audioChoice"];
     self.captionChoice = [coder decodeObjectOfClass:[NSString class] forKey:@"captionChoice"];
+    self.captionChoice2 = [coder decodeObjectOfClass:[NSString class] forKey:@"captionChoice2"];
     self.captionDelay = [coder decodeDoubleForKey:@"captionDelay"];
     self.album = [coder decodeObjectOfClass:[NSString class] forKey:@"album"];
     self.trackNumber = [coder decodeIntegerForKey:@"trackNumber"];
@@ -126,8 +128,10 @@
     [coder encodeBool:self.isShort forKey:@"short"];
     [coder encodeObject:self.sponsorSegments forKey:@"sponsorSegments"];
     [coder encodeDouble:self.sponsorCheckedAt forKey:@"sponsorCheckedAt"];
+    [coder encodeInteger:self.sponsorRevision forKey:@"sponsorRevision"];
     [coder encodeObject:self.audioChoice forKey:@"audioChoice"];
     [coder encodeObject:self.captionChoice forKey:@"captionChoice"];
+    [coder encodeObject:self.captionChoice2 forKey:@"captionChoice2"];
     [coder encodeDouble:self.captionDelay forKey:@"captionDelay"];
     [coder encodeObject:self.album forKey:@"album"];
     [coder encodeInteger:self.trackNumber forKey:@"trackNumber"];

@@ -754,16 +754,18 @@ static NSString *SCIYTPhotosRefusal(PHAuthorizationStatus status) {
     if (![SCIYTSponsorClient anyCategoryEnabled]) { finish(); return; }
 
     NSTimeInterval now = [[NSDate date] timeIntervalSince1970];
-    BOOL asked = job.sponsorCheckedAt > 0;
+    BOOL asked = job.sponsorCheckedAt > 0 && job.sponsorRevision >= 2;
     BOOL found = job.sponsorSegments.count > 0;
     if (asked && (found || now - job.sponsorCheckedAt < 7 * 24 * 3600)) { finish(); return; }
 
     __weak __typeof(self) weakSelf = self;
-    [SCIYTSponsorClient segmentsForSavedVideo:job.videoID completion:^(NSArray<SCISponsorSegment *> *segments) {
+    [SCIYTSponsorClient annotatedSegmentsForSavedVideo:job.videoID completion:^(NSArray<SCISponsorSegment *> *segments) {
         NSMutableArray *kept = [NSMutableArray array];
         for (SCISponsorSegment *segment in segments) {
-            [kept addObject:@{@"category": segment.category ?: @"", @"start": @(segment.start), @"end": @(segment.end)}];
+            [kept addObject:@{@"category": segment.category ?: @"", @"action": segment.actionType ?: @"skip",
+                              @"title": segment.title ?: @"", @"start": @(segment.start), @"end": @(segment.end)}];
         }
+        job.sponsorRevision = 2;
         // A reply with nothing in it is recorded as "asked" only when the request could have been
         // answered at all; the client cannot say, so the week's wait above is the compromise.
         job.sponsorSegments = kept;

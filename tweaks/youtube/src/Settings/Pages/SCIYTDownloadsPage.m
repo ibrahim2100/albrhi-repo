@@ -36,12 +36,18 @@
                                      preferredStyle:UIAlertControllerStyleActionSheet];
 
     NSInteger current = SCIPrefNumber(SCIPrefParallel);
-    if (current < 1) current = 4;
+
+    // Unset is the default and means automatic: the count is learned from how fast the last downloads
+    // went (SCIYTConcurrency). A fixed number overrides that.
+    [sheet addAction:[UIAlertAction actionWithTitle:[SCILocalized(@"set_parallel_auto") stringByAppendingString:(current < 1 ? @" ✓" : @"")]
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(__unused UIAlertAction *action) {
+        [[NSUserDefaults standardUserDefaults] removeObjectForKey:SCIPrefParallel];
+    }]];
 
     for (NSNumber *value in @[@4, @6, @8]) {
-        NSString *title = [NSString stringWithFormat:@"%@%@%@",
+        NSString *title = [NSString stringWithFormat:@"%@%@",
                            value,
-                           value.integerValue == 4 ? SCILocalized(@"set_parallel_tested") : @"",
                            value.integerValue == current ? @" ✓" : @""];
 
         [sheet addAction:[UIAlertAction actionWithTitle:title

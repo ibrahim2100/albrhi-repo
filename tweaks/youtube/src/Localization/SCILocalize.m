@@ -212,6 +212,8 @@ static void SCIBuildTables(void) {
         @"cap_timing": @"Timing",
         @"cap_timing_note": @"Plus shows the captions later, minus earlier. Remembered for this video.",
         @"cap_timing_reset": @"Reset",
+        @"cap_second": @"Second language",
+        @"cap_second_note": @"Shown under the first, a little softer: to read one language while hearing or learning another. Remembered for this video.",
         @"cap_export": @"Export",
         @"cap_export_note": @"A .srt file with your timing applied, to open in any player or editor.",
         @"cap_export_lang": @"Export .srt · %@",
@@ -459,6 +461,10 @@ static void SCIBuildTables(void) {
         @"pl_header_quality": @"Save as",
         @"pl_best": @"Best available",
         @"pl_skip_saved": @"Skip videos already saved",
+        @"chapters_title": @"Chapters",
+        @"chapters_note": @"Named stretches of the video, from SponsorBlock's community. Tap one to go there.",
+        @"chapters_untitled": @"Chapter %ld",
+        @"chapters_highlight": @"Jump to the highlight",
         @"dl_share_album": @"Album",
         @"pl_estimate": @"About %@ for %ld videos · %@ free",
         @"pl_tight": @"This would use about %@ of the %@ free. Lower the quality to be safe.",
@@ -546,8 +552,8 @@ static void SCIBuildTables(void) {
         @"diag_response": @"Full player response",
         @"diag_response_note": @"Everything YouTube told the app about that video. This is the part worth copying — it decides how downloading can work at all.",
         @"set_parallel": @"Simultaneous downloads",
-        @"set_parallel_note": @"How many pieces of a video are fetched at once. More is faster; too many and the server may slow you down.",
-        @"set_parallel_tested": @" (tested)",
+        @"set_parallel_note": @"How many pieces of a video are fetched at once. Automatic learns from how fast your last downloads went and backs off when YouTube asks it to slow down; a number overrides that.",
+        @"set_parallel_auto": @"Automatic",
     };
 
     _arTable = @{
@@ -750,6 +756,8 @@ static void SCIBuildTables(void) {
         @"cap_timing": @"التوقيت",
         @"cap_timing_note": @"الزائد يؤخّر ظهور الترجمة والناقص يقدّمه. يُحفظ لهذا الفيديو.",
         @"cap_timing_reset": @"إعادة",
+        @"cap_second": @"لغة ثانية",
+        @"cap_second_note": @"تظهر تحت الأولى بلون أخفّ: لتقرأ بلغة وأنت تسمع أو تتعلّم أخرى. تُحفظ لهذا الفيديو.",
         @"cap_export": @"تصدير",
         @"cap_export_note": @"ملف ‎.srt‎ بتوقيتك المضبوط، لتفتحه في أي مشغّل أو محرّر.",
         @"cap_export_lang": @"تصدير ‎.srt‎ · %@",
@@ -997,6 +1005,10 @@ static void SCIBuildTables(void) {
         @"pl_header_quality": @"احفظها بجودة",
         @"pl_best": @"الأعلى المتاحة",
         @"pl_skip_saved": @"تخطَّ ما هو محفوظ أصلاً",
+        @"chapters_title": @"الفصول",
+        @"chapters_note": @"مقاطع مسمّاة من الفيديو من مجتمع SponsorBlock. اضغط واحداً للانتقال إليه.",
+        @"chapters_untitled": @"الفصل %ld",
+        @"chapters_highlight": @"اقفز إلى أبرز لحظة",
         @"dl_share_album": @"الألبوم",
         @"pl_estimate": @"نحو %@ لـ %ld فيديو · المتاح %@",
         @"pl_tight": @"سيستهلك هذا نحو %@ من المتاح %@. خفّض الجودة للأمان.",
@@ -1084,8 +1096,8 @@ static void SCIBuildTables(void) {
         @"diag_response": @"استجابة المشغّل كاملة",
         @"diag_response_note": @"كل ما قاله يوتيوب للتطبيق عن ذلك الفيديو. هذا هو الجزء الذي يستحق النسخ — فهو يحدّد كيف يمكن للتحميل أن يعمل أصلًا.",
         @"set_parallel": @"التنزيلات المتزامنة",
-        @"set_parallel_note": @"كم قطعة من الفيديو تُجلب في وقتٍ واحد. الأكثر أسرع، والزائد قد يجعل الخادم يبطّئك.",
-        @"set_parallel_tested": @" (المُجرَّب)",
+        @"set_parallel_note": @"كم قطعة من الفيديو تُجلب في وقتٍ واحد. «تلقائي» يتعلّم من سرعة آخر تحميلاتك ويتراجع حين يطلب يوتيوب التمهّل؛ والرقم الثابت يتقدّم عليه.",
+        @"set_parallel_auto": @"تلقائي",
     };
 }
 

@@ -8,6 +8,11 @@
 @property (nonatomic, copy) NSString *uuid;
 @property (nonatomic, assign) NSTimeInterval start;
 @property (nonatomic, assign) NSTimeInterval end;
+/// `skip` (the ones acted on live), `chapter` (a named stretch of the video) or `poi` (a single point,
+/// the highlight). Only a saved file's lookup returns the last two.
+@property (nonatomic, copy) NSString *actionType;
+/// A chapter's name, when the submitter gave one.
+@property (nonatomic, copy) NSString *title;
 @end
 
 
@@ -42,6 +47,12 @@
 /// *when it plays*, so a category switched on after the download applies to it too.
 + (void)segmentsForSavedVideo:(NSString *)videoID
                    completion:(void (^)(NSArray<SCISponsorSegment *> *segments))completion;
+
+/// The segments of a saved file with what the live lookup leaves out: `chapter` (the community's
+/// named chapters) and `poi_highlight` (the one moment worth jumping to) come back beside the skips,
+/// told apart by `actionType`. Asked for under the same condition as `segmentsForSavedVideo:`.
++ (void)annotatedSegmentsForSavedVideo:(NSString *)videoID
+                            completion:(void (^)(NSArray<SCISponsorSegment *> *segments))completion;
 
 /// Whether SponsorBlock is on and at least one category is.
 + (BOOL)anyCategoryEnabled;

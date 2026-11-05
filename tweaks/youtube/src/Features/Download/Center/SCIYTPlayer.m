@@ -9,6 +9,7 @@
 #import "SCIYTArbiter.h"
 #import "SCIYTQueueSheet.h"
 #import "SCIYTCaptionSettings.h"
+#import "SCIYTChapterSheet.h"
 #import "../SCIYTCaptionReader.h"
 #import "../SCIYTSubtitles.h"
 #import "../../SponsorBlock/SCIYTSponsorClient.h"
@@ -119,6 +120,9 @@ static const double kSCINudge = 10;
 @property (nonatomic, copy) NSArray<NSDictionary *> *sponsorSegments;
 @property (nonatomic, strong) NSMutableSet<NSNumber *> *sponsorDone;
 @property (nonatomic, strong) UIButton *skipPill;
+@property (nonatomic) BOOL audioChoices;                       ///< the file has a second sound to pick
+@property (nonatomic) NSInteger chapterIndex;                  ///< the chapter playing, -1 before the first
+@property (nonatomic, copy) NSString *chapterShown;
 @property (nonatomic, strong) NSTimer *pillTimer;
 @property (nonatomic) double pillBack;
 
@@ -126,6 +130,8 @@ static const double kSCINudge = 10;
 @property (nonatomic, copy) NSArray<NSDictionary *> *captionTracks;      ///< the file's, from the reader
 @property (nonatomic, copy) NSArray<NSDictionary *> *captionCues;        ///< the chosen language's
 @property (nonatomic, copy) NSString *captionLang;
+@property (nonatomic, copy) NSString *captionLang2;               ///< shown under the first
+@property (nonatomic, copy) NSArray<NSDictionary *> *captionCues2;
 @property (nonatomic) NSInteger captionToken;
 @property (nonatomic) NSInteger captionLoad;
 @property (nonatomic, strong) NSMutableDictionary<NSString *, NSArray *> *cueCache;
@@ -1406,6 +1412,9 @@ static SCIYTPlayer *sciCurrent = nil;
     self.blindTicks = 0;
     self.showingUnreadable = NO;
     self.tracksButton.hidden = YES;
+    self.audioChoices = NO;
+    self.chapterShown = nil;
+    self.chapterIndex = -1;
     [self resetCaptionsForNewFile];
     [self loadSponsorFor:job];
     if (self.shuffle) [self syncShuffleToIndex];
@@ -1438,6 +1447,7 @@ static SCIYTPlayer *sciCurrent = nil;
     [self setChromeHidden:NO animated:NO];
     [self describeToLockScreen];
     [self announce];
+    [self republishSoon];
 
     // Read back rather than asserted -- the one call in -load that checks whether what
     // was just handed to iOS actually stuck, for exactly the report that says whether
@@ -1644,6 +1654,7 @@ static SCIYTPlayer *sciCurrent = nil;
         if (!strongSelf || [strongSelf current] != job) return;
         strongSelf.sponsorSegments = job.sponsorSegments ?: @[];
         [strongSelf.sponsorDone removeAllObjects];
+        [strongSelf refreshTracksVisibility];
     }];
 }
 
@@ -1657,7 +1668,9 @@ static SCIYTPlayer *sciCurrent = nil;
         NSDictionary *segment = self.sponsorSegments[i];
         starts[i] = [segment[@"start"] doubleValue];
         ends[i] = [segment[@"end"] doubleValue];
-        active[i] = [SCIYTSponsorClient categoryIsEnabled:segment[@"category"]] ? 1 : 0;
+        // Only the entries that are skips: a chapter or a highlight is something to show, never to jump over.
+        NSString *action = [segment[@"action"] isKindOfClass:[NSString class]] ? segment[@"action"] : @"skip";
+        active[i] = ([action isEqualToString:@"skip"] && [SCIYTSponsorClient categoryIsEnabled:segment[@"category"]]) ? 1 : 0;
         done[i] = [self.sponsorDone containsObject:@(i)] ? 1 : 0;
     }
     int hit = SCISkipIndex(starts, ends, active, done, (int)n, at, length);
@@ -1709,6 +1722,8 @@ static double SCICaptionScaleValue(void) {
     self.captionTracks = nil;
     self.captionCues = nil;
     self.captionLang = nil;
+    self.captionCues2 = nil;
+    self.captionLang2 = nil;
     self.captionShown = nil;
     self.cueCache = [NSMutableDictionary dictionary];
     self.captionLabel.hidden = YES;
@@ -1729,7 +1744,8 @@ static double SCICaptionScaleValue(void) {
             AVMediaSelectionGroup *audio = [asset mediaSelectionGroupForMediaCharacteristic:AVMediaCharacteristicAudible];
             AVMediaSelectionGroup *text = [asset mediaSelectionGroupForMediaCharacteristic:AVMediaCharacteristicLegible];
             strongSelf.captionTracks = [SCIYTCaptionReader captionTracksInAsset:asset];
-            strongSelf.tracksButton.hidden = !(audio.options.count > 1 || strongSelf.captionTracks.count > 0);
+            strongSelf.audioChoices = audio.options.count > 1;
+            [strongSelf refreshTracksVisibility];
 
             // Captions are drawn by this player; the system's own would draw them twice (and a phone
             // with "closed captions" switched on in Accessibility turns them on by itself).
@@ -1746,8 +1762,54 @@ static double SCICaptionScaleValue(void) {
             if (job.captionChoice.length && ![job.captionChoice isEqualToString:@"off"]) {
                 [strongSelf showCaptionLanguage:job.captionChoice remember:NO];
             }
+            if (job.captionChoice2.length && ![job.captionChoice2 isEqualToString:@"off"]) {
+                [strongSelf showSecondCaptionLanguage:job.captionChoice2 remember:NO];
+            }
         });
     }];
+}
+
+/// The button that opens the audio / captions / chapters sheet is there when the file has anything to
+/// choose in it.
+- (void)refreshTracksVisibility {
+    self.tracksButton.hidden = !(self.audioChoices || self.captionTracks.count > 0 || [self chapters].count > 0 || [self highlight]);
+}
+
+/// The file's chapters, in time order, from what SponsorBlock gave for it.
+- (NSArray<NSDictionary *> *)chapters {
+    NSMutableArray<NSDictionary *> *list = [NSMutableArray array];
+    for (NSDictionary *entry in self.sponsorSegments) {
+        if (![entry[@"action"] isEqual:@"chapter"]) continue;
+        [list addObject:@{@"start": entry[@"start"] ?: @0, @"title": entry[@"title"] ?: @""}];
+    }
+    [list sortUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) { return [a[@"start"] compare:b[@"start"]]; }];
+    return list;
+}
+
+/// The one moment SponsorBlock's community marked as the highlight, if any.
+- (NSDictionary *)highlight {
+    for (NSDictionary *entry in self.sponsorSegments) if ([entry[@"action"] isEqual:@"poi"]) return entry;
+    return nil;
+}
+
+/// The chapter playing is written beside the quality under the title.
+- (void)updateChapterAt:(double)at {
+    NSArray<NSDictionary *> *chapters = [self chapters];
+    NSString *shown = @"";
+    if (chapters.count) {
+        int n = (int)MIN(chapters.count, (NSUInteger)512);
+        double starts[512];
+        for (int i = 0; i < n; i++) starts[i] = [chapters[(NSUInteger)i][@"start"] doubleValue];
+        int index = SCIChapterIndex(starts, n, at);
+        self.chapterIndex = index;
+        if (index >= 0) shown = chapters[(NSUInteger)index][@"title"] ?: @"";
+    } else {
+        self.chapterIndex = -1;
+    }
+    if ([shown isEqualToString:self.chapterShown ?: @""]) return;
+    self.chapterShown = shown;
+    SCIYTJob *job = [self current];
+    self.subtitle.text = shown.length ? [NSString stringWithFormat:@"%@ · %@", job.quality ?: @"", shown] : job.quality;
 }
 
 - (void)showCaptionLanguage:(NSString *)lang remember:(BOOL)remember {
@@ -1794,19 +1856,61 @@ static double SCICaptionScaleValue(void) {
     });
 }
 
+/// A second language, drawn under the first: for someone learning one from the other, or watching in
+/// a language and reading in another. Chosen per video and remembered like the first.
+- (void)showSecondCaptionLanguage:(NSString *)lang remember:(BOOL)remember {
+    SCIYTJob *job = [self current];
+    if (remember && job) {
+        job.captionChoice2 = lang.length ? lang : @"off";
+        [[SCIYTLibrary shared] save];
+    }
+
+    self.captionLoad++;
+    NSInteger load = self.captionLoad, file = self.captionToken;
+    self.captionLang2 = lang.length ? lang : nil;
+    self.captionCues2 = nil;
+    self.captionShown = nil;
+    if (!self.captionLang2) { [self drawCaption]; return; }
+
+    NSArray *cached = self.cueCache[lang];
+    if (cached) { self.captionCues2 = cached; [self drawCaption]; return; }
+
+    NSDictionary *entry = nil;
+    for (NSDictionary *candidate in self.captionTracks) if ([candidate[@"lang"] isEqualToString:lang]) { entry = candidate; break; }
+    if (!entry) { self.captionLang2 = nil; return; }
+
+    AVAsset *asset = self.player.currentItem.asset;
+    __weak __typeof(self) weakSelf = self;
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        NSArray *cues = [SCIYTCaptionReader cuesInTrack:entry[@"track"] asset:asset];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            __typeof(self) strongSelf = weakSelf;
+            if (!strongSelf || strongSelf.captionToken != file) return;
+            if (cues) strongSelf.cueCache[lang] = cues;
+            if (!cues || ![strongSelf.captionLang2 isEqualToString:lang]) return;
+            (void)load;
+            strongSelf.captionCues2 = cues;
+            [strongSelf drawCaption];
+        });
+    });
+}
+
 /// Twice... ten times a second: the line for this moment, with the person's timing offset.
 - (void)drawCaption {
-    if (!self.captionCues.count) {
+    if (!self.captionCues.count && !self.captionCues2.count) {
         if (!self.captionLabel.hidden) self.captionLabel.hidden = YES;
         return;
     }
     double at = CMTimeGetSeconds(self.player.currentTime) - [self current].captionDelay;
-    NSString *text = [SCIYTCaptionReader cueAtTime:at inCues:self.captionCues][@"text"];
+    NSString *first = [SCIYTCaptionReader cueAtTime:at inCues:self.captionCues ?: @[]][@"text"];
+    NSString *second = [SCIYTCaptionReader cueAtTime:at inCues:self.captionCues2 ?: @[]][@"text"];
+    NSString *text = [SCIYTSubtitles bilingualPrimary:first secondary:second];
     if (!text.length) {
         if (!self.captionLabel.hidden) self.captionLabel.hidden = YES;
         self.captionShown = nil;
         return;
     }
+
     // Over the bottom of the picture itself, not of the area the picture is centred in (in portrait that
     // is a tall black field and the line would hang far below the video).
     CGRect video = self.layer.videoRect;
@@ -1826,12 +1930,23 @@ static double SCICaptionScaleValue(void) {
     shadow.shadowOffset = CGSizeMake(0, 1);
     NSMutableParagraphStyle *centred = [[NSMutableParagraphStyle alloc] init];
     centred.alignment = NSTextAlignmentCenter;
-    self.captionLabel.attributedText = [[NSAttributedString alloc] initWithString:text attributes:@{
-        NSFontAttributeName: [UIFont systemFontOfSize:17 * SCICaptionScaleValue() weight:UIFontWeightSemibold],
-        NSForegroundColorAttributeName: [UIColor whiteColor],
-        NSShadowAttributeName: shadow,
-        NSParagraphStyleAttributeName: centred,
-    }];
+    double size = 17 * SCICaptionScaleValue();
+
+    // The first language at full strength, the second a little smaller and softer, so the eye knows
+    // which is which.
+    NSMutableAttributedString *drawn = [[NSMutableAttributedString alloc] init];
+    NSArray<NSString *> *lines = [text componentsSeparatedByString:@"\n"];
+    for (NSUInteger i = 0; i < lines.count; i++) {
+        BOOL secondary = (i > 0);
+        NSString *piece = i + 1 < lines.count ? [lines[i] stringByAppendingString:@"\n"] : lines[i];
+        [drawn appendAttributedString:[[NSAttributedString alloc] initWithString:piece attributes:@{
+            NSFontAttributeName: [UIFont systemFontOfSize:secondary ? size * 0.88 : size weight:UIFontWeightSemibold],
+            NSForegroundColorAttributeName: [UIColor colorWithWhite:1 alpha:secondary ? 0.82 : 1],
+            NSShadowAttributeName: shadow,
+            NSParagraphStyleAttributeName: centred,
+        }]];
+    }
+    self.captionLabel.attributedText = drawn;
     self.captionLabel.hidden = NO;
 }
 
@@ -1840,6 +1955,9 @@ static double SCICaptionScaleValue(void) {
     for (NSDictionary *entry in sciCurrent.captionTracks) [out addObject:@{@"lang": entry[@"lang"], @"name": entry[@"name"]}];
     return out;
 }
+
++ (NSString *)secondCaptionLanguage { return sciCurrent.captionLang2; }
++ (void)setSecondCaptionLanguage:(NSString *)language { [sciCurrent showSecondCaptionLanguage:language remember:YES]; }
 
 + (double)captionScale { return SCICaptionScaleValue(); }
 
@@ -1917,6 +2035,22 @@ static double SCICaptionScaleValue(void) {
                 [[SCIYTLibrary shared] save];
             }]];
         }
+    }
+
+    NSArray<NSDictionary *> *chapters = [self chapters];
+    if (chapters.count) {
+        [sheet addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"%@ (%lu)…", SCILocalized(@"chapters_title"), (unsigned long)chapters.count]
+                                                  style:UIAlertActionStyleDefault
+                                                handler:^(__unused UIAlertAction *action) {
+            [SCIYTChapterSheet presentFrom:self chapters:chapters current:self.chapterIndex jump:^(double seconds) { [self seekTo:seconds]; }];
+        }]];
+    }
+    NSDictionary *highlight = [self highlight];
+    if (highlight) {
+        double at = [highlight[@"start"] doubleValue];
+        [sheet addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"%@ · %@", SCILocalized(@"chapters_highlight"), [SCIYTThumbnails clock:at]]
+                                                  style:UIAlertActionStyleDefault
+                                                handler:^(__unused UIAlertAction *action) { [self seekTo:at]; }]];
     }
 
     if (self.captionTracks.count > 0) {
@@ -2131,6 +2265,7 @@ static double SCICaptionScaleValue(void) {
     if (self.scrubbing) return;
 
     [self skipSponsorAt:at length:length];
+    [self updateChapterAt:at];
 
     // Said again about every two seconds while playing.
     //
@@ -2192,6 +2327,13 @@ static double SCICaptionScaleValue(void) {
     //
     // Changed back rather than kept and worked around: a tidier sound profile is not worth
     // sound that stops.
+    // Asked for once: the system decides which app the lock screen's transport belongs to partly by
+    // which one is receiving remote-control events, and nothing in this player ever said it was.
+    // YouTube's own player does, which is why the card could appear for a video and not for a sound
+    // that has no picture to make the app look busy. Harmless where already on.
+    static dispatch_once_t remoteOnce;
+    dispatch_once(&remoteOnce, ^{ [[UIApplication sharedApplication] beginReceivingRemoteControlEvents]; });
+
     [session setCategory:AVAudioSessionCategoryPlayback
                     mode:AVAudioSessionModeMoviePlayback
                  options:0
@@ -2424,6 +2566,37 @@ static double SCICaptionScaleValue(void) {
     if (@available(iOS 13.0, *)) {
         [MPNowPlayingInfoCenter defaultCenter].playbackState =
             self.player.rate > 0 ? MPNowPlayingPlaybackStatePlaying : MPNowPlayingPlaybackStatePaused;
+    }
+}
+
+/// Said again a moment after a track starts, and again a few seconds on, for a sound.
+///
+/// A sound has no picture, so nothing but the entry itself tells iOS that this app is the one
+/// playing; a video also has a layer on screen. The first publication happens in the same breath
+/// as `-play`, before the player has produced a sample, and an entry written that early can be
+/// overwritten by YouTube's own player winding down (it is paused by the same call). Two later
+/// writes cost a dictionary each. **Not measured on a device:** the simulator shows the card for a
+/// sound at once (checked), so whether this is what a phone needed is the question the report line
+/// below answers (`later` rows).
+- (void)republishSoon {
+    NSInteger file = self.captionToken;       // changes with every track, so a late write cannot describe the last one
+    __weak __typeof(self) weakSelf = self;
+    for (NSNumber *delay in @[@1.2, @4.0]) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay.doubleValue * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            __typeof(self) strongSelf = weakSelf;
+            if (!strongSelf || strongSelf.captionToken != file || !strongSelf.player || strongSelf.player.rate <= 0) return;
+            [strongSelf claimAudio];
+            [strongSelf describeToLockScreen];
+            NSDictionary *published = [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo;
+            AVAudioSession *session = [AVAudioSession sharedInstance];
+            [SCIYTDiagnostics recordLockScreenState:[NSString stringWithFormat:
+                @"%@ · later (+%.1fs) · title %@ · state %ld · owner %d · mode %@ · other audio %@ · control %ld (2 playing)",
+                [strongSelf current].kind == SCIYTJobKindAudio ? @"audio" : @"video", delay.doubleValue,
+                published[MPMediaItemPropertyTitle] ? @"set" : @"MISSING",
+                (long)[MPNowPlayingInfoCenter defaultCenter].playbackState, (int)[SCIYTArbiter owner],
+                session.mode ?: @"?", session.isOtherAudioPlaying ? @"yes" : @"no",
+                (long)strongSelf.player.timeControlStatus]];
+        });
     }
 }
 

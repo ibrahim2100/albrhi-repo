@@ -50,6 +50,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// sample -- the silence between two cues -- and for a payload that is shorter than it says.
 + (nullable NSString *)textFromPayload:(NSData *)payload;
 
+/// Two languages on screen at once: the first line over the second, each when it has one, and only
+/// one when the two are the same text (a track that repeats the other adds nothing but height).
++ (nullable NSString *)bilingualPrimary:(nullable NSString *)primary secondary:(nullable NSString *)secondary;
+
 /// `HH:MM:SS,mmm`, the form SubRip wants.
 + (NSString *)srtTimestamp:(double)seconds;
 

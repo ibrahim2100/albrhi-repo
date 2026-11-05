@@ -102,12 +102,17 @@ typedef NS_ENUM(NSInteger, SCIYTJobState) {
 /// When they were asked for, as a time interval since 1970; 0 = never. An empty answer is asked again
 /// after a week, because "nothing found" and "the request failed" look the same from here.
 @property (nonatomic) double sponsorCheckedAt;
+/// 2 once the answer includes chapters and highlights (`action` and `title` on each entry); older
+/// answers carry skips only and are asked again once.
+@property (nonatomic) NSInteger sponsorRevision;
 
 /// What was last chosen for this video in the player: a sound's or a caption's language tag
 /// (`@"off"` for captions switched off), nil = never chosen. And how far the captions were
 /// moved in time, in seconds -- a file whose captions drift is a property of that file.
 @property (nonatomic, copy, nullable) NSString *audioChoice;
 @property (nonatomic, copy, nullable) NSString *captionChoice;
+/// A second language shown under the first (nil or `@"off"` = none).
+@property (nonatomic, copy, nullable) NSString *captionChoice2;
 @property (nonatomic) double captionDelay;
 
 /// Where a sound sits when it was saved as part of an album (a playlist): the album's name and the
