@@ -2,6 +2,7 @@
 #import "SCIYTLibrary.h"
 #import "../SCIYTPlaylist.h"
 #import "../SCIYTRecipe.h"
+#import "../SCIYTPreflight.h"
 #import "../../../Tweak.h"
 #import "../../../Localization/SCILocalize.h"
 
@@ -22,6 +23,7 @@ typedef NS_ENUM(NSInteger, SCIPlaylistStage) { SCIPlaylistStageInput, SCIPlaylis
 @property (nonatomic) NSInteger maxHeight;            ///< 0 = the tallest there is
 @property (nonatomic) BOOL skipSaved;
 @property (nonatomic) BOOL expanded;
+@property (nonatomic, copy) NSDictionary<NSString *, NSNumber *> *durations;
 @end
 
 @implementation SCIYTPlaylistSheet
@@ -94,12 +96,13 @@ typedef NS_ENUM(NSInteger, SCIPlaylistStage) { SCIPlaylistStageInput, SCIPlaylis
     [self refresh];
 
     __weak __typeof(self) weakSelf = self;
-    [SCIYTPlaylist loadPlaylistID:identifier limit:kSCILimit completion:^(NSArray<NSString *> *ids, NSString *title, NSString *total, NSString *failure) {
+    [SCIYTPlaylist loadPlaylistID:identifier limit:kSCILimit completion:^(NSArray<NSString *> *ids, NSString *title, NSString *total, NSDictionary<NSString *, NSNumber *> *durations, NSString *failure) {
         __typeof(self) strongSelf = weakSelf;
         if (!strongSelf) return;
         strongSelf.videoIDs = ids;
         strongSelf.playlistTitle = title;
         strongSelf.playlistTotal = total;
+        strongSelf.durations = durations;
         strongSelf.message = failure;
         strongSelf.stage = ids.count ? SCIPlaylistStageReady : SCIPlaylistStageInput;
         [strongSelf refresh];
@@ -108,12 +111,45 @@ typedef NS_ENUM(NSInteger, SCIPlaylistStage) { SCIPlaylistStageInput, SCIPlaylis
 
 - (BOOL)textFieldShouldReturn:(UITextField *)field { [self load]; return NO; }
 
+/// The videos that would actually be fetched: the list, less what is already saved when asked to skip.
+- (NSArray<NSString *> *)pendingVideos {
+    SCIYTJobKind kind = self.soundOnly ? SCIYTJobKindAudio : SCIYTJobKindVideo;
+    NSMutableArray<NSString *> *pending = [NSMutableArray array];
+    for (NSString *video in self.videoIDs) {
+        if (self.skipSaved && [[SCIYTLibrary shared] existingJobForVideo:video kind:kind]) continue;
+        [pending addObject:video];
+    }
+    return pending;
+}
+
+- (long long)estimatedBytes {
+    return [SCIYTPreflight estimatedBytesForVideoIDs:[self pendingVideos] durations:self.durations ?: @{}
+                                              height:self.maxHeight soundOnly:self.soundOnly];
+}
+
+- (SCIYTPreflightVerdict)verdict {
+    return [SCIYTPreflight verdictForBytes:[self estimatedBytes] free:[SCIYTPreflight freeBytes]];
+}
+
+/// "About 3.2 GB for 40 videos, 18 GB free" -- or why not.
+- (NSString *)estimateLine {
+    long long bytes = [self estimatedBytes], free = [SCIYTPreflight freeBytes];
+    NSString *need = [NSByteCountFormatter stringFromByteCount:bytes countStyle:NSByteCountFormatterCountStyleFile];
+    NSString *have = free >= 0 ? [NSByteCountFormatter stringFromByteCount:free countStyle:NSByteCountFormatterCountStyleFile] : @"?";
+    switch ([self verdict]) {
+        case SCIYTPreflightTooBig: return [NSString stringWithFormat:SCILocalized(@"pl_too_big"), need, have];
+        case SCIYTPreflightTight: return [NSString stringWithFormat:SCILocalized(@"pl_tight"), need, have];
+        default: return [NSString stringWithFormat:SCILocalized(@"pl_estimate"), need, (long)[self pendingVideos].count, have];
+    }
+}
+
 - (void)refresh {
     BOOL ready = (self.stage == SCIPlaylistStageReady);
     UIBarButtonItem *item = [[UIBarButtonItem alloc]
         initWithTitle:[NSString stringWithFormat:SCILocalized(@"pl_download_n"), (long)self.videoIDs.count]
                 style:UIBarButtonItemStyleDone target:self action:@selector(start)];
     item.tintColor = SCIAccent();
+    item.enabled = !ready || [self verdict] != SCIYTPreflightTooBig;      // a batch that cannot fit is not started
     UIBarButtonItem *flex = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
     self.toolbarItems = @[flex, item, flex];
     if (ready && !self.expanded) {
@@ -132,10 +168,19 @@ typedef NS_ENUM(NSInteger, SCIPlaylistStage) { SCIPlaylistStageInput, SCIPlaylis
     NSMutableArray<SCIYTRecipe *> *recipes = [NSMutableArray array];
     SCIYTJobKind kind = self.soundOnly ? SCIYTJobKindAudio : SCIYTJobKindVideo;
 
+    NSUInteger position = 0;
     for (NSString *video in self.videoIDs) {
+        position++;
         if (self.skipSaved && [[SCIYTLibrary shared] existingJobForVideo:video kind:kind]) continue;
         SCIYTRecipe *recipe = [[SCIYTRecipe alloc] init];
         recipe.videoID = video;
+        // A saved playlist of sounds is an album: its name, and each track's place in the *whole* list
+        // (not in what is left after skipping what was already saved), so a library orders it right.
+        if (self.soundOnly && self.playlistTitle.length) {
+            recipe.album = self.playlistTitle;
+            recipe.trackNumber = (NSInteger)position;
+            recipe.trackCount = (NSInteger)self.videoIDs.count;
+        }
         recipe.audioOnly = self.soundOnly;
         recipe.maxHeight = self.maxHeight;
         [recipes addObject:recipe];
@@ -178,6 +223,7 @@ typedef NS_ENUM(NSInteger, SCIPlaylistStage) { SCIPlaylistStageInput, SCIPlaylis
     }
     if (section == 0 && self.videoIDs.count >= kSCILimit) return [NSString stringWithFormat:SCILocalized(@"pl_truncated"), (long)kSCILimit];
     if (section == 0 && self.message.length) return self.message;
+    if (section == 1) return [self estimateLine];
     if (section == 2) return SCILocalized(@"pl_queue_note");
     return nil;
 }
@@ -256,8 +302,8 @@ typedef NS_ENUM(NSInteger, SCIPlaylistStage) { SCIPlaylistStageInput, SCIPlaylis
     return cell;
 }
 
-- (void)kindChanged:(UISegmentedControl *)sender { self.soundOnly = (sender.selectedSegmentIndex == 1); [self.tableView reloadData]; }
-- (void)skipChanged:(UISwitch *)sender { self.skipSaved = sender.on; }
+- (void)kindChanged:(UISegmentedControl *)sender { self.soundOnly = (sender.selectedSegmentIndex == 1); [self refresh]; }
+- (void)skipChanged:(UISwitch *)sender { self.skipSaved = sender.on; [self refresh]; }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
@@ -282,7 +328,7 @@ typedef NS_ENUM(NSInteger, SCIPlaylistStage) { SCIPlaylistStageInput, SCIPlaylis
     if (indexPath.section == 1 && indexPath.row >= 1) {
         NSInteger heights[] = {0, 1080, 720, 480, 360};
         self.maxHeight = heights[indexPath.row - 1];
-        [tableView reloadSections:[NSIndexSet indexSetWithIndex:1] withRowAnimation:UITableViewRowAnimationNone];
+        [self refresh];
     }
 }
 

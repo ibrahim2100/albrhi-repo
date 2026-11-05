@@ -3,6 +3,8 @@
 #import "../../SCILog.h"
 #import "../../Localization/SCILocalize.h"
 #import "../../Diagnostics/SCIYTDiagnostics.h"
+#import "SCIYTConcurrency.h"
+#import "SCIYTFailure.h"
 
 /// How many parts the system is asked to run at once.
 ///
@@ -19,13 +21,10 @@
 // measurable from a build machine, so it is asked rather than decided: the settings row offers
 // 4, 6 and 8, and an unset preference keeps exactly the behaviour that has been shipping.
 //
-static const NSUInteger kSCIParallelDefault = 4;
-
-static NSUInteger SCIParallel(void) {
-    NSInteger chosen = SCIPrefNumber(SCIPrefParallel);
-    if (chosen < 1 || chosen > 8) return kSCIParallelDefault;
-    return (NSUInteger)chosen;
-}
+// Now learned across downloads (SCIYTConcurrency): the person's own choice in Settings stands when
+// they made one, else it is what the last runs measured, four before any.
+static NSUInteger sciSessionParallel = 4;     // what the session in use was made with
+static NSUInteger SCIParallel(void) { return [SCIYTConcurrency parallelism]; }
 
 /// How many times one part is asked for before the run gives up.
 static const NSUInteger kSCIAttempts = 3;
@@ -46,6 +45,8 @@ static const NSUInteger kSCIAttempts = 3;
 @property (nonatomic, strong) NSMutableDictionary<NSNumber *, NSNumber *> *attempts;
 
 @property (nonatomic) NSUInteger completed;
+@property (nonatomic) NSTimeInterval startedAt;       ///< when the first part of this attempt was asked for
+@property (nonatomic) long long fetchedBytes;         ///< what this attempt fetched (not what was already on disk)
 @property (nonatomic) BOOL finished;
 
 /// Which attempt at this run these tasks belong to. A run restarted under the same identifier
@@ -132,7 +133,8 @@ static BOOL sciForegroundForHarness = NO;
                 @"com.albrhi.youtube.downloads"];
 
         // Enough for the parts in flight and no more.
-        configuration.HTTPMaximumConnectionsPerHost = SCIParallel();
+        sciSessionParallel = SCIParallel();
+        configuration.HTTPMaximumConnectionsPerHost = sciSessionParallel;
         configuration.timeoutIntervalForRequest = 60;
 
         // Not discretionary: this was asked for by a person who is watching a progress bar,
@@ -246,6 +248,7 @@ runIdentifier:(NSString *)persistentIdentifier
             dispatch_async(dispatch_get_main_queue(), ^{ run.progress(fraction); });
         }
 
+        run.startedAt = [NSDate date].timeIntervalSince1970;
         for (NSUInteger i = 0; i < addresses.count; i++) {
             if (![run.files[i] isKindOfClass:[NSNull class]]) continue;
             [self startPart:i of:run];
@@ -323,6 +326,11 @@ runIdentifier:(NSString *)persistentIdentifier
     run.finished = YES;
     [sciRuns removeObjectForKey:run.identifier];
 
+    // How fast this run went, at the parallelism it had, so the next session can start better.
+    if (run.startedAt > 0 && run.fetchedBytes > 0) {
+        [SCIYTConcurrency recordRunBytes:run.fetchedBytes seconds:[NSDate date].timeIntervalSince1970 - run.startedAt used:sciSessionParallel];
+    }
+
     NSArray<NSURL *> *ordered = [run.files copy];
     NSURL *folder = run.folder;
     void (^done)(NSArray<NSURL *> *, NSURL *, NSString *) = run.completion;
@@ -380,6 +388,21 @@ didFinishDownloadingToURL:(NSURL *)location {
             return;
         }
 
+        // A download task also "finishes" when the server answered with an error: the body of a 403 or
+        // a 429 lands here as an ordinary file. Taking it for a part corrupts the join and surfaces
+        // much later as a size mismatch with no reason; it is a failed attempt and is treated as one.
+        NSInteger status = [task.response isKindOfClass:[NSHTTPURLResponse class]] ? ((NSHTTPURLResponse *)task.response).statusCode : 0;
+        unsigned long long arrived = [[[NSFileManager defaultManager] attributesOfItemAtPath:staged.path error:nil] fileSize];
+        BOOL wrongSize = run.sizes && arrived != (unsigned long long)[run.sizes[index] longLongValue];
+        if (status >= 400 || wrongSize) {
+            [[NSFileManager defaultManager] removeItemAtURL:staged error:nil];
+            [SCIYTParts retryOrFailPart:index of:run status:status note:wrongSize
+                ? [NSString stringWithFormat:@"part %lu arrived as %llu bytes, expected %lld", (unsigned long)index + 1, arrived, [run.sizes[index] longLongValue]]
+                : nil];
+            return;
+        }
+        run.fetchedBytes += (long long)arrived;
+
         NSURL *file = [SCIYTParts partFile:index inFolder:run.folder];
 
         [[NSFileManager defaultManager] removeItemAtURL:file error:nil];
@@ -419,31 +442,42 @@ didCompleteWithError:(NSError *)error {
         NSUInteger index = 0;
         SCIYTPartsRun *run = [SCIYTParts runForTask:task index:&index];
         if (!run || run.finished || index >= run.addresses.count) return;
-
-        NSUInteger tried = [run.attempts[@(index)] unsignedIntegerValue] + 1;
-        run.attempts[@(index)] = @(tried);
-
-        // A refusal is not a hiccup: 4xx means the address is wrong or has expired, and
-        // asking again three times makes the same mistake more slowly.
-        BOOL worthRetrying = (status < 400 || status >= 500);
-
-        if (worthRetrying && tried < kSCIAttempts) {
-            double pause = 0.5 * (double)tried;
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(pause * NSEC_PER_SEC)),
-                           sciLock, ^{
-                if (!run.finished) [SCIYTParts startPart:index of:run];
-            });
-            return;
-        }
-
-        [SCIYTDiagnostics recordStreamAttempt:
-            [NSString stringWithFormat:@"parts: %lu of %lu failed after %lu tries — %@",
-                (unsigned long)(index + 1), (unsigned long)run.addresses.count,
-                (unsigned long)tried,
-                error.localizedDescription ?: [NSString stringWithFormat:@"HTTP %ld", (long)status]]];
-
-        [SCIYTParts failRun:run with:error.localizedDescription ?: SCILocalized(@"dl_failed")];
+        [SCIYTParts retryOrFailPart:index of:run status:status note:error.localizedDescription];
     });
+}
+
+/// One part did not arrive: ask again after a pause, or end the run. Called on the run's queue.
+///
+/// A refusal that means "slow down" (429, 503) is worth asking again, later, and tells the parallelism
+/// learner to ask for fewer connections next time. A refusal that means "this address is no good" (403,
+/// 410: it has expired) is not -- asking three times makes the same mistake more slowly.
++ (void)retryOrFailPart:(NSUInteger)index of:(SCIYTPartsRun *)run status:(NSInteger)status note:(NSString *)note {
+    if (run.finished) return;
+
+    NSUInteger tried = [run.attempts[@(index)] unsignedIntegerValue] + 1;
+    run.attempts[@(index)] = @(tried);
+
+    BOOL throttled = (status == 429 || status == 503);
+    if (throttled) [SCIYTConcurrency recordThrottle];
+
+    BOOL worthRetrying = throttled || status < 400 || status >= 500;
+    if (worthRetrying && tried < kSCIAttempts + (throttled ? 2 : 0)) {
+        double pause = throttled ? 3.0 * (double)tried : 0.5 * (double)tried;
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(pause * NSEC_PER_SEC)), sciLock, ^{
+            if (!run.finished) [SCIYTParts startPart:index of:run];
+        });
+        return;
+    }
+
+    [SCIYTDiagnostics recordStreamAttempt:
+        [NSString stringWithFormat:@"parts: %lu of %lu failed after %lu tries — %@",
+            (unsigned long)(index + 1), (unsigned long)run.addresses.count, (unsigned long)tried,
+            note.length ? note : [NSString stringWithFormat:@"HTTP %ld", (long)status]]];
+
+    NSString *sentence = [SCIYTFailure causeForText:note status:status] != SCIYTFailureUnknown
+        ? [SCIYTFailure messageForCause:[SCIYTFailure causeForText:note status:status]]
+        : (note.length ? note : SCILocalized(@"dl_failed"));
+    [SCIYTParts failRun:run with:sentence];
 }
 
 // MARK: - Joining

@@ -48,6 +48,10 @@
 /// The video's own title and channel, as `/player` names them, for the tags written into the file.
 @property (nonatomic, copy) NSString *directTitle;
 @property (nonatomic, copy) NSString *directAuthor;
+/// Where this sits in a collection (a playlist saved as an album): its title, and the track's place in it.
+@property (nonatomic, copy, nullable) NSString *directAlbum;
+@property (nonatomic) NSInteger directTrackNumber;
+@property (nonatomic) NSInteger directTrackCount;
 
 /// The sound-only choice, when a language other than the original was picked for a sound download.
 @property (nonatomic, copy) NSString *soundOnlyTrackID;

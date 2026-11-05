@@ -11,6 +11,7 @@ void Test_Subtitles(void);
 void Test_Mux(void);
 void Test_Recipe(void);
 void Test_Playlist(void);
+void Test_Robust(void);
 
 int main(void) {
     @autoreleasepool {
@@ -22,6 +23,7 @@ int main(void) {
         Test_Mux();
         Test_Recipe();
         Test_Playlist();
+        Test_Robust();
         printf("\n%ld passed, %ld failed\n", (long)AlbrhiTestsPassed, (long)AlbrhiTestsFailed);
         return AlbrhiTestsFailed == 0 ? 0 : 1;
     }

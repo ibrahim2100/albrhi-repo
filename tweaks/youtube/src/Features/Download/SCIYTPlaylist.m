@@ -22,7 +22,8 @@ static void SCIWalk(id node, NSString *key, NSMutableArray *out) {
 @interface SCIPlaylistLoad : NSObject
 @property (nonatomic, copy) NSString *playlistID;
 @property (nonatomic) NSUInteger limit;
-@property (nonatomic, copy) void (^completion)(NSArray<NSString *> *, NSString *, NSString *, NSString *);
+@property (nonatomic, copy) void (^completion)(NSArray<NSString *> *, NSString *, NSString *, NSDictionary<NSString *, NSNumber *> *, NSString *);
+@property (nonatomic, strong) NSMutableDictionary<NSString *, NSNumber *> *durations;
 @property (nonatomic, strong) NSURLSession *session;
 @property (nonatomic, strong) NSMutableArray<NSString *> *all;
 @property (nonatomic, strong) NSMutableSet<NSString *> *seen;
@@ -37,6 +38,7 @@ static void SCIWalk(id node, NSString *key, NSMutableArray *out) {
     if (!self) return nil;
     _all = [NSMutableArray array];
     _seen = [NSMutableSet set];
+    _durations = [NSMutableDictionary dictionary];
     NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration ephemeralSessionConfiguration];
     configuration.timeoutIntervalForRequest = 15;
     configuration.timeoutIntervalForResource = 60;
@@ -47,8 +49,9 @@ static void SCIWalk(id node, NSString *key, NSMutableArray *out) {
 - (void)finishWith:(NSString *)failure {
     NSArray *ids = [self.all copy];
     NSString *title = self.title, *total = self.total;
-    void (^done)(NSArray<NSString *> *, NSString *, NSString *, NSString *) = self.completion;
-    dispatch_async(dispatch_get_main_queue(), ^{ done(ids, title, total, failure); });
+    NSDictionary *durations = [self.durations copy];
+    void (^done)(NSArray<NSString *> *, NSString *, NSString *, NSDictionary<NSString *, NSNumber *> *, NSString *) = self.completion;
+    dispatch_async(dispatch_get_main_queue(), ^{ done(ids, title, total, durations, failure); });
 }
 
 - (void)fetch:(NSString *)continuation page:(NSUInteger)pageNumber {
@@ -79,6 +82,7 @@ static void SCIWalk(id node, NSString *key, NSMutableArray *out) {
 
         NSString *next = nil, *title = nil, *total = nil;
         NSArray<NSString *> *ids = [SCIYTPlaylist videoIDsInBrowse:json token:&next title:&title total:&total];
+        [self.durations addEntriesFromDictionary:[SCIYTPlaylist durationsInBrowse:json]];
         if (title.length && !self.title) self.title = title;
         if (total.length && !self.total) self.total = total;
         for (NSString *video in ids) {
@@ -170,9 +174,25 @@ static void SCIWalk(id node, NSString *key, NSMutableArray *out) {
     return ids;
 }
 
++ (NSDictionary<NSString *, NSNumber *> *)durationsInBrowse:(NSDictionary *)json {
+    NSMutableDictionary<NSString *, NSNumber *> *out = [NSMutableDictionary dictionary];
+    NSMutableArray *renderers = [NSMutableArray array];
+    SCIWalk(json, @"playlistVideoRenderer", renderers);
+    for (id renderer in renderers) {
+        if (![renderer isKindOfClass:[NSDictionary class]]) continue;
+        NSString *video = renderer[@"videoId"];
+        id length = renderer[@"lengthSeconds"];
+        if (![video isKindOfClass:[NSString class]] || video.length != 11) continue;
+        if (![length isKindOfClass:[NSString class]] && ![length isKindOfClass:[NSNumber class]]) continue;
+        double seconds = [length doubleValue];
+        if (seconds > 0 && seconds < 86400 * 2) out[video] = @(seconds);
+    }
+    return out;
+}
+
 + (void)loadPlaylistID:(NSString *)playlistID
                  limit:(NSUInteger)limit
-            completion:(void (^)(NSArray<NSString *> *, NSString *, NSString *, NSString *))completion {
+            completion:(void (^)(NSArray<NSString *> *, NSString *, NSString *, NSDictionary<NSString *, NSNumber *> *, NSString *))completion {
     SCIPlaylistLoad *load = [[SCIPlaylistLoad alloc] init];
     load.playlistID = playlistID;
     load.limit = limit;

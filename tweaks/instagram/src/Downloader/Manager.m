@@ -1,3 +1,4 @@
+#import "shared/src/SCIMediaSniff.h"
 #import "Manager.h"
 #import "../SCILog.h"
 
@@ -40,8 +41,31 @@
 }
 
 - (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(NSURL *)location {    
+    // An HTTP error answers with a body like any other and NSURLSession hands it over as a finished
+    // download: a refused address arrives as a small page named like a video and fails later, in the
+    // transcoder or in Photos, with no reason.
+    if ([downloadTask.response isKindOfClass:[NSHTTPURLResponse class]]) {
+        NSInteger status = ((NSHTTPURLResponse *)downloadTask.response).statusCode;
+        if (status < 200 || status >= 300) {
+            SCILogV(@"[SCInsta] Download Handler: server answered HTTP %ld", (long)status);
+            [[NSFileManager defaultManager] removeItemAtURL:location error:nil];
+            [self.delegate downloadDidFinishWithError:[NSError errorWithDomain:@"SCIDownload" code:status
+                userInfo:@{NSLocalizedDescriptionKey: [NSString stringWithFormat:@"HTTP %ld", (long)status]}]];
+            return;
+        }
+    }
+
     // Move downloaded file to cache directory
     NSURL *finalLocation = [self moveFileToCacheDir:location];
+
+    SCIMediaKind seen = SCIMediaKindUnknown;
+    if (finalLocation && !SCIMediaFileLooksFinished(finalLocation, &seen)) {
+        SCILogV(@"[SCInsta] Download Handler: refused a file that is %@", SCIMediaKindDescription(seen));
+        [[NSFileManager defaultManager] removeItemAtURL:finalLocation error:nil];
+        [self.delegate downloadDidFinishWithError:[NSError errorWithDomain:@"SCIDownload" code:0
+            userInfo:@{NSLocalizedDescriptionKey: @"The server sent a page instead of the file"}]];
+        return;
+    }
 
     [self.delegate downloadDidFinishWithFileURL:finalLocation];
 }

@@ -110,6 +110,12 @@ typedef NS_ENUM(NSInteger, SCIYTJobState) {
 @property (nonatomic, copy, nullable) NSString *captionChoice;
 @property (nonatomic) double captionDelay;
 
+/// Where a sound sits when it was saved as part of an album (a playlist): the album's name and the
+/// track's place in it. `trackNumber` 0 means it belongs to none.
+@property (nonatomic, copy, nullable) NSString *album;
+@property (nonatomic) NSInteger trackNumber;
+@property (nonatomic) NSInteger trackCount;
+
 /// What this download was asked to be, when it can be asked again (the direct route). Not coded with
 /// the finished list: the library keeps the unfinished ones' recipes in a file of their own.
 @property (nonatomic, strong, nullable) SCIYTRecipe *recipe;

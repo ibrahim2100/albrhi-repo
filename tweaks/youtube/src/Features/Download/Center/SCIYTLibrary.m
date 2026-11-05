@@ -4,6 +4,9 @@
 #import "../SCIYTRecipe.h"
 #import "../SCIYTParts.h"
 #import "../SCIYTDirect.h"
+#import "../SCIYTFailure.h"
+#import "../SCIYTPreflight.h"
+#import "shared/src/SCIMediaSniff.h"
 #import "../../SponsorBlock/SCIYTSponsorClient.h"
 #import "../../../SCIYTLaunchGuard.h"
 #import "../../../SCILog.h"
@@ -259,6 +262,7 @@ __attribute__((constructor)) static void SCIYTLibraryResumeRegister(void) {
 
     SCIYTJob *job = [SCIYTJob jobWithTitle:title quality:quality kind:kind videoID:videoID];
     job.isShort = isShort;
+    job.album = variant.directAuthor;      // YouTube names no album: the channel stands in
 
     // A direct-route download can be asked again later, so what it was asked for is kept and its
     // parts are fetched under a name that outlives this process. A playlist-route one cannot.
@@ -335,6 +339,12 @@ __attribute__((constructor)) static void SCIYTLibraryResumeRegister(void) {
 
         [recipe applyTo:variant];
         variant.resumeKey = job.identifier;
+        variant.directAlbum = recipe.album;
+        variant.directTrackNumber = recipe.trackNumber;
+        variant.directTrackCount = recipe.trackCount;
+        job.album = recipe.album.length ? recipe.album : variant.directAuthor;
+        job.trackNumber = recipe.trackNumber;
+        job.trackCount = recipe.trackCount;
 
         job.quality = recipe.audioOnly ? SCILocalized(@"dl_kind_audio") : [variant label];
         if ((!job.title.length || [job.title isEqualToString:recipe.videoID]) && variant.directTitle.length) {
@@ -371,7 +381,9 @@ __attribute__((constructor)) static void SCIYTLibraryResumeRegister(void) {
     dispatch_async(dispatch_get_main_queue(), ^{
         if (job.cancelled) return;
         job.state = SCIYTJobStateFailed;
-        job.failure = reason.length ? reason : SCILocalized(@"dl_failed");
+        // Said as a cause with one thing to do, not as whatever YouTube or the network happened to
+        // write; the raw text is in the diagnostics report.
+        job.failure = [SCIYTFailure sentenceForReason:reason fallback:(reason.length ? reason : SCILocalized(@"dl_failed"))];
         job.waiting = NO;
         [self settle:job];
         [self changed];
@@ -429,12 +441,19 @@ __attribute__((constructor)) static void SCIYTLibraryResumeRegister(void) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self adopt:file for:job];
 
-            // Finished: nothing left to resume, and nothing of its parts left on disk.
-            job.recipe = nil;
-            [SCIYTParts abandonRun:job.identifier];
-            [self settle:job];
-
-            [SCIYTNotice announceFinished:job];
+            if (job.state == SCIYTJobStateDone) {
+                // Finished: nothing left to resume, and nothing of its parts left on disk.
+                job.recipe = nil;
+                [SCIYTParts abandonRun:job.identifier];
+                [self settle:job];
+                [SCIYTNotice announceFinished:job];
+            } else {
+                // The file was refused or could not be kept. What it fetched may be the problem, so
+                // the parts go, but the recipe stays: the row is still a retry button.
+                [SCIYTParts abandonRun:job.identifier];
+                [self settle:job];
+                [SCIYTNotice announceFailed:job reason:job.failure];
+            }
 
             if (hold != UIBackgroundTaskInvalid) {
                 [app endBackgroundTask:hold];
@@ -466,6 +485,21 @@ __attribute__((constructor)) static void SCIYTLibraryResumeRegister(void) {
 
     NSString *extension = file.pathExtension.length ? file.pathExtension : @"mp4";
 
+    // What arrived is looked at before it is kept: a server that answers 200 with an HTML page or an
+    // empty body leaves a file with the right name that nothing can play, found out later in Photos
+    // or the player with no reason given.
+    SCIMediaKind seen = SCIMediaKindUnknown;
+    if (!SCIMediaFileLooksFinished(file, &seen)) {
+        SCILogV(@"library: refused %@ -- it is %@", file.lastPathComponent, SCIMediaKindDescription(seen));
+        [SCIYTDiagnostics recordStreamAttempt:[NSString stringWithFormat:@"finished file refused: %@", SCIMediaKindDescription(seen)]];
+        [[NSFileManager defaultManager] removeItemAtURL:file error:nil];
+        job.state = SCIYTJobStateFailed;
+        job.failure = [SCIYTFailure messageForCause:SCIYTFailureBadFile];
+        [self settle:job];
+        [self changed];
+        return;
+    }
+
     // The characters a file name cannot hold, taken out rather than escaped. A title is
     // whatever the uploader typed, and on this project that has included newlines.
     NSMutableCharacterSet *illegal =
@@ -493,7 +527,8 @@ __attribute__((constructor)) static void SCIYTLibraryResumeRegister(void) {
     if (![[NSFileManager defaultManager] moveItemAtURL:file toURL:destination error:&error]) {
         SCILogV(@"library: could not keep it — %@", error.localizedDescription);
         job.state = SCIYTJobStateFailed;
-        job.failure = SCILocalized(@"dl_failed");
+        SCIYTFailureCause cause = [SCIYTFailure causeForError:error];
+        job.failure = cause == SCIYTFailureUnknown ? SCILocalized(@"dl_failed") : [SCIYTFailure messageForCause:cause];
         [self changed];
         return;
     }

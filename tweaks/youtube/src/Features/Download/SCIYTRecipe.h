@@ -38,6 +38,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// For a sound-only save in a language other than the original.
 @property (nonatomic, copy, nullable) NSString *soundOnlyTrackID;
 
+/// A playlist saved as an album: the album's name and this video's place in it (1-based; 0 = none).
+@property (nonatomic, copy, nullable) NSString *album;
+@property (nonatomic) NSInteger trackNumber;
+@property (nonatomic) NSInteger trackCount;
+
 + (NSString *)familyOfVariant:(SCIHLSVariant *)variant;
 
 /// The recipe of a variant the person just chose in the sheet (its ticks included).

@@ -1,3 +1,4 @@
+#import "SCIYTClients.h"
 #import "SCIYTDirect.h"
 #import <ImageIO/ImageIO.h>
 #import "SCIYTFragments.h"
@@ -23,15 +24,10 @@ static NSString * const kSCIDirectAgent =
 
 static NSMutableSet<NSString *> *sFailed = nil;
 
-static NSDictionary *SCIDirectContext(NSString *visitor) {
-    NSMutableDictionary *client = [@{
-        @"clientName": @"VISIONOS", @"clientVersion": @"1.02",
-        @"osName": @"visionOS", @"osVersion": @"26.5.23O471",
-        @"deviceMake": @"Apple", @"deviceModel": @"RealityDevice17,1",
-        @"userAgent": kSCIDirectAgent,
-        @"hl": @"en", @"gl": @"US",
-    } mutableCopy];
-    if (visitor.length) client[@"visitorData"] = visitor;
+static NSDictionary *SCIDirectContext(NSDictionary *spec, NSString *visitor) {
+    NSMutableDictionary *client = [spec[@"client"] mutableCopy];
+    client[@"userAgent"] = spec[@"agent"];
+    if ([spec[@"visitor"] boolValue] && visitor.length) client[@"visitorData"] = visitor;
     return @{@"client": client};
 }
 
@@ -68,12 +64,16 @@ static NSDictionary *SCIDirectContext(NSString *visitor) {
 }
 
 + (NSMutableURLRequest *)requestFor:(NSString *)path body:(NSDictionary *)body visitor:(NSString *)visitor {
+    return [self requestFor:path body:body visitor:visitor agent:kSCIDirectAgent];
+}
+
++ (NSMutableURLRequest *)requestFor:(NSString *)path body:(NSDictionary *)body visitor:(NSString *)visitor agent:(NSString *)agent {
     NSString *address = [@"https://youtubei.googleapis.com/youtubei/v1/" stringByAppendingString:path];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:address]];
     request.HTTPMethod = @"POST";
     request.HTTPBody = [NSJSONSerialization dataWithJSONObject:body options:0 error:nil];
     [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
-    [request setValue:kSCIDirectAgent forHTTPHeaderField:@"User-Agent"];
+    [request setValue:agent forHTTPHeaderField:@"User-Agent"];
     if (visitor.length) [request setValue:visitor forHTTPHeaderField:@"X-Goog-Visitor-Id"];
     return request;
 }
@@ -92,7 +92,7 @@ static NSDictionary *SCIDirectContext(NSString *visitor) {
     }
 
     NSMutableURLRequest *request = [self requestFor:@"guide?prettyPrint=false&fields=responseContext.visitorData"
-                                               body:@{@"context": SCIDirectContext(nil)} visitor:nil];
+                                               body:@{@"context": SCIDirectContext(SCIYTClients.all.firstObject, nil)} visitor:nil];
     [[[self session] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         id json = data.length ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
         id responseContext = [json isKindOfClass:[NSDictionary class]] ? json[@"responseContext"] : nil;
@@ -341,15 +341,47 @@ static long long SCIDirectNumber(id value) {
     }];
 }
 
-/// One player request. A second attempt takes a fresh visitor id, because a stale one is the
-/// usual reason an otherwise healthy request is turned away.
+/// The player request, asked of the clients in `SCIYTClients` in turn.
+///
+/// The first client (visionOS) gets two tries, the second with a fresh visitor id, because a stale
+/// one is the usual reason an otherwise healthy request is turned away. A refusal that another client
+/// may not share (a sign-in demand, "unplayable") moves on to the next; one that is true for everyone
+/// (removed, private, region-locked) stops. An answer that lists formats but looks held back (nothing
+/// above 360p for something two minutes long) is *kept* and the next client asked as well, and the
+/// better of the two is used -- a short or old video can honestly have nothing better.
 + (void)askForVideo:(NSString *)videoID attempt:(NSInteger)attempt
          completion:(void (^)(NSDictionary *streamingData, NSDictionary *captions, NSDictionary *details, NSString *failure))completion {
+    [self askForVideo:videoID clientIndex:0 refresh:NO held:nil completion:completion];
+}
 
-    [self visitorRefreshing:(attempt > 0) completion:^(NSString *visitor) {
-        NSDictionary *body = @{@"context": SCIDirectContext(visitor), @"videoId": videoID,
+static NSInteger SCIDirectMaxHeight(NSDictionary *streamingData) {
+    NSInteger best = 0;
+    for (NSDictionary *format in streamingData[@"adaptiveFormats"]) {
+        if (![format isKindOfClass:[NSDictionary class]] || ![format[@"url"] isKindOfClass:[NSString class]]) continue;
+        if (![format[@"mimeType"] hasPrefix:@"video/"]) continue;
+        best = MAX(best, (NSInteger)SCIDirectNumber(format[@"height"]));
+    }
+    return best;
+}
+
++ (void)askForVideo:(NSString *)videoID clientIndex:(NSUInteger)index refresh:(BOOL)refresh held:(NSDictionary *)held
+         completion:(void (^)(NSDictionary *streamingData, NSDictionary *captions, NSDictionary *details, NSString *failure))completion {
+
+    NSArray<NSDictionary *> *clients = SCIYTClients.all;
+    if (index >= clients.count) {
+        // Out of clients: whatever was held back is better than nothing.
+        if (held) completion(held[@"streaming"], held[@"captions"], held[@"details"], nil);
+        else completion(nil, nil, nil, @"no client answered");
+        return;
+    }
+    NSDictionary *spec = clients[index];
+    BOOL isLast = (index + 1 >= clients.count);
+
+    [self visitorRefreshing:refresh completion:^(NSString *visitor) {
+        NSDictionary *body = @{@"context": SCIDirectContext(spec, visitor), @"videoId": videoID,
                                @"contentCheckOk": @YES, @"racyCheckOk": @YES};
-        NSMutableURLRequest *request = [self requestFor:@"player?prettyPrint=false" body:body visitor:visitor];
+        NSMutableURLRequest *request = [self requestFor:@"player?prettyPrint=false" body:body
+                                                visitor:[spec[@"visitor"] boolValue] ? visitor : nil agent:spec[@"agent"]];
 
         [[[self session] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
             NSInteger status = [response isKindOfClass:[NSHTTPURLResponse class]] ? [(NSHTTPURLResponse *)response statusCode] : 0;
@@ -360,20 +392,55 @@ static long long SCIDirectNumber(id value) {
             if ([streamingData isKindOfClass:[NSDictionary class]] && [streamingData[@"adaptiveFormats"] count]) {
                 NSDictionary *captions = json[@"captions"][@"playerCaptionsTracklistRenderer"];
                 NSDictionary *details = json[@"videoDetails"];
-                completion(streamingData, [captions isKindOfClass:[NSDictionary class]] ? captions : nil,
-                           [details isKindOfClass:[NSDictionary class]] ? details : nil, nil);
+                captions = [captions isKindOfClass:[NSDictionary class]] ? captions : nil;
+                details = [details isKindOfClass:[NSDictionary class]] ? details : nil;
+
+                NSInteger tallest = SCIDirectMaxHeight(streamingData);
+                double seconds = [details[@"lengthSeconds"] doubleValue];
+
+                // A better answer than the one held: take it, and say which client it was.
+                NSInteger heldTallest = held ? SCIDirectMaxHeight(held[@"streaming"]) : 0;
+                if (held && tallest <= heldTallest) {
+                    completion(held[@"streaming"], held[@"captions"], held[@"details"], nil);
+                    return;
+                }
+
+                if ([SCIYTClients looksDegradedMaxHeight:tallest seconds:seconds] && !isLast) {
+                    NSMutableDictionary *keep = [NSMutableDictionary dictionaryWithObject:streamingData forKey:@"streaming"];
+                    if (captions) keep[@"captions"] = captions;
+                    if (details) keep[@"details"] = details;
+                    [SCIYTDiagnostics recordStreamAttempt:[NSString stringWithFormat:
+                        @"direct (%@): %@ offered %ldp at most for %.0f s; asking the next client", videoID, spec[@"name"], (long)tallest, seconds]];
+                    [self askForVideo:videoID clientIndex:index + 1 refresh:NO held:keep completion:completion];
+                    return;
+                }
+
+                if (index > 0) [SCIYTDiagnostics recordStreamAttempt:[NSString stringWithFormat:
+                    @"direct (%@): answered by %@ (%ldp)", videoID, spec[@"name"], (long)tallest]];
+                completion(streamingData, captions, details, nil);
                 return;
             }
 
-            if (attempt < 1) { [self askForVideo:videoID attempt:attempt + 1 completion:completion]; return; }
+            // The same client again, with a fresh visitor id, before giving up on it.
+            if (!refresh && [spec[@"visitor"] boolValue]) {
+                [self askForVideo:videoID clientIndex:index refresh:YES held:held completion:completion];
+                return;
+            }
 
             NSDictionary *playability = json[@"playabilityStatus"];
-            NSString *why = nil;
-            if ([playability isKindOfClass:[NSDictionary class]]) {
-                NSString *s = playability[@"status"], *r = playability[@"reason"];
-                why = [NSString stringWithFormat:@"%@%@", [s isKindOfClass:[NSString class]] ? s : @"",
-                       [r isKindOfClass:[NSString class]] ? [@": " stringByAppendingString:r] : @""];
+            NSString *state = [playability isKindOfClass:[NSDictionary class]] && [playability[@"status"] isKindOfClass:[NSString class]] ? playability[@"status"] : nil;
+            NSString *reason = [playability isKindOfClass:[NSDictionary class]] && [playability[@"reason"] isKindOfClass:[NSString class]] ? playability[@"reason"] : nil;
+
+            if (!isLast && (!json || [SCIYTClients refusalMayDifferByClient:state reason:reason])) {
+                [SCIYTDiagnostics recordStreamAttempt:[NSString stringWithFormat:
+                    @"direct (%@): %@ refused (%@); asking the next client", videoID, spec[@"name"], state ?: [NSString stringWithFormat:@"HTTP %ld", (long)status]]];
+                [self askForVideo:videoID clientIndex:index + 1 refresh:NO held:held completion:completion];
+                return;
             }
+
+            if (held) { completion(held[@"streaming"], held[@"captions"], held[@"details"], nil); return; }
+
+            NSString *why = state ? [NSString stringWithFormat:@"%@%@", state, reason.length ? [@": " stringByAppendingString:reason] : @""] : nil;
             completion(nil, nil, nil, why.length ? why : (error.localizedDescription ?: [NSString stringWithFormat:@"HTTP %ld, no formats", (long)status]));
         }] resume];
     }];
@@ -555,7 +622,9 @@ static NSData *SCIDirectCover(NSString *videoID) {
 static NSDictionary *SCIDirectTags(SCIHLSVariant *variant, BOOL withCover) {
     NSMutableDictionary *tags = [NSMutableDictionary dictionary];
     if (variant.directTitle.length) tags[@"title"] = variant.directTitle;
-    if (variant.directAuthor.length) tags[@"artist"] = variant.directAuthor;
+    if (variant.directAuthor.length) { tags[@"artist"] = variant.directAuthor; tags[@"albumArtist"] = variant.directAuthor; }
+    if (variant.directAlbum.length) tags[@"album"] = variant.directAlbum;
+    if (variant.directTrackNumber > 0) { tags[@"track"] = @(variant.directTrackNumber); tags[@"trackTotal"] = @(variant.directTrackCount); }
     if (withCover) {
         NSData *cover = SCIDirectCover(variant.directVideoID);
         if (cover) tags[@"artwork"] = cover;

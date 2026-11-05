@@ -3,6 +3,7 @@
 #import <VideoToolbox/VideoToolbox.h>
 #import "../../../Tweak.h"
 #import "SCIYTLibrary.h"
+#import "../SCIYTAlbum.h"
 #import "SCIYTPlayer.h"
 #import "SCIYTThumbnails.h"
 #import "SCIYTRowCell.h"
@@ -299,6 +300,21 @@
 
     // Sound has no place in Photos, so that action is not offered for it at all rather
     // than offered and then refused.
+    if (self.kind == SCIYTJobKindAudio) {
+        // A sound saved as part of an album can be shared with its whole album, in order.
+        NSArray<SCIYTJob *> *siblings = [self albumTracksOf:job];
+        if (siblings.count > 1) {
+            UIContextualAction *album =
+                [UIContextualAction contextualActionWithStyle:UIContextualActionStyleNormal
+                                                        title:SCILocalized(@"dl_share_album")
+                                                      handler:^(UIContextualAction *action, UIView *source, void (^done)(BOOL)) {
+                [self shareAlbum:siblings from:source];
+                done(YES);
+            }];
+            album.backgroundColor = SCIAccent();
+            return [UISwipeActionsConfiguration configurationWithActions:@[remove, rename, album, share]];
+        }
+    }
     return (self.kind == SCIYTJobKindAudio)
         ? [UISwipeActionsConfiguration configurationWithActions:@[remove, rename, share]]
         : [UISwipeActionsConfiguration configurationWithActions:@[remove, rename, photos, share]];
@@ -374,6 +390,49 @@
     sheet.popoverPresentationController.sourceRect =
         CGRectMake(CGRectGetMidX(anchor.bounds), CGRectGetMidY(anchor.bounds), 1, 1);
 
+    [self presentViewController:sheet animated:YES completion:nil];
+}
+
+/// The finished sounds of the same album as `job`, in album order. Only an album that was saved as
+/// one (a playlist, with track numbers) counts: sounds that merely share a channel are not an album.
+- (NSArray<SCIYTJob *> *)albumTracksOf:(SCIYTJob *)job {
+    if (!job.album.length || job.trackNumber <= 0) return @[];
+    NSMutableArray<NSDictionary *> *entries = [NSMutableArray array];
+    for (SCIYTJob *candidate in [SCIYTLibrary shared].jobs) {
+        if (candidate.state != SCIYTJobStateDone || candidate.kind != SCIYTJobKindAudio) continue;
+        if (![candidate.album isEqualToString:job.album] || candidate.trackNumber <= 0 || ![candidate fileURL]) continue;
+        [entries addObject:@{@"title": candidate.title ?: @"", @"track": @(candidate.trackNumber), @"job": candidate}];
+    }
+    NSMutableArray<SCIYTJob *> *ordered = [NSMutableArray array];
+    for (NSDictionary *entry in [SCIYTAlbum orderedTracks:entries]) [ordered addObject:entry[@"job"]];
+    return ordered;
+}
+
+/// Copies the album's files, named "01 Title.m4a" and so on, into a folder of the album's name and
+/// hands them to the share sheet: AirDrop to a Mac puts them in Music as one album, "Save to Files"
+/// keeps the folder, and any player takes them in order.
+- (void)shareAlbum:(NSArray<SCIYTJob *> *)tracks from:(UIView *)source {
+    NSFileManager *files = [NSFileManager defaultManager];
+    NSString *name = [SCIYTAlbum folderNameForAlbum:tracks.firstObject.album];
+    NSURL *folder = [[NSURL fileURLWithPath:NSTemporaryDirectory()] URLByAppendingPathComponent:[@"albrhi-album-" stringByAppendingString:name]];
+    [files removeItemAtURL:folder error:nil];
+    [files createDirectoryAtURL:folder withIntermediateDirectories:YES attributes:nil error:nil];
+
+    NSMutableArray<NSURL *> *staged = [NSMutableArray array];
+    NSInteger total = tracks.firstObject.trackCount ?: (NSInteger)tracks.count;
+    for (SCIYTJob *track in tracks) {
+        NSURL *file = [track fileURL];
+        if (!file) continue;
+        NSString *fileName = [SCIYTAlbum fileNameForTrack:track.trackNumber of:total title:track.title extension:file.pathExtension];
+        NSURL *copy = [folder URLByAppendingPathComponent:fileName];
+        if ([files copyItemAtURL:file toURL:copy error:nil]) [staged addObject:copy];
+    }
+    if (!staged.count) return;
+
+    UIActivityViewController *sheet = [[UIActivityViewController alloc] initWithActivityItems:staged applicationActivities:nil];
+    UIView *anchor = source ?: self.view;
+    sheet.popoverPresentationController.sourceView = anchor;
+    sheet.popoverPresentationController.sourceRect = CGRectMake(CGRectGetMidX(anchor.bounds), CGRectGetMidY(anchor.bounds), 1, 1);
     [self presentViewController:sheet animated:YES completion:nil];
 }
 

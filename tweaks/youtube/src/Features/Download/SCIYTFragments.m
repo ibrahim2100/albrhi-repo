@@ -550,7 +550,20 @@ static NSArray<AVMetadataItem *> *SCIFMetadata(NSDictionary *tags) {
 
     add(AVMetadataCommonIdentifierTitle, title, (__bridge NSString *)kCMMetadataBaseDataType_UTF8);
     add(AVMetadataCommonIdentifierArtist, artist, (__bridge NSString *)kCMMetadataBaseDataType_UTF8);
-    add(AVMetadataCommonIdentifierAlbumName, artist, (__bridge NSString *)kCMMetadataBaseDataType_UTF8);
+    // The album is what a collection is called: a playlist's title when the save came from one, else
+    // the channel (YouTube names no album). A music library groups on it and on the album artist.
+    NSString *album = [tags[@"album"] isKindOfClass:[NSString class]] && [tags[@"album"] length] ? tags[@"album"] : artist;
+    NSString *albumArtist = [tags[@"albumArtist"] isKindOfClass:[NSString class]] && [tags[@"albumArtist"] length] ? tags[@"albumArtist"] : artist;
+    add(AVMetadataCommonIdentifierAlbumName, album, (__bridge NSString *)kCMMetadataBaseDataType_UTF8);
+    add(AVMetadataIdentifieriTunesMetadataAlbumArtist, albumArtist, (__bridge NSString *)kCMMetadataBaseDataType_UTF8);
+
+    // Position in the album: the `trkn` atom is eight bytes, two of padding, the track and the total as
+    // 16-bit numbers, two more of padding. Without it a library sorts an album by title.
+    NSInteger track = [tags[@"track"] integerValue], total = [tags[@"trackTotal"] integerValue];
+    if (track > 0 && track < 65536) {
+        uint8_t atom[8] = { 0, 0, (uint8_t)(track >> 8), (uint8_t)track, (uint8_t)(MAX(total, 0) >> 8), (uint8_t)MAX(total, 0), 0, 0 };
+        add(AVMetadataIdentifieriTunesMetadataTrackNumber, [NSData dataWithBytes:atom length:8], (__bridge NSString *)kCMMetadataBaseDataType_RawData);
+    }
     add(AVMetadataCommonIdentifierArtwork, art, (__bridge NSString *)kCMMetadataBaseDataType_JPEG);
     return items;
 }

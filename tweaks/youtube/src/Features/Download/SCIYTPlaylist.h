@@ -31,12 +31,18 @@ NS_ASSUME_NONNULL_BEGIN
                                     title:(NSString * _Nullable * _Nullable)title
                                     total:(NSString * _Nullable * _Nullable)total;
 
+/// Each video's length in seconds, by id, for the entries of a page that state one (`lengthSeconds`).
+/// A video with no stated length (a live stream, a removed video) is absent. Pure.
++ (NSDictionary<NSString *, NSNumber *> *)durationsInBrowse:(NSDictionary *)json;
+
 /// Loads up to `limit` videos. `completion` runs on the main queue: the list, the title, how many
-/// the playlist says it holds (a display string), and a sentence when nothing could be read.
+/// the playlist says it holds (a display string), each video's length where the playlist states it,
+/// and a sentence when nothing could be read.
 + (void)loadPlaylistID:(NSString *)playlistID
                  limit:(NSUInteger)limit
             completion:(void (^)(NSArray<NSString *> *videoIDs, NSString * _Nullable title,
-                                 NSString * _Nullable total, NSString * _Nullable failure))completion;
+                                 NSString * _Nullable total, NSDictionary<NSString *, NSNumber *> *durations,
+                                 NSString * _Nullable failure))completion;
 
 @end
 

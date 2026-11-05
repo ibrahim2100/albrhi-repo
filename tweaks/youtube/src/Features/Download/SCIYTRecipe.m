@@ -46,6 +46,9 @@
     recipe.maxHeight = [d[@"max"] integerValue];
     recipe.family = [d[@"family"] isKindOfClass:[NSString class]] ? d[@"family"] : nil;
     recipe.soundOnlyTrackID = [d[@"soundOnly"] isKindOfClass:[NSString class]] ? d[@"soundOnly"] : nil;
+    recipe.album = [d[@"album"] isKindOfClass:[NSString class]] ? d[@"album"] : nil;
+    recipe.trackNumber = [d[@"track"] integerValue];
+    recipe.trackCount = [d[@"tracks"] integerValue];
 
     NSMutableArray *extras = [NSMutableArray array], *captions = [NSMutableArray array];
     for (id item in ([d[@"extras"] isKindOfClass:[NSArray class]] ? d[@"extras"] : @[])) if ([item isKindOfClass:[NSString class]]) [extras addObject:item];
@@ -67,6 +70,8 @@
     if (self.soundOnlyTrackID.length) d[@"soundOnly"] = self.soundOnlyTrackID;
     if (self.extraAudioIDs.count) d[@"extras"] = self.extraAudioIDs;
     if (self.captionIDs.count) d[@"captions"] = self.captionIDs;
+    if (self.album.length) d[@"album"] = self.album;
+    if (self.trackNumber > 0) { d[@"track"] = @(self.trackNumber); d[@"tracks"] = @(self.trackCount); }
     return d;
 }
 

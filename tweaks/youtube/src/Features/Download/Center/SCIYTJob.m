@@ -97,6 +97,9 @@
     self.audioChoice = [coder decodeObjectOfClass:[NSString class] forKey:@"audioChoice"];
     self.captionChoice = [coder decodeObjectOfClass:[NSString class] forKey:@"captionChoice"];
     self.captionDelay = [coder decodeDoubleForKey:@"captionDelay"];
+    self.album = [coder decodeObjectOfClass:[NSString class] forKey:@"album"];
+    self.trackNumber = [coder decodeIntegerForKey:@"trackNumber"];
+    self.trackCount = [coder decodeIntegerForKey:@"trackCount"];
 
     // Always Done. Only finished jobs are written out, and a decoder that trusted a
     // stored state would put a permanently stalled row in front of the user after a
@@ -126,6 +129,9 @@
     [coder encodeObject:self.audioChoice forKey:@"audioChoice"];
     [coder encodeObject:self.captionChoice forKey:@"captionChoice"];
     [coder encodeDouble:self.captionDelay forKey:@"captionDelay"];
+    [coder encodeObject:self.album forKey:@"album"];
+    [coder encodeInteger:self.trackNumber forKey:@"trackNumber"];
+    [coder encodeInteger:self.trackCount forKey:@"trackCount"];
 }
 
 @end

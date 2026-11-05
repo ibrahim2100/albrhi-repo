@@ -46,6 +46,12 @@ xcrun clang \
   src/Features/Download/SCIYTCaptionReader.m \
   src/Features/Download/SCIYTRecipe.m \
   src/Features/Download/SCIYTPlaylist.m \
+  src/Features/Download/SCIYTFailure.m \
+  src/Features/Download/SCIYTPreflight.m \
+  src/Features/Download/SCIYTConcurrency.m \
+  src/Features/Download/SCIYTClients.m \
+  src/Features/Download/SCIYTAlbum.m \
+  ../../shared/src/SCIMediaSniff.m \
   src/Features/Download/SCIYTParts.m \
   src/Features/Download/SCIYTFragments.m \
   src/Localization/SCILocalize.m \

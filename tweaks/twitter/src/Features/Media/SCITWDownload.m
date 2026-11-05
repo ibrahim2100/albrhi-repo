@@ -1,3 +1,4 @@
+#import "shared/src/SCIMediaSniff.h"
 #import "SCITWDownload.h"
 #import "Localization/SCILocalize.h"
 #import "SCILog.h"
@@ -106,6 +107,19 @@ static NSMutableSet<SCITWDownload *> *_running = nil;
 - (void)URLSession:(NSURLSession *)session
       downloadTask:(NSURLSessionDownloadTask *)task
 didFinishDownloadingToURL:(NSURL *)location {
+    // An HTTP error answers with a body like any other response and NSURLSession hands it over as
+    // a successful download: a 403 or a 404 arrives here as a small page named like a video, which
+    // Photos then refuses for a reason that says nothing about the real one.
+    if ([task.response isKindOfClass:[NSHTTPURLResponse class]]) {
+        NSInteger status = ((NSHTTPURLResponse *)task.response).statusCode;
+        if (status < 200 || status >= 300) {
+            SCILogV(@"download refused: HTTP %ld", (long)status);
+            [[NSFileManager defaultManager] removeItemAtURL:location error:NULL];
+            [self finish:NO message:SCILocalized(@"save_failed")];
+            return;
+        }
+    }
+
     // Moved out of the temporary location before this method returns, because iOS deletes
     // it the moment it does. Named with the right extension: Photos rejects a video handed
     // to it under the wrong one, and rejects it quietly.
@@ -118,6 +132,15 @@ didFinishDownloadingToURL:(NSURL *)location {
 
     NSError *move = nil;
     if (![[NSFileManager defaultManager] moveItemAtURL:location toURL:staged error:&move]) {
+        [self finish:NO message:SCILocalized(@"save_failed")];
+        return;
+    }
+
+    // And looked at: a 200 with a web page in it is still not a video.
+    SCIMediaKind seen = SCIMediaKindUnknown;
+    if (!SCIMediaFileLooksFinished(staged, &seen)) {
+        SCILogV(@"download refused: the file is %@", SCIMediaKindDescription(seen));
+        [[NSFileManager defaultManager] removeItemAtURL:staged error:NULL];
         [self finish:NO message:SCILocalized(@"save_failed")];
         return;
     }
