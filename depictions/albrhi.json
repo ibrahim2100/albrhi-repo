@@ -106,40 +106,40 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.109.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **يوتيوب 1.48.0 — رسائل فشل مسمّاة، فحص مسبق لقوائم التشغيل، عملاء احتياطيون، عدد أجزاء متعلَّم، فحص بايتات الملف، وألبومات صوت قابلة للمشاركة؛ وإنستغرام 4.8.2 وX 0.22.1…",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "v1.108.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **يوتيوب 1.47.0 — مشغّل مركز التحميلات: تخطّي مقاطع SponsorBlock داخل الملف المحفوظ، وعشوائي، وقائمة تشغيل قابلة للترتيب، وترجمة بحجم وتوقيت من اختيارك وتصديرها .srt،…",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.107.0",
           "useBoldText": true
         },
         {
           "class": "DepictionMarkdownView",
           "markdown": "• **يوتيوب 1.46.0 — التحميل يكمل بعد إغلاق التطبيق، وتحميل قائمة تشغيل كاملة، وحفظ الصوت كملف موسيقى بوسوم (عنوان وفنان وألبوم وغلاف).**",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.106.1",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **يوتيوب 1.45.1 — بطاقة «يُشغَّل الآن» لمشغّل مركز التحميلات تظهر على شاشة القفل وفي مركز التحكم (كانت حالة التشغيل لا تُضبط، فيراها النظام غير مشغِّل).**",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.106.0",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **يوتيوب 1.45.0 — التحميل: اختيار لغات الصوت والترجمة قبل التحميل (تُحفظ داخل الملف)، وورقة اختيار جديدة بزر تحميل يعرض الحجم.**",
           "useSpacing": true
         },
         {
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.107.0"
+          "text": "1.109.0"
         },
         {
           "class": "DepictionTableTextView",
