@@ -106,6 +106,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.110.2",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **يوتيوب 1.49.2 — «التالي» في المشغّل يبدأ المقطع من بدايته لا من دقيقة المقطع السابق.**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.110.1",
           "useBoldText": true
         },
@@ -131,20 +145,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.109.0",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **يوتيوب 1.48.0 — رسائل فشل مسمّاة، فحص مسبق لقوائم التشغيل، عملاء احتياطيون، عدد أجزاء متعلَّم، فحص بايتات الملف، وألبومات صوت قابلة للمشاركة؛ وإنستغرام 4.8.2 وX 0.22.1…",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.110.1"
+          "text": "1.110.2"
         },
         {
           "class": "DepictionTableTextView",
