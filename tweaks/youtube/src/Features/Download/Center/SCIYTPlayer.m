@@ -120,6 +120,7 @@ static const double kSCINudge = 10;
 @property (nonatomic, copy) NSArray<NSDictionary *> *sponsorSegments;
 @property (nonatomic, strong) NSMutableSet<NSNumber *> *sponsorDone;
 @property (nonatomic, strong) UIButton *skipPill;
+@property (nonatomic) BOOL openedFromList;                    ///< the next -load is the person picking this row, the one case that resumes
 @property (nonatomic, strong) SCIYTJob *loadedJob;                ///< the job the AVPlayer actually has, which `index` may already have moved past
 @property (nonatomic) BOOL audioChoices;                       ///< the file has a second sound to pick
 @property (nonatomic) NSInteger chapterIndex;                  ///< the chapter playing, -1 before the first
@@ -197,7 +198,7 @@ static SCIYTPlayer *sciCurrent = nil;
     [presenter presentViewController:player animated:YES completion:^{
         // Loaded after it is on screen, and only when it is not already playing this row --
         // reopening from the mini bar must not start the song over.
-        if (!sameRow) [player load];
+        if (!sameRow) { player.openedFromList = YES; [player load]; }
     }];
 }
 
@@ -1440,10 +1441,22 @@ static SCIYTPlayer *sciCurrent = nil;
 
     // Back where it was left, if it was left anywhere worth returning to. Done before
     // playing rather than after, so it does not start at the beginning and jump.
-    if (job.position > kSCIResumeFloor) {
+    //
+    // **Only when the person picked this row, and not for a song.** Next, Previous, a track that ended and a
+    // tap in the queue all start a track from its beginning: resuming there made "next" begin wherever an
+    // earlier track had been left, and a position written wrongly by an earlier release stayed on the file
+    // and went on doing it after the cause was fixed. A sound shorter than ten minutes is a song, which is
+    // never resumed; a long one (a podcast, a lecture) is, when opened from the list.
+    BOOL fromList = self.openedFromList;
+    self.openedFromList = NO;
+    BOOL song = (job.kind == SCIYTJobKindAudio && job.duration > 0 && job.duration < 600);
+    if (fromList && !song && job.position > kSCIResumeFloor) {
         [self.player seekToTime:CMTimeMakeWithSeconds(job.position, 600)
                 toleranceBefore:kCMTimeZero
                  toleranceAfter:kCMTimeZero];
+    } else if (job.position != 0) {
+        job.position = 0;                  // no stale place is kept for a track that starts from the top
+        [[SCIYTLibrary shared] save];
     }
 
     [self.player play];
