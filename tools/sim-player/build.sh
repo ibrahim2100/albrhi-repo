@@ -19,7 +19,7 @@ FULLFLAGS=""; FULLSRC=""
 if [ "${FULL:-0}" = "1" ]; then
   FULLFLAGS="-DSIM_FULL=1"
   D=$SRC/Features/Download
-  FULLSRC="$C/SCIYTLibrary.m $C/SCIYTNotice.m $D/SCIYTDirect.m $D/SCIYTFragments.m $D/SCIYTRecipe.m $D/SCIYTPlaylist.m $C/SCIYTPlaylistSheet.m $D/SCIYTHLS.m $D/SCIYTTransport.m $H/stub/AV1Stub.m"
+  FULLSRC="$C/SCIYTLibrary.m $C/SCIYTNotice.m $D/SCIYTDirect.m $D/SCIYTFragments.m $D/SCIYTRecipe.m $D/SCIYTPlaylist.m $C/SCIYTPlaylistSheet.m $D/SCIYTFailure.m $D/SCIYTPreflight.m $D/SCIYTConcurrency.m $D/SCIYTClients.m $D/SCIYTAlbum.m $R/shared/src/SCIMediaSniff.m $D/SCIYTHLS.m $D/SCIYTTransport.m $H/stub/AV1Stub.m"
 fi
 OUT="${TMPDIR:-/tmp}/albrhi-sim-player"; mkdir -p "$OUT/PlayerHarness.app"; SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
 clang -fobjc-arc -target arm64-apple-ios15.0-simulator -isysroot "$SDK" -Wall -Wno-unused-function -Wno-objc-method-access -Wno-incomplete-implementation \

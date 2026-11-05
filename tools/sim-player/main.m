@@ -100,6 +100,23 @@ static void SCIAfter(double seconds, void (^block)(void)) {
 
 
 
+    // -badfirst: the first client in the cascade is made to ask for something that does not exist, so
+    // the route has to fall through to the next one -- the only way to see the cascade work while the
+    // real first client is healthy.
+    if ([d boolForKey:@"badfirst"]) {
+        Method m = class_getClassMethod(objc_getClass("SCIYTClients"), NSSelectorFromString(@"all"));
+        NSArray *(*orig)(id, SEL) = (NSArray *(*)(id, SEL))method_getImplementation(m);
+        method_setImplementation(m, imp_implementationWithBlock(^NSArray *(id self_) {
+            NSMutableArray *list = [orig(self_, NSSelectorFromString(@"all")) mutableCopy];
+            NSMutableDictionary *first = [list.firstObject mutableCopy];
+            NSMutableDictionary *client = [first[@"client"] mutableCopy];
+            client[@"clientName"] = @"NO_SUCH_CLIENT";
+            first[@"client"] = client;
+            list[0] = first;
+            return list;
+        }));
+        NSLog(@"[CASCADE] first client broken on purpose");
+    }
 #ifdef SIM_FULL
     if ([d boolForKey:@"playlisttest"]) { [SCIYTParts useForegroundSessionForHarness]; [SCIYTPlaylistSheet presentFrom:self]; return; }
     // The REAL library, direct route, parts, recipe and muxer, against YouTube itself.
@@ -109,7 +126,7 @@ static void SCIAfter(double seconds, void (^block)(void)) {
         [SCIYTParts useForegroundSessionForHarness];
         if ([d stringForKey:@"dltest"].length) {
             SCIYTRecipe *r = [SCIYTRecipe new];
-            r.videoID = [d stringForKey:@"dltest"]; r.maxHeight = 240; r.audioOnly = [d boolForKey:@"audio"];
+            r.videoID = [d stringForKey:@"dltest"]; r.maxHeight = [d integerForKey:@"height"] ?: 240; r.audioOnly = [d boolForKey:@"audio"];
             r.extraAudioIDs = @[@"ar.3"]; r.captionIDs = @[@"en", @"ar"];
             [[SCIYTLibrary shared] enqueueRecipes:@[r]];
         }
