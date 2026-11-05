@@ -6,6 +6,8 @@
 #import "Features/Download/Center/SCIYTPlayer.h"
 #import "Features/Download/Center/SCIYTJob.h"
 #import "Features/Download/Center/SCIYTLibrary.h"
+#import "Features/Download/Center/SCIYTCaptionSettings.h"
+#import "Features/Download/Center/SCIYTQueueSheet.h"
 #import "Features/Download/Center/SCIYTHostPlayer.h"
 #import "Features/Download/Center/SCIYTArbiter.h"
 #import "Features/Download/Center/SCIYTChoiceSheet.h"
@@ -31,6 +33,7 @@ BOOL SCIPanelAllowsThisApp(void) { return YES; }
     return u;
 }
 - (void)save {}
+- (void)ensureSponsorSegmentsFor:(SCIYTJob *)job completion:(void (^)(void))completion { if (completion) completion(); }
 @end
 #endif
 
@@ -189,7 +192,42 @@ static void SCIAfter(double seconds, void (^block)(void)) {
         j.fileName = s[1]; j.state = SCIYTJobStateDone; j.duration = 90;
         [jobs addObject:j];
     }
+    // SponsorBlock segments kept with the file (no network): a sponsor at 20-30 s, an intro at 5-8 s
+    // whose category is left off, so a skip at 20 s and none at 5 s shows the filter works.
+    [d registerDefaults:@{@"sponsorblock": @YES, @"sponsorblock_notice": @YES, @"sb_sponsor": @YES, @"sb_intro": @NO}];
+    if ([d boolForKey:@"sbtest"]) {
+        SCIYTJob *a = jobs.firstObject;
+        a.sponsorSegments = @[@{@"category": @"intro", @"start": @5, @"end": @8}, @{@"category": @"sponsor", @"start": @20, @"end": @30}];
+        a.sponsorCheckedAt = [[NSDate date] timeIntervalSince1970];
+        for (NSNumber *t in @[@6, @19, @21, @24, @32]) SCIAfter(t.doubleValue, ^{ NSLog(@"[SBTEST] t+%@s playhead=%.1f s", t, [SCIYTPlayer progress] * 90.1); });
+    }
+    // Captions: -captest logs what the file carries; -caplang <tag> pretends that was chosen last time,
+    // which is the "remembered per video" path; -capdelay <s> sets the timing offset.
+    if ([d stringForKey:@"caplang"].length) ((SCIYTJob *)jobs.firstObject).captionChoice = [d stringForKey:@"caplang"];
+    if ([d objectForKey:@"capdelay"]) ((SCIYTJob *)jobs.firstObject).captionDelay = [d doubleForKey:@"capdelay"];
     [SCIYTPlayer presentFrom:self jobs:jobs start:[d integerForKey:@"start"]];
+    if ([d boolForKey:@"shuffletest"]) {
+        SCIAfter(2, ^{ [[SCIYTPlayer current] performSelector:NSSelectorFromString(@"toggleShuffle")]; NSLog(@"[SHUF] on, playing %@", [SCIYTPlayer nowPlaying].title); });
+        for (int i = 1; i <= 7; i++) SCIAfter(2 + i * 1.5, ^{
+            [[SCIYTPlayer current] performSelector:NSSelectorFromString(@"next")];
+            NSLog(@"[SHUF] next %d -> %@", i, [SCIYTPlayer nowPlaying].title);
+        });
+        for (int i = 1; i <= 2; i++) SCIAfter(14 + i * 1.5, ^{
+            [[SCIYTPlayer current] performSelector:NSSelectorFromString(@"previous")];
+            NSLog(@"[SHUF] previous %d -> %@", i, [SCIYTPlayer nowPlaying].title);
+        });
+    }
+    if ([d boolForKey:@"capsheet"]) SCIAfter(3, ^{ [SCIYTCaptionSettings presentFrom:[SCIYTPlayer current]]; });
+    if ([d boolForKey:@"queuesheet"]) SCIAfter(3, ^{ [d setBool:YES forKey:@"queuesheet_shown"]; [SCIYTQueueSheet presentFrom:[SCIYTPlayer current]]; });
+    if ([d boolForKey:@"captest"]) SCIAfter(4, ^{
+        NSLog(@"[CAPTEST] languages=%@ scale=%.2f delay=%.1f", [SCIYTPlayer captionLanguages], [SCIYTPlayer captionScale], [SCIYTPlayer captionDelay]);
+        for (NSDictionary *l in [SCIYTPlayer captionLanguages]) {
+            [SCIYTPlayer exportCaptionsFor:l[@"lang"] completion:^(NSURL *f, NSString *why) {
+                NSLog(@"[CAPTEST] export %@ -> %@ %@", l[@"lang"], f.path, why ?: @"");
+                if (f) NSLog(@"[CAPTEST] srt head:\n%@", [[[NSString stringWithContentsOfURL:f encoding:NSUTF8StringEncoding error:nil] componentsSeparatedByString:@"\n"] subarrayWithRange:NSMakeRange(0, 8)]);
+            }];
+        }
+    });
 
     if ([d boolForKey:@"nptest"]) for (NSNumber *t in @[@3, @6, @9]) SCIAfter(t.doubleValue, ^{ SCIProbeNowPlaying([NSString stringWithFormat:@"t+%@s", t]); });
 

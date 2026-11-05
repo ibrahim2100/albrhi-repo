@@ -19,13 +19,13 @@ FULLFLAGS=""; FULLSRC=""
 if [ "${FULL:-0}" = "1" ]; then
   FULLFLAGS="-DSIM_FULL=1"
   D=$SRC/Features/Download
-  FULLSRC="$C/SCIYTLibrary.m $C/SCIYTNotice.m $D/SCIYTDirect.m $D/SCIYTFragments.m $D/SCIYTSubtitles.m $D/SCIYTRecipe.m $D/SCIYTPlaylist.m $C/SCIYTPlaylistSheet.m $D/SCIYTHLS.m $D/SCIYTTransport.m $H/stub/AV1Stub.m"
+  FULLSRC="$C/SCIYTLibrary.m $C/SCIYTNotice.m $D/SCIYTDirect.m $D/SCIYTFragments.m $D/SCIYTRecipe.m $D/SCIYTPlaylist.m $C/SCIYTPlaylistSheet.m $D/SCIYTHLS.m $D/SCIYTTransport.m $H/stub/AV1Stub.m"
 fi
 OUT="${TMPDIR:-/tmp}/albrhi-sim-player"; mkdir -p "$OUT/PlayerHarness.app"; SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
 clang -fobjc-arc -target arm64-apple-ios15.0-simulator -isysroot "$SDK" -Wall -Wno-unused-function -Wno-objc-method-access -Wno-incomplete-implementation \
   -I"$SRC" -I"$R" -I"$H/stub" -F"$SDK/System/Library/Frameworks" \
   -framework UIKit -framework Foundation -framework AVFoundation -framework AVKit -framework MediaPlayer -framework CoreMedia -framework QuartzCore -framework Photos -framework CoreGraphics -framework ImageIO -framework UserNotifications -framework VideoToolbox \
-  $FULLFLAGS "$H/main.m" "$C/SCIYTPlayer.m" "$C/SCIYTJob.m" "$C/SCIYTPalette.m" "$C/SCIYTIcon.m" "$C/SCIYTThumbnails.m" "$C/SCIYTArbiter.m" "$C/SCIYTChoiceSheet.m" "$SRC/Features/Download/SCIYTParts.m" $FULLSRC \
+  $FULLFLAGS "$H/main.m" "$C/SCIYTPlayer.m" "$C/SCIYTJob.m" "$C/SCIYTPalette.m" "$C/SCIYTIcon.m" "$C/SCIYTThumbnails.m" "$C/SCIYTArbiter.m" "$C/SCIYTChoiceSheet.m" "$C/SCIYTQueueSheet.m" "$C/SCIYTCaptionSettings.m" "$SRC/Features/Download/SCIYTCaptionReader.m" "$SRC/Features/Download/SCIYTSubtitles.m" "$SRC/Features/SponsorBlock/SCIYTSponsorClient.m" "$SRC/Features/Download/SCIYTParts.m" $FULLSRC \
   "$SRC/Localization/SCILocalize.m" "$SRC/SCIYTLaunchGuard.m" \
   -o "$OUT/PlayerHarness.app/PlayerHarness" 2>&1 | grep -E "error|Undefined|referenced from|symbol" | head -30 || true
 test -f "$OUT/PlayerHarness.app/PlayerHarness"
