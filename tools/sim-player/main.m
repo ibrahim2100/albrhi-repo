@@ -223,6 +223,14 @@ static void SCIAfter(double seconds, void (^block)(void)) {
     if ([d stringForKey:@"caplang"].length) ((SCIYTJob *)jobs.firstObject).captionChoice = [d stringForKey:@"caplang"];
     if ([d objectForKey:@"capdelay"]) ((SCIYTJob *)jobs.firstObject).captionDelay = [d doubleForKey:@"capdelay"];
     [SCIYTPlayer presentFrom:self jobs:jobs start:[d integerForKey:@"start"]];
+    // -nextcheck: after 13 s of the first track, press Next; the next one must start near its own beginning,
+    // not at the 13 s the last one reached.
+    if ([d boolForKey:@"nextcheck"]) {
+        SCIAfter(13, ^{ [[SCIYTPlayer current] performSelector:NSSelectorFromString(@"next")]; });
+        SCIAfter(15.5, ^{ NSLog(@"[NEXTCHECK] now %@ at %.1f s of %.1f (fraction %.3f)", [SCIYTPlayer nowPlaying].title, [SCIYTPlayer progress] * [SCIYTPlayer nowPlaying].duration, [SCIYTPlayer nowPlaying].duration, [SCIYTPlayer progress]); });
+        SCIAfter(18, ^{ [[SCIYTPlayer current] performSelector:NSSelectorFromString(@"next")]; });
+        SCIAfter(20.5, ^{ NSLog(@"[NEXTCHECK] then %@ fraction %.3f", [SCIYTPlayer nowPlaying].title, [SCIYTPlayer progress]); });
+    }
     if ([d boolForKey:@"shuffletest"]) {
         SCIAfter(2, ^{ [[SCIYTPlayer current] performSelector:NSSelectorFromString(@"toggleShuffle")]; NSLog(@"[SHUF] on, playing %@", [SCIYTPlayer nowPlaying].title); });
         for (int i = 1; i <= 7; i++) SCIAfter(2 + i * 1.5, ^{
