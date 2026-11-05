@@ -106,6 +106,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.110.3",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **يوتيوب 1.49.3 — الأغاني تبدأ من بدايتها دائماً (المتابعة من حيث توقفت للفيديو وللصوت الطويل فقط، وعند اختيار الصف من القائمة فقط)، وتُمسح المواضع الخاطئة التي خلّفها…",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.110.2",
           "useBoldText": true
         },
@@ -131,20 +145,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.110.0",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **يوتيوب 1.49.0 — تقوية ظهور الصوت المحمَّل على شاشة القفل (لم تُقَس على جهاز، والتقرير يحسمها)، وفصول وأبرز لحظة من SponsorBlock، وترجمة ثنائية اللغة، وخيار «تلقائي»…",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.110.2"
+          "text": "1.110.3"
         },
         {
           "class": "DepictionTableTextView",
