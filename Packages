@@ -623,10 +623,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tiktok.roothide
 Replaces: com.albrhi.tiktok.roothide
 Filename: debs/com.albrhi.tiktok_0.28.0_iphoneos-arm64.deb
-Size: 164630
-MD5sum: 7843e2f432f0ca89bdb5d7532a895129
-SHA1: 40f199baf9b787ce9faeeb60d79e351c25d86f9e
-SHA256: 459d57c1720844b48b929811c16fcf0cd5891694c2f68a5a586ccfa53949d8df
+Size: 164396
+MD5sum: 0d4dbca1ef481cb1f892995d79ca4674
+SHA1: 80c51f5a2bbc2c2e1b08d6e9554b2b0496b4fe23
+SHA256: 83b1e4f713ff365878f57a85996b569e8a8b731b05d42dc1c45fa2d90fd70719
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
@@ -685,10 +685,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tiktok
 Replaces: com.albrhi.tiktok
 Filename: debs/com.albrhi.tiktok.roothide_0.28.0_iphoneos-arm64e.deb
-Size: 164554
-MD5sum: 1ea3473422929485b80c5ae5d834a6d5
-SHA1: decc8067b261d4f36962ed557f77c1b680cf4d8a
-SHA256: 6940d67b6b6c7d7fdce7f6355aa6d0a4d404515d15064e6c2cbb3eac4404d728
+Size: 164506
+MD5sum: 416d147bf387e9b39bba0d36599c10f4
+SHA1: e5390db4231e101c79edd49715cee5a296890adc
+SHA256: 62fe97379d65525ccdbd5443f6696d47fb6dfa81ef01623366483275d5c23a28
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
@@ -747,10 +747,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tweak.roothide
 Replaces: com.albrhi.tweak.roothide
 Filename: debs/com.albrhi.tweak_4.8.1_iphoneos-arm64.deb
-Size: 513588
-MD5sum: 50cd94b5ee97bc3f829360288117ba1d
-SHA1: 9453360e7f81352e435e480de68931d163785e7e
-SHA256: a89a19100866466f4809d95545cec3671c6f28b742a06c8b7125893ce66341e4
+Size: 513824
+MD5sum: bb4fc6115ca142576318e611049b1b67
+SHA1: 4344b5571035e0a2a194730259aa8a991f225e67
+SHA256: 73318d53cfae24090f79312b73c91c1cd1f965c2bf5fc2fb2ab2c4d6c4b98f78
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download anything, hide the noise, browse invisibly — in Arabic or English.
@@ -819,10 +819,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tweak
 Replaces: com.albrhi.tweak
 Filename: debs/com.albrhi.tweak.roothide_4.8.1_iphoneos-arm64e.deb
-Size: 513886
-MD5sum: 6ecfc7dd6fd6a73f8cfec107f3068279
-SHA1: d22f63535e34084865722ddca258beb92d62f45f
-SHA256: 5350d3333ed8486f03c0c4c4f19d473563bf446041b17d38ea58adec14685c0b
+Size: 513670
+MD5sum: 524b389a1eaddaba787860e93aa63f1b
+SHA1: d2221cf83e9732207211bd54a06e6bcbecc03e19
+SHA256: ba74d36945a5a5ed145d954a0aa0a271544cab51d42f86b7e8221fb13d309eea
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download anything, hide the noise, browse invisibly — in Arabic or English.
@@ -891,10 +891,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.twitter.roothide
 Replaces: com.albrhi.twitter.roothide
 Filename: debs/com.albrhi.twitter_0.22.0_iphoneos-arm64.deb
-Size: 103798
-MD5sum: d0c772441686968d70db7a31726e5878
-SHA1: d761714ff03bae230cb621820154bcedb3dea09a
-SHA256: 47434ce6f993f86303092ecd2684c3a38b1a0e1c92c04391293bc161da7ea1da
+Size: 103328
+MD5sum: 886c80463d9c1c81193463b8fb98d91b
+SHA1: 3f6f23157b2b0f86603359e3863fdfa6100365fd
+SHA256: f4cb32163ce6bce315bf8b3512f58ab369f0c552b74a08592993077645032fb7
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
@@ -966,9 +966,9 @@ Conflicts: com.albrhi.twitter
 Replaces: com.albrhi.twitter
 Filename: debs/com.albrhi.twitter.roothide_0.22.0_iphoneos-arm64e.deb
 Size: 103278
-MD5sum: 709da8158fd7292afd34eab40d179180
-SHA1: 0380c90a2cc0b0ba9e05897f96203df4d3675edd
-SHA256: a23a215bb635a6e742cb1c37969666cef808bf84d1d7c80252d9c84d4166489c
+MD5sum: 5ad334cecd70b15576e14011ce92b270
+SHA1: beac24432dc61c4a13c196a2faba6287f7f84d6e
+SHA256: b1888e34b8d40c3d1499d0e252fe0fff260b86c42f165ee5d771894982ce8b6e
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
@@ -1029,6 +1029,92 @@ Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.h
 Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for Twitter (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.json
+
+Package: com.albrhi.watch
+Version: 0.6.1
+Architecture: iphoneos-arm64
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 536
+Depends: mobilesubstrate, preferenceloader, firmware (>= 15.0)
+Conflicts: com.albrhi.watch.roothide, com.34306.watched, app.legizmo.moonstone, app.legizmo
+Replaces: com.albrhi.watch.roothide
+Filename: debs/com.albrhi.watch_0.6.1_iphoneos-arm64.deb
+Size: 63212
+MD5sum: d70450d47006214a6116114466a79697
+SHA1: e20a5fcff828dd779edb7e5606e7303d38422555
+SHA256: 6d90a2b871d734cdcf86aba8d4f9ae22dc038c43d45d7e71b6a07d1dcc84e59d
+Section: Tweaks
+Homepage: https://github.com/ibrahim2100/albrhi-repo
+Description: Pair an Apple Watch running a watchOS your iPhone does not officially support.
+ .
+ ▍WHAT IT DOES
+ iOS refuses to pair with a watch whose watchOS is newer than it expects, and refuses to
+ install companion apps onto it. This answers those compatibility questions the way a
+ supported pairing would, so setup completes and apps install.
+ .
+ ▍SWITCHED ON FROM ALBRHI
+ Settings › Albrhi Watch. Nothing is patched until the master switch is on —
+ this touches pairing, so it is never on because it happened to be installed. A respring
+ button sits on the same page, since every change here takes effect at the next launch of
+ the process it lives in.
+ .
+ ▍CREDIT — THE PAIRING CORE IS SOMEONE ELSE'S WORK
+ The pairing gate, the capability answers and the NanoRegistry preference writes come
+ from watched by 34306 (github.com/34306/watched), used under the MIT licence, whose text
+ ships with this package as LICENSE-watched. What this project adds is the master switch,
+ the settings page, the diagnostics and the bilingual interface.
+ .
+ Maintained by Ibrahim Ismail AL-Rahn. Open source; the pairing core is used under
+ the MIT licence, whose text ships with this package.
+Tag: role::enduser
+Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
+Name: Albrhi Watch (rootless)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
+
+Package: com.albrhi.watch.roothide
+Version: 0.6.1
+Architecture: iphoneos-arm64e
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 536
+Depends: mobilesubstrate, preferenceloader, firmware (>= 15.0)
+Conflicts: com.albrhi.watch, com.34306.watched, app.legizmo.moonstone, app.legizmo
+Replaces: com.albrhi.watch
+Filename: debs/com.albrhi.watch.roothide_0.6.1_iphoneos-arm64e.deb
+Size: 63502
+MD5sum: 8d29b787db33fa2ae16c18f4b3bfc583
+SHA1: 2b0ad2ba3896f0644146cfe498f84a119bfc7e78
+SHA256: 92c9cb175db23065c10b077b4a827693ce3801d4715d8f6de1558582fa170dec
+Section: Tweaks
+Homepage: https://github.com/ibrahim2100/albrhi-repo
+Description: Pair an Apple Watch running a watchOS your iPhone does not officially support.
+ .
+ ▍WHAT IT DOES
+ iOS refuses to pair with a watch whose watchOS is newer than it expects, and refuses to
+ install companion apps onto it. This answers those compatibility questions the way a
+ supported pairing would, so setup completes and apps install.
+ .
+ ▍SWITCHED ON FROM ALBRHI
+ Settings › Albrhi Watch. Nothing is patched until the master switch is on —
+ this touches pairing, so it is never on because it happened to be installed. A respring
+ button sits on the same page, since every change here takes effect at the next launch of
+ the process it lives in.
+ .
+ ▍CREDIT — THE PAIRING CORE IS SOMEONE ELSE'S WORK
+ The pairing gate, the capability answers and the NanoRegistry preference writes come
+ from watched by 34306 (github.com/34306/watched), used under the MIT licence, whose text
+ ships with this package as LICENSE-watched. What this project adds is the master switch,
+ the settings page, the diagnostics and the bilingual interface.
+ .
+ Maintained by Ibrahim Ismail AL-Rahn. Open source; the pairing core is used under
+ the MIT licence, whose text ships with this package.
+Tag: role::enduser
+Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
+Name: Albrhi Watch (roothide)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
 
 Package: com.albrhi.youtube
 Version: 1.44.0
