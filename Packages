@@ -144,9 +144,9 @@ Conflicts: com.albrhi.roothide, com.albrhi.tweak, com.albrhi.tweak.roothide, com
 Replaces: com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide
 Filename: debs/com.albrhi_1.110.1_iphoneos-arm64.deb
 Size: 2662022
-MD5sum: 49db9158ce1894f937d11ea0a693c3aa
-SHA1: 7816e3d2b672468c988e61e32a9778e577943fa3
-SHA256: a9dac137b0e42d503c8f1e9801b64b05790aaeb97a3bc4cab513c53325a1495a
+MD5sum: 8915c6cedcdfaa056ac77d6fca476a52
+SHA1: 9123d7d014285d8f8811b72c4acd88ab2720e875
+SHA256: e61110b130e3885cab7bf72d0017cacd828576d5798fa507b12ddddad27d2b04
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
@@ -555,10 +555,10 @@ Depends: mobilesubstrate, preferenceloader
 Conflicts: com.albrhi.roothide, com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide, com.dvntm.ytmultimate
 Replaces: com.albrhi.tweak, com.albrhi.tweak.roothide, com.albrhi.youtube, com.albrhi.youtube.roothide, com.albrhi.twitter, com.albrhi.twitter.roothide, com.albrhi.tiktok, com.albrhi.tiktok.roothide, com.albrhi.ytmusic, com.albrhi.ytmusic.roothide, com.albrhi.panel, com.albrhi.panel.roothide
 Filename: debs/com.albrhi.roothide_1.110.1_iphoneos-arm64e.deb
-Size: 2659268
-MD5sum: a5c3aa1d644fddae8008bb8c464b2d7d
-SHA1: d7f5d271a1be9d6cfe8f08a6bbd84d6f19c2b545
-SHA256: 0c0966f21e161f27c0e8ce7545fd0a34e533727da5fa2548b464a7c4c8fcccf7
+Size: 2659274
+MD5sum: a848987b69b02f8cecbccebba19974c2
+SHA1: f3713104fe6587c46b634be5f09e10be91f56f61
+SHA256: 73f48933a7d92f02e6158a6092367076449c9932985a25fbf75fca58e6f401eb
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
@@ -623,10 +623,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tiktok.roothide
 Replaces: com.albrhi.tiktok.roothide
 Filename: debs/com.albrhi.tiktok_0.28.0_iphoneos-arm64.deb
-Size: 165794
-MD5sum: 626890c724854414dc816f99d92cc695
-SHA1: 38d8a2006375fa5fc2c7809a8cd9948c92ffa5d1
-SHA256: cc5d245b6c2b13031092a597d09e7a9dcc75172d68e679ee8340d170ed44192e
+Size: 165772
+MD5sum: 22373e543c3ff4781c211ce2828db439
+SHA1: f77a6fb225ac0f84ab0ad3084703e4a73681991d
+SHA256: 6c3fd146429a68d008f42e285235cd7b38bcf4321665a48d651c0ce5de88245e
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
@@ -685,10 +685,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tiktok
 Replaces: com.albrhi.tiktok
 Filename: debs/com.albrhi.tiktok.roothide_0.28.0_iphoneos-arm64e.deb
-Size: 165812
-MD5sum: c780448f5944bccc173496bbaa7412c7
-SHA1: 954c0e68808cc1fa44f8a467c22370cbef3f8e17
-SHA256: 9e616c3aa5300194c74602f9d530ac83a9fafdbd9b46db5d109a096442496c76
+Size: 165802
+MD5sum: 1c538e0489ddfb94dacd5c806749dd32
+SHA1: 97c679a93837c2d3966f2fea58c7de88b4441133
+SHA256: b11021da6b19dcbc3db2c15031a723bf2e9eeffcd0c759fc8a6605a467326b49
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
@@ -747,10 +747,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tweak.roothide
 Replaces: com.albrhi.tweak.roothide
 Filename: debs/com.albrhi.tweak_4.8.2_iphoneos-arm64.deb
-Size: 515212
-MD5sum: af3f669b59a74fa512055fe4d0591b44
-SHA1: d407658b921eaa1bb22c0f47a82441db375c34cf
-SHA256: 07f3ee1b13388ad1091cb17d3e9cae6f459f3ef0faa7f6e1f7baa31b6a6b1309
+Size: 515364
+MD5sum: 700e0c835ab5651792493fe952e0601f
+SHA1: a0d0557a444347af334e25a66b27a71b5ac45533
+SHA256: 3a9594dc2102e9b773c2faae87121dce74afd5220f886e0893c2f795b9612bb4
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download anything, hide the noise, browse invisibly — in Arabic or English.
@@ -819,10 +819,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tweak
 Replaces: com.albrhi.tweak
 Filename: debs/com.albrhi.tweak.roothide_4.8.2_iphoneos-arm64e.deb
-Size: 515110
-MD5sum: effde36ef87cee363f47d3977dc2ec31
-SHA1: 8f34dd5ff0e0b26f4c2c1a6a938c696b71484fb3
-SHA256: 26ab6dbe1d2048c9b16fac1f827789e625f2ee7fc2be8d6ec5cfc597c7794f0d
+Size: 515298
+MD5sum: 929b0d54f4df3fb69e6024e216e19860
+SHA1: c1680642785bed7f40646efb7b2c5991c26c23df
+SHA256: 6450c0ddff1b521022c8b4edf09a902a01a8d16abdfc67d5a9ee541c0f9b4a3e
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download anything, hide the noise, browse invisibly — in Arabic or English.
@@ -891,10 +891,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.twitter.roothide
 Replaces: com.albrhi.twitter.roothide
 Filename: debs/com.albrhi.twitter_0.22.1_iphoneos-arm64.deb
-Size: 104742
-MD5sum: 59a86f3fb8a44d417167829399116868
-SHA1: e81e7c741602e4cec7d9eb284cc39a3934c47c0c
-SHA256: c09c746799844d850975e9c351c54cb9f4e14c39e77e599f0fc6da28224ca4e4
+Size: 104768
+MD5sum: 6489c46d2a8d7433f8999d27c7e31c9d
+SHA1: 6da4a3e61cd0a35c9a35707e6b66098ab2078fb5
+SHA256: 548dc8c5d3e73d8dc23d450398c1c9c20c6cb4de95654c9c38e9702bec88f0c1
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
@@ -965,10 +965,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.twitter
 Replaces: com.albrhi.twitter
 Filename: debs/com.albrhi.twitter.roothide_0.22.1_iphoneos-arm64e.deb
-Size: 104668
-MD5sum: 9d2aa35a191df620b78c66e8039165dc
-SHA1: 9ff8342ab20ef68778a5bdb5c46ed6a38d8092a9
-SHA256: 6f251b9caf77b7e64ca8aa89fb3826a953961926ef9225fa414a8b08e0a6e941
+Size: 104680
+MD5sum: 28f66495011a3f05413b3d6c6eea20f2
+SHA1: 7ebcdfc3b33fcc490520f084db686fb2b044c9ed
+SHA256: 1d1db69a6f876283d527087623b7d069b2658080e4e669cdb0d0efa91245d928
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
