@@ -51,6 +51,7 @@ xcrun clang \
   src/Features/Download/SCIYTConcurrency.m \
   src/Features/Download/SCIYTClients.m \
   src/Features/Download/SCIYTAlbum.m \
+  src/Features/Interface/SCIYTRyd.m \
   ../../shared/src/SCIMediaSniff.m \
   src/Features/Download/SCIYTParts.m \
   src/Features/Download/SCIYTFragments.m \

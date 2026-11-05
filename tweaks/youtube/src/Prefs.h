@@ -147,6 +147,7 @@
 /// Ideas from YouQuality and YouPiP by PoomSmart (MIT); the placement is this tweak's own.
 #define SCIPrefOverlayQuality   @"overlay_quality_button"
 #define SCIPrefOverlayPiP       @"overlay_pip_button"
+#define SCIPrefOverlayDislikes  @"overlay_dislikes_button"
 
 
 /// Quality.

@@ -17,7 +17,12 @@
 #import "Features/Download/SCIYTAlbum.h"
 #import "Features/Download/SCIYTPlaylist.h"
 #import "Features/Download/SCIYTFragments.h"
+#import "Features/Interface/SCIYTRyd.h"
 #import "AlbrhiTestKit.h"
+
+// What Prefs.h's SCIPrefEnabled reaches for; the real ones need the panel and the launch guard.
+BOOL SCIPanelAllowsThisApp(void) { return YES; }
+void SCIYTLaunchMark(NSString *label) { (void)label; }
 
 static NSData *SCIBytes(const char *text) { return [NSData dataWithBytes:text length:strlen(text)]; }
 
@@ -254,5 +259,30 @@ void Test_Robust(void) {
         NSArray *trk = [AVMetadataItem metadataItemsFromArray:itunes filteredByIdentifier:AVMetadataIdentifieriTunesMetadataTrackNumber];
         NSData *raw = [trk.firstObject dataValue];
         ALBRHI_ASSERT(raw.length >= 6 && ((const uint8_t *)raw.bytes)[3] == 3 && ((const uint8_t *)raw.bytes)[5] == 12, @"track 3 of 12 in the trkn atom");
+    });
+
+    printf("dislike counts\n");
+
+    ALBRHI_TEST(ryd_counts_are_compact, {
+        ALBRHI_ASSERT([[SCIYTRyd compact:0] isEqualToString:@"0"] && [[SCIYTRyd compact:987] isEqualToString:@"987"], @"under a thousand as is");
+        ALBRHI_ASSERT([[SCIYTRyd compact:1000] isEqualToString:@"1K"] && [[SCIYTRyd compact:1234] isEqualToString:@"1.2K"], @"one decimal under ten of a unit");
+        ALBRHI_ASSERT([[SCIYTRyd compact:34400] isEqualToString:@"34K"] && [[SCIYTRyd compact:999999] isEqualToString:@"1M"], @"none above, and 999.9K carries up");
+        ALBRHI_ASSERT([[SCIYTRyd compact:1.2e6] isEqualToString:@"1.2M"] && [[SCIYTRyd compact:4.7e9] isEqualToString:@"4.7B"], @"millions and billions");
+        ALBRHI_ASSERT([[SCIYTRyd compact:-5] isEqualToString:@"—"] && [[SCIYTRyd compact:NAN] isEqualToString:@"—"], @"nonsense is a dash");
+    });
+
+    ALBRHI_TEST(ryd_answers_are_read_or_refused, {
+        NSDictionary *good = @{@"id": @"x", @"likes": @1500, @"dislikes": @34000, @"rating": @4.2, @"viewCount": @9000000, @"deleted": @NO};
+        NSDictionary *ok = [SCIYTRyd parseVotes:good];
+        ALBRHI_ASSERT([ok[@"dislikes"] intValue] == 34000 && [ok[@"likes"] intValue] == 1500 && fabs([ok[@"rating"] doubleValue] - 4.2) < 1e-9 && [ok[@"views"] intValue] == 9000000, @"the figures");
+        NSDictionary *none = @{@"likes": @0, @"dislikes": @0};
+        ALBRHI_ASSERT([SCIYTRyd parseVotes:none] == nil, @"nothing known is not a zero to show");
+        NSDictionary *negative = @{@"likes": @-1, @"dislikes": @5};
+        ALBRHI_ASSERT([SCIYTRyd parseVotes:negative] == nil, @"negative counts");
+        NSDictionary *text = @{@"likes": @"1", @"dislikes": @2};
+        NSArray *array = @[];
+        ALBRHI_ASSERT([SCIYTRyd parseVotes:text] == nil && [SCIYTRyd parseVotes:array] == nil && [SCIYTRyd parseVotes:nil] == nil, @"wrong shapes");
+        NSDictionary *gone = @{@"likes": @5, @"dislikes": @5, @"deleted": @YES};
+        ALBRHI_ASSERT([SCIYTRyd parseVotes:gone] == nil, @"a removed video");
     });
 }

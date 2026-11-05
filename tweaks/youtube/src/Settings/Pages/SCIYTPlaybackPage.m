@@ -186,6 +186,10 @@ static void SCIAskForCap(SCIYTSettingsHostController *host, NSString *key) {
                        detail:SCILocalized(@"overlay_pip_note")
                        symbol:@"pip.enter"
                       prefKey:SCIPrefOverlayPiP],
+            [SCIRow switchRow:SCILocalized(@"overlay_dislikes_title")
+                       detail:SCILocalized(@"overlay_dislikes_note")
+                       symbol:@"hand.thumbsdown"
+                      prefKey:SCIPrefOverlayDislikes],
         ];
 
         // The experimental section is gone, and deliberately not left switched off.

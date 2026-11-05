@@ -1,3 +1,5 @@
+#import "SCIYTRyd.h"
+#import "../../UI/SCIYTWindow.h"
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import "shared/src/SCIResponder.h"
@@ -72,6 +74,7 @@ static char kSCIOverlayJoined;
 static char kSCIOverlayExtras;
 static const NSInteger SCIOverlayQualityTag = 0x5C10B9;
 static const NSInteger SCIOverlayPiPTag     = 0x5C10BA;
+static const NSInteger SCIOverlayRydTag     = 0x5C10BB;
 
 /// Every quality button that exists, held weakly, so a choice made in the quality sheet can retitle all of them without an observer
 /// per overlay that would have to be removed again.
@@ -109,7 +112,7 @@ static const NSInteger SCIEndTimeTag       = 0x5C10B8;
 /// Whether a view is one of the buttons this file added. The neighbour search below must never measure them: it would take its own
 /// button for the control it is meant to sit beside, and the button would walk.
 static BOOL SCIIsOurs(UIView *view) {
-    return view.tag == SCIOverlayButtonTag || view.tag == SCIOverlayQualityTag || view.tag == SCIOverlayPiPTag;
+    return view.tag == SCIOverlayButtonTag || view.tag == SCIOverlayQualityTag || view.tag == SCIOverlayPiPTag || view.tag == SCIOverlayRydTag;
 }
 
 /// The clock time a video ends at, from now plus what is left of it.
@@ -446,7 +449,9 @@ static UIButton *SCIMakeTopButton(YTMainAppControlsOverlayView *overlay, UIImage
 }
 
 /// Builds the extras once for this overlay, for whichever of the two switches was on at that moment.
-static void SCIBuildExtraButtons(YTMainAppControlsOverlayView *overlay, BOOL quality, BOOL pip) {
+static NSHashTable<UIButton *> *sciRydButtons = nil;
+
+static void SCIBuildExtraButtons(YTMainAppControlsOverlayView *overlay, BOOL quality, BOOL pip, BOOL dislikes) {
     NSMutableArray<UIButton *> *extras = [NSMutableArray array];
 
     if (quality) {
@@ -462,6 +467,22 @@ static void SCIBuildExtraButtons(YTMainAppControlsOverlayView *overlay, BOOL qua
         UIImage *icon = [UIImage systemImageNamed:@"pip.enter"] ?: [UIImage systemImageNamed:@"rectangle.on.rectangle"];
         [extras addObject:SCIMakeTopButton(overlay, icon, nil, SCILocalized(@"overlay_pip"), SCIOverlayPiPTag, @selector(sciPiPTapped:))];
         sciPiPMade++;
+    }
+
+    if (dislikes) {
+        // Return YouTube Dislike's count for the video on screen, as the label of a top-row button (the same
+        // construction as the quality label). Tapping it says likes, dislikes, rating and views.
+        UIButton *button = SCIMakeTopButton(overlay, nil, [SCIYTRyd buttonTitle], SCILocalized(@"overlay_dislikes"), SCIOverlayRydTag, @selector(sciRydTapped:));
+        static dispatch_once_t once;
+        dispatch_once(&once, ^{
+            sciRydButtons = [NSHashTable weakObjectsHashTable];
+            [[NSNotificationCenter defaultCenter] addObserverForName:SCIYTRydDidChangeNotification object:nil queue:[NSOperationQueue mainQueue]
+                                                          usingBlock:^(__unused NSNotification *note) {
+                for (UIButton *b in sciRydButtons.allObjects) [b setTitle:[SCIYTRyd buttonTitle] forState:UIControlStateNormal];
+            }];
+        });
+        [sciRydButtons addObject:button];
+        [extras addObject:button];
     }
 
     objc_setAssociatedObject(overlay, &kSCIOverlayExtras, extras, OBJC_ASSOCIATION_RETAIN);
@@ -494,7 +515,8 @@ static void SCIBuildExtraButtons(YTMainAppControlsOverlayView *overlay, BOOL qua
     BOOL wantSave = SCIPrefEnabled(SCIPrefOverlayButton);
     BOOL wantQuality = SCIPrefEnabled(SCIPrefOverlayQuality);
     BOOL wantPiP = SCIPrefEnabled(SCIPrefOverlayPiP);
-    if (!wantSave && !wantQuality && !wantPiP) return controls;
+    BOOL wantDislikes = SCIPrefEnabled(SCIPrefOverlayDislikes);
+    if (!wantSave && !wantQuality && !wantPiP && !wantDislikes) return controls;
 
     @try {
         UIButton *save = objc_getAssociatedObject(self, &kSCIOverlaySaveButton);
@@ -595,7 +617,7 @@ static void SCIBuildExtraButtons(YTMainAppControlsOverlayView *overlay, BOOL qua
         // The two extras, once, next to the save button. They are built from the same hook, on the same moment and in the same way,
         // so a build where the save button attaches is a build where these attach.
         if (!extrasBuilt) {
-            SCIBuildExtraButtons(self, wantQuality, wantPiP);
+            SCIBuildExtraButtons(self, wantQuality, wantPiP, wantDislikes);
             SCISyncSaveButton(self, NO);
         }
 
@@ -701,6 +723,16 @@ static void SCIBuildExtraButtons(YTMainAppControlsOverlayView *overlay, BOOL qua
     if ([delegate respondsToSelector:@selector(didPressVideoQuality:)]) {
         ((void (*)(id, SEL, id))objc_msgSend)(delegate, @selector(didPressVideoQuality:), sender);
     }
+}
+
+%new(v@:@)
+- (void)sciRydTapped:(UIButton *)sender {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:SCILocalized(@"overlay_dislikes")
+                                                                    message:[SCIYTRyd summary]
+                                                             preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:SCILocalized(@"ok") style:UIAlertActionStyleDefault handler:nil]];
+    UIViewController *top = SCIYTTopViewController();
+    [top presentViewController:alert animated:YES completion:nil];
 }
 
 %new(v@:@)

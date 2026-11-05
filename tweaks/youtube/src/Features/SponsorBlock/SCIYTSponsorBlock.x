@@ -5,6 +5,7 @@
 #import "../../SCIYTLaunchGuard.h"
 #import "../../Localization/SCILocalize.h"
 #import "SCIYTSponsorClient.h"
+#import "../Interface/SCIYTRyd.h"
 #import "../Download/SCIYTPlayerStreams.h"
 #import "../../Diagnostics/SCIYTDiagnostics.h"
 #import <objc/runtime.h>
@@ -425,6 +426,14 @@ static void SCIDrawMarkers(UIView *bar, double barTotalTime) {
            didActivateVideo:(id)video
            withPlaybackData:(id)playbackData {
     %orig;
+
+    // Return YouTube Dislike's figures follow the video that became active. Before the SponsorBlock gate: it
+    // is a different switch, and asking is off unless that one is on.
+    if (SCIPrefEnabled(SCIPrefOverlayDislikes)) {
+        NSString *rydID = SCIVideoIDFrom(video);
+        if (!rydID.length) rydID = SCIVideoIDFrom(self);
+        [SCIYTRyd videoActivated:rydID];
+    }
 
     if (!SCIPrefEnabled(SCIPrefSponsorBlock)) return;
 

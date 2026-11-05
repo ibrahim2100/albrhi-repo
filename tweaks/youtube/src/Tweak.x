@@ -7,7 +7,7 @@
 #import "Diagnostics/SCIYTDiagnostics.h"
 #import "Features/Display/SCIYTDimmer.h"
 
-NSString *SCIVersionString = @"v1.49.0";  // AlbrhiYT
+NSString *SCIVersionString = @"v1.49.1";  // AlbrhiYT
 
 ///
 /// Capture, so the diagnostics page has something true to report.
@@ -181,6 +181,7 @@ NSString *SCIVersionString = @"v1.49.0";  // AlbrhiYT
         SCIPrefOverlayEndTime: @NO,
         SCIPrefOverlayQuality: @NO,
         SCIPrefOverlayPiP: @NO,
+        SCIPrefOverlayDislikes: @NO,
 
         // Fullscreen direction: off, meaning YouTube keeps deciding from how the phone is
         // held. Forcing a side for everybody would be wrong for anybody who holds it the
