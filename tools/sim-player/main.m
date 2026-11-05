@@ -226,6 +226,8 @@ static void SCIAfter(double seconds, void (^block)(void)) {
     // -nextcheck: after 13 s of the first track, press Next; the next one must start near its own beginning,
     // not at the 13 s the last one reached.
     if ([d boolForKey:@"nextcheck"]) {
+        for (SCIYTJob *j in jobs) j.position = 95;       // what the old bug left on every track
+        ((SCIYTJob *)jobs[1]).duration = 90; ((SCIYTJob *)jobs[2]).duration = 120;
         SCIAfter(13, ^{ [[SCIYTPlayer current] performSelector:NSSelectorFromString(@"next")]; });
         SCIAfter(15.5, ^{ NSLog(@"[NEXTCHECK] now %@ at %.1f s of %.1f (fraction %.3f)", [SCIYTPlayer nowPlaying].title, [SCIYTPlayer progress] * [SCIYTPlayer nowPlaying].duration, [SCIYTPlayer nowPlaying].duration, [SCIYTPlayer progress]); });
         SCIAfter(18, ^{ [[SCIYTPlayer current] performSelector:NSSelectorFromString(@"next")]; });
