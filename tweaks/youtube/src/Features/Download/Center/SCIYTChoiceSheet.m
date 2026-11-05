@@ -391,6 +391,7 @@ typedef NS_ENUM(NSInteger, SCISheetSection) {
             if ([t[@"id"] isEqualToString:chosen] && ![t[@"default"] boolValue]) {
                 variant.directAudioURL = t[@"url"];
                 variant.directAudioBytes = [t[@"bytes"] longLongValue];
+                variant.soundOnlyTrackID = t[@"id"];
             }
         }
         variant.chosenExtraAudios = @[];

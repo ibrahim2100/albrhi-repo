@@ -1,4 +1,5 @@
 #import "SCIYTJob.h"
+#import "../SCIYTRecipe.h"
 #import "SCIYTLibrary.h"
 #import "../../../Localization/SCILocalize.h"
 
@@ -29,11 +30,16 @@
 - (NSString *)statusLine {
     switch (self.state) {
         case SCIYTJobStateWorking:
+            if (self.waiting) return SCILocalized(@"dl_waiting");
+            if (self.resuming && self.progress <= 0) return SCILocalized(@"dl_resuming");
             return [NSString stringWithFormat:SCILocalized(@"dl_progress_format"),
                     (int)(self.progress * 100)];
 
-        case SCIYTJobStateFailed:
-            return self.failure.length ? self.failure : SCILocalized(@"dl_failed");
+        case SCIYTJobStateFailed: {
+            NSString *why = self.failure.length ? self.failure : SCILocalized(@"dl_failed");
+            // A download that can be asked again says so: the row is the retry button.
+            return self.recipe ? [NSString stringWithFormat:@"%@ · %@", why, SCILocalized(@"dl_tap_retry")] : why;
+        }
 
         case SCIYTJobStateDone: {
             NSString *size = [NSByteCountFormatter stringFromByteCount:self.bytes

@@ -4,6 +4,7 @@
 #import "SCIYTMiniPlayer.h"
 #import "SCIYTPlayer.h"
 #import "SCIYTJob.h"
+#import "SCIYTPlaylistSheet.h"
 #import "../../../Localization/SCILocalize.h"
 
 
@@ -62,11 +63,23 @@
 
     [self buildChipBar];
 
+    // A playlist, downloaded whole: its own button, because the video's download button
+    // belongs to a video and a playlist is not one.
+    UIBarButtonItem *playlist =
+        [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"text.badge.plus"]
+                                         style:UIBarButtonItemStylePlain
+                                        target:self
+                                        action:@selector(addPlaylist)];
+    playlist.accessibilityLabel = SCILocalized(@"pl_title");
+
     if (self.dismissable) {
-        self.navigationItem.rightBarButtonItem =
-            [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
-                                                           target:self
-                                                           action:@selector(close)];
+        self.navigationItem.rightBarButtonItems =
+            @[[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
+                                                             target:self
+                                                             action:@selector(close)],
+              playlist];
+    } else {
+        self.navigationItem.rightBarButtonItem = playlist;
     }
 
     [self buildMiniPlayer];
@@ -77,6 +90,10 @@
 /// are: a capsule each, dim and grey until picked, solid white with black text once it
 /// is -- not this tweak's accent colour standing in for a selection, but the same colour
 /// switch the real filter row already makes.
+- (void)addPlaylist {
+    [SCIYTPlaylistSheet presentFrom:self];
+}
+
 - (void)buildChipBar {
     self.chipBar = [[UIView alloc] init];
     self.chipBar.translatesAutoresizingMaskIntoConstraints = NO;

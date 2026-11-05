@@ -48,6 +48,17 @@ static const NSUInteger kSCIAttempts = 3;
 @property (nonatomic) NSUInteger completed;
 @property (nonatomic) BOOL finished;
 
+/// Which attempt at this run these tasks belong to. A run restarted under the same identifier
+/// (a download resumed after the app was closed) must not hear from the tasks of the attempt
+/// it replaced: they are cancelled, and their cancellation would otherwise look like a failure.
+@property (nonatomic, copy) NSString *generation;
+
+/// Whether the parts are kept on failure, for a later resume. A persistent run's folder is the
+/// only record of what has already arrived, so a failure leaves it alone; the owner of the run
+/// removes it when the job is finished or abandoned.
+@property (nonatomic) BOOL persistent;
+@property (nonatomic, strong) NSArray<NSNumber *> *sizes;
+
 @property (nonatomic, copy) void (^progress)(double);
 @property (nonatomic, copy) void (^completion)(NSArray<NSURL *> *, NSURL *, NSString *);
 @end
@@ -103,12 +114,21 @@ static dispatch_queue_t sciLock = nil;
 /// half-written video looking finished, and the case it buys -- force-quitting the app you
 /// are downloading in -- is not the one anybody complained about.
 ///
+static BOOL sciForegroundForHarness = NO;
+
+/// For the simulator harness only: the simulator has no `nsurlsessiond`, so a background session
+/// cannot be made there at all. An ordinary session answers through the same delegate, which is
+/// enough to test what the parts fetcher itself decides -- what is kept, what is fetched again.
+/// It does not test the system delivering parts while the app is dead; that needs a device.
++ (void)useForegroundSessionForHarness { sciForegroundForHarness = YES; }
+
 + (NSURLSession *)session {
     static NSURLSession *session = nil;
     static dispatch_once_t once;
     dispatch_once(&once, ^{
-        NSURLSessionConfiguration *configuration =
-            [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:
+        NSURLSessionConfiguration *configuration = sciForegroundForHarness
+            ? [NSURLSessionConfiguration defaultSessionConfiguration]
+            : [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:
                 @"com.albrhi.youtube.downloads"];
 
         // Enough for the parts in flight and no more.
@@ -128,7 +148,35 @@ static dispatch_queue_t sciLock = nil;
     return session;
 }
 
++ (NSURL *)resumableRoot {
+    static NSURL *root = nil;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        NSURL *support = [[[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory
+                                                                  inDomains:NSUserDomainMask] firstObject];
+        root = [support URLByAppendingPathComponent:@"AlbrhiPartial" isDirectory:YES];
+        [[NSFileManager defaultManager] createDirectoryAtURL:root withIntermediateDirectories:YES attributes:nil error:nil];
+
+        // Not part of a backup: it is a cache of bytes that can be fetched again, and a phone
+        // backing up half a video helps nobody.
+        [root setResourceValue:@YES forKey:NSURLIsExcludedFromBackupKey error:nil];
+    });
+    return root;
+}
+
++ (NSURL *)folderForRun:(NSString *)identifier {
+    return [[self resumableRoot] URLByAppendingPathComponent:identifier isDirectory:YES];
+}
+
 + (void)fetch:(NSArray<NSString *> *)addresses
+     progress:(void (^)(double))progress
+   completion:(void (^)(NSArray<NSURL *> *, NSURL *, NSString *))completion {
+    [self fetch:addresses sizes:nil runIdentifier:nil progress:progress completion:completion];
+}
+
++ (void)fetch:(NSArray<NSString *> *)addresses
+        sizes:(NSArray<NSNumber *> *)sizes
+runIdentifier:(NSString *)persistentIdentifier
      progress:(void (^)(double))progress
    completion:(void (^)(NSArray<NSURL *> *, NSURL *, NSString *))completion {
 
@@ -137,9 +185,10 @@ static dispatch_queue_t sciLock = nil;
         return;
     }
 
-    NSString *identifier = [[NSUUID UUID] UUIDString];
-    NSURL *folder = [NSURL fileURLWithPath:
-        [NSTemporaryDirectory() stringByAppendingPathComponent:identifier]];
+    BOOL persistent = persistentIdentifier.length > 0;
+    NSString *identifier = persistent ? persistentIdentifier : [[NSUUID UUID] UUIDString];
+    NSURL *folder = persistent ? [self folderForRun:identifier]
+                               : [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:identifier]];
 
     NSError *error = nil;
     [[NSFileManager defaultManager] createDirectoryAtURL:folder
@@ -159,6 +208,9 @@ static dispatch_queue_t sciLock = nil;
     run.attempts = [NSMutableDictionary dictionary];
     run.progress = progress;
     run.completion = completion;
+    run.persistent = persistent;
+    run.sizes = (sizes.count == addresses.count) ? sizes : nil;
+    run.generation = [[[NSUUID UUID] UUIDString] substringToIndex:8];
 
     // Filled with placeholders so a part can be written at its own index whenever it lands.
     // This is the ordering guarantee in one line: the slot is decided before the request is
@@ -166,9 +218,36 @@ static dispatch_queue_t sciLock = nil;
     for (NSUInteger i = 0; i < addresses.count; i++) [run.files addObject:[NSNull null]];
 
     dispatch_async(sciLock, ^{
+        // What already arrived, on an earlier attempt or while the app was closed. A part counts
+        // only when it is there *and* the right size: a rename into place is atomic, but a size
+        // that disagrees with the plan means the plan changed under it, and bytes of the wrong
+        // plan are worse than bytes not yet fetched.
+        if (persistent) {
+            for (NSUInteger i = 0; i < addresses.count; i++) {
+                NSURL *file = [SCIYTParts partFile:i inFolder:folder];
+                NSDictionary *attributes = [[NSFileManager defaultManager] attributesOfItemAtPath:file.path error:nil];
+                if (!attributes) continue;
+
+                BOOL right = !run.sizes || [attributes fileSize] == (unsigned long long)[run.sizes[i] longLongValue];
+                if (right) { run.files[i] = file; run.completed += 1; }
+                else [[NSFileManager defaultManager] removeItemAtURL:file error:nil];
+            }
+        }
+
+        // A run restarted under the same name replaces the tasks of the one before it.
+        if (persistent) [SCIYTParts cancelSystemTasksOfRun:identifier];
+
         sciRuns[identifier] = run;
 
+        if (run.completed >= addresses.count) { [SCIYTParts finishRun:run]; return; }
+
+        if (run.progress && run.completed) {
+            double fraction = (double)run.completed / (double)addresses.count;
+            dispatch_async(dispatch_get_main_queue(), ^{ run.progress(fraction); });
+        }
+
         for (NSUInteger i = 0; i < addresses.count; i++) {
+            if (![run.files[i] isKindOfClass:[NSNull class]]) continue;
             [self startPart:i of:run];
         }
     });
@@ -186,18 +265,68 @@ static dispatch_queue_t sciLock = nil;
     // The run and the slot, on the task itself. A background session hands its tasks back
     // through a delegate with no context of ours attached, so the only way to know what a
     // finished file is *for* is to have written it on the task when it was made.
-    task.taskDescription = [NSString stringWithFormat:@"%@|%lu",
-                            run.identifier, (unsigned long)index];
+    task.taskDescription = [NSString stringWithFormat:@"%@|%lu|%@",
+                            run.identifier, (unsigned long)index, run.generation];
     [task resume];
 }
 
 /// Reads the run and slot back off a task.
 + (SCIYTPartsRun *)runForTask:(NSURLSessionTask *)task index:(NSUInteger *)indexOut {
     NSArray<NSString *> *parts = [task.taskDescription componentsSeparatedByString:@"|"];
-    if (parts.count != 2) return nil;
+    if (parts.count != 3) return nil;
 
     *indexOut = (NSUInteger)[parts[1] integerValue];
-    return sciRuns[parts[0]];
+    SCIYTPartsRun *run = sciRuns[parts[0]];
+
+    // A task of an attempt that has been replaced is not this run's to count.
+    return (run && [run.generation isEqualToString:parts[2]]) ? run : nil;
+}
+
++ (NSURL *)partFile:(NSUInteger)index inFolder:(NSURL *)folder {
+    // Zero padded, because part 10 sorts before part 9 as text and the join reads names.
+    return [folder URLByAppendingPathComponent:[NSString stringWithFormat:@"%06lu.part", (unsigned long)index]];
+}
+
+/// Cancels whatever the system is still doing for a run, before it is started again. Their
+/// cancellations arrive carrying the old generation and are ignored.
++ (void)cancelSystemTasksOfRun:(NSString *)identifier {
+    NSString *prefix = [identifier stringByAppendingString:@"|"];
+    [[self session] getTasksWithCompletionHandler:^(NSArray *data, NSArray *uploads, NSArray<NSURLSessionDownloadTask *> *downloads) {
+        for (NSURLSessionDownloadTask *task in downloads) {
+            if ([task.taskDescription hasPrefix:prefix]) [task cancel];
+        }
+    }];
+}
+
+/// Stops a persistent run for good: its tasks, its folder, and its place in memory.
++ (void)abandonRun:(NSString *)identifier {
+    if (!identifier.length) return;
+    dispatch_async(sciLock, ^{
+        SCIYTPartsRun *run = sciRuns[identifier];
+        if (run) { run.finished = YES; [sciRuns removeObjectForKey:identifier]; }
+        [SCIYTParts cancelSystemTasksOfRun:identifier];
+        [[NSFileManager defaultManager] removeItemAtURL:[SCIYTParts folderForRun:identifier] error:nil];
+    });
+}
+
+/// What of a run is on disk, in parts and bytes -- for a row that says "resuming".
++ (NSUInteger)partsOnDiskForRun:(NSString *)identifier {
+    NSArray *names = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:[self folderForRun:identifier].path error:nil];
+    NSUInteger n = 0;
+    for (NSString *name in names) if ([name hasSuffix:@".part"]) n++;
+    return n;
+}
+
+/// Ends a run whose parts are all present. Called on the run's queue.
++ (void)finishRun:(SCIYTPartsRun *)run {
+    if (run.finished) return;
+    run.finished = YES;
+    [sciRuns removeObjectForKey:run.identifier];
+
+    NSArray<NSURL *> *ordered = [run.files copy];
+    NSURL *folder = run.folder;
+    void (^done)(NSArray<NSURL *> *, NSURL *, NSString *) = run.completion;
+    if (done) dispatch_async(dispatch_get_main_queue(), ^{ done(ordered, folder, nil); });
 }
 
 /// Ends a run once, and clears up. Called on the run's queue.
@@ -206,7 +335,10 @@ static dispatch_queue_t sciLock = nil;
     run.finished = YES;
 
     [sciRuns removeObjectForKey:run.identifier];
-    [[NSFileManager defaultManager] removeItemAtURL:run.folder error:nil];
+
+    // A persistent run's parts are what a retry resumes from, so they stay.
+    if (!run.persistent) [[NSFileManager defaultManager] removeItemAtURL:run.folder error:nil];
+    else [SCIYTParts cancelSystemTasksOfRun:run.identifier];
 
     void (^done)(NSArray<NSURL *> *, NSURL *, NSString *) = run.completion;
     if (done) dispatch_async(dispatch_get_main_queue(), ^{ done(nil, nil, message); });
@@ -229,18 +361,27 @@ didFinishDownloadingToURL:(NSURL *)location {
         NSUInteger index = 0;
         SCIYTPartsRun *run = [SCIYTParts runForTask:task index:&index];
 
-        // A part for a run nobody remembers -- the app was killed and relaunched to be told
-        // about it. Nothing sensible can be done with one part of a video whose other
-        // ninety are gone, so it goes, and the sweep clears the folder it belonged to.
+        // A part for a run nobody is running -- the app was closed and relaunched to be told
+        // about it, or the attempt it belonged to was replaced. If it belongs to a download that
+        // can be resumed its folder exists, and the part is filed there: the next attempt then
+        // finds it already fetched. Anything else has nowhere to go.
         if (!run || run.finished || index >= run.addresses.count) {
+            NSArray<NSString *> *fields = [task.taskDescription componentsSeparatedByString:@"|"];
+            NSURL *folder = (fields.count == 3 && [fields[0] length]) ? [SCIYTParts folderForRun:fields[0]] : nil;
+            BOOL isDirectory = NO;
+            if (folder && [[NSFileManager defaultManager] fileExistsAtPath:folder.path isDirectory:&isDirectory] && isDirectory) {
+                NSURL *target = [SCIYTParts partFile:(NSUInteger)[fields[1] integerValue] inFolder:folder];
+                if (![[NSFileManager defaultManager] fileExistsAtPath:target.path]) {
+                    [[NSFileManager defaultManager] moveItemAtURL:staged toURL:target error:nil];
+                    return;
+                }
+            }
             [[NSFileManager defaultManager] removeItemAtURL:staged error:nil];
             return;
         }
 
-        NSURL *file = [run.folder URLByAppendingPathComponent:
-            [NSString stringWithFormat:@"%06lu.part", (unsigned long)index]];
+        NSURL *file = [SCIYTParts partFile:index inFolder:run.folder];
 
-        // Zero padded, because part 10 sorts before part 9 as text and the join reads names.
         [[NSFileManager defaultManager] removeItemAtURL:file error:nil];
 
         NSError *moveError = nil;
@@ -261,15 +402,7 @@ didFinishDownloadingToURL:(NSURL *)location {
         }
 
         if (run.completed < run.addresses.count) return;
-
-        run.finished = YES;
-        [sciRuns removeObjectForKey:run.identifier];
-
-        NSArray<NSURL *> *ordered = [run.files copy];
-        NSURL *folder = run.folder;
-        void (^done)(NSArray<NSURL *> *, NSURL *, NSString *) = run.completion;
-
-        if (done) dispatch_async(dispatch_get_main_queue(), ^{ done(ordered, folder, nil); });
+        [SCIYTParts finishRun:run];
     });
 }
 
@@ -327,7 +460,7 @@ didCompleteWithError:(NSError *)error {
     NSFileHandle *handle = [NSFileHandle fileHandleForWritingToURL:joined error:nil];
 
     if (!handle) {
-        [[NSFileManager defaultManager] removeItemAtURL:folder error:nil];
+        if (folder) [[NSFileManager defaultManager] removeItemAtURL:folder error:nil];
         return nil;
     }
 
@@ -352,7 +485,10 @@ didCompleteWithError:(NSError *)error {
     }
 
     [handle closeFile];
-    [[NSFileManager defaultManager] removeItemAtURL:folder error:nil];
+
+    // A nil folder is "do not touch it": several joins read one run's parts in turn, and the
+    // first of them removing the folder took the others' parts with it.
+    if (folder) [[NSFileManager defaultManager] removeItemAtURL:folder error:nil];
 
     if (!ok) {
         [[NSFileManager defaultManager] removeItemAtURL:joined error:nil];

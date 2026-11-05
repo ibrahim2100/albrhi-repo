@@ -52,6 +52,21 @@ NS_ASSUME_NONNULL_BEGIN
          subtitles:(NSArray<NSDictionary *> *)subtitles
         completion:(void (^)(NSURL *output, NSString *failure))completion;
 
+/// The same, with tags written into the file: `@{@"title", @"artist", @"artwork": NSData (JPEG)}`,
+/// any of them absent.
++ (void)mergeVideo:(NSURL *)video
+             audio:(NSURL *)audio
+     audioLanguage:(nullable NSString *)audioLanguage
+       extraAudios:(NSArray<NSDictionary *> *)extraAudios
+         subtitles:(NSArray<NSDictionary *> *)subtitles
+              tags:(nullable NSDictionary *)tags
+        completion:(void (^)(NSURL *output, NSString *failure))completion;
+
+/// AAC in a fragmented file, written as an ordinary .m4a, with the tags a music file carries.
++ (void)rewriteAudio:(NSURL *)audio
+                tags:(nullable NSDictionary *)tags
+          completion:(void (^)(NSURL *output, NSString *failure))completion;
+
 /// AAC in a fragmented file, written as an ordinary .m4a.
 + (void)rewriteAudio:(NSURL *)audio
           completion:(void (^)(NSURL *output, NSString *failure))completion;

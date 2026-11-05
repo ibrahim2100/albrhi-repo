@@ -1,6 +1,10 @@
 #import "SCIYTLibrary.h"
 #import "SCIYTNotice.h"
 #import "SCIYTThumbnails.h"
+#import "../SCIYTRecipe.h"
+#import "../SCIYTParts.h"
+#import "../SCIYTDirect.h"
+#import "../../../SCIYTLaunchGuard.h"
 #import "../../../SCILog.h"
 #import "../../../Prefs.h"
 #import "../../../Localization/SCILocalize.h"
@@ -10,8 +14,15 @@
 
 NSNotificationName const SCIYTLibraryDidChangeNotification = @"SCIYTLibraryDidChange";
 
+/// How many downloads run at once before a batch makes the rest wait. Two: a playlist of forty
+/// videos must not open forty sets of connections, and a person's own single download is never
+/// made to wait behind it (it starts at once and merely takes a slot while it runs).
+static const NSInteger kSCIMaxActive = 2;
+
 @interface SCIYTLibrary ()
 @property (nonatomic, strong) NSMutableArray<SCIYTJob *> *store;
+@property (nonatomic, strong) NSMutableArray<SCIYTJob *> *queue;     ///< waiting for a slot, in order
+@property (nonatomic) NSInteger active;
 @end
 
 @implementation SCIYTLibrary
@@ -28,7 +39,9 @@ NSNotificationName const SCIYTLibraryDidChangeNotification = @"SCIYTLibraryDidCh
     if (!self) return nil;
 
     _store = [NSMutableArray array];
+    _queue = [NSMutableArray array];
     [self load];
+    [self loadPending];
     return self;
 }
 
@@ -146,6 +159,92 @@ NSNotificationName const SCIYTLibraryDidChangeNotification = @"SCIYTLibraryDidCh
     });
 }
 
+// MARK: - Unfinished downloads, kept across launches
+
+/// The file that remembers what was asked for and not yet finished. A JSON list of recipes with the
+/// state they reached -- nothing here is bytes; those are the parts under SCIYTParts' own folder.
++ (NSURL *)pendingFile {
+    return [[SCIYTParts resumableRoot] URLByAppendingPathComponent:@"pending.json"];
+}
+
+- (void)persistPending {
+    NSMutableArray<NSDictionary *> *entries = [NSMutableArray array];
+    for (SCIYTJob *job in self.store) {
+        if (job.state == SCIYTJobStateDone || !job.recipe || job.cancelled) continue;
+        [entries addObject:@{
+            @"id": job.identifier,
+            @"recipe": [job.recipe dictionary],
+            @"title": job.title ?: @"",
+            @"quality": job.quality ?: @"",
+            @"created": @(job.createdAt.timeIntervalSince1970),
+            @"failed": @(job.state == SCIYTJobStateFailed),
+            @"failure": job.failure ?: @"",
+        }];
+    }
+
+    NSURL *file = [SCIYTLibrary pendingFile];
+    if (!entries.count) { [[NSFileManager defaultManager] removeItemAtURL:file error:nil]; return; }
+
+    NSData *data = [NSJSONSerialization dataWithJSONObject:entries options:0 error:nil];
+    if (data) [data writeToURL:file atomically:YES];
+}
+
+/// Puts back the downloads the last launch did not finish. The working ones are queued to continue
+/// (see -resumeInterrupted); the failed ones come back as failed rows with their retry intact.
+- (void)loadPending {
+    NSData *data = [NSData dataWithContentsOfURL:[SCIYTLibrary pendingFile]];
+    NSArray *entries = data.length ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+    if (![entries isKindOfClass:[NSArray class]]) return;
+
+    NSUInteger at = 0;
+    for (NSDictionary *entry in entries) {
+        if (![entry isKindOfClass:[NSDictionary class]]) continue;
+        SCIYTRecipe *recipe = [SCIYTRecipe recipeFromDictionary:entry[@"recipe"]];
+        NSString *identifier = entry[@"id"];
+        if (!recipe || ![identifier isKindOfClass:[NSString class]] || !identifier.length) continue;
+
+        SCIYTJob *job = [SCIYTJob jobWithTitle:[entry[@"title"] length] ? entry[@"title"] : recipe.videoID
+                                       quality:[entry[@"quality"] length] ? entry[@"quality"] : nil
+                                          kind:recipe.audioOnly ? SCIYTJobKindAudio : SCIYTJobKindVideo
+                                       videoID:recipe.videoID];
+        job.identifier = identifier;
+        job.isShort = recipe.isShort;
+        job.recipe = recipe;
+        job.createdAt = [NSDate dateWithTimeIntervalSince1970:[entry[@"created"] doubleValue]];
+
+        if ([entry[@"failed"] boolValue]) {
+            job.state = SCIYTJobStateFailed;
+            job.failure = [entry[@"failure"] length] ? entry[@"failure"] : SCILocalized(@"dl_failed");
+        } else {
+            job.state = SCIYTJobStateWorking;
+            job.progress = 0;
+            job.resuming = YES;
+            job.waiting = YES;
+            [self.queue addObject:job];
+        }
+        [self.store insertObject:job atIndex:MIN(at++, self.store.count)];
+    }
+    if (entries.count) SCILogV(@"library: %lu unfinished downloads remembered (%lu to resume)",
+                               (unsigned long)entries.count, (unsigned long)self.queue.count);
+}
+
+/// Continues what the last launch left half done. Called once the app is active; it takes the
+/// running slots in order and the rest wait, exactly like a batch.
+- (void)resumeInterrupted {
+    [self changed];
+    [self pump];
+}
+
+__attribute__((constructor)) static void SCIYTLibraryResumeRegister(void) {
+    SCIYTWhenActive(^{
+        if (![[NSFileManager defaultManager] fileExistsAtPath:[SCIYTLibrary pendingFile].path]) return;
+        // A moment after the app is up -- the launch is not the time to start a dozen requests.
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [[SCIYTLibrary shared] resumeInterrupted];
+        });
+    });
+}
+
 // MARK: - Running one
 
 - (SCIYTJob *)startVariant:(SCIHLSVariant *)variant
@@ -159,8 +258,128 @@ NSNotificationName const SCIYTLibraryDidChangeNotification = @"SCIYTLibraryDidCh
 
     SCIYTJob *job = [SCIYTJob jobWithTitle:title quality:quality kind:kind videoID:videoID];
     job.isShort = isShort;
+
+    // A direct-route download can be asked again later, so what it was asked for is kept and its
+    // parts are fetched under a name that outlives this process. A playlist-route one cannot.
+    NSString *recipeID = variant.directVideoID.length ? variant.directVideoID : videoID;
+    if ((variant.directVideoURL.length || variant.directAudioURL.length) && recipeID.length) {
+        variant.resumeKey = job.identifier;
+        job.recipe = [SCIYTRecipe recipeForVariant:variant audioOnly:(kind == SCIYTJobKindAudio)
+                                             title:title videoID:recipeID isShort:isShort];
+    }
+
     [self.store insertObject:job atIndex:0];
+    job.counted = YES;
+    self.active += 1;
+    [self persistPending];
     [self changed];
+
+    [self runJob:job variant:variant];
+    return job;
+}
+
+/// Starts batches in order, as slots free up.
+- (void)pump {
+    while (self.active < kSCIMaxActive && self.queue.count) {
+        SCIYTJob *job = self.queue.firstObject;
+        [self.queue removeObjectAtIndex:0];
+        if (job.cancelled) continue;
+
+        job.waiting = NO;
+        job.counted = YES;
+        self.active += 1;
+        [self changed];
+        [self launchRecipeJob:job];
+    }
+}
+
+- (NSArray<SCIYTJob *> *)enqueueRecipes:(NSArray<SCIYTRecipe *> *)recipes {
+    NSMutableArray<SCIYTJob *> *made = [NSMutableArray array];
+    NSUInteger at = 0;
+    for (SCIYTRecipe *recipe in recipes) {
+        SCIYTJob *job = [SCIYTJob jobWithTitle:recipe.title.length ? recipe.title : recipe.videoID
+                                       quality:nil
+                                          kind:recipe.audioOnly ? SCIYTJobKindAudio : SCIYTJobKindVideo
+                                       videoID:recipe.videoID];
+        job.isShort = recipe.isShort;
+        job.recipe = recipe;
+        job.waiting = YES;
+
+        // In the order given, at the top: a playlist reads as a playlist.
+        [self.store insertObject:job atIndex:at++];
+        [self.queue addObject:job];
+        [made addObject:job];
+    }
+    [self persistPending];
+    [self changed];
+    [self pump];
+    return made;
+}
+
+/// Asks YouTube for fresh addresses and makes the recipe's choice again among them, then fetches
+/// whatever has not arrived. What it asked for before is a choice, not a link: links expire.
+- (void)launchRecipeJob:(SCIYTJob *)job {
+    SCIYTRecipe *recipe = job.recipe;
+    __weak __typeof(self) weakSelf = self;
+
+    [SCIYTDirect variantsForVideo:recipe.videoID completion:^(NSArray<SCIHLSVariant *> *variants, NSString *failure) {
+        __typeof(self) strongSelf = weakSelf;
+        if (!strongSelf || job.cancelled) return;
+
+        SCIHLSVariant *variant = [recipe pickFrom:variants];
+        if (!variant) {
+            [strongSelf failJob:job reason:failure.length ? failure : SCILocalized(@"dl_why_no_data")];
+            return;
+        }
+
+        [recipe applyTo:variant];
+        variant.resumeKey = job.identifier;
+
+        job.quality = recipe.audioOnly ? SCILocalized(@"dl_kind_audio") : [variant label];
+        if ((!job.title.length || [job.title isEqualToString:recipe.videoID]) && variant.directTitle.length) {
+            job.title = variant.directTitle;
+            recipe.title = variant.directTitle;
+        }
+        [strongSelf persistPending];
+        [strongSelf changed];
+        [strongSelf runJob:job variant:variant];
+    }];
+}
+
+- (void)retry:(SCIYTJob *)job {
+    if (job.state != SCIYTJobStateFailed || !job.recipe || job.cancelled) return;
+    job.state = SCIYTJobStateWorking;
+    job.failure = nil;
+    job.progress = 0;
+    job.resuming = YES;
+    job.waiting = YES;
+    [self.queue addObject:job];
+    [self persistPending];
+    [self changed];
+    [self pump];
+}
+
+/// A download ends, one way or the other, exactly once: its slot is freed and the next waits no more.
+- (void)settle:(SCIYTJob *)job {
+    if (job.counted) { job.counted = NO; self.active = MAX(0, self.active - 1); }
+    [self persistPending];
+    [self pump];
+}
+
+- (void)failJob:(SCIYTJob *)job reason:(NSString *)reason {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (job.cancelled) return;
+        job.state = SCIYTJobStateFailed;
+        job.failure = reason.length ? reason : SCILocalized(@"dl_failed");
+        job.waiting = NO;
+        [self settle:job];
+        [self changed];
+        [SCIYTNotice announceFailed:job reason:reason];
+    });
+}
+
+- (void)runJob:(SCIYTJob *)job variant:(SCIHLSVariant *)variant {
+    SCIYTJobKind kind = job.kind;
 
     // Progress is throttled to whole percents. A playlist of two hundred parts posts two
     // hundred notifications otherwise, each one reloading a table that has not changed
@@ -168,21 +387,23 @@ NSNotificationName const SCIYTLibraryDidChangeNotification = @"SCIYTLibraryDidCh
     __block int lastShown = -1;
 
     void (^onProgress)(double) = ^(double fraction) {
+        if (job.cancelled) return;
         int percent = (int)(fraction * 100);
         job.progress = fraction;
+        if (fraction > 0) job.resuming = NO;
         if (percent == lastShown) return;
         lastShown = percent;
         [self changed];
     };
 
     void (^onDone)(NSURL *, NSString *) = ^(NSURL *file, NSString *failure) {
+        if (job.cancelled) {
+            if (file) [[NSFileManager defaultManager] removeItemAtURL:file error:nil];
+            return;
+        }
+
         if (!file) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                job.state = SCIYTJobStateFailed;
-                job.failure = failure ?: SCILocalized(@"dl_failed");
-                [self changed];
-                [SCIYTNotice announceFailed:job reason:failure];
-            });
+            [self failJob:job reason:failure];
             return;
         }
 
@@ -204,13 +425,21 @@ NSNotificationName const SCIYTLibraryDidChangeNotification = @"SCIYTLibraryDidCh
                 hold = UIBackgroundTaskInvalid;
             }];
 
-        [self adopt:file for:job];
-        [SCIYTNotice announceFinished:job];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self adopt:file for:job];
 
-        if (hold != UIBackgroundTaskInvalid) {
-            [app endBackgroundTask:hold];
-            hold = UIBackgroundTaskInvalid;
-        }
+            // Finished: nothing left to resume, and nothing of its parts left on disk.
+            job.recipe = nil;
+            [SCIYTParts abandonRun:job.identifier];
+            [self settle:job];
+
+            [SCIYTNotice announceFinished:job];
+
+            if (hold != UIBackgroundTaskInvalid) {
+                [app endBackgroundTask:hold];
+                hold = UIBackgroundTaskInvalid;
+            }
+        });
     };
 
     if (kind == SCIYTJobKindAudio) {
@@ -218,8 +447,6 @@ NSNotificationName const SCIYTLibraryDidChangeNotification = @"SCIYTLibraryDidCh
     } else {
         [SCIYTHLS downloadVariant:variant progress:onProgress completion:onDone];
     }
-
-    return job;
 }
 
 /// Moves a finished file into the library folder under a name a person can read.
@@ -388,7 +615,16 @@ NSNotificationName const SCIYTLibraryDidChangeNotification = @"SCIYTLibraryDidCh
     NSURL *file = [job fileURL];
     if (file) [[NSFileManager defaultManager] removeItemAtURL:file error:nil];
 
+    // A download that is still running is cancelled for real: its tasks stop, what it fetched is
+    // deleted, and anything it still reports is ignored.
+    if (job.state != SCIYTJobStateDone) {
+        job.cancelled = YES;
+        [self.queue removeObject:job];
+        [SCIYTParts abandonRun:job.identifier];
+    }
+
     [self.store removeObject:job];
+    [self settle:job];
     [self save];
     [self changed];
 }

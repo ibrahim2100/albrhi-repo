@@ -38,11 +38,14 @@ xcrun clang \
   -Wno-deprecated-declarations -Wno-unguarded-availability-new \
   -target arm64-apple-ios16.0-macabi -isysroot "$SDK" \
   -iframework "$IOS_FW" -F "$IOS_FW" \
-  -I src -I src/Features/Download -I tests/host -I "$OUT" \
+  -I src -I src/Features/Download -I ../.. -I tests/host -I "$OUT" \
   -DALBRHI_HOST_TESTS=1 \
   -framework Foundation -framework UIKit -framework AVFoundation -framework CoreMedia -framework CoreVideo -framework UniformTypeIdentifiers \
   src/Features/Download/SCIYTTransport.m \
   src/Features/Download/SCIYTSubtitles.m \
+  src/Features/Download/SCIYTRecipe.m \
+  src/Features/Download/SCIYTPlaylist.m \
+  src/Features/Download/SCIYTParts.m \
   src/Features/Download/SCIYTFragments.m \
   src/Localization/SCILocalize.m \
   tests/host/*.m \

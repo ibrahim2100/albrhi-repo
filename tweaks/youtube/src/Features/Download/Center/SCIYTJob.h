@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+@class SCIYTRecipe;
+
 NS_ASSUME_NONNULL_BEGIN
 
 typedef NS_ENUM(NSInteger, SCIYTJobKind) {
@@ -93,6 +95,18 @@ typedef NS_ENUM(NSInteger, SCIYTJobState) {
 /// covering a setting nobody had turned on, a permission iOS had denied, and a host app
 /// that declares no reason to add to the library. Three different fixes, one silence.
 @property (nonatomic, copy, nullable) NSString *exportFailure;
+
+/// What this download was asked to be, when it can be asked again (the direct route). Not coded with
+/// the finished list: the library keeps the unfinished ones' recipes in a file of their own.
+@property (nonatomic, strong, nullable) SCIYTRecipe *recipe;
+
+/// Queued behind other downloads, or picked up again after the app was closed.
+@property (nonatomic) BOOL waiting;
+@property (nonatomic) BOOL resuming;
+
+/// Set when the person removed it while it ran: whatever its tasks still report is ignored.
+@property (nonatomic) BOOL cancelled;
+@property (nonatomic) BOOL counted;      ///< takes one of the library's running slots
 
 + (instancetype)jobWithTitle:(NSString *)title
                      quality:(nullable NSString *)quality

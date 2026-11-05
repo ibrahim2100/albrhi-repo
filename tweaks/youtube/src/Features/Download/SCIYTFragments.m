@@ -525,6 +525,36 @@ static void SCISetInputLanguage(AVAssetWriterInput *input, NSString *tag) {
     @catch (NSException *exception) { SCILogV(@"fragments: language tag %@ refused — %@", tag, exception.reason); }
 }
 
+// MARK: - Tags
+
+/// Title, artist, album and cover as the metadata a file carries. `tags`: `@{@"title", @"artist",
+/// @"artwork": NSData (JPEG)}`, any of them absent. Common identifiers, which AVAssetWriter maps
+/// onto whatever the container uses (the `©nam`, `©ART`, `©alb` and `covr` atoms of an .m4a), so
+/// players that read tags -- Files, VLC, Infuse, a Mac -- show a song and not a random file name.
+static NSArray<AVMetadataItem *> *SCIFMetadata(NSDictionary *tags) {
+    NSMutableArray<AVMetadataItem *> *items = [NSMutableArray array];
+
+    void (^add)(AVMetadataIdentifier, id, NSString *) = ^(AVMetadataIdentifier identifier, id value, NSString *type) {
+        if (!value) return;
+        AVMutableMetadataItem *item = [AVMutableMetadataItem metadataItem];
+        item.identifier = identifier;
+        item.value = value;
+        if (type) item.dataType = type;
+        item.extendedLanguageTag = @"und";
+        [items addObject:item];
+    };
+
+    NSString *title = [tags[@"title"] isKindOfClass:[NSString class]] && [tags[@"title"] length] ? tags[@"title"] : nil;
+    NSString *artist = [tags[@"artist"] isKindOfClass:[NSString class]] && [tags[@"artist"] length] ? tags[@"artist"] : nil;
+    NSData *art = [tags[@"artwork"] isKindOfClass:[NSData class]] && [tags[@"artwork"] length] ? tags[@"artwork"] : nil;
+
+    add(AVMetadataCommonIdentifierTitle, title, (__bridge NSString *)kCMMetadataBaseDataType_UTF8);
+    add(AVMetadataCommonIdentifierArtist, artist, (__bridge NSString *)kCMMetadataBaseDataType_UTF8);
+    add(AVMetadataCommonIdentifierAlbumName, artist, (__bridge NSString *)kCMMetadataBaseDataType_UTF8);
+    add(AVMetadataCommonIdentifierArtwork, art, (__bridge NSString *)kCMMetadataBaseDataType_JPEG);
+    return items;
+}
+
 // MARK: - Alternatives inside one file
 
 /// Marks the sound tracks as alternatives of one another, and the caption tracks too.
@@ -634,6 +664,7 @@ static void SCIFMarkAlternatives(NSURL *url) {
      audioLanguage:(NSString *)audioLanguage
             extras:(NSArray<NSDictionary *> *)extras
          subtitles:(NSArray<NSDictionary *> *)subtitles
+              tags:(NSDictionary *)tags
           fileType:(AVFileType)fileType
          extension:(NSString *)extension
         completion:(void (^)(NSURL *, NSString *))completion {
@@ -722,6 +753,8 @@ static void SCIFMarkAlternatives(NSURL *url) {
     }
 
     writer.shouldOptimizeForNetworkUse = YES;   // index first, so it plays from a share sheet and Photos
+    NSArray<AVMetadataItem *> *tagItems = SCIFMetadata(tags);
+    if (tagItems.count) writer.metadata = tagItems;
     [writer startWriting];
     [writer startSessionAtSourceTime:kCMTimeZero];
 
@@ -846,7 +879,7 @@ static void SCIFMarkAlternatives(NSURL *url) {
           fileType:(AVFileType)fileType
          extension:(NSString *)extension
         completion:(void (^)(NSURL *, NSString *))completion {
-    [self writeVideo:video audio:audio audioLanguage:nil extras:@[] subtitles:@[]
+    [self writeVideo:video audio:audio audioLanguage:nil extras:@[] subtitles:@[] tags:nil
             fileType:fileType extension:extension completion:completion];
 }
 
@@ -885,6 +918,17 @@ static void SCIFMarkAlternatives(NSURL *url) {
        extraAudios:(NSArray<NSDictionary *> *)extraAudios
          subtitles:(NSArray<NSDictionary *> *)subtitles
         completion:(void (^)(NSURL *, NSString *))completion {
+    [self mergeVideo:videoURL audio:audioURL audioLanguage:audioLanguage extraAudios:extraAudios
+           subtitles:subtitles tags:nil completion:completion];
+}
+
++ (void)mergeVideo:(NSURL *)videoURL
+             audio:(NSURL *)audioURL
+     audioLanguage:(NSString *)audioLanguage
+       extraAudios:(NSArray<NSDictionary *> *)extraAudios
+         subtitles:(NSArray<NSDictionary *> *)subtitles
+              tags:(NSDictionary *)tags
+        completion:(void (^)(NSURL *, NSString *))completion {
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
         NSString *why = nil;
         SCIFTrack *video = [self trackFromFile:videoURL failure:&why];
@@ -911,12 +955,16 @@ static void SCIFMarkAlternatives(NSURL *url) {
             [tracks addObject:@{@"track": track, @"lang": extra[@"lang"] ?: @""}];
         }
 
-        [self writeVideo:video audio:audio audioLanguage:audioLanguage extras:tracks subtitles:subtitles
+        [self writeVideo:video audio:audio audioLanguage:audioLanguage extras:tracks subtitles:subtitles tags:tags
                 fileType:AVFileTypeMPEG4 extension:@"mp4" completion:completion];
     });
 }
 
 + (void)rewriteAudio:(NSURL *)audioURL completion:(void (^)(NSURL *, NSString *))completion {
+    [self rewriteAudio:audioURL tags:nil completion:completion];
+}
+
++ (void)rewriteAudio:(NSURL *)audioURL tags:(NSDictionary *)tags completion:(void (^)(NSURL *, NSString *))completion {
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
         NSString *why = nil;
         SCIFTrack *audio = [self trackFromFile:audioURL failure:&why];
@@ -926,7 +974,8 @@ static void SCIFMarkAlternatives(NSURL *url) {
             return;
         }
 
-        [self writeVideo:nil audio:audio fileType:AVFileTypeAppleM4A extension:@"m4a" completion:completion];
+        [self writeVideo:nil audio:audio audioLanguage:nil extras:@[] subtitles:@[] tags:tags
+                fileType:AVFileTypeAppleM4A extension:@"m4a" completion:completion];
     });
 }
 

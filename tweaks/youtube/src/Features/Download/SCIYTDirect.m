@@ -1,4 +1,5 @@
 #import "SCIYTDirect.h"
+#import <ImageIO/ImageIO.h>
 #import "SCIYTFragments.h"
 #import "SCIYTSubtitles.h"
 #import "SCIYTAV1Convert.h"
@@ -291,7 +292,7 @@ static long long SCIDirectNumber(id value) {
 
     if (!videoID.length) { finish(@[], SCILocalized(@"dl_why_no_data")); return; }
 
-    [self askForVideo:videoID attempt:0 completion:^(NSDictionary *streamingData, NSDictionary *captions, NSString *failure) {
+    [self askForVideo:videoID attempt:0 completion:^(NSDictionary *streamingData, NSDictionary *captions, NSDictionary *details, NSString *failure) {
         if (!streamingData) { finish(@[], failure); return; }
 
         NSMutableArray<NSDictionary *> *videos = [NSMutableArray array];
@@ -320,9 +321,13 @@ static long long SCIDirectNumber(id value) {
         // video and not to a quality: other languages of the sound, and the captions.
         NSArray<NSDictionary *> *soundTracks = [self audioTracksFromFormats:streamingData[@"adaptiveFormats"]];
         NSArray<NSDictionary *> *captionTracks = [self captionTracksFromRenderer:captions];
+        NSString *name = [details[@"title"] isKindOfClass:[NSString class]] ? details[@"title"] : nil;
+        NSString *channel = [details[@"author"] isKindOfClass:[NSString class]] ? details[@"author"] : nil;
         for (SCIHLSVariant *variant in variants) {
             variant.directAudioTracks = soundTracks;
             variant.directCaptionTracks = captionTracks;
+            variant.directTitle = name;
+            variant.directAuthor = channel;
         }
         [SCIYTDiagnostics recordStreamAttempt:[NSString stringWithFormat:
             @"direct (%@): %lu sound track(s), %lu caption track(s) offered", videoID,
@@ -339,7 +344,7 @@ static long long SCIDirectNumber(id value) {
 /// One player request. A second attempt takes a fresh visitor id, because a stale one is the
 /// usual reason an otherwise healthy request is turned away.
 + (void)askForVideo:(NSString *)videoID attempt:(NSInteger)attempt
-         completion:(void (^)(NSDictionary *streamingData, NSDictionary *captions, NSString *failure))completion {
+         completion:(void (^)(NSDictionary *streamingData, NSDictionary *captions, NSDictionary *details, NSString *failure))completion {
 
     [self visitorRefreshing:(attempt > 0) completion:^(NSString *visitor) {
         NSDictionary *body = @{@"context": SCIDirectContext(visitor), @"videoId": videoID,
@@ -354,7 +359,9 @@ static long long SCIDirectNumber(id value) {
             NSDictionary *streamingData = json[@"streamingData"];
             if ([streamingData isKindOfClass:[NSDictionary class]] && [streamingData[@"adaptiveFormats"] count]) {
                 NSDictionary *captions = json[@"captions"][@"playerCaptionsTracklistRenderer"];
-                completion(streamingData, [captions isKindOfClass:[NSDictionary class]] ? captions : nil, nil);
+                NSDictionary *details = json[@"videoDetails"];
+                completion(streamingData, [captions isKindOfClass:[NSDictionary class]] ? captions : nil,
+                           [details isKindOfClass:[NSDictionary class]] ? details : nil, nil);
                 return;
             }
 
@@ -367,7 +374,7 @@ static long long SCIDirectNumber(id value) {
                 why = [NSString stringWithFormat:@"%@%@", [s isKindOfClass:[NSString class]] ? s : @"",
                        [r isKindOfClass:[NSString class]] ? [@": " stringByAppendingString:r] : @""];
             }
-            completion(nil, nil, why.length ? why : (error.localizedDescription ?: [NSString stringWithFormat:@"HTTP %ld, no formats", (long)status]));
+            completion(nil, nil, nil, why.length ? why : (error.localizedDescription ?: [NSString stringWithFormat:@"HTTP %ld, no formats", (long)status]));
         }] resume];
     }];
 }
@@ -384,6 +391,16 @@ static NSArray<NSString *> *SCIDirectChunks(NSString *url, long long bytes) {
     return list;
 }
 
+/// How many bytes each of those chunks is, in the same order -- what a resumed download checks the
+/// parts already on disk against.
+static NSArray<NSNumber *> *SCIDirectChunkSizes(long long bytes) {
+    NSMutableArray *list = [NSMutableArray array];
+    for (long long start = 0; start < bytes; start += kSCIDirectChunk) {
+        [list addObject:@(MIN(start + kSCIDirectChunk, bytes) - start)];
+    }
+    return list;
+}
+
 static long long SCIDirectFileSize(NSURL *file) {
     return [[[NSFileManager defaultManager] attributesOfItemAtPath:file.path error:nil] fileSize];
 }
@@ -394,6 +411,7 @@ static long long SCIDirectFileSize(NSURL *file) {
 + (void)fetchVideoURL:(NSString *)videoURL videoBytes:(long long)videoBytes
              audioURL:(NSString *)audioURL audioBytes:(long long)audioBytes
                extras:(NSArray<NSDictionary *> *)extras
+            resumeKey:(NSString *)resumeKey
              progress:(void (^)(double))progress
            completion:(void (^)(NSURL *video, NSURL *audio, NSArray<NSURL *> *extraFiles, NSString *failure))completion {
 
@@ -405,38 +423,49 @@ static long long SCIDirectFileSize(NSURL *file) {
     NSMutableArray<NSArray<NSString *> *> *extraChunks = [NSMutableArray array];
     NSMutableArray<NSString *> *all = [NSMutableArray arrayWithArray:videoChunks];
     [all addObjectsFromArray:audioChunks];
+
+    // The expected size of every part, in the same order: what a resumed run compares the parts
+    // already on disk with, so bytes from a different plan are not mistaken for this one's.
+    NSMutableArray<NSNumber *> *sizes = [NSMutableArray array];
+    if (videoURL) [sizes addObjectsFromArray:SCIDirectChunkSizes(videoBytes)];
+    [sizes addObjectsFromArray:SCIDirectChunkSizes(audioBytes)];
     for (NSDictionary *extra in extras) {
         NSArray<NSString *> *chunks = SCIDirectChunks(extra[@"url"], [extra[@"bytes"] longLongValue]);
         [extraChunks addObject:chunks];
         [all addObjectsFromArray:chunks];
+        [sizes addObjectsFromArray:SCIDirectChunkSizes([extra[@"bytes"] longLongValue])];
     }
 
-    [SCIYTParts fetch:all progress:progress completion:^(NSArray<NSURL *> *ordered, NSURL *folder, NSString *error) {
+    [SCIYTParts fetch:all sizes:sizes runIdentifier:resumeKey progress:progress completion:^(NSArray<NSURL *> *ordered, NSURL *folder, NSString *error) {
         if (!ordered) { completion(nil, nil, nil, error ?: SCILocalized(@"dl_failed")); return; }
 
         // Joining reads every part back, which is real work for a long video; off the main queue.
         dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
-            NSURL *unused = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]]];
             NSURL *video = nil, *audio = nil;
             NSMutableArray<NSURL *> *extraFiles = [NSMutableArray array];
             NSUInteger at = 0;
 
             if (videoChunks.count) {
                 video = [SCIYTParts join:[ordered subarrayWithRange:NSMakeRange(at, videoChunks.count)]
-                               extension:@"mp4" folder:unused];
+                               extension:@"mp4" folder:nil];
             }
             at += videoChunks.count;
             audio = [SCIYTParts join:[ordered subarrayWithRange:NSMakeRange(at, audioChunks.count)]
-                           extension:@"m4a" folder:folder];
+                           extension:@"m4a" folder:nil];
             at += audioChunks.count;
 
             BOOL extrasOK = YES;
             for (NSUInteger k = 0; k < extras.count; k++) {
                 NSUInteger count = extraChunks[k].count;
-                NSURL *file = [SCIYTParts join:[ordered subarrayWithRange:NSMakeRange(at, count)] extension:@"m4a" folder:folder];
+                NSURL *file = [SCIYTParts join:[ordered subarrayWithRange:NSMakeRange(at, count)] extension:@"m4a" folder:nil];
                 at += count;
                 if (file && SCIDirectFileSize(file) == [extras[k][@"bytes"] longLongValue]) [extraFiles addObject:file]; else extrasOK = NO;
             }
+
+            // Every join has read what it needed. The first of them used to remove the folder, and
+            // the ones after it then found their parts gone: a download with a second language
+            // failed as "incomplete" every time.
+            [[NSFileManager defaultManager] removeItemAtURL:folder error:nil];
 
             BOOL sound = audio && SCIDirectFileSize(audio) == audioBytes;
             BOOL picture = !videoChunks.count || (video && SCIDirectFileSize(video) == videoBytes);
@@ -496,6 +525,44 @@ static long long SCIDirectFileSize(NSURL *file) {
     });
 }
 
+/// The video's cover as JPEG bytes, or nil. Asked for in the two sizes the cover cache uses, for the
+/// same reason: YouTube answers a missing "maxres" with a small grey placeholder, not a 404, so the
+/// width is the test. Blocking, with a short timeout -- called from the merge's own queue, and a cover
+/// that does not arrive costs the cover, never the download.
+static NSData *SCIDirectCover(NSString *videoID) {
+    if (!videoID.length) return nil;
+    for (NSString *name in @[@"maxresdefault", @"hqdefault"]) {
+        NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"https://i.ytimg.com/vi/%@/%@.jpg", videoID, name]];
+        NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:8];
+
+        __block NSData *data = nil;
+        dispatch_semaphore_t done = dispatch_semaphore_create(0);
+        [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *body, NSURLResponse *response, NSError *error) {
+            if ([(NSHTTPURLResponse *)response statusCode] == 200) data = body;
+            dispatch_semaphore_signal(done);
+        }] resume];
+        dispatch_semaphore_wait(done, dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_SEC));
+
+        CGImageSourceRef source = data.length ? CGImageSourceCreateWithData((__bridge CFDataRef)data, NULL) : NULL;
+        NSDictionary *properties = source ? CFBridgingRelease(CGImageSourceCopyPropertiesAtIndex(source, 0, NULL)) : nil;
+        if (source) CFRelease(source);
+        if ([properties[(NSString *)kCGImagePropertyPixelWidth] integerValue] >= 200) return data;
+    }
+    return nil;
+}
+
+/// What is written into the file about the video: its title and its channel, and for a song the cover.
+static NSDictionary *SCIDirectTags(SCIHLSVariant *variant, BOOL withCover) {
+    NSMutableDictionary *tags = [NSMutableDictionary dictionary];
+    if (variant.directTitle.length) tags[@"title"] = variant.directTitle;
+    if (variant.directAuthor.length) tags[@"artist"] = variant.directAuthor;
+    if (withCover) {
+        NSData *cover = SCIDirectCover(variant.directVideoID);
+        if (cover) tags[@"artwork"] = cover;
+    }
+    return tags;
+}
+
 + (void)downloadVariant:(SCIHLSVariant *)variant
                progress:(void (^)(double))progress
              completion:(void (^)(NSURL *, NSString *))completion {
@@ -518,6 +585,7 @@ static long long SCIDirectFileSize(NSURL *file) {
     [self fetchVideoURL:variant.directVideoURL videoBytes:variant.directVideoBytes
                audioURL:variant.directAudioURL audioBytes:variant.directAudioBytes
                  extras:extras
+              resumeKey:variant.resumeKey
                progress:^(double fraction) { if (progress) progress(fraction * 0.93); }
              completion:^(NSURL *video, NSURL *audio, NSArray<NSURL *> *extraFiles, NSString *failure) {
         if (!video || !audio) {
@@ -565,7 +633,11 @@ static long long SCIDirectFileSize(NSURL *file) {
         }
 
         if (!extraFiles.count && !captions.count) {
-            [SCIYTFragments mergeVideo:video audio:audio completion:merged];
+            dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+                NSDictionary *tags = SCIDirectTags(variant, NO);
+                [SCIYTFragments mergeVideo:video audio:audio audioLanguage:mainLanguage extraAudios:@[] subtitles:@[]
+                                      tags:tags completion:merged];
+            });
             return;
         }
 
@@ -577,8 +649,10 @@ static long long SCIDirectFileSize(NSURL *file) {
         }
         [self fetchCaptions:captions completion:^(NSArray<NSDictionary *> *subtitles) {
             if (progress) progress(0.96);
-            [SCIYTFragments mergeVideo:video audio:audio audioLanguage:mainLanguage
-                           extraAudios:named subtitles:subtitles completion:merged];
+            dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+                [SCIYTFragments mergeVideo:video audio:audio audioLanguage:mainLanguage
+                               extraAudios:named subtitles:subtitles tags:SCIDirectTags(variant, NO) completion:merged];
+            });
         }];
     }];
 }
@@ -590,6 +664,7 @@ static long long SCIDirectFileSize(NSURL *file) {
     [self fetchVideoURL:nil videoBytes:0
                audioURL:variant.directAudioURL audioBytes:variant.directAudioBytes
                  extras:@[]
+              resumeKey:variant.resumeKey
                progress:^(double fraction) { if (progress) progress(fraction * 0.95); }
              completion:^(NSURL *video, NSURL *audio, NSArray<NSURL *> *extraFiles, NSString *failure) {
         if (!audio) {
@@ -598,12 +673,15 @@ static long long SCIDirectFileSize(NSURL *file) {
             return;
         }
 
-        [SCIYTFragments rewriteAudio:audio completion:^(NSURL *output, NSString *why) {
+        dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+        NSDictionary *tags = SCIDirectTags(variant, YES);
+        [SCIYTFragments rewriteAudio:audio tags:tags completion:^(NSURL *output, NSString *why) {
             [[NSFileManager defaultManager] removeItemAtURL:audio error:nil];
             if (!output) [self rememberFailure:variant.directVideoID];
             if (progress && output) progress(1.0);
             completion(output, why);
         }];
+        });
     }];
 }
 

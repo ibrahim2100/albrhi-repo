@@ -41,6 +41,17 @@
 @property (nonatomic, copy) NSArray<NSDictionary *> *directAudioTracks;
 @property (nonatomic, copy) NSArray<NSDictionary *> *directCaptionTracks;
 
+/// Names a resumable download: the parts it fetches are kept under this name and picked up again
+/// by the next attempt. Nil for a download that is not worth resuming (a playlist-route fetch).
+@property (nonatomic, copy) NSString *resumeKey;
+
+/// The video's own title and channel, as `/player` names them, for the tags written into the file.
+@property (nonatomic, copy) NSString *directTitle;
+@property (nonatomic, copy) NSString *directAuthor;
+
+/// The sound-only choice, when a language other than the original was picked for a sound download.
+@property (nonatomic, copy) NSString *soundOnlyTrackID;
+
 /// What the person ticked before pressing Download: the sound tracks beyond the original, and the
 /// captions. Set by the choice sheet on the one variant it hands back; empty means "as before".
 @property (nonatomic, copy) NSArray<NSDictionary *> *chosenExtraAudios;

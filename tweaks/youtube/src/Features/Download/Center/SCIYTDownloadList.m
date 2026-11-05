@@ -145,6 +145,15 @@
     if (!self.rows.count) return;
 
     SCIYTJob *job = self.rows[(NSUInteger)indexPath.row];
+
+    // A download that failed and can be asked again: the row itself is the retry button, and what it
+    // had already fetched is kept, so asking again continues rather than starting over.
+    if (job.state == SCIYTJobStateFailed && job.recipe) {
+        [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] impactOccurred];
+        [[SCIYTLibrary shared] retry:job];
+        return;
+    }
+
     if (job.state != SCIYTJobStateDone) return;
 
     if (![job fileURL]) { [[SCIYTLibrary shared] remove:job]; return; }
@@ -223,6 +232,17 @@
     }];
 
     if (job.state != SCIYTJobStateDone) {
+        if (job.state == SCIYTJobStateFailed && job.recipe) {
+            UIContextualAction *again =
+                [UIContextualAction contextualActionWithStyle:UIContextualActionStyleNormal
+                                                        title:SCILocalized(@"dl_retry")
+                                                      handler:^(UIContextualAction *action, UIView *source, void (^done)(BOOL)) {
+                [[SCIYTLibrary shared] retry:job];
+                done(YES);
+            }];
+            again.backgroundColor = [UIColor systemBlueColor];
+            return [UISwipeActionsConfiguration configurationWithActions:@[remove, again]];
+        }
         return [UISwipeActionsConfiguration configurationWithActions:@[remove]];
     }
 

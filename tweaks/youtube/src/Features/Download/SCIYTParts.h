@@ -24,6 +24,8 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface SCIYTParts : NSObject
 
 /// Fetches every address and hands back the files, in the order the addresses were given.
@@ -36,12 +38,37 @@
      progress:(void (^)(double fraction))progress
    completion:(void (^)(NSArray<NSURL *> *ordered, NSURL *folder, NSString *error))completion;
 
+/// The same, kept on disk: the parts of run `runIdentifier` live in `+folderForRun:` and survive the
+/// app being closed. Parts already there with the size the plan expects are not fetched again, the
+/// system's tasks of an earlier attempt are cancelled, and a failure leaves the folder for the next try.
+/// `sizes` gives each part's expected byte count (nil to accept any), index for index with `addresses`.
++ (void)fetch:(NSArray<NSString *> *)addresses
+        sizes:(nullable NSArray<NSNumber *> *)sizes
+runIdentifier:(nullable NSString *)runIdentifier
+     progress:(void (^)(double fraction))progress
+   completion:(void (^)(NSArray<NSURL *> *ordered, NSURL *folder, NSString *error))completion;
+
+/// Harness only: an ordinary session instead of the system's background one (see the .m).
++ (void)useForegroundSessionForHarness;
+
+/// Where resumable runs keep their parts, and the folder of one.
++ (NSURL *)resumableRoot;
++ (NSURL *)folderForRun:(NSString *)identifier;
+
+/// Stops a resumable run for good and deletes what it had fetched.
++ (void)abandonRun:(NSString *)identifier;
+
+/// How many parts of a run are on disk.
++ (NSUInteger)partsOnDiskForRun:(NSString *)identifier;
+
 /// Joins parts into one file, in the order given, and removes the folder afterwards.
 ///
 /// Written through a handle rather than gathered: a 1080p video is a couple of hundred
 /// megabytes and a phone should not be asked to hold that twice to concatenate it.
-+ (NSURL *)join:(NSArray<NSURL *> *)ordered
-      extension:(NSString *)extension
-         folder:(NSURL *)folder;
++ (nullable NSURL *)join:(NSArray<NSURL *> *)ordered
+               extension:(NSString *)extension
+                  folder:(nullable NSURL *)folder;
 
 @end
+
+NS_ASSUME_NONNULL_END

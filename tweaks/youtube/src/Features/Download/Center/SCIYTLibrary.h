@@ -11,6 +11,8 @@
 #import "SCIYTJob.h"
 #import "../SCIYTHLS.h"
 
+@class SCIYTRecipe;
+
 NS_ASSUME_NONNULL_BEGIN
 
 /// Posted on the main thread whenever anything is added, finishes, or moves.
@@ -50,6 +52,17 @@ extern NSNotificationName const SCIYTLibraryDidChangeNotification;
                      title:(nullable NSString *)title
                    videoID:(nullable NSString *)videoID
                    isShort:(BOOL)isShort;
+
+/// Queues downloads of videos by recipe: each waits for a free slot, then asks YouTube for fresh
+/// addresses and makes the recipe's choice among them. For playlists. Returns their rows, at the
+/// top of the list in the order given.
+- (NSArray<SCIYTJob *> *)enqueueRecipes:(NSArray<SCIYTRecipe *> *)recipes;
+
+/// Asks a failed download again, picking up the parts it already fetched.
+- (void)retry:(SCIYTJob *)job;
+
+/// Continues the downloads the last launch did not finish (called once the app is active).
+- (void)resumeInterrupted;
 
 /// A finished save of this video, if there is one.
 ///
