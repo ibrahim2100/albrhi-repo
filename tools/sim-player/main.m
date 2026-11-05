@@ -11,11 +11,18 @@
 #import "Features/Download/Center/SCIYTChoiceSheet.h"
 #import "Diagnostics/SCIYTDiagnostics.h"
 #import "SCIYTLaunchGuard.h"
+#import "Features/Download/SCIYTParts.h"
+#ifdef SIM_FULL
+#import "Features/Download/Center/SCIYTPlaylistSheet.h"
+#endif
+#import "Features/Download/SCIYTRecipe.h"
+#import <AVFoundation/AVFoundation.h>
 
 // ---- Stubs for what the player reaches that a Mac-side harness has no business running.
 NSString *SCIVersionString = @"harness";
 BOOL SCIPanelAllowsThisApp(void) { return YES; }
 
+#ifndef SIM_FULL
 @implementation SCIYTLibrary
 + (instancetype)shared { static SCIYTLibrary *l; static dispatch_once_t o; dispatch_once(&o, ^{ l = [SCIYTLibrary new]; }); return l; }
 + (NSURL *)folder {
@@ -25,6 +32,7 @@ BOOL SCIPanelAllowsThisApp(void) { return YES; }
 }
 - (void)save {}
 @end
+#endif
 
 @implementation SCIYTHostPlayer
 + (void)pauseHost {}
@@ -35,9 +43,11 @@ BOOL SCIPanelAllowsThisApp(void) { return YES; }
 + (BOOL)resolveClassMethod:(SEL)sel { class_addMethod(object_getClass(self), sel, imp_implementationWithBlock(^(id _s) { return (id)nil; }), "@@:"); return YES; }
 @end
 
+#ifndef SIM_FULL
 @implementation SCIHLSVariant
 - (NSString *)label { return [NSString stringWithFormat:@"%ldp · %@", (long)self.height, [self.codecs containsString:@"av01"] ? @"AV1" : @"H.264"]; }
 @end
+#endif
 
 // ---- Stand-ins for YouTube's classes, with the exact selectors and encodings of 21.41.5, so the arbiter's REAL hooks
 // ---- install on them and can be driven.
@@ -85,6 +95,65 @@ static void SCIAfter(double seconds, void (^block)(void)) {
     static BOOL once; if (once) return; once = YES;
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
 
+
+
+#ifdef SIM_FULL
+    if ([d boolForKey:@"playlisttest"]) { [SCIYTParts useForegroundSessionForHarness]; [SCIYTPlaylistSheet presentFrom:self]; return; }
+    // The REAL library, direct route, parts, recipe and muxer, against YouTube itself.
+    //   -dltest <videoID> [-audio YES]   queue one download (240p at most, an extra language and two captions)
+    //   -dlwatch YES                     only watch: what the last launch left (the library resumes it by itself)
+    if ([d stringForKey:@"dltest"].length || [d boolForKey:@"dlwatch"]) {
+        [SCIYTParts useForegroundSessionForHarness];
+        if ([d stringForKey:@"dltest"].length) {
+            SCIYTRecipe *r = [SCIYTRecipe new];
+            r.videoID = [d stringForKey:@"dltest"]; r.maxHeight = 240; r.audioOnly = [d boolForKey:@"audio"];
+            r.extraAudioIDs = @[@"ar.3"]; r.captionIDs = @[@"en", @"ar"];
+            [[SCIYTLibrary shared] enqueueRecipes:@[r]];
+        }
+        __block NSString *last = @"";
+        NSTimer *poll = [NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer *t) {
+            for (SCIYTJob *job in [SCIYTLibrary shared].jobs) {
+                NSString *line = [NSString stringWithFormat:@"%@ | %@ | state %ld | %@", job.title, job.quality, (long)job.state, [job statusLine]];
+                if ([line isEqualToString:last]) continue;
+                last = line;
+                NSLog(@"[DLTEST] %@", line);
+                if (job.state == SCIYTJobStateDone && job.fileURL) {
+                    AVURLAsset *a = [AVURLAsset URLAssetWithURL:job.fileURL options:nil];
+                    NSMutableArray *langs = [NSMutableArray array];
+                    for (AVAssetTrack *tr in a.tracks) [langs addObject:[NSString stringWithFormat:@"%@:%@%@", [tr.mediaType substringToIndex:4], tr.extendedLanguageTag ?: @"-", tr.isEnabled ? @"" : @"(off)"]];
+                    NSMutableArray *meta = [NSMutableArray array];
+                    for (AVMetadataItem *m in a.commonMetadata) [meta addObject:[NSString stringWithFormat:@"%@=%@", m.commonKey, [m.commonKey isEqualToString:@"artwork"] ? [NSString stringWithFormat:@"%lu bytes", (unsigned long)[(NSData *)m.value length]] : m.stringValue]];
+                    NSLog(@"[DLTEST] FILE %@ %lld bytes, %.1f s | tracks %@ | tags %@", job.fileName, job.bytes, CMTimeGetSeconds(a.duration), [langs componentsJoinedByString:@" "], [meta componentsJoinedByString:@"; "]);
+                }
+            }
+        }];
+        (void)poll;
+        return;
+    }
+#endif
+    if ([d boolForKey:@"partstest"]) {
+        // The real parts fetcher against tools/sim-player/range-server.py: eight parts of 1 MB, kept under one
+        // name. Kill the app mid-way and launch again: what arrived must not be fetched a second time.
+        NSMutableArray *urls = [NSMutableArray array], *sizes = [NSMutableArray array];
+        for (int i = 0; i < 8; i++) {
+            [urls addObject:[NSString stringWithFormat:@"http://127.0.0.1:8765/blob?v=1&range=%d-%d", i * 1000000, (i + 1) * 1000000 - 1]];
+            [sizes addObject:@1000000];
+        }
+        [SCIYTParts useForegroundSessionForHarness];
+        NSLog(@"[PARTSTEST] parts on disk at start: %lu", (unsigned long)[SCIYTParts partsOnDiskForRun:@"testrun"]);
+        [SCIYTParts fetch:urls sizes:sizes runIdentifier:@"testrun" progress:^(double f) { NSLog(@"[PARTSTEST] progress %.2f", f); }
+               completion:^(NSArray<NSURL *> *ordered, NSURL *folder, NSString *error) {
+            if (!ordered) { NSLog(@"[PARTSTEST] FAILED: %@", error); return; }
+            NSURL *joined = [SCIYTParts join:ordered extension:@"bin" folder:nil];
+            NSData *data = [NSData dataWithContentsOfURL:joined];
+            BOOL ok = data.length == 8000000;
+            const uint8_t *b = data.bytes;
+            for (NSUInteger i = 0; ok && i < data.length; i += 997) if (b[i] != (uint8_t)((i * 7) % 251)) ok = NO;
+            NSLog(@"[PARTSTEST] DONE bytes=%lu identical=%d", (unsigned long)data.length, ok);
+            [SCIYTParts abandonRun:@"testrun"];
+        }];
+        return;
+    }
     if ([d boolForKey:@"sheettest"]) {
         NSMutableArray *variants = [NSMutableArray array];
         NSArray *sounds = @[@{@"id":@"en-US.4",@"lang":@"en-US",@"name":@"English (United States) original",@"url":@"u",@"bytes":@(4200000),@"default":@YES},

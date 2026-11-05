@@ -13,11 +13,19 @@ set -euo pipefail
 H="$(cd "$(dirname "$0")" && pwd)"; R="$(cd "$H/../.." && pwd)"; SRC=$R/tweaks/youtube/src; C=$SRC/Features/Download/Center
 MEDIA="${SIM_PLAYER_MEDIA:-$HOME/Desktop/Albrhi-PlayerMedia}"
 SIM="${SIM:-$(xcrun simctl list devices booted | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}' | head -1)}"
+# FULL=1: the real library, direct route, parts, recipe and muxer instead of stubs, so a download can be run end to end
+# against YouTube itself (no AV1 conversion: that links a device-built dav1d).
+FULLFLAGS=""; FULLSRC=""
+if [ "${FULL:-0}" = "1" ]; then
+  FULLFLAGS="-DSIM_FULL=1"
+  D=$SRC/Features/Download
+  FULLSRC="$C/SCIYTLibrary.m $C/SCIYTNotice.m $D/SCIYTDirect.m $D/SCIYTFragments.m $D/SCIYTSubtitles.m $D/SCIYTRecipe.m $D/SCIYTPlaylist.m $C/SCIYTPlaylistSheet.m $D/SCIYTHLS.m $D/SCIYTTransport.m $H/stub/AV1Stub.m"
+fi
 OUT="${TMPDIR:-/tmp}/albrhi-sim-player"; mkdir -p "$OUT/PlayerHarness.app"; SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
 clang -fobjc-arc -target arm64-apple-ios15.0-simulator -isysroot "$SDK" -Wall -Wno-unused-function -Wno-objc-method-access -Wno-incomplete-implementation \
   -I"$SRC" -I"$R" -I"$H/stub" -F"$SDK/System/Library/Frameworks" \
-  -framework UIKit -framework Foundation -framework AVFoundation -framework AVKit -framework MediaPlayer -framework CoreMedia -framework QuartzCore -framework Photos -framework CoreGraphics -framework ImageIO \
-  "$H/main.m" "$C/SCIYTPlayer.m" "$C/SCIYTJob.m" "$C/SCIYTPalette.m" "$C/SCIYTIcon.m" "$C/SCIYTThumbnails.m" "$C/SCIYTArbiter.m" "$C/SCIYTChoiceSheet.m" \
+  -framework UIKit -framework Foundation -framework AVFoundation -framework AVKit -framework MediaPlayer -framework CoreMedia -framework QuartzCore -framework Photos -framework CoreGraphics -framework ImageIO -framework UserNotifications -framework VideoToolbox \
+  $FULLFLAGS "$H/main.m" "$C/SCIYTPlayer.m" "$C/SCIYTJob.m" "$C/SCIYTPalette.m" "$C/SCIYTIcon.m" "$C/SCIYTThumbnails.m" "$C/SCIYTArbiter.m" "$C/SCIYTChoiceSheet.m" "$SRC/Features/Download/SCIYTParts.m" $FULLSRC \
   "$SRC/Localization/SCILocalize.m" "$SRC/SCIYTLaunchGuard.m" \
   -o "$OUT/PlayerHarness.app/PlayerHarness" 2>&1 | grep -E "error|Undefined|referenced from|symbol" | head -30 || true
 test -f "$OUT/PlayerHarness.app/PlayerHarness"
