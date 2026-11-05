@@ -120,6 +120,7 @@ static const double kSCINudge = 10;
 @property (nonatomic, copy) NSArray<NSDictionary *> *sponsorSegments;
 @property (nonatomic, strong) NSMutableSet<NSNumber *> *sponsorDone;
 @property (nonatomic, strong) UIButton *skipPill;
+@property (nonatomic, strong) SCIYTJob *loadedJob;                ///< the job the AVPlayer actually has, which `index` may already have moved past
 @property (nonatomic) BOOL audioChoices;                       ///< the file has a second sound to pick
 @property (nonatomic) NSInteger chapterIndex;                  ///< the chapter playing, -1 before the first
 @property (nonatomic, copy) NSString *chapterShown;
@@ -1308,7 +1309,10 @@ static SCIYTPlayer *sciCurrent = nil;
 
 /// Writes the position down, for this file, now.
 - (void)rememberPosition {
-    SCIYTJob *job = [self current];
+    // The job the player has, not the one `index` points at: -next and -previous move `index` first and
+    // load after, so at that moment `current` is the track about to start, and the playhead of the track
+    // being left was being written onto it -- which then began where the last one stopped.
+    SCIYTJob *job = self.loadedJob ?: [self current];
     if (!job) return;
 
     double at = CMTimeGetSeconds(self.player.currentTime);
@@ -1374,6 +1378,7 @@ static SCIYTPlayer *sciCurrent = nil;
     }
 
     self.player = [AVPlayer playerWithURL:file];
+    self.loadedJob = job;
 
     // Only ever asked "is it waiting on data right now" -- not "has playback started yet",
     // which is true for the entire span between +load and the first frame and would spin

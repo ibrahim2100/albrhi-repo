@@ -1093,6 +1093,8 @@ what the system believes, not what the app wrote.** Not seen: the transport butt
 
 **Saved sound missing from the lock screen (1.49.0, open): the simulator cannot reproduce it.** `-nptest -start 2` (a saved sound) asks MediaRemote the same questions as for a video and gets the same answers (client = the app, title, rate 1, *is playing = 1*), so the cause is device-only. Differences between the kinds in the code: no picture layer for a sound, and nothing in the player ever told iOS it receives remote-control events (YouTube's own player does). 1.49.0 calls `beginReceivingRemoteControlEvents` once, re-publishes the entry 1.2 s and 4 s after a track starts (the first write happens in the same call that pauses YouTube's player, which can wind down over it) and records two `later` diagnostics lines (title, state, owner, audio-session mode, other audio, `timeControlStatus`). **A hardening for an unverified hypothesis, not a cure**; the report from the phone decides. Chapters and the highlight come from `SCIYTSponsorClient annotatedSegmentsForSavedVideo:` (`actionType=skip|poi|chapter` must be asked for by name -- the server answers skips only otherwise; `poi_highlight` was seen live, a `chapter` answer never was). Bilingual captions are `+[SCIYTSubtitles bilingualPrimary:secondary:]` drawn by the same label. **Return YouTube Dislike (1.49.1)** is a top-row button built like the quality label (`SCIYTRyd`; the id comes from the `didActivateVideo:` hook SponsorBlock already uses; off by default, the row says a third party sees the video id; `/votes` answers `likes`, `dislikes` (an estimate), `rating`, `viewCount` -- measured live); **not placed under the video beside the like button, whose element-based UI was not measured.** Not built: on-device transcription (YouTube's `Info.plist` has no `NSSpeechRecognitionUsageDescription`, and asking without it ends the process).
 
+**Next started the next track at the last one\'s minute (1.49.2).** `-next`/`-previous` move `index` and *then* call `-load`, whose "remember where the track being left stopped" asked `[self current]` -- already the new track -- so the old playhead was written onto it and its resume-position logic then jumped there; the track after inherited the next one\'s. State that has to describe the *outgoing* thing must not be read through a pointer that has already moved: `loadedJob` is the job the AVPlayer really holds. Measured in the harness (`-nextcheck`): the second track began at 2.3 s after Next at 13 s.
+
 **The app stopped launching in 1.29–1.31 and the lessons are in §4.3** (three hooks asking for layout from inside layout; `-topControls`
 doing work per call; icon repaints; dead code woken by the `SCISafeValueForKey` fix; `_ASDisplayView`). The launch guard and `NOHOOKS`
 exist because of it. One failure was cured by clearing the app's data, and on a second phone by deleting the app (1.31.1 added two guards on the tab bar for it).
@@ -1413,8 +1415,8 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.8.2** · YouTube **1.49.1** · X **0.22.1** · TikTok **0.28.0** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.110.1**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.8.2** · YouTube **1.49.2** · X **0.22.1** · TikTok **0.28.0** · YouTube Music **0.10.0** ·
+Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.110.2**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
