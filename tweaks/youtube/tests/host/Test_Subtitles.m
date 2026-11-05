@@ -100,4 +100,35 @@ void Test_Subtitles(void) {
             CFRelease(format);
         }
     });
+
+    ALBRHI_TEST(payload_round_trips_and_a_gap_has_no_text, {
+        NSString *arabic = @"مرحبا بالعالم";
+        ALBRHI_ASSERT([[SCIYTSubtitles textFromPayload:[SCIYTSubtitles payloadForText:arabic]] isEqualToString:arabic], @"text out is the text in");
+        ALBRHI_ASSERT([SCIYTSubtitles textFromPayload:[SCIYTSubtitles payloadForText:nil]] == nil, @"a gap reads as nothing");
+        NSMutableData *styled = [[SCIYTSubtitles payloadForText:@"hi"] mutableCopy];
+        [styled appendData:[@"STYLATOMS" dataUsingEncoding:NSASCIIStringEncoding]];
+        ALBRHI_ASSERT([[SCIYTSubtitles textFromPayload:styled] isEqualToString:@"hi"], @"atoms after the text are ignored");
+        uint8_t lie[] = {0, 50, 'a', 'b'};
+        ALBRHI_ASSERT([SCIYTSubtitles textFromPayload:[NSData dataWithBytes:lie length:4]] == nil, @"a length longer than the data");
+        ALBRHI_ASSERT([SCIYTSubtitles textFromPayload:[NSData data]] == nil, @"empty");
+    });
+
+    ALBRHI_TEST(srt_timestamps, {
+        ALBRHI_ASSERT([[SCIYTSubtitles srtTimestamp:0] isEqualToString:@"00:00:00,000"], @"zero");
+        ALBRHI_ASSERT([[SCIYTSubtitles srtTimestamp:3725.0415] isEqualToString:@"01:02:05,042"], @"rounded to the millisecond");
+        ALBRHI_ASSERT([[SCIYTSubtitles srtTimestamp:-4] isEqualToString:@"00:00:00,000"], @"never negative");
+        ALBRHI_ASSERT([[SCIYTSubtitles srtTimestamp:59.9996] isEqualToString:@"00:01:00,000"], @"carries into the minute");
+    });
+
+    ALBRHI_TEST(srt_document_and_delay, {
+        NSArray *cues = @[@{@"start": @1.0, @"end": @2.5, @"text": @"one"},
+                          @{@"start": @3.0, @"end": @4.0, @"text": @"two\n\nlines"}];
+        NSString *plain = [SCIYTSubtitles srtFromCues:cues delay:0];
+        ALBRHI_ASSERT([plain isEqualToString:@"1\n00:00:01,000 --> 00:00:02,500\none\n\n2\n00:00:03,000 --> 00:00:04,000\ntwo\nlines\n\n"], @"numbered blocks, a blank line only between blocks");
+        NSString *early = [SCIYTSubtitles srtFromCues:cues delay:-1.5];
+        ALBRHI_ASSERT([early hasPrefix:@"1\n00:00:00,000 --> 00:00:01,000\none"], @"a cue straddling zero starts at zero");
+        NSString *gone = [SCIYTSubtitles srtFromCues:cues delay:-2.6];
+        ALBRHI_ASSERT([gone hasPrefix:@"1\n00:00:00,400 --> 00:00:01,400\ntwo"], @"a cue wholly before zero is dropped and the numbering restarts");
+        ALBRHI_ASSERT([SCIYTSubtitles srtFromCues:@[] delay:0].length == 0, @"nothing in, nothing out");
+    });
 }

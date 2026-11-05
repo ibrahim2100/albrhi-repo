@@ -96,6 +96,20 @@ typedef NS_ENUM(NSInteger, SCIYTJobState) {
 /// that declares no reason to add to the library. Three different fixes, one silence.
 @property (nonatomic, copy, nullable) NSString *exportFailure;
 
+/// SponsorBlock segments saved with the file: `@{@"category", @"start", @"end"}`. The player skips the
+/// ones whose category is switched on *when it plays*. nil = never asked.
+@property (nonatomic, copy, nullable) NSArray<NSDictionary *> *sponsorSegments;
+/// When they were asked for, as a time interval since 1970; 0 = never. An empty answer is asked again
+/// after a week, because "nothing found" and "the request failed" look the same from here.
+@property (nonatomic) double sponsorCheckedAt;
+
+/// What was last chosen for this video in the player: a sound's or a caption's language tag
+/// (`@"off"` for captions switched off), nil = never chosen. And how far the captions were
+/// moved in time, in seconds -- a file whose captions drift is a property of that file.
+@property (nonatomic, copy, nullable) NSString *audioChoice;
+@property (nonatomic, copy, nullable) NSString *captionChoice;
+@property (nonatomic) double captionDelay;
+
 /// What this download was asked to be, when it can be asked again (the direct route). Not coded with
 /// the finished list: the library keeps the unfinished ones' recipes in a file of their own.
 @property (nonatomic, strong, nullable) SCIYTRecipe *recipe;

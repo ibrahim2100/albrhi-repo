@@ -7,6 +7,11 @@
 #import "SCIYTPlayerMath.h"
 #import "SCIYTHostPlayer.h"
 #import "SCIYTArbiter.h"
+#import "SCIYTQueueSheet.h"
+#import "SCIYTCaptionSettings.h"
+#import "../SCIYTCaptionReader.h"
+#import "../SCIYTSubtitles.h"
+#import "../../SponsorBlock/SCIYTSponsorClient.h"
 #import "../../../Diagnostics/SCIYTDiagnostics.h"
 #import "../../../SCILog.h"
 #import "../../../Prefs.h"
@@ -104,6 +109,30 @@ static const double kSCINudge = 10;
 @property (nonatomic) BOOL holdingFast;
 
 // What a file carries besides its picture and its first sound: other languages, captions.
+@property (nonatomic, strong) UIButton *shuffleButton;
+@property (nonatomic, strong) UIButton *queueButton;
+@property (nonatomic) BOOL shuffle;
+@property (nonatomic, strong) NSMutableArray<NSNumber *> *shuffleOrder;
+@property (nonatomic) NSInteger shufflePos;
+
+// SponsorBlock segments saved with the file, the ones already skipped this time, the notice.
+@property (nonatomic, copy) NSArray<NSDictionary *> *sponsorSegments;
+@property (nonatomic, strong) NSMutableSet<NSNumber *> *sponsorDone;
+@property (nonatomic, strong) UIButton *skipPill;
+@property (nonatomic, strong) NSTimer *pillTimer;
+@property (nonatomic) double pillBack;
+
+// Captions the player draws itself (so size and timing can be ours).
+@property (nonatomic, copy) NSArray<NSDictionary *> *captionTracks;      ///< the file's, from the reader
+@property (nonatomic, copy) NSArray<NSDictionary *> *captionCues;        ///< the chosen language's
+@property (nonatomic, copy) NSString *captionLang;
+@property (nonatomic) NSInteger captionToken;
+@property (nonatomic) NSInteger captionLoad;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, NSArray *> *cueCache;
+@property (nonatomic, strong) UILabel *captionLabel;
+@property (nonatomic, strong) NSLayoutConstraint *captionBottom;
+@property (nonatomic, strong) id captionTicker;
+@property (nonatomic, copy) NSString *captionShown;
 @property (nonatomic, strong) UIButton *tracksButton;
 @property (nonatomic, strong) UIButton *repeatButton;
 /// 0 off, 1 the whole queue, 2 this one.
@@ -318,6 +347,11 @@ static SCIYTPlayer *sciCurrent = nil;
         [self.player removeTimeObserver:self.ticker];
         self.ticker = nil;
     }
+    if (self.captionTicker) {
+        [self.player removeTimeObserver:self.captionTicker];
+        self.captionTicker = nil;
+    }
+    [self.pillTimer invalidate];
 
     if (self.observingTimeControl) {
         [self.player removeObserver:self forKeyPath:@"timeControlStatus"];
@@ -674,8 +708,14 @@ static SCIYTPlayer *sciCurrent = nil;
     self.tracksButton.accessibilityLabel = SCILocalized(@"player_captions");
     self.tracksButton.hidden = YES;
 
+    self.shuffleButton = [self control:@"shuffle" size:17 action:@selector(toggleShuffle)];
+    self.shuffleButton.tintColor = [UIColor colorWithWhite:1 alpha:0.75];
+    self.shuffleButton.accessibilityLabel = SCILocalized(@"player_shuffle_off");
+    self.queueButton = [self control:@"list.bullet" size:17 action:@selector(showQueue)];
+    self.queueButton.accessibilityLabel = SCILocalized(@"player_queue");
+
     UIStackView *extras = [[UIStackView alloc] initWithArrangedSubviews:
-        @[self.speedButton, self.repeatButton, route, self.tracksButton, self.sleepButton]];
+        @[self.speedButton, self.shuffleButton, self.repeatButton, self.queueButton, route, self.tracksButton, self.sleepButton]];
     extras.axis = UILayoutConstraintAxisHorizontal;
     extras.distribution = UIStackViewDistributionEqualCentering;
     extras.alignment = UIStackViewAlignmentCenter;
@@ -777,6 +817,41 @@ static SCIYTPlayer *sciCurrent = nil;
         [self.hud.topAnchor constraintEqualToAnchor:self.stage.safeAreaLayoutGuide.topAnchor constant:64],
         [self.hud.heightAnchor constraintEqualToConstant:34],
         [self.hud.widthAnchor constraintGreaterThanOrEqualToConstant:84],
+    ]];
+
+    // Captions are drawn here, not by AVPlayerLayer, so their size and timing are ours to change.
+    self.captionLabel = [[UILabel alloc] init];
+    self.captionLabel.numberOfLines = 0;
+    self.captionLabel.textAlignment = NSTextAlignmentCenter;
+    self.captionLabel.isAccessibilityElement = NO;
+    self.captionLabel.hidden = YES;
+    self.captionLabel.userInteractionEnabled = NO;
+    self.captionLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.stage addSubview:self.captionLabel];
+    [NSLayoutConstraint activateConstraints:@[
+        [self.captionLabel.centerXAnchor constraintEqualToAnchor:self.stage.centerXAnchor],
+        [self.captionLabel.leadingAnchor constraintGreaterThanOrEqualToAnchor:self.stage.leadingAnchor constant:18],
+        [self.captionLabel.trailingAnchor constraintLessThanOrEqualToAnchor:self.stage.trailingAnchor constant:-18],
+    ]];
+    self.captionBottom = [self.captionLabel.bottomAnchor constraintEqualToAnchor:self.stage.bottomAnchor constant:-26];
+    self.captionBottom.active = YES;
+
+    // "Skipped sponsor" with an undo, over the picture for a few seconds.
+    self.skipPill = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.skipPill.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+    [self.skipPill setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    self.skipPill.backgroundColor = [UIColor colorWithWhite:0.08 alpha:0.9];
+    self.skipPill.layer.cornerRadius = 17;
+    self.skipPill.layer.cornerCurve = kCACornerCurveContinuous;
+    self.skipPill.contentEdgeInsets = UIEdgeInsetsMake(8, 16, 8, 16);
+    self.skipPill.alpha = 0;
+    self.skipPill.hidden = YES;
+    [self.skipPill addTarget:self action:@selector(undoSkip) forControlEvents:UIControlEventTouchUpInside];
+    self.skipPill.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.stage addSubview:self.skipPill];
+    [NSLayoutConstraint activateConstraints:@[
+        [self.skipPill.centerXAnchor constraintEqualToAnchor:self.stage.centerXAnchor],
+        [self.skipPill.topAnchor constraintEqualToAnchor:self.stage.safeAreaLayoutGuide.topAnchor constant:110],
     ]];
 
     // The volume slider of the system lives in this view, and reads back only while the view
@@ -1282,6 +1357,7 @@ static SCIYTPlayer *sciCurrent = nil;
     if (self.player) [self rememberPosition];
 
     if (self.ticker) { [self.player removeTimeObserver:self.ticker]; self.ticker = nil; }
+    if (self.captionTicker) { [self.player removeTimeObserver:self.captionTicker]; self.captionTicker = nil; }
 
     // Off the outgoing player before it is replaced -- KVO does not follow a property to a
     // new object, and leaving it registered on one about to be released is a crash waiting
@@ -1330,6 +1406,9 @@ static SCIYTPlayer *sciCurrent = nil;
     self.blindTicks = 0;
     self.showingUnreadable = NO;
     self.tracksButton.hidden = YES;
+    [self resetCaptionsForNewFile];
+    [self loadSponsorFor:job];
+    if (self.shuffle) [self syncShuffleToIndex];
 
     [self preparePiP:isVideo];
 
@@ -1338,6 +1417,11 @@ static SCIYTPlayer *sciCurrent = nil;
                                                             queue:dispatch_get_main_queue()
                                                        usingBlock:^(__unused CMTime time) {
         [weakSelf tick];
+    }];
+    self.captionTicker = [self.player addPeriodicTimeObserverForInterval:CMTimeMake(1, 10)
+                                                                   queue:dispatch_get_main_queue()
+                                                              usingBlock:^(__unused CMTime time) {
+        [weakSelf drawCaption];
     }];
 
     // Back where it was left, if it was left anywhere worth returning to. Done before
@@ -1376,6 +1460,24 @@ static SCIYTPlayer *sciCurrent = nil;
 
 - (void)next {
     [self lightHaptic];
+    if (self.shuffle && self.jobs.count > 1) {
+        if (self.shufflePos + 1 < (NSInteger)self.shuffleOrder.count) {
+            self.shufflePos++;
+            self.index = (NSUInteger)self.shuffleOrder[(NSUInteger)self.shufflePos].integerValue;
+            [self load];
+            return;
+        }
+        if (self.repeatMode == 1) {                 // a new round
+            [self rebuildShuffleStartingAt:self.index];
+            self.shufflePos = 1;
+            self.index = (NSUInteger)self.shuffleOrder[1].integerValue;
+            [self load];
+            return;
+        }
+        [self.player pause];
+        [self showPlaying:NO];
+        return;
+    }
     if (self.index + 1 >= self.jobs.count) { [self.player pause]; [self showPlaying:NO]; return; }
     self.index++;
     [self load];
@@ -1383,10 +1485,18 @@ static SCIYTPlayer *sciCurrent = nil;
 
 - (void)previous {
     [self lightHaptic];
-    if (CMTimeGetSeconds(self.player.currentTime) > 3 || self.index == 0) {
-        [self seekTo:0];
+    if (CMTimeGetSeconds(self.player.currentTime) > 3) { [self seekTo:0]; return; }
+    if (self.shuffle) {
+        if (self.shufflePos > 0) {
+            self.shufflePos--;
+            self.index = (NSUInteger)self.shuffleOrder[(NSUInteger)self.shufflePos].integerValue;
+            [self load];
+        } else {
+            [self seekTo:0];
+        }
         return;
     }
+    if (self.index == 0) { [self seekTo:0]; return; }
     self.index--;
     [self load];
 }
@@ -1404,6 +1514,7 @@ static SCIYTPlayer *sciCurrent = nil;
     }
 
     if (self.repeatMode == 2) {
+        [self.sponsorDone removeAllObjects];
         __weak __typeof(self) weakSelf = self;
         [self.player seekToTime:kCMTimeZero toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero
               completionHandler:^(__unused BOOL finished) {
@@ -1414,7 +1525,7 @@ static SCIYTPlayer *sciCurrent = nil;
         return;
     }
 
-    if (self.repeatMode == 1 && self.index + 1 >= self.jobs.count) {
+    if (!self.shuffle && self.repeatMode == 1 && self.index + 1 >= self.jobs.count) {
         self.index = 0;
         [self load];
         return;
@@ -1440,28 +1551,356 @@ static SCIYTPlayer *sciCurrent = nil;
     [self say:SCILocalized(key)];
 }
 
-// MARK: - Other languages and captions
+// MARK: - Shuffle and the queue
 
-/// Shown only when the file has something to choose: a second sound, or captions.
+- (void)rebuildShuffleStartingAt:(NSUInteger)first {
+    int count = (int)MIN(self.jobs.count, (NSUInteger)100000);
+    NSMutableArray<NSNumber *> *list = [NSMutableArray array];
+    if (count > 0) {
+        int *order = calloc((size_t)count, sizeof(int));
+        if (order) {
+            SCIShuffleOrder(order, count, (int)first, arc4random());
+            for (int i = 0; i < count; i++) [list addObject:@(order[i])];
+            free(order);
+        }
+    }
+    self.shuffleOrder = list;
+    self.shufflePos = 0;
+}
+
+/// After anything that moved `index` without going through next/previous (a tap in the queue, a new
+/// list): the order is rebuilt if it no longer describes this list, and the position found in it.
+- (void)syncShuffleToIndex {
+    if (self.shuffleOrder.count != self.jobs.count) { [self rebuildShuffleStartingAt:self.index]; return; }
+    NSUInteger at = [self.shuffleOrder indexOfObject:@(self.index)];
+    if (at == NSNotFound) { [self rebuildShuffleStartingAt:self.index]; return; }
+    self.shufflePos = (NSInteger)at;
+}
+
+- (void)toggleShuffle {
+    self.shuffle = !self.shuffle;
+    if (self.shuffle) [self rebuildShuffleStartingAt:self.index];
+    self.shuffleButton.tintColor = self.shuffle ? SCIAccent() : [UIColor colorWithWhite:1 alpha:0.75];
+    NSString *key = self.shuffle ? @"player_shuffle_on" : @"player_shuffle_off";
+    self.shuffleButton.accessibilityLabel = SCILocalized(key);
+    [self lightHaptic];
+    [self say:SCILocalized(key)];
+}
+
+- (void)showQueue { [SCIYTQueueSheet presentFrom:self]; }
+
+- (void)jumpTo:(NSUInteger)row {
+    if (row >= self.jobs.count) return;
+    self.index = row;
+    [self load];
+}
+
+- (void)moveFrom:(NSUInteger)from to:(NSUInteger)to {
+    if (from >= self.jobs.count || to >= self.jobs.count || from == to) return;
+    SCIYTJob *playing = [self current];
+    NSMutableArray<SCIYTJob *> *list = [self.jobs mutableCopy];
+    SCIYTJob *moved = list[from];
+    [list removeObjectAtIndex:from];
+    [list insertObject:moved atIndex:to];
+    self.jobs = list;
+    NSUInteger at = playing ? [list indexOfObjectIdenticalTo:playing] : NSNotFound;
+    if (at != NSNotFound) self.index = at;
+    if (self.shuffle) [self rebuildShuffleStartingAt:self.index];
+}
+
+- (void)removeAt:(NSUInteger)row {
+    if (row >= self.jobs.count) return;
+    BOOL wasCurrent = (row == self.index);
+    NSMutableArray<SCIYTJob *> *list = [self.jobs mutableCopy];
+    [list removeObjectAtIndex:row];
+    self.jobs = list;
+    if (!list.count) { [SCIYTPlayer stop]; [self close]; return; }
+    if (row < self.index) self.index--;
+    if (self.index >= list.count) self.index = list.count - 1;
+    if (self.shuffle) [self rebuildShuffleStartingAt:self.index];
+    if (wasCurrent) [self load];
+}
+
++ (NSArray<SCIYTJob *> *)queueJobs { return sciCurrent.jobs ?: @[]; }
++ (NSUInteger)queueIndex { return sciCurrent.index; }
++ (BOOL)queueShuffled { return sciCurrent.shuffle; }
++ (void)queueJumpTo:(NSUInteger)row { [sciCurrent jumpTo:row]; }
++ (void)queueMoveFrom:(NSUInteger)from to:(NSUInteger)to { [sciCurrent moveFrom:from to:to]; }
++ (void)queueRemoveAt:(NSUInteger)row { [sciCurrent removeAt:row]; }
+
+// MARK: - SponsorBlock in a saved file
+
+/// The segments saved with the file, asked for now when it never was (or an empty answer is a week
+/// old). The decision to skip is made while playing, against the categories that are on *then*.
+- (void)loadSponsorFor:(SCIYTJob *)job {
+    if (!self.sponsorDone) self.sponsorDone = [NSMutableSet set];
+    [self.sponsorDone removeAllObjects];
+    self.sponsorSegments = job.sponsorSegments ?: @[];
+    [self hidePill];
+
+    __weak __typeof(self) weakSelf = self;
+    [[SCIYTLibrary shared] ensureSponsorSegmentsFor:job completion:^{
+        __typeof(self) strongSelf = weakSelf;
+        if (!strongSelf || [strongSelf current] != job) return;
+        strongSelf.sponsorSegments = job.sponsorSegments ?: @[];
+        [strongSelf.sponsorDone removeAllObjects];
+    }];
+}
+
+- (void)skipSponsorAt:(double)at length:(double)length {
+    NSUInteger n = MIN(self.sponsorSegments.count, (NSUInteger)256);
+    if (!n || !SCIPrefEnabled(SCIPrefSponsorBlock)) return;
+
+    double starts[256], ends[256];
+    unsigned char active[256], done[256];
+    for (NSUInteger i = 0; i < n; i++) {
+        NSDictionary *segment = self.sponsorSegments[i];
+        starts[i] = [segment[@"start"] doubleValue];
+        ends[i] = [segment[@"end"] doubleValue];
+        active[i] = [SCIYTSponsorClient categoryIsEnabled:segment[@"category"]] ? 1 : 0;
+        done[i] = [self.sponsorDone containsObject:@(i)] ? 1 : 0;
+    }
+    int hit = SCISkipIndex(starts, ends, active, done, (int)n, at, length);
+    if (hit < 0) return;
+
+    [self.sponsorDone addObject:@(hit)];
+    NSDictionary *segment = self.sponsorSegments[(NSUInteger)hit];
+    double end = MIN(ends[hit], isfinite(length) && length > 0 ? length : ends[hit]);
+    self.pillBack = starts[hit];
+    [self seekTo:end];
+    [SCIYTDiagnostics recordSponsorState:[NSString stringWithFormat:@"saved file: skipped %@ %.1f → %.1f",
+                                          segment[@"category"], starts[hit], end]];
+
+    if (!SCIPrefEnabled(SCIPrefSBNotice)) return;
+    NSString *what = [SCIYTSponsorClient displayNameForCategory:segment[@"category"]];
+    NSString *text = [NSString stringWithFormat:@"%@   ·   %@", [NSString stringWithFormat:SCILocalized(@"sb_skipped_format"), what], SCILocalized(@"sb_undo")];
+    [self.skipPill setTitle:text forState:UIControlStateNormal];
+    self.skipPill.hidden = NO;
+    [UIView animateWithDuration:0.2 animations:^{ self.skipPill.alpha = 1; }];
+    [self.pillTimer invalidate];
+    self.pillTimer = [NSTimer scheduledTimerWithTimeInterval:5 repeats:NO block:^(NSTimer *t) { [self hidePill]; }];
+}
+
+- (void)undoSkip {
+    [self hidePill];
+    [self seekTo:self.pillBack];
+}
+
+- (void)hidePill {
+    [self.pillTimer invalidate];
+    self.pillTimer = nil;
+    [UIView animateWithDuration:0.2 animations:^{ self.skipPill.alpha = 0; } completion:^(BOOL finished) {
+        if (self.skipPill.alpha == 0) self.skipPill.hidden = YES;
+    }];
+}
+
+// MARK: - Captions the player draws itself
+
+static NSString *const kSCICaptionScaleKey = @"albrhi_yt_caption_scale";
+
+static double SCICaptionScaleValue(void) {
+    double scale = [[NSUserDefaults standardUserDefaults] doubleForKey:kSCICaptionScaleKey];
+    return (isfinite(scale) && scale >= 0.6 && scale <= 2.2) ? scale : 1.0;
+}
+
+- (void)resetCaptionsForNewFile {
+    self.captionToken++;
+    self.captionLoad++;
+    self.captionTracks = nil;
+    self.captionCues = nil;
+    self.captionLang = nil;
+    self.captionShown = nil;
+    self.cueCache = [NSMutableDictionary dictionary];
+    self.captionLabel.hidden = YES;
+    self.tracksButton.tintColor = [UIColor whiteColor];
+}
+
+/// Shown only when the file has something to choose: a second sound, or captions. Also where what
+/// was chosen last time for this file is put back.
 - (void)refreshTracksButton {
     AVAsset *asset = self.player.currentItem.asset;
+    SCIYTJob *job = [self current];
+    NSInteger file = self.captionToken;
     __weak __typeof(self) weakSelf = self;
-    [asset loadValuesAsynchronouslyForKeys:@[@"availableMediaCharacteristics"] completionHandler:^{
+    [asset loadValuesAsynchronouslyForKeys:@[@"availableMediaCharacteristics", @"tracks"] completionHandler:^{
         dispatch_async(dispatch_get_main_queue(), ^{
             __typeof(self) strongSelf = weakSelf;
-            if (!strongSelf || strongSelf.player.currentItem.asset != asset) return;
+            if (!strongSelf || strongSelf.captionToken != file || strongSelf.player.currentItem.asset != asset) return;
             AVMediaSelectionGroup *audio = [asset mediaSelectionGroupForMediaCharacteristic:AVMediaCharacteristicAudible];
             AVMediaSelectionGroup *text = [asset mediaSelectionGroupForMediaCharacteristic:AVMediaCharacteristicLegible];
-            strongSelf.tracksButton.hidden = !(audio.options.count > 1 || text.options.count > 0);
+            strongSelf.captionTracks = [SCIYTCaptionReader captionTracksInAsset:asset];
+            strongSelf.tracksButton.hidden = !(audio.options.count > 1 || strongSelf.captionTracks.count > 0);
+
+            // Captions are drawn by this player; the system's own would draw them twice (and a phone
+            // with "closed captions" switched on in Accessibility turns them on by itself).
+            AVPlayerItem *item = strongSelf.player.currentItem;
+            if (text) [item selectMediaOption:nil inMediaSelectionGroup:text];
+
+            // What was chosen last time for this video.
+            if (job.audioChoice.length && audio.options.count > 1) {
+                for (AVMediaSelectionOption *option in audio.options) {
+                    NSString *tag = option.extendedLanguageTag ?: option.displayName;
+                    if ([tag isEqualToString:job.audioChoice]) { [item selectMediaOption:option inMediaSelectionGroup:audio]; break; }
+                }
+            }
+            if (job.captionChoice.length && ![job.captionChoice isEqualToString:@"off"]) {
+                [strongSelf showCaptionLanguage:job.captionChoice remember:NO];
+            }
         });
     }];
+}
+
+- (void)showCaptionLanguage:(NSString *)lang remember:(BOOL)remember {
+    SCIYTJob *job = [self current];
+    if (remember && job) {
+        job.captionChoice = lang.length ? lang : @"off";
+        [[SCIYTLibrary shared] save];
+    }
+
+    self.captionLoad++;
+    NSInteger load = self.captionLoad, file = self.captionToken;
+    self.captionLang = lang.length ? lang : nil;
+    self.captionCues = nil;
+    self.captionShown = nil;
+    self.captionLabel.hidden = YES;
+    self.tracksButton.tintColor = self.captionLang ? SCIAccent() : [UIColor whiteColor];
+    if (!self.captionLang) return;
+
+    NSArray *cached = self.cueCache[lang];
+    if (cached) { self.captionCues = cached; [self drawCaption]; return; }
+
+    NSDictionary *entry = nil;
+    for (NSDictionary *candidate in self.captionTracks) if ([candidate[@"lang"] isEqualToString:lang]) { entry = candidate; break; }
+    if (!entry) { self.captionLang = nil; self.tracksButton.tintColor = [UIColor whiteColor]; return; }
+
+    AVAsset *asset = self.player.currentItem.asset;
+    __weak __typeof(self) weakSelf = self;
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        NSArray *cues = [SCIYTCaptionReader cuesInTrack:entry[@"track"] asset:asset];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            __typeof(self) strongSelf = weakSelf;
+            if (!strongSelf || strongSelf.captionToken != file) return;
+            if (cues) strongSelf.cueCache[lang] = cues;
+            if (strongSelf.captionLoad != load) return;
+            if (!cues) {
+                [strongSelf say:SCILocalized(@"cap_unreadable")];
+                strongSelf.captionLang = nil;
+                strongSelf.tracksButton.tintColor = [UIColor whiteColor];
+                return;
+            }
+            strongSelf.captionCues = cues;
+            [strongSelf drawCaption];
+        });
+    });
+}
+
+/// Twice... ten times a second: the line for this moment, with the person's timing offset.
+- (void)drawCaption {
+    if (!self.captionCues.count) {
+        if (!self.captionLabel.hidden) self.captionLabel.hidden = YES;
+        return;
+    }
+    double at = CMTimeGetSeconds(self.player.currentTime) - [self current].captionDelay;
+    NSString *text = [SCIYTCaptionReader cueAtTime:at inCues:self.captionCues][@"text"];
+    if (!text.length) {
+        if (!self.captionLabel.hidden) self.captionLabel.hidden = YES;
+        self.captionShown = nil;
+        return;
+    }
+    // Over the bottom of the picture itself, not of the area the picture is centred in (in portrait that
+    // is a tall black field and the line would hang far below the video).
+    CGRect video = self.layer.videoRect;
+    CGFloat height = self.stage.bounds.size.height;
+    if (!CGRectIsEmpty(video) && height > 0 && video.size.height > 0) {
+        CGFloat wanted = -MAX(height - CGRectGetMaxY(video), 0) - 14;
+        if (fabs(self.captionBottom.constant - wanted) > 0.5) self.captionBottom.constant = wanted;
+    }
+
+    NSString *key = [NSString stringWithFormat:@"%@|%.2f", text, SCICaptionScaleValue()];
+    if ([key isEqualToString:self.captionShown]) { self.captionLabel.hidden = NO; return; }
+    self.captionShown = key;
+
+    NSShadow *shadow = [[NSShadow alloc] init];
+    shadow.shadowColor = [UIColor blackColor];
+    shadow.shadowBlurRadius = 4;
+    shadow.shadowOffset = CGSizeMake(0, 1);
+    NSMutableParagraphStyle *centred = [[NSMutableParagraphStyle alloc] init];
+    centred.alignment = NSTextAlignmentCenter;
+    self.captionLabel.attributedText = [[NSAttributedString alloc] initWithString:text attributes:@{
+        NSFontAttributeName: [UIFont systemFontOfSize:17 * SCICaptionScaleValue() weight:UIFontWeightSemibold],
+        NSForegroundColorAttributeName: [UIColor whiteColor],
+        NSShadowAttributeName: shadow,
+        NSParagraphStyleAttributeName: centred,
+    }];
+    self.captionLabel.hidden = NO;
+}
+
++ (NSArray<NSDictionary *> *)captionLanguages {
+    NSMutableArray *out = [NSMutableArray array];
+    for (NSDictionary *entry in sciCurrent.captionTracks) [out addObject:@{@"lang": entry[@"lang"], @"name": entry[@"name"]}];
+    return out;
+}
+
++ (double)captionScale { return SCICaptionScaleValue(); }
+
++ (void)setCaptionScale:(double)scale {
+    scale = MIN(MAX(scale, 0.6), 2.2);
+    [[NSUserDefaults standardUserDefaults] setDouble:scale forKey:kSCICaptionScaleKey];
+    sciCurrent.captionShown = nil;
+    [sciCurrent drawCaption];
+}
+
++ (double)captionDelay { return [sciCurrent current].captionDelay; }
+
++ (void)setCaptionDelay:(double)seconds {
+    SCIYTJob *job = [sciCurrent current];
+    if (!job) return;
+    job.captionDelay = MIN(MAX(seconds, -30), 30);
+    [[SCIYTLibrary shared] save];
+    [sciCurrent drawCaption];
+}
+
++ (void)exportCaptionsFor:(NSString *)language completion:(void (^)(NSURL *, NSString *))completion {
+    SCIYTPlayer *player = sciCurrent;
+    SCIYTJob *job = [player current];
+    NSDictionary *entry = nil;
+    for (NSDictionary *candidate in player.captionTracks) if ([candidate[@"lang"] isEqualToString:language]) { entry = candidate; break; }
+    if (!entry || !job) { completion(nil, SCILocalized(@"cap_unreadable")); return; }
+
+    AVAsset *asset = player.player.currentItem.asset;
+    NSString *title = job.title ?: @"captions";
+    double delay = job.captionDelay;
+    NSArray *cached = player.cueCache[language];
+    NSInteger file = player.captionToken;
+
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        NSArray *cues = cached ?: [SCIYTCaptionReader cuesInTrack:entry[@"track"] asset:asset];
+        NSURL *url = nil;
+        if (cues.count) {
+            NSMutableString *safe = [NSMutableString string];
+            NSCharacterSet *bad = [NSCharacterSet characterSetWithCharactersInString:@"/\\:?%*|\"<>"];
+            for (NSUInteger i = 0; i < title.length && safe.length < 80; i++) {
+                unichar c = [title characterAtIndex:i];
+                [safe appendString:[bad characterIsMember:c] ? @"_" : [NSString stringWithCharacters:&c length:1]];
+            }
+            NSString *dir = [NSTemporaryDirectory() stringByAppendingPathComponent:@"albrhi-srt"];
+            [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:nil];
+            NSString *path = [dir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@ - %@.srt", safe, language]];
+            NSString *srt = [SCIYTSubtitles srtFromCues:cues delay:delay];
+            if ([srt writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:nil]) url = [NSURL fileURLWithPath:path];
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (cues && player.captionToken == file) player.cueCache[language] = cues;
+            completion(url, url ? nil : SCILocalized(@"cap_unreadable"));
+        });
+    });
 }
 
 - (void)pickTracks {
     AVPlayerItem *item = self.player.currentItem;
     AVAsset *asset = item.asset;
     AVMediaSelectionGroup *audio = [asset mediaSelectionGroupForMediaCharacteristic:AVMediaCharacteristicAudible];
-    AVMediaSelectionGroup *text = [asset mediaSelectionGroupForMediaCharacteristic:AVMediaCharacteristicLegible];
+    SCIYTJob *job = [self current];
 
     UIAlertController *sheet = [UIAlertController alertControllerWithTitle:nil message:nil
                                                             preferredStyle:UIAlertControllerStyleActionSheet];
@@ -1474,29 +1913,33 @@ static SCIYTPlayer *sciCurrent = nil;
             [sheet addAction:[UIAlertAction actionWithTitle:title style:UIAlertActionStyleDefault
                                                     handler:^(__unused UIAlertAction *action) {
                 [item selectMediaOption:option inMediaSelectionGroup:audio];
+                job.audioChoice = option.extendedLanguageTag ?: option.displayName;
+                [[SCIYTLibrary shared] save];
             }]];
         }
     }
 
-    if (text.options.count > 0) {
-        AVMediaSelectionOption *chosen = [item.currentMediaSelection selectedMediaOptionInMediaSelectionGroup:text];
+    if (self.captionTracks.count > 0) {
         NSString *off = [NSString stringWithFormat:@"%@ · %@%@", SCILocalized(@"player_captions"),
-                         SCILocalized(@"player_captions_off"), chosen ? @"" : @"  ✓"];
+                         SCILocalized(@"player_captions_off"), self.captionLang ? @"" : @"  ✓"];
         [sheet addAction:[UIAlertAction actionWithTitle:off style:UIAlertActionStyleDefault
                                                 handler:^(__unused UIAlertAction *action) {
-            [item selectMediaOption:nil inMediaSelectionGroup:text];
+            [self showCaptionLanguage:nil remember:YES];
         }]];
-        for (AVMediaSelectionOption *option in text.options) {
-            // AVFoundation adds a "Forced" twin to every caption track; it only ever shows the
-            // lines meant for foreign speech, which is not what anyone opening this list wants.
-            if ([option hasMediaCharacteristic:AVMediaCharacteristicContainsOnlyForcedSubtitles]) continue;
+        for (NSDictionary *entry in self.captionTracks) {
+            NSString *lang = entry[@"lang"];
             NSString *title = [NSString stringWithFormat:@"%@ · %@%@", SCILocalized(@"player_captions"),
-                               option.displayName, option == chosen ? @"  ✓" : @""];
+                               entry[@"name"], [lang isEqualToString:self.captionLang] ? @"  ✓" : @""];
             [sheet addAction:[UIAlertAction actionWithTitle:title style:UIAlertActionStyleDefault
                                                     handler:^(__unused UIAlertAction *action) {
-                [item selectMediaOption:option inMediaSelectionGroup:text];
+                [self showCaptionLanguage:lang remember:YES];
             }]];
         }
+        [sheet addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"%@…", SCILocalized(@"cap_settings")]
+                                                  style:UIAlertActionStyleDefault
+                                                handler:^(__unused UIAlertAction *action) {
+            [SCIYTCaptionSettings presentFrom:self];
+        }]];
     }
 
     [self offer:sheet from:self.tracksButton];
@@ -1686,6 +2129,8 @@ static SCIYTPlayer *sciCurrent = nil;
     }
 
     if (self.scrubbing) return;
+
+    [self skipSponsorAt:at length:length];
 
     // Said again about every two seconds while playing.
     //

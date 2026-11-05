@@ -92,6 +92,11 @@
     // exactly right, since every job saved before Shorts had their own tab was an
     // ordinary video by definition.
     self.isShort    = [coder decodeBoolForKey:@"short"];
+    self.sponsorSegments = [coder decodeObjectOfClasses:[NSSet setWithObjects:[NSArray class], [NSDictionary class], [NSString class], [NSNumber class], nil] forKey:@"sponsorSegments"];
+    self.sponsorCheckedAt = [coder decodeDoubleForKey:@"sponsorCheckedAt"];
+    self.audioChoice = [coder decodeObjectOfClass:[NSString class] forKey:@"audioChoice"];
+    self.captionChoice = [coder decodeObjectOfClass:[NSString class] forKey:@"captionChoice"];
+    self.captionDelay = [coder decodeDoubleForKey:@"captionDelay"];
 
     // Always Done. Only finished jobs are written out, and a decoder that trusted a
     // stored state would put a permanently stalled row in front of the user after a
@@ -116,6 +121,11 @@
     [coder encodeBool:self.exported forKey:@"exported"];
     [coder encodeObject:self.exportFailure forKey:@"exportFailure"];
     [coder encodeBool:self.isShort forKey:@"short"];
+    [coder encodeObject:self.sponsorSegments forKey:@"sponsorSegments"];
+    [coder encodeDouble:self.sponsorCheckedAt forKey:@"sponsorCheckedAt"];
+    [coder encodeObject:self.audioChoice forKey:@"audioChoice"];
+    [coder encodeObject:self.captionChoice forKey:@"captionChoice"];
+    [coder encodeDouble:self.captionDelay forKey:@"captionDelay"];
 }
 
 @end

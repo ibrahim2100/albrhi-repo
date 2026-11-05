@@ -43,6 +43,7 @@ xcrun clang \
   -framework Foundation -framework UIKit -framework AVFoundation -framework CoreMedia -framework CoreVideo -framework UniformTypeIdentifiers \
   src/Features/Download/SCIYTTransport.m \
   src/Features/Download/SCIYTSubtitles.m \
+  src/Features/Download/SCIYTCaptionReader.m \
   src/Features/Download/SCIYTRecipe.m \
   src/Features/Download/SCIYTPlaylist.m \
   src/Features/Download/SCIYTParts.m \

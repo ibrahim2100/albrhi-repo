@@ -99,6 +99,12 @@ extern NSNotificationName const SCIYTLibraryDidChangeNotification;
 /// Total size of everything held.
 - (long long)totalBytes;
 
+/// SponsorBlock segments for a saved file, asked for once and kept with it (so playing offline skips
+/// too). Does nothing when SponsorBlock or every category is off, when the file has no video id, or
+/// when it was asked recently; an empty answer is asked again after a week (a failed request looks
+/// the same). `completion` runs on the main queue once the job holds an answer, or at once.
+- (void)ensureSponsorSegmentsFor:(SCIYTJob *)job completion:(nullable void (^)(void))completion;
+
 @end
 
 NS_ASSUME_NONNULL_END

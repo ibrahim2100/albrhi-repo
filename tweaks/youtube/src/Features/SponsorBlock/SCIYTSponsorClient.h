@@ -36,6 +36,19 @@
 + (void)segmentsForVideo:(NSString *)videoID
               completion:(void (^)(NSArray<SCISponsorSegment *> *segments))completion;
 
+/// The same lookup for a file that will be played later: the segments of **every** category,
+/// asked for only when SponsorBlock is on and at least one category is switched on (someone who
+/// wants none of it makes no request). The player then skips only the categories that are on
+/// *when it plays*, so a category switched on after the download applies to it too.
++ (void)segmentsForSavedVideo:(NSString *)videoID
+                   completion:(void (^)(NSArray<SCISponsorSegment *> *segments))completion;
+
+/// Whether SponsorBlock is on and at least one category is.
++ (BOOL)anyCategoryEnabled;
+
+/// Whether this category's switch is on right now (and SponsorBlock itself).
++ (BOOL)categoryIsEnabled:(NSString *)category;
+
 /// A human name for a category, for the notice shown after a skip.
 + (NSString *)displayNameForCategory:(NSString *)category;
 

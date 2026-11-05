@@ -52,3 +52,49 @@ static inline int SCIPlayerZoomChoice(double scale) {
     if (scale < 0.87) return -1;
     return 0;
 }
+
+// MARK: - SponsorBlock in a saved file
+
+/// Which saved segment to jump over right now, or -1.
+///
+/// `starts`/`ends` are the segments in seconds; `active[i]` says whether its category is switched
+/// on *now* (the choice is read when playing, not when the file was saved, so a category turned on
+/// later applies to old files); `done[i]` marks the ones already skipped this playback, so an undo
+/// that goes back into a segment is not skipped again. A segment under one second is not worth a
+/// jump (the seek costs about that), one that starts at or past the end of the file is a segment
+/// of a different cut of the video, and the end is clamped to the file.
+static inline int SCISkipIndex(const double *starts, const double *ends, const unsigned char *active,
+                               const unsigned char *done, int count, double now, double length) {
+    if (!isfinite(now) || now < 0) return -1;
+    for (int i = 0; i < count; i++) {
+        if (!active[i] || done[i]) continue;
+        double start = starts[i], end = ends[i];
+        if (!isfinite(start) || !isfinite(end) || start < 0 || end <= start) continue;
+        if (isfinite(length) && length > 0) {
+            if (start >= length - 0.5) continue;
+            if (end > length) end = length;
+        }
+        if (end - start < 1.0) continue;
+        if (now >= start && now < end) return i;
+    }
+    return -1;
+}
+
+// MARK: - Shuffle
+
+/// A play order for `count` items that starts with `first` and visits every other one once.
+/// Fisher-Yates over a small deterministic generator, so a test can pin the seed and a run of
+/// the app does not need a source of randomness it can fail to have.
+static inline void SCIShuffleOrder(int *out, int count, int first, unsigned int seed) {
+    if (count <= 0) return;
+    if (first < 0 || first >= count) first = 0;
+    int slot = 1;
+    out[0] = first;
+    for (int i = 0; i < count; i++) if (i != first) out[slot++] = i;
+    unsigned int state = seed ? seed : 0x9E3779B9u;
+    for (int i = count - 1; i > 1; i--) {
+        state ^= state << 13; state ^= state >> 17; state ^= state << 5;
+        int j = 1 + (int)(state % (unsigned int)i);   // 1...i, slot 0 stays where it is
+        int t = out[i]; out[i] = out[j]; out[j] = t;
+    }
+}

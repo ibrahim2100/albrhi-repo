@@ -180,4 +180,38 @@ static BOOL SCIHasWordTiming(NSString *line) {
     return status == noErr ? sample : NULL;
 }
 
++ (NSString *)textFromPayload:(NSData *)payload {
+    if (payload.length < 2) return nil;
+    const uint8_t *bytes = payload.bytes;
+    NSUInteger length = ((NSUInteger)bytes[0] << 8) | bytes[1];
+    if (length == 0 || payload.length < 2 + length) return nil;
+    return [[NSString alloc] initWithBytes:bytes + 2 length:length encoding:NSUTF8StringEncoding];
+}
+
++ (NSString *)srtTimestamp:(double)seconds {
+    if (!isfinite(seconds) || seconds < 0) seconds = 0;
+    long long ms = (long long)llround(seconds * 1000.0);
+    return [NSString stringWithFormat:@"%02lld:%02lld:%02lld,%03lld",
+            ms / 3600000, (ms / 60000) % 60, (ms / 1000) % 60, ms % 1000];
+}
+
++ (NSString *)srtFromCues:(NSArray<NSDictionary *> *)cues delay:(double)delay {
+    NSMutableString *out = [NSMutableString string];
+    NSInteger number = 0;
+    for (NSDictionary *cue in cues) {
+        NSString *text = cue[@"text"];
+        if (![text isKindOfClass:[NSString class]] || !text.length) continue;
+        double start = [cue[@"start"] doubleValue] + delay;
+        double end = [cue[@"end"] doubleValue] + delay;
+        if (end <= 0 || end <= start) continue;
+        if (start < 0) start = 0;
+        // A blank line ends a SubRip block, so none may sit inside the text.
+        NSString *body = [[text stringByReplacingOccurrencesOfString:@"\r" withString:@""]
+                          stringByReplacingOccurrencesOfString:@"\n\n" withString:@"\n"];
+        [out appendFormat:@"%ld\n%@ --> %@\n%@\n\n", (long)++number,
+         [self srtTimestamp:start], [self srtTimestamp:end], body];
+    }
+    return out;
+}
+
 @end

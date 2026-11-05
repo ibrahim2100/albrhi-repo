@@ -63,4 +63,68 @@ void Test_PlayerMath(void) {
         ALBRHI_ASSERT(SCIPlayerZoomChoice(1.05) == 0, @"a tremor changes nothing");
         ALBRHI_ASSERT(SCIPlayerZoomChoice(0.95) == 0, @"a tremor changes nothing");
     });
+
+    printf("sponsor segments in a saved file\n");
+
+    ALBRHI_TEST(skip_picks_the_segment_the_playhead_is_inside, {
+        double starts[] = {10, 100}, ends[] = {20, 130};
+        unsigned char active[] = {1, 1}, done[] = {0, 0};
+        ALBRHI_ASSERT(SCISkipIndex(starts, ends, active, done, 2, 5, 600) == -1, @"before the first");
+        ALBRHI_ASSERT(SCISkipIndex(starts, ends, active, done, 2, 10, 600) == 0, @"at the start of the first");
+        ALBRHI_ASSERT(SCISkipIndex(starts, ends, active, done, 2, 19.9, 600) == 0, @"inside it");
+        ALBRHI_ASSERT(SCISkipIndex(starts, ends, active, done, 2, 20, 600) == -1, @"the end is outside");
+        ALBRHI_ASSERT(SCISkipIndex(starts, ends, active, done, 2, 120, 600) == 1, @"inside the second");
+    });
+
+    ALBRHI_TEST(skip_honours_switches_and_what_was_already_skipped, {
+        double starts[] = {10}, ends[] = {20};
+        unsigned char off[] = {0}, on[] = {1}, done[] = {0}, skipped[] = {1};
+        ALBRHI_ASSERT(SCISkipIndex(starts, ends, off, done, 1, 12, 600) == -1, @"a category that is off");
+        ALBRHI_ASSERT(SCISkipIndex(starts, ends, on, skipped, 1, 12, 600) == -1, @"an undone skip is not repeated");
+    });
+
+    ALBRHI_TEST(skip_ignores_what_is_not_worth_it_or_not_in_this_file, {
+        double starts[] = {10, 50, 580, 5}, ends[] = {10.5, 40, 700, NAN};
+        unsigned char active[] = {1, 1, 1, 1}, done[] = {0, 0, 0, 0};
+        ALBRHI_ASSERT(SCISkipIndex(starts, ends, active, done, 4, 10.2, 600) == -1, @"under a second");
+        ALBRHI_ASSERT(SCISkipIndex(starts, ends, active, done, 4, 45, 600) == -1, @"end before start");
+        double lateStart[] = {599.7}, lateEnd[] = {640};
+        unsigned char one[] = {1}, none[] = {0};
+        ALBRHI_ASSERT(SCISkipIndex(lateStart, lateEnd, one, none, 1, 599.8, 600) == -1, @"a segment that begins at the very end is another cut");
+        ALBRHI_ASSERT(SCISkipIndex(starts, ends, active, done, 4, 590, 600) == 2, @"one that runs past the end is clamped, not dropped");
+        ALBRHI_ASSERT(SCISkipIndex(starts, ends, active, done, 4, 6, 600) == -1, @"NaN");
+        ALBRHI_ASSERT(SCISkipIndex(starts, ends, active, done, 4, NAN, 600) == -1, @"no time");
+    });
+
+    printf("shuffle\n");
+
+    ALBRHI_TEST(shuffle_starts_at_the_current_one_and_visits_each_once, {
+        for (unsigned seed = 1; seed < 200; seed++) {
+            int order[9];
+            SCIShuffleOrder(order, 9, 4, seed);
+            int seen[9] = {0};
+            for (int i = 0; i < 9; i++) { ALBRHI_ASSERT(order[i] >= 0 && order[i] < 9, @"in range"); seen[order[i]]++; }
+            for (int i = 0; i < 9; i++) ALBRHI_ASSERT(seen[i] == 1, @"each exactly once");
+            ALBRHI_ASSERT(order[0] == 4, @"the one playing stays first");
+        }
+    });
+
+    ALBRHI_TEST(shuffle_actually_mixes_and_is_repeatable, {
+        int a[20], b[20], c[20];
+        SCIShuffleOrder(a, 20, 0, 7); SCIShuffleOrder(b, 20, 0, 7); SCIShuffleOrder(c, 20, 0, 8);
+        BOOL same = YES, other = NO, ordered = YES;
+        for (int i = 0; i < 20; i++) { if (a[i] != b[i]) same = NO; if (a[i] != c[i]) other = YES; if (a[i] != i) ordered = NO; }
+        ALBRHI_ASSERT(same, @"the same seed gives the same order");
+        ALBRHI_ASSERT(other, @"another seed gives another");
+        ALBRHI_ASSERT(!ordered, @"not left in order");
+    });
+
+    ALBRHI_TEST(shuffle_edge_sizes, {
+        int one[1]; SCIShuffleOrder(one, 1, 0, 3);
+        ALBRHI_ASSERT(one[0] == 0, @"one item");
+        int two[2]; SCIShuffleOrder(two, 2, 1, 3);
+        ALBRHI_ASSERT(two[0] == 1 && two[1] == 0, @"two items, the second playing");
+        int bad[3]; SCIShuffleOrder(bad, 3, 99, 3);
+        ALBRHI_ASSERT(bad[0] == 0, @"an invalid start falls back to the first");
+    });
 }

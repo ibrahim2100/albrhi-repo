@@ -200,11 +200,32 @@ static NSString *SCIHashPrefix(NSString *videoID) {
     return out;
 }
 
++ (BOOL)anyCategoryEnabled {
+    return SCIPrefEnabled(SCIPrefSponsorBlock) && SCIEnabledCategories().count > 0;
+}
+
++ (BOOL)categoryIsEnabled:(NSString *)category {
+    NSString *key = SCICategoryPrefs()[category];
+    return key && SCIPrefEnabled(SCIPrefSponsorBlock) && SCIPrefEnabled(key);
+}
+
++ (void)segmentsForSavedVideo:(NSString *)videoID
+                   completion:(void (^)(NSArray<SCISponsorSegment *> *))completion {
+    if (!completion) return;
+    if (!SCIEnabledCategories().count) { completion(@[]); return; }
+    [self segmentsForVideo:videoID categories:[SCICategoryPrefs().allKeys sortedArrayUsingSelector:@selector(compare:)]
+                completion:completion];
+}
+
 + (void)segmentsForVideo:(NSString *)videoID
               completion:(void (^)(NSArray<SCISponsorSegment *> *))completion {
-    if (!completion) return;
+    [self segmentsForVideo:videoID categories:SCIEnabledCategories() completion:completion];
+}
 
-    NSArray<NSString *> *enabled = SCIEnabledCategories();
++ (void)segmentsForVideo:(NSString *)videoID
+              categories:(NSArray<NSString *> *)enabled
+              completion:(void (^)(NSArray<SCISponsorSegment *> *))completion {
+    if (!completion) return;
 
     // Nothing is sent when the feature is off, or when every category is off. Someone
     // who does not want this makes no network request at all -- not a request whose

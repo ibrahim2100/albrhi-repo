@@ -83,6 +83,26 @@ extern NSNotificationName const SCIYTPlaybackDidChangeNotification;
 /// Brings the full screen back, from the mini bar.
 + (void)reopenFrom:(UIViewController *)presenter;
 
+// MARK: - Used by the player's own sheets (queue, captions)
+
+/// The queue, the row that is playing, and whether the order is being shuffled.
++ (NSArray<SCIYTJob *> *)queueJobs;
++ (NSUInteger)queueIndex;
++ (BOOL)queueShuffled;
++ (void)queueJumpTo:(NSUInteger)row;
++ (void)queueMoveFrom:(NSUInteger)from to:(NSUInteger)to;
++ (void)queueRemoveAt:(NSUInteger)row;
+
+/// The caption languages the playing file carries (`@{@"lang", @"name"}`), the size multiplier and the
+/// timing offset (seconds the captions are shown later than the file says; negative = earlier), and
+/// a .srt of one language with that offset applied.
++ (NSArray<NSDictionary *> *)captionLanguages;
++ (double)captionScale;
++ (void)setCaptionScale:(double)scale;
++ (double)captionDelay;
++ (void)setCaptionDelay:(double)seconds;
++ (void)exportCaptionsFor:(NSString *)language completion:(void (^)(NSURL * _Nullable file, NSString * _Nullable failure))completion;
+
 @end
 
 NS_ASSUME_NONNULL_END

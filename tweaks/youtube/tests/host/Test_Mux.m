@@ -14,6 +14,7 @@
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "Features/Download/SCIYTFragments.h"
 #import "Features/Download/SCIYTSubtitles.h"
+#import "Features/Download/SCIYTCaptionReader.h"
 #import "AlbrhiTestKit.h"
 
 @interface SCIMuxCollector : NSObject <AVAssetWriterDelegate>
@@ -141,6 +142,34 @@ void Test_Mux(void) {
         AVMediaSelectionGroup *group = [asset mediaSelectionGroupForMediaCharacteristic:AVMediaCharacteristicLegible];
         ALBRHI_ASSERT(group.options.count >= 2, @"both caption tracks are offered");
         for (AVAssetTrack *track in [asset tracksWithMediaType:AVMediaTypeSubtitle]) ALBRHI_ASSERT(!track.isEnabled, @"no caption shows unasked");
+    });
+
+    ALBRHI_TEST(the_player_reads_back_the_captions_that_were_written, {
+        AVURLAsset *asset = [AVURLAsset URLAssetWithURL:merged options:nil];
+        NSArray *tracks = [SCIYTCaptionReader captionTracksInAsset:asset];
+        ALBRHI_ASSERT(tracks.count == 2, @"two caption tracks");
+        NSMutableDictionary *byLanguage = [NSMutableDictionary dictionary];
+        for (NSDictionary *entry in tracks) byLanguage[entry[@"lang"]] = entry;
+        ALBRHI_ASSERT(byLanguage[@"en"] && byLanguage[@"ar"], @"each carries its language");
+        NSArray *english = [SCIYTCaptionReader cuesInTrack:byLanguage[@"en"][@"track"] asset:asset];
+        NSArray *arabic = [SCIYTCaptionReader cuesInTrack:byLanguage[@"ar"][@"track"] asset:asset];
+        ALBRHI_ASSERT(english.count == 1 && [english[0][@"text"] isEqualToString:@"Hello"], @"the English line, and not the silences around it");
+        ALBRHI_ASSERT(fabs([english[0][@"start"] doubleValue] - 1.0) < 0.01 && fabs([english[0][@"end"] doubleValue] - 2.0) < 0.01, @"at the time it was written");
+        ALBRHI_ASSERT(arabic.count == 1 && [arabic[0][@"text"] isEqualToString:@"مرحبا"], @"the Arabic line survives the round trip");
+        ALBRHI_ASSERT([SCIYTCaptionReader cueAtTime:1.5 inCues:english] != nil, @"shown while it lasts");
+        ALBRHI_ASSERT([SCIYTCaptionReader cueAtTime:0.5 inCues:english] == nil && [SCIYTCaptionReader cueAtTime:2.0 inCues:english] == nil, @"not before it starts or once it ended");
+        NSString *srt = [SCIYTSubtitles srtFromCues:english delay:0];
+        ALBRHI_ASSERT([srt isEqualToString:@"1\n00:00:01,000 --> 00:00:02,000\nHello\n\n"], @"and it exports");
+    });
+
+    ALBRHI_TEST(cue_lookup_finds_the_right_one_among_many, {
+        NSMutableArray *cues = [NSMutableArray array];
+        for (int i = 0; i < 1000; i++) [cues addObject:@{@"start": @(i * 3.0), @"end": @(i * 3.0 + 2.0), @"text": [NSString stringWithFormat:@"%d", i]}];
+        ALBRHI_ASSERT([[SCIYTCaptionReader cueAtTime:1500.5 inCues:cues][@"text"] isEqualToString:@"500"], @"in the middle");
+        ALBRHI_ASSERT([SCIYTCaptionReader cueAtTime:1502.5 inCues:cues] == nil, @"in a gap");
+        ALBRHI_ASSERT([[SCIYTCaptionReader cueAtTime:2997.5 inCues:cues][@"text"] isEqualToString:@"999"], @"the last");
+        ALBRHI_ASSERT([SCIYTCaptionReader cueAtTime:5000 inCues:cues] == nil && [SCIYTCaptionReader cueAtTime:-1 inCues:cues] == nil, @"outside");
+        ALBRHI_ASSERT([SCIYTCaptionReader cueAtTime:1 inCues:@[]] == nil, @"no cues");
     });
 
     ALBRHI_TEST(without_extras_the_plain_merge_is_unchanged, {

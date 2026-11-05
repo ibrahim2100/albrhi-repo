@@ -45,6 +45,19 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable CMSampleBufferRef)newSampleForEntry:(NSDictionary *)entry
                                          format:(CMFormatDescriptionRef)format CF_RETURNS_RETAINED;
 
+/// The text inside one text sample's payload (the inverse of `payloadForText:`): the 16-bit length,
+/// then that many bytes of UTF-8; anything after them (style atoms) is ignored. nil for an empty
+/// sample -- the silence between two cues -- and for a payload that is shorter than it says.
++ (nullable NSString *)textFromPayload:(NSData *)payload;
+
+/// `HH:MM:SS,mmm`, the form SubRip wants.
++ (NSString *)srtTimestamp:(double)seconds;
+
+/// A SubRip (.srt) document for these cues (`start`, `end`, `text`), shifted by `delay` seconds
+/// (what the player's timing offset says the person saw). Cues that end up wholly before zero are
+/// dropped and one that straddles zero starts at zero.
++ (NSString *)srtFromCues:(NSArray<NSDictionary *> *)cues delay:(double)delay;
+
 @end
 
 NS_ASSUME_NONNULL_END
