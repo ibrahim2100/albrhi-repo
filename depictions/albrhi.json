@@ -106,6 +106,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.112.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **اللوحة 0.11.0 — تصميم جديد كامل لصفحة البرهي في الإعدادات: بطاقة رأس، أيقونة لكل تطبيق مثبّتاً كان أو لا، قسم تحديثات مستقل، ودليل بطاقات.**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.111.0",
           "useBoldText": true
         },
@@ -131,20 +145,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.110.3",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **يوتيوب 1.49.3 — الأغاني تبدأ من بدايتها دائماً (المتابعة من حيث توقفت للفيديو وللصوت الطويل فقط، وعند اختيار الصف من القائمة فقط)، وتُمسح المواضع الخاطئة التي خلّفها…",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.111.0"
+          "text": "1.112.0"
         },
         {
           "class": "DepictionTableTextView",
