@@ -115,6 +115,7 @@ inside one package, three stand apart.
   TWIGalaxy, `carsurf`, Regram, InstaPlus,
   Legizmo (a paid tweak — its licence and DRM components were deliberately not examined), and **Rocket for Instagram 4.23.1** (closed source, obfuscated, with a paid store: read for its public feature list and the
   selector names it carries in the clear; store and entitlement code not examined; call recording not proposed — `docs/investigations/rocket-feature-map.md`).
+- **VibeTok 1.77 (DeNsor) was opened with REA on 2026-11-09 for its hook table and what the replacements do** (unlicensed, nothing copied; `docs/investigations/vibetok.md`). Its symbols are not stripped, so the whole table was read from the Logos names.
 - **RyukGram is NOT in that list, and was wrongly in it until 2026-10-15.** Its repository carries a *proprietary* licence (all rights reserved) that forbids reverse engineering and forbids using
   any part of it, README included, to "build, train, or assist a competing product" -- which this project's Instagram tweak is. It is not read at all, for architecture or for its feature list. **Check the LICENSE file
   before reading a reference, not after:** "no licence file" and "a licence that forbids this" are different things and the second one was filed under the first.
