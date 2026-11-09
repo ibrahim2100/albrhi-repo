@@ -177,6 +177,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// Newest first, at most a small cap.
 + (NSArray<SCITTMediaItem *> *)recent;
 
+/// The item captured for *this* model, found by the model's own id, or nil when it has none or none was captured. **`recent.firstObject` is
+/// the newest capture, not the video on screen**: the feed also captures the videos around it, and a button that took the newest gave the
+/// visible video the neighbour's date (and the neighbour's file).
++ (SCITTMediaItem *)itemForModel:(id)model;
+
 + (void)forgetAll;
 
 /// What the resolution chain last did -- which step it reached, and where it stopped

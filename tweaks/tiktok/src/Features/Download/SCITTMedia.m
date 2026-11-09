@@ -1014,6 +1014,15 @@ static void SCITTCaptureStats(id model) {
 
 static void SCITTCapturePostedDate(id model) {
     sciPendingPosted = nil;
+    // **Which video this capture is about, for every route** (it used to be set on the video route only, so a photo post's item could
+    // not be told from its neighbours'). `+itemForModel:` finds the item by this, and a date label must never be read from "whatever
+    // was captured last": the feed captures the videos around the visible one too.
+    sciPendingItemID = nil;
+    if (model) {
+        SEL idSel = NSSelectorFromString(@"itemID");
+        id identifier = [model respondsToSelector:idSel] ? ((id (*)(id, SEL))objc_msgSend)(model, idSel) : nil;
+        if ([identifier isKindOfClass:[NSString class]] && [(NSString *)identifier length]) sciPendingItemID = identifier;
+    }
     SCITTCaptureStats(model);
     if (!model) return;
 
@@ -1042,6 +1051,7 @@ static void SCITTAddPhotoPost(NSArray<NSArray<NSURL *> *> *photos, NSURL *audio)
     SCITTMediaItem *item = [[SCITTMediaItem alloc] init];
     item.url = primary;
     item.photoVariants = photos;
+    item.itemID = sciPendingItemID;
     item.photoIndex = (sciPhotoIndex < photos.count) ? sciPhotoIndex : NSNotFound;
     item.audioURL = audio;
 
@@ -1392,6 +1402,17 @@ static NSArray<NSURL *> *SCITTAllLinksForVideoModel(id videoModel, NSString **ou
     }
 
     [self captureModel:model];
+}
+
++ (SCITTMediaItem *)itemForModel:(id)model {
+    if (!model) return nil;
+    SEL idSel = NSSelectorFromString(@"itemID");
+    id identifier = [model respondsToSelector:idSel] ? ((id (*)(id, SEL))objc_msgSend)(model, idSel) : nil;
+    if (![identifier isKindOfClass:[NSString class]] || ![(NSString *)identifier length]) return nil;
+    for (SCITTMediaItem *item in [sciRecent copy]) {
+        if ([item.itemID isEqualToString:identifier]) return item;
+    }
+    return nil;
 }
 
 + (void)captureModel:(AWEAwemeModel *)model {

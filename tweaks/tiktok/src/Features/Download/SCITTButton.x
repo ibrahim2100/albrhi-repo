@@ -1516,7 +1516,7 @@ static BOOL sciCellItemFromCell = NO;
             // The settled entry point: this model came from the cell's own view controller,
             // so it is finished and on screen, and may be asked for the bitrate ladder.
             [SCITTMedia captureSettledModel:(AWEAwemeModel *)model];
-            item = [SCITTMedia recent].firstObject;
+            item = [SCITTMedia itemForModel:model] ?: [SCITTMedia recent].firstObject;
         }
 
         // Falls back, and **never hides the button** -- 0.10.0 did both the other way round
@@ -1732,7 +1732,10 @@ static void SCITTPlaceBaseButton(UIViewController *controller) {
                                  OBJC_ASSOCIATION_ASSIGN);
     }
 
-    SCITTMediaItem *item = [SCITTMedia recent].firstObject;
+    // **This video's own item, not the newest capture.** The feed captures the videos around the visible one as well, so
+    // `recent.firstObject` was whichever of them was seen last, and its date was drawn on the video being watched.
+    SCITTMediaItem *own = [SCITTMedia itemForModel:model];
+    SCITTMediaItem *item = own ?: [SCITTMedia recent].firstObject;
     if (!item) return;
 
     // Anything an older build's cell surface left behind is removed. An upgrade must not inherit
@@ -1796,7 +1799,8 @@ static void SCITTPlaceBaseButton(UIViewController *controller) {
     // Re-associated on every bind, because the controller is reused and the button is not:
     // a stale association is how the same clip saved three times while another was on screen.
     objc_setAssociatedObject(button, kSCIItemKey, item, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    SCITTPlaceDateLabel(host, button, item);
+    // No date is better than another video's: when this model's own item cannot be found the label is hidden, not borrowed.
+    SCITTPlaceDateLabel(host, button, own);
 
     } @catch (NSException *exception) {
         SCILogV(@"base button: %@", exception.reason);
