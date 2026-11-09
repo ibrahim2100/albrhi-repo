@@ -106,6 +106,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.111.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **تيك توك 0.29.0 — الرسائل المسحوبة تبقى بين التشغيلات وتُلوَّن فقاعتها، إيقاف «يكتب»، سؤال قبل حذف الرسالة مع تراجع، أعداد دقيقة، كيبورد أسود، صوت فيديو كرسالة صوتية،…",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.110.4",
           "useBoldText": true
         },
@@ -131,20 +145,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.110.2",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **يوتيوب 1.49.2 — «التالي» في المشغّل يبدأ المقطع من بدايته لا من دقيقة المقطع السابق.**",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -155,7 +155,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.110.4"
+          "text": "1.111.0"
         },
         {
           "class": "DepictionTableTextView",
