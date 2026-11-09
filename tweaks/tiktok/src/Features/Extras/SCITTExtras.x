@@ -6,6 +6,8 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+#import <QuartzCore/QuartzCore.h>
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import "SCITTExtras.h"
@@ -13,6 +15,7 @@
 #import "../../Diagnostics/SCITTDiagnostics.h"
 #import "../../SCILog.h"
 #import "../../Localization/SCILocalize.h"
+#import "../Messages/SCITTRecalledStore.h"
 
 ///
 /// **Where these came from, and what was measured before any of it was written.**
@@ -45,18 +48,35 @@
 @interface TTKProfileViewsPresenter : NSObject
 @end
 
+/// 47.1.0 draws a direct text message in `AWEIMTextMessageCellView` (a view, not a table cell: `AWEIMTextMessageTableViewCell` is not in that
+/// build), whose bubble is a `CAShapeLayer` filled by `-p_setBubbleLayerColor`. `-message` and `-cellViewModel` come from its base class
+/// `AWEIMMessageBaseCellView`; `AWEIMMessage -serverMessageID` is a `long long`, the same id `TIMOMessage` carries as an `NSNumber`.
+@interface AWEIMMessage : NSObject
+- (long long)serverMessageID;
+@end
+
+@interface AWEIMTextMessageCellView : UIView
+- (id)message;
+- (id)cellViewModel;
+- (CAShapeLayer *)bubbleLayer;
+// Added by the hook below (`%property` / `%new`), declared so the hook body can send them.
+@property (nonatomic, strong) id albrhiTintOriginal;
+- (void)albrhiSyncRecalledTint;
+@end
+
 static NSString *sciExtrasState = nil;
 static NSUInteger sciVisitorsSeen = 0;
 
-/// The messages whose sender took them back, by `serverMessageID`.
+/// The messages whose sender took them back, by `serverMessageID` -- **kept in a file now** (`SCITTRecalledStore`, 0.29.0), so a message
+/// stays visible, and stays marked, across launches and not only for the one in which the recall arrived.
 ///
-/// **The hook that hides the recall is also the only thing that knows one happened.** `%orig`
-/// answers YES a moment before Albrhi answers NO, so the fact is there to be kept rather than
-/// swallowed -- and keeping it is what lets the message be *marked* instead of quietly restored.
-/// A message shown as though nothing happened is the tweak deciding something on the reader's
-/// behalf without saying so, which is the same objection this project raised about a watch being
-/// told it was up to date.
-static NSMutableSet *sciRecalledIDs = nil;
+/// **The hook that hides the recall is also the only thing that knows one happened.** `%orig` answers YES a moment before Albrhi answers NO, so the
+/// fact is there to be kept rather than swallowed -- and keeping it is what lets the message be *marked* instead of quietly restored.
+/// A message shown as though nothing happened is the tweak deciding something on the reader's behalf without saying so, which is the same
+/// objection this project raised about a watch being told it was up to date.
+static BOOL sciBubbleTintInstalled = NO;
+static NSUInteger sciRecalledSeen = 0, sciRecalledStored = 0, sciTintApplied = 0, sciTintRestored = 0;
+static NSString *sciTintState = nil;
 
 /// What the content dictionary turned out to hold, recorded once, and which key was marked.
 static NSString *sciContentKeys = nil;
@@ -107,22 +127,43 @@ static BOOL SCITTEncodingMatches(Class cls, NSString *selectorName, NSString *ex
     if (!SCIPrefEnabled(SCIPrefKeepRecalled)) return recalled;
 
     if (recalled) {
-        // Remembered before it is answered away. Ids only -- holding the message itself would keep
-        // it alive past the conversation that made it.
+        // Remembered before it is answered away -- by id only: this getter is asked constantly, and reading the content from here would
+        // run the content hook below on every call. The content is taken where the recall is *set* (`-setRecalled:`), once.
         id identifier = [self respondsToSelector:@selector(serverMessageID)]
             ? ((id (*)(id, SEL))objc_msgSend)(self, @selector(serverMessageID)) : nil;
-
-        if (identifier) {
-            static dispatch_once_t once;
-            dispatch_once(&once, ^{ sciRecalledIDs = [NSMutableSet set]; });
-            @synchronized (sciRecalledIDs) { [sciRecalledIDs addObject:identifier]; }
-        }
+        if ([[SCITTRecalledStore shared] track:identifier content:nil]) sciRecalledSeen++;
     }
 
     // The message is still here: TikTok received it, then received an instruction to hide it, and
     // hiding is done by the client. Nothing is fetched back from a server -- what is refused is the
     // instruction to stop showing what already arrived.
     return NO;
+}
+
+%end
+%end
+
+/// **The setter, as well as the getter** -- the lesson written down twice already (`-bypassOnesie`, `AWEAwemeACLItem.watermarkType`): code that
+/// reads the ivar directly never passes through a getter hook, while a stored value is true for every reader. This is also the one moment the
+/// message still has its own content: it is read here, kept, and only then is NO stored in place of YES.
+%group SCITTKeepRecalledSetter
+
+%hook TIMOMessage
+
+- (void)setRecalled:(BOOL)recalled {
+    if (!recalled || !SCIPrefEnabled(SCIPrefKeepRecalled)) {
+        %orig;
+        return;
+    }
+
+    id identifier = [self respondsToSelector:@selector(serverMessageID)]
+        ? ((id (*)(id, SEL))objc_msgSend)(self, @selector(serverMessageID)) : nil;
+    id content = [self respondsToSelector:@selector(content)]
+        ? ((id (*)(id, SEL))objc_msgSend)(self, @selector(content)) : nil;
+    if ([[SCITTRecalledStore shared] track:identifier content:content]) sciRecalledSeen++;
+    if ([[SCITTRecalledStore shared] contentFor:identifier]) sciRecalledStored++;
+
+    %orig(NO);
 }
 
 %end
@@ -138,17 +179,19 @@ static BOOL SCITTEncodingMatches(Class cls, NSString *selectorName, NSString *ex
     id content = %orig;
 
     if (!SCIPrefEnabled(SCIPrefKeepRecalled)) return content;
-    if (![content isKindOfClass:[NSDictionary class]]) return content;
 
     id identifier = [self respondsToSelector:@selector(serverMessageID)]
         ? ((id (*)(id, SEL))objc_msgSend)(self, @selector(serverMessageID)) : nil;
-    if (!identifier) return content;
+    if (!identifier || ![[SCITTRecalledStore shared] isTracked:identifier]) return content;
 
-    BOOL recalled = NO;
-    @synchronized (sciRecalledIDs ?: [NSMutableSet set]) {
-        recalled = [sciRecalledIDs containsObject:identifier];
-    }
-    if (!recalled) return content;
+    // What TikTok left of the message after the recall is not what was said. The content kept when the recall arrived is, so it is handed back
+    // (a copy of TikTok's own dictionary is never written through, and nothing is stored back into it).
+    id kept = [[SCITTRecalledStore shared] contentFor:identifier];
+    if ([kept isKindOfClass:[NSDictionary class]]) content = kept;
+
+    // The bubble is tinted (SCITTRecalledBubble below) and that is the mark. Only where it could not be installed does the text itself carry one.
+    if (sciBubbleTintInstalled) return content;
+    if (![content isKindOfClass:[NSDictionary class]]) return content;
 
     // Recorded once, so the next release can name the key instead of matching a shape.
     if (!sciContentKeys) {
@@ -156,32 +199,16 @@ static BOOL SCITTEncodingMatches(Class cls, NSString *selectorName, NSString *ex
     }
 
     //
-    // **The key is matched on its name, and the report says which one was taken.**
-    //
-    // The content dictionary's text key is not documented anywhere this project can read, and
-    // guessing at a name is what `downloadAddr` and `bestURLtoDownload` already cost this tweak.
-    // So the rule is narrow and visible: the first key whose own name contains "text", carrying a
-    // string. If nothing matches, **nothing is marked** and the report carries every key there was
-    // -- an honest miss that names the fix, rather than a mark placed on whatever happened to be a
-    // string.
+    // **`text` is the key, confirmed on a device rather than matched by shape** (0.19.x: `marked: 1 via key text`), and a shape rule stays
+    // underneath it as the fallback for a build that renames it: the first key whose own name contains "text", carrying a string. If nothing
+    // matches, **nothing is marked** and the report carries every key there was -- an honest miss that names the fix.
     //
     NSMutableDictionary *marked = [NSMutableDictionary dictionaryWithDictionary:content];
-    NSString *chosen = nil;
+    NSString *badge = SCILocalized(@"recalled_badge");
 
-    //
-    // **`text` is the key, confirmed on a device rather than matched by shape.**
-    //
-    // The first version took the first key whose *name* contained "text", and said so on its own
-    // row so the next release could name it exactly. A report came back reading `marked: 1 via key
-    // text` -- so the exact key is tried first now, and the shape rule stays underneath it as the
-    // fallback for a build that renames it. A measurement that arrives and is not used is a round
-    // trip spent for nothing.
-    //
     NSString *known = content[@"text"];
     if ([known isKindOfClass:[NSString class]]) {
-        NSString *badge = SCILocalized(@"recalled_badge");
         if ([known hasPrefix:badge]) return content;
-
         marked[@"text"] = [badge stringByAppendingString:known];
         sciMarkedKey = @"text";
         sciMarkedCount++;
@@ -190,28 +217,74 @@ static BOOL SCITTEncodingMatches(Class cls, NSString *selectorName, NSString *ex
 
     for (NSString *key in [(NSDictionary *)content allKeys]) {
         if (![key isKindOfClass:[NSString class]]) continue;
-        if ([key rangeOfString:@"text" options:NSCaseInsensitiveSearch].location == NSNotFound)
-            continue;
+        if ([key rangeOfString:@"text" options:NSCaseInsensitiveSearch].location == NSNotFound) continue;
 
         NSString *value = content[key];
         if (![value isKindOfClass:[NSString class]]) continue;
-
-        NSString *badge = SCILocalized(@"recalled_badge");
         if ([value hasPrefix:badge]) return content;   // already marked: idempotent by content
 
         marked[key] = [badge stringByAppendingString:value];
-        chosen = key;
-        break;
+        sciMarkedKey = key;
+        sciMarkedCount++;
+        return marked;
+    }
+    return content;
+}
+
+%end
+%end
+
+#pragma mark - Tinting the bubble of a message that was taken back
+
+/// **The mark is the bubble's colour, and the first thing every redraw does is ask whether this is still the right message.** A cell is reused
+/// (CLAUDE.md 4.5: a recycled cell is never removed from its window), so a tint put on a bubble and never taken off would follow the cell to
+/// the next message it shows. The colour the app had is kept on the cell (`albrhiTintOriginal`) and put back whenever the message in it is not a
+/// recalled one. Two doors, both confirmed on 47.1.0: the app's own colour write (`-p_setBubbleLayerColor`, which also means the colour just
+/// written is the new original) and the bind that fills a reused cell (`-p_configWithCellViewModel:oldCellViewModel:`).
+///
+/// **Not seen on a screen:** a direct message needs an account, which the simulator copy does not have. A custom chat wallpaper draws the
+/// bubble as an image (`bubbleImageView`) and a gradient bubble draws over the shape; those are not tinted.
+%group SCITTRecalledBubble
+
+%hook AWEIMTextMessageCellView
+
+%property (nonatomic, strong) id albrhiTintOriginal;
+
+%new(v@:)
+- (void)albrhiSyncRecalledTint {
+    BOOL recalled = NO;
+    if (SCIPrefEnabled(SCIPrefKeepRecalled)) {
+        id message = [self message] ?: [[self cellViewModel] message];
+        if ([message respondsToSelector:@selector(serverMessageID)]) {
+            recalled = [[SCITTRecalledStore shared] isTracked:@([(AWEIMMessage *)message serverMessageID])];
+        }
     }
 
-    if (!chosen) return content;
+    CAShapeLayer *layer = [self bubbleLayer];
+    if (![layer isKindOfClass:[CAShapeLayer class]]) return;
 
-    sciMarkedKey = chosen;
-    sciMarkedCount++;
+    if (recalled) {
+        if (!self.albrhiTintOriginal) self.albrhiTintOriginal = layer.fillColor ? (__bridge id)layer.fillColor : (id)[NSNull null];
+        layer.fillColor = [UIColor colorWithRed:0.93 green:0.30 blue:0.32 alpha:0.9].CGColor;
+        sciTintApplied++;
+    } else if (self.albrhiTintOriginal) {
+        id original = self.albrhiTintOriginal;
+        layer.fillColor = [original isKindOfClass:[NSNull class]] ? NULL : (__bridge CGColorRef)original;
+        self.albrhiTintOriginal = nil;
+        sciTintRestored++;
+    }
+}
 
-    // A copy is returned; TikTok's own dictionary is never written through. Same reason the
-    // visitor list is not merged back into the array the app is about to draw.
-    return marked;
+- (void)p_setBubbleLayerColor {
+    %orig;
+    // The app has just written the real colour: whatever was remembered as "the original" is stale.
+    self.albrhiTintOriginal = nil;
+    [self albrhiSyncRecalledTint];
+}
+
+- (void)p_configWithCellViewModel:(id)viewModel oldCellViewModel:(id)oldViewModel {
+    %orig;
+    [self albrhiSyncRecalledTint];
 }
 
 %end
@@ -277,12 +350,14 @@ NSArray<NSString *> *SCITTVisitorLog(void) {
 
 NSString *SCITTExtrasReport(void) {
     return [NSString stringWithFormat:
-            @"%@; visitors remembered: %lu (%lu seen this launch); recalled seen: %lu, marked: %lu%@%@",
+            @"%@; visitors remembered: %lu (%lu seen this launch); recalled messages kept in the file: %lu (new this launch %lu, with content %lu), marked by text: %lu%@%@; bubble tint: %@ (applied %lu, put back %lu)",
             sciExtrasState ?: @"not installed",
             (unsigned long)SCITTVisitorLog().count, (unsigned long)sciVisitorsSeen,
-            (unsigned long)(sciRecalledIDs.count), (unsigned long)sciMarkedCount,
+            (unsigned long)[SCITTRecalledStore shared].count, (unsigned long)sciRecalledSeen, (unsigned long)sciRecalledStored,
+            (unsigned long)sciMarkedCount,
             sciMarkedKey ? [@" via key " stringByAppendingString:sciMarkedKey] : @"",
-            sciContentKeys ? [@"; content keys: " stringByAppendingString:sciContentKeys] : @""];
+            sciContentKeys ? [@"; content keys: " stringByAppendingString:sciContentKeys] : @"",
+            sciTintState ?: @"not installed", (unsigned long)sciTintApplied, (unsigned long)sciTintRestored];
 }
 
 //
@@ -452,6 +527,31 @@ void SCITTInstallExtras(void) {
         [installed addObject:@"-recalled"];
     } else {
         [skipped addObject:@"TIMOMessage -recalled"];
+    }
+
+    if (message && SCITTEncodingMatches(message, @"setRecalled:", @"v20@0:8B16")) {
+        %init(SCITTKeepRecalledSetter);
+        [installed addObject:@"-setRecalled:"];
+    } else {
+        [skipped addObject:@"TIMOMessage -setRecalled:"];
+    }
+
+    // The bubble: every selector this reads or hooks asked of the build first, and the text badge stays as the fallback if any is missing.
+    Class cellView = NSClassFromString(@"AWEIMTextMessageCellView");
+    if (cellView
+        && SCITTEncodingMatches(cellView, @"p_setBubbleLayerColor", @"v16@0:8")
+        && SCITTEncodingMatches(cellView, @"p_configWithCellViewModel:oldCellViewModel:", @"v32@0:8@16@24")
+        && SCITTEncodingMatches(cellView, @"bubbleLayer", @"@16@0:8")
+        && SCITTEncodingMatches(cellView, @"message", @"@16@0:8")
+        && SCITTEncodingMatches(NSClassFromString(@"AWEIMMessage") ?: [NSObject class], @"serverMessageID", @"q16@0:8")) {
+        %init(SCITTRecalledBubble);
+        sciBubbleTintInstalled = YES;
+        sciTintState = @"installed: AWEIMTextMessageCellView";
+        [installed addObject:@"AWEIMTextMessageCellView (recalled bubble tint)"];
+    } else {
+        sciTintState = cellView ? @"stood down: a selector is missing or differently typed; the text badge marks instead"
+                                : @"stood down: AWEIMTextMessageCellView absent; the text badge marks instead";
+        [skipped addObject:@"AWEIMTextMessageCellView (recalled bubble tint)"];
     }
 
     if (message && SCITTEncodingMatches(message, @"content", @"@16@0:8")) {

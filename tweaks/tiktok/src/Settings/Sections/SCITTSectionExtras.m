@@ -143,6 +143,30 @@
                     kSCIRowIcon: @"eye.fill",
                     kSCIRowColor: [UIColor systemIndigoColor],
                 },
+                @{
+                    kSCIRowKind: kSCIKindSwitch,
+                    kSCIRowPref: SCIPrefExactCounts,
+                    kSCIRowTitle: SCILocalized(@"row_exact_counts"),
+                    kSCIRowNote: SCILocalized(@"row_exact_counts_note"),
+                    kSCIRowIcon: @"number.circle.fill",
+                    kSCIRowColor: [UIColor systemIndigoColor],
+                },
+                @{
+                    kSCIRowKind: kSCIKindSwitch,
+                    kSCIRowPref: SCIPrefOLEDKeyboard,
+                    kSCIRowTitle: SCILocalized(@"row_oled_keyboard"),
+                    kSCIRowNote: SCILocalized(@"row_oled_keyboard_note"),
+                    kSCIRowIcon: @"keyboard.fill",
+                    kSCIRowColor: [UIColor systemIndigoColor],
+                },
+                @{
+                    kSCIRowKind: kSCIKindSwitch,
+                    kSCIRowPref: SCIPrefVoiceFromVideo,
+                    kSCIRowTitle: SCILocalized(@"row_voice_from_video"),
+                    kSCIRowNote: SCILocalized(@"row_voice_from_video_note"),
+                    kSCIRowIcon: @"waveform.badge.mic",
+                    kSCIRowColor: [UIColor systemIndigoColor],
+                },
             ],
         };
     });

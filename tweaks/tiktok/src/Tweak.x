@@ -25,10 +25,14 @@
 #import "Features/Lock/SCITTAppLock.h"
 #import "Features/Feed/SCITTFeedFilters.h"
 #import "Features/Messages/SCITTReadAlert.h"
+#import "Features/Messages/SCITTMessages.h"
+#import "Features/Messages/SCITTVoiceMessage.h"
+#import "Features/Profile/SCITTExactCounts.h"
+#import "Features/Interface/SCITTKeyboard.h"
 #import "Settings/SCITTSettingsEntry.h"
 #import "Settings/SCITTGesture.h"
 
-NSString *SCIVersionString = @"v0.28.1";  // AlbrhiTT
+NSString *SCIVersionString = @"v0.29.0";  // AlbrhiTT
 
 ///
 /// TESTED ON TikTok 46.4.0. Every class here was confirmed present in that build's own
@@ -61,7 +65,6 @@ NSString *SCIVersionString = @"v0.28.1";  // AlbrhiTT
         // front of TikTok's own like button until they turn one on.
         SCIPrefConfirmLike: @NO,
         SCIPrefConfirmFollow: @NO,
-        SCIPrefBypass: @YES,
         SCIPrefPrivacyStory: @YES,
         SCIPrefPrivacyMessages: @YES,
         SCIPrefPrivacyProfile: @YES,
@@ -103,6 +106,13 @@ NSString *SCIVersionString = @"v0.28.1";  // AlbrhiTT
         SCIPrefCommentCleanCopy: @NO,
         SCIPrefCommentSaveSticker: @NO,
         SCIPrefCommentTranslate: @NO,
+        // The six things 0.29.0 adds are all off: each changes what a message, a count, the keyboard or a recording does.
+        SCIPrefHideTyping: @NO,
+        SCIPrefConfirmDelete: @NO,
+        SCIPrefUndoDelete: @NO,
+        SCIPrefExactCounts: @NO,
+        SCIPrefOLEDKeyboard: @NO,
+        SCIPrefVoiceFromVideo: @NO,
     }];
 
     NSLog(@"[AlbrhiTT] %@ loaded into %@", SCIVersionString,
@@ -142,5 +152,9 @@ NSString *SCIVersionString = @"v0.28.1";  // AlbrhiTT
     SCITTInstallAppLock();
     SCITTInstallFeedFilters();
     SCITTInstallReadAlert();
+    SCITTInstallMessages();
+    SCITTInstallVoiceMessage();
+    SCITTInstallExactCounts();
+    SCITTInstallKeyboard();
     SCITTInstallSettingsEntry();
 }

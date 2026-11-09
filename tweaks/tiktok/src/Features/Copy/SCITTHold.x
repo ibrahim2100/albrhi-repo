@@ -140,7 +140,7 @@ static NSString *SCITTProfileTextAt(UIView *hit) {
 static void SCITTHoldFire(NSUInteger token) {
     if (token != sciHoldToken) return;
     UIView *hit = sciHoldView;
-    if (!hit || !SCIPrefEnabled(SCIPrefCopyMenu)) return;
+    if (!hit || !SCITTHoldMenuWanted()) return;
     sciHoldFired++;
 
     if (SCITTCopyHoldOnDownloadButton(hit)) {
@@ -178,7 +178,7 @@ static void SCITTHoldObserve(UIWindow *window, UIEvent *event) {
     UITouch *touch = all.anyObject;
     switch (touch.phase) {
         case UITouchPhaseBegan: {
-            if (!SCIPrefEnabled(SCIPrefCopyMenu)) return;
+            if (!SCITTHoldMenuWanted()) return;
             CGPoint point = [touch locationInView:window];
             UIView *hit = [window hitTest:point withEvent:nil];
             if (!hit) return;

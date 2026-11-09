@@ -155,3 +155,78 @@ EOM
 ROOT="$(cd ../../../.. && pwd)"
 clang -fobjc-arc -Wall -Wno-unused-function -I"$ROOT" -framework Foundation -framework ImageIO -framework CoreGraphics "$OUT/Test.m" "$ROOT/shared/src/SCIKVC.m" -o "$OUT/test"
 "$OUT/test"
+
+# --- The recalled-message store (SCITTRecalledStore.m is plain Foundation, compiled as it ships) -------------------
+cat > "$OUT/Store.m" <<'EOM'
+#import <Foundation/Foundation.h>
+#import "tweaks/tiktok/src/Features/Messages/SCITTRecalledStore.h"
+
+static int fails = 0;
+#define CHECK(x) do { if (!(x)) { printf("FAIL line %d: %s\n", __LINE__, #x); fails++; } } while (0)
+
+int main(void) {
+    @autoreleasepool {
+        NSString *dir = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"albrhi-store-%u", arc4random()]];
+        NSString *path = [dir stringByAppendingPathComponent:@"sub/recalled.plist"];
+
+        SCITTRecalledStore *store = [[SCITTRecalledStore alloc] initWithPath:path limit:3];
+        CHECK(store.count == 0);
+        CHECK(![store isTracked:@(111)]);
+        CHECK(![store isTracked:nil]);
+
+        // An id seen alone is tracked (the message is marked) with no content; an NSNumber and its decimal string are the same id.
+        CHECK([store track:@(111) content:nil] == YES);
+        CHECK([store isTracked:@(111)] && [store isTracked:@"111"] && [store isTracked:@111LL]);
+        CHECK([store contentFor:@(111)] == nil);
+        CHECK([store track:@(111) content:nil] == NO);        // the recall getter asks again and again: nothing new
+
+        // Content arriving later for a known id is kept; later empty or different content never replaces it.
+        NSDictionary *said = @{ @"text": @"hello", @"n": @3 };
+        CHECK([store track:@(111) content:said] == NO);
+        CHECK([[store contentFor:@(111)] isEqual:said]);
+        [store track:@(111) content:@{}];
+        [store track:@(111) content:@{ @"text": @"overwritten" }];
+        CHECK([[store contentFor:@(111)] isEqual:said]);
+
+        // Content that cannot be a property list is not kept, but the id still is.
+        CHECK([store track:@(222) content:@{ @"bad": [NSObject new] }] == YES);
+        CHECK([store isTracked:@(222)] && [store contentFor:@(222)] == nil);
+
+        // Content over 16 KB is not kept either.
+        NSMutableString *big = [NSMutableString string];
+        while (big.length < 20000) [big appendString:@"x"];
+        [store track:@(333) content:@{ @"text": big }];
+        CHECK([store isTracked:@(333)] && [store contentFor:@(333)] == nil);
+
+        // The newest `limit` survive: a fourth id pushes the oldest (111) out.
+        CHECK([store track:@(444) content:@{ @"text": @"four" }] == YES);
+        CHECK(store.count == 3);
+        CHECK(![store isTracked:@(111)] && [store isTracked:@(444)]);
+
+        // It is written, atomically, and a new store reads the file back.
+        [store flush];
+        CHECK([[NSFileManager defaultManager] fileExistsAtPath:path]);
+        SCITTRecalledStore *again = [[SCITTRecalledStore alloc] initWithPath:path limit:3];
+        CHECK(again.count == 3);
+        CHECK([again isTracked:@(444)] && [[again contentFor:@(444)] isEqual:@{ @"text": @"four" }]);
+        CHECK([again isTracked:@(222)] && ![again isTracked:@(111)]);
+
+        // A smaller limit trims on load; forgetting removes.
+        SCITTRecalledStore *small = [[SCITTRecalledStore alloc] initWithPath:path limit:1];
+        CHECK(small.count == 1 && [small isTracked:@(444)]);
+        [small forget:@(444)];
+        CHECK(small.count == 0 && ![small isTracked:@(444)]);
+
+        // A damaged file is an empty store, not a crash.
+        [@"not a plist" writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+        SCITTRecalledStore *damaged = [[SCITTRecalledStore alloc] initWithPath:path limit:3];
+        CHECK(damaged.count == 0);
+
+        [[NSFileManager defaultManager] removeItemAtPath:dir error:NULL];
+        printf(fails ? "\n%d FAILED (store)\n" : "recalled store: all passed\n", fails);
+        return fails ? 1 : 0;
+    }
+}
+EOM
+clang -fobjc-arc -Wall -I"$ROOT" -framework Foundation "$OUT/Store.m" "$ROOT/tweaks/tiktok/src/Features/Messages/SCITTRecalledStore.m" -o "$OUT/store-test"
+"$OUT/store-test"

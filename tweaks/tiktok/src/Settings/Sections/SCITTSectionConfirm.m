@@ -69,6 +69,22 @@
                     kSCIRowIcon: @"hand.thumbsdown.fill",
                     kSCIRowColor: [UIColor systemOrangeColor],
                 },
+                @{
+                    kSCIRowKind: kSCIKindSwitch,
+                    kSCIRowPref: SCIPrefConfirmDelete,
+                    kSCIRowTitle: SCILocalized(@"row_confirm_delete"),
+                    kSCIRowNote: SCILocalized(@"row_confirm_delete_note"),
+                    kSCIRowIcon: @"trash.fill",
+                    kSCIRowColor: [UIColor systemRedColor],
+                },
+                @{
+                    kSCIRowKind: kSCIKindSwitch,
+                    kSCIRowPref: SCIPrefUndoDelete,
+                    kSCIRowTitle: SCILocalized(@"row_undo_delete"),
+                    kSCIRowNote: SCILocalized(@"row_undo_delete_note"),
+                    kSCIRowIcon: @"arrow.uturn.backward.circle.fill",
+                    kSCIRowColor: [UIColor systemOrangeColor],
+                },
             ],
         };
     });

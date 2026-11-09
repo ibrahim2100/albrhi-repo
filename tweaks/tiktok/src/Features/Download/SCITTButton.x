@@ -779,7 +779,7 @@ static void SCITTAttachCopyMenu(UIButton *button) {
 }
 
 BOOL SCITTTouchIsOnCopyButton(UIView *hit) {
-    if (!SCIPrefEnabled(SCIPrefCopyMenu)) return NO;
+    if (!SCITTHoldMenuWanted()) return NO;
     UIView *view = hit;
     for (NSInteger step = 0; view && step < 6; step++, view = view.superview) {
         if (objc_getAssociatedObject(view, kSCITTCopyMarkKey)) return YES;
@@ -791,7 +791,7 @@ BOOL SCITTCopyHoldOnDownloadButton(UIView *hit) {
     UIView *view = hit;
     for (NSInteger step = 0; view && step < 6; step++, view = view.superview) {
         if (!objc_getAssociatedObject(view, kSCITTCopyMarkKey)) continue;
-        if (!SCIPrefEnabled(SCIPrefCopyMenu)) return NO;
+        if (!SCITTHoldMenuWanted()) return NO;
 
         // The finger is still down: the lift that follows is the end of a hold, not a tap, and must not start a download.
         objc_setAssociatedObject(view, kSCITTHeldKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);

@@ -77,6 +77,14 @@
                     kSCIRowIcon: @"circle.slash",
                     kSCIRowColor: [UIColor systemTealColor],
                 },
+                @{
+                    kSCIRowKind: kSCIKindSwitch,
+                    kSCIRowPref: SCIPrefHideTyping,
+                    kSCIRowTitle: SCILocalized(@"row_hide_typing"),
+                    kSCIRowNote: SCILocalized(@"row_hide_typing_note"),
+                    kSCIRowIcon: @"ellipsis.bubble.fill",
+                    kSCIRowColor: [UIColor systemTealColor],
+                },
             ],
         };
     });

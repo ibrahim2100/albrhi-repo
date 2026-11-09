@@ -11,6 +11,9 @@
 #import <objc/message.h>
 #import "../../UI/SCITTToast.h"
 #import "../../Localization/SCILocalize.h"
+#import "../../Prefs.h"
+#import "../Download/SCITTMedia.h"
+#import "../Messages/SCITTVoiceMessage.h"
 
 ///
 /// **A dropdown from the download button, rows that each copy one thing.**
@@ -88,6 +91,8 @@ static NSString *SCITTLinkOf(id value) {
 @property (nonatomic, copy) NSString *text;     // exactly what is copied, and exactly what is shown beneath the title
 @property (nonatomic, assign) BOOL link;        // shown truncated in the middle
 @property (nonatomic, assign) BOOL groupStart;  // a separator above
+/// A row that does something instead of copying `text`. `text` is then only the line shown under the title.
+@property (nonatomic, copy) void (^action)(void);
 @end
 @implementation SCITTCopyRow
 @end
@@ -138,12 +143,26 @@ static NSArray<SCITTCopyRow *> *SCITTRowsForModel(id model) {
         [rows addObject:row];
     };
 
-    add(SCITTMakeRow(@"copy_video_link", @"link", video, YES), NO);
-    add(SCITTMakeRow(@"copy_caption", @"text.quote", caption, NO), NO);
-    add(SCITTMakeRow(@"copy_sound_link", @"music.note", sound, YES), YES);
-    add(SCITTMakeRow(@"copy_username", @"at", handle, NO), YES);
-    add(SCITTMakeRow(@"copy_bio", @"text.alignleft", bio, NO), NO);
-    add(SCITTMakeRow(@"copy_profile_link", @"person.crop.circle", profile, YES), NO);
+    if (SCIPrefEnabled(SCIPrefCopyMenu)) {
+        add(SCITTMakeRow(@"copy_video_link", @"link", video, YES), NO);
+        add(SCITTMakeRow(@"copy_caption", @"text.quote", caption, NO), NO);
+        add(SCITTMakeRow(@"copy_sound_link", @"music.note", sound, YES), YES);
+        add(SCITTMakeRow(@"copy_username", @"at", handle, NO), YES);
+        add(SCITTMakeRow(@"copy_bio", @"text.alignleft", bio, NO), NO);
+        add(SCITTMakeRow(@"copy_profile_link", @"person.crop.circle", profile, YES), NO);
+    }
+
+    // **Not a copy row: it prepares this video's sound as the next voice message** (SCITTVoiceMessage.m). The item is the one captured for *this*
+    // model (`+itemForModel:`, never "the newest capture", CLAUDE.md §5.4: the date had that fault), so the sound is the video that was held.
+    if (SCIPrefEnabled(SCIPrefVoiceFromVideo)) {
+        SCITTCopyRow *voice = SCITTMakeRow(@"voice_row_title", @"waveform.badge.mic", SCILocalized(@"voice_row_note"), NO);
+        voice.action = ^{
+            SCITTMediaItem *item = [SCITTMedia itemForModel:model];
+            if (item) SCITTVoicePrepareFromItem(item);
+            else [SCITTToast noticeWithText:SCILocalized(@"voice_nothing") symbol:@"questionmark.circle"];
+        };
+        add(voice, YES);
+    }
     return rows;
 }
 
@@ -323,6 +342,16 @@ static __weak SCITTCopyDropdown *sciCopyShowing = nil;
 - (void)chosen:(SCITTCopyRowControl *)control {
     if (_chosen) return;   // a second tap while the confirmation shows copies nothing more
     _chosen = YES;
+
+    if (control.row.action) {
+        // An action row closes the menu at once and does its own work; its own banner reports progress and result.
+        void (^action)(void) = control.row.action;
+        sciCopyLastRow = control.row.title;
+        [self dismiss];
+        action();
+        return;
+    }
+
     [UIPasteboard generalPasteboard].string = control.row.text;
     sciCopyCopied++;
     sciCopyLastRow = control.row.title;

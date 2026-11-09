@@ -43,6 +43,18 @@
 @end
 
 
+@interface IOSSecuritySuite : NSObject
+@end
+
+/// **There is no switch for this any more (0.29.0, the owner's decision).** It used to be one row,
+/// «Hide the jailbreak», on by default, and nobody ever turned it off; a row that exists to be left
+/// alone is a screen that asks a question with one answer. The only stop that remains is the panel's
+/// per-app switch, which every feature here reads through the same call, so turning Albrhi off for
+/// TikTok still leaves every hook below answering `%orig`.
+static inline BOOL SCITTBypassOn(void) {
+    return SCIPanelAllowsThisApp();
+}
+
 %group Bypass
 
 // The direct question: is this device jailbroken. Confirmed as a real selector on
@@ -50,7 +62,7 @@
 %hook TTAdSplashDeviceHelper
 
 + (BOOL)isJailBroken {
-    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
+    if (!SCITTBypassOn()) return %orig;
     [SCITTDiagnostics recordBypassAnswer:@"isJailBroken"];
     return NO;
 }
@@ -63,19 +75,19 @@
 %hook GULAppEnvironmentUtil
 
 + (BOOL)isFromAppStore {
-    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
+    if (!SCITTBypassOn()) return %orig;
     [SCITTDiagnostics recordBypassAnswer:@"isFromAppStore"];
     return YES;
 }
 
 + (BOOL)isAppStoreReceiptSandbox {
-    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
+    if (!SCITTBypassOn()) return %orig;
     [SCITTDiagnostics recordBypassAnswer:@"isAppStoreReceiptSandbox"];
     return NO;
 }
 
 + (BOOL)isAppExtension {
-    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
+    if (!SCITTBypassOn()) return %orig;
     [SCITTDiagnostics recordBypassAnswer:@"isAppExtension"];
     return YES;
 }
@@ -88,7 +100,7 @@
 %hook FBSDKAppEventsUtility
 
 - (BOOL)isDebugBuild {
-    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
+    if (!SCITTBypassOn()) return %orig;
     [SCITTDiagnostics recordBypassAnswer:@"isDebugBuild"];
     return NO;
 }
@@ -100,7 +112,7 @@
 %hook AWEAPMManager
 
 + (id)signInfo {
-    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
+    if (!SCITTBypassOn()) return %orig;
     [SCITTDiagnostics recordBypassAnswer:@"signInfo"];
     return @"AppStore";
 }
@@ -113,7 +125,7 @@
 %hook AWESecurity
 
 - (void)resetCollectMode {
-    if (!SCIPrefEnabled(SCIPrefBypass)) {
+    if (!SCITTBypassOn()) {
         %orig;
         return;
     }
@@ -128,7 +140,7 @@
 %hook AppsFlyerUtils
 
 + (BOOL)isJailbrokenWithSkipAdvancedJailbreakValidation:(BOOL)skip {
-    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
+    if (!SCITTBypassOn()) return %orig;
     [SCITTDiagnostics recordBypassAnswer:@"AppsFlyer isJailbroken"];
     return NO;
 }
@@ -141,7 +153,7 @@
 %hook IESLiveDeviceInfo
 
 + (BOOL)isJailBroken {
-    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
+    if (!SCITTBypassOn()) return %orig;
     [SCITTDiagnostics recordBypassAnswer:@"IESLiveDeviceInfo isJailBroken"];
     return NO;
 }
@@ -152,7 +164,7 @@
 %hook TTInstallUtil
 
 + (BOOL)isJailBroken {
-    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
+    if (!SCITTBypassOn()) return %orig;
     [SCITTDiagnostics recordBypassAnswer:@"TTInstallUtil isJailBroken"];
     return NO;
 }
@@ -166,7 +178,7 @@
 %hook BDADeviceHelper
 
 + (BOOL)isJailBroken {
-    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
+    if (!SCITTBypassOn()) return %orig;
     [SCITTDiagnostics recordBypassAnswer:@"BDADeviceHelper isJailBroken"];
     return NO;
 }
@@ -190,7 +202,7 @@
 %hook NSBundle
 
 - (NSString *)pathForResource:(NSString *)name ofType:(NSString *)extension {
-    if ([extension isEqualToString:@"mobileprovision"] && SCIPrefEnabled(SCIPrefBypass)) {
+    if ([extension isEqualToString:@"mobileprovision"] && SCITTBypassOn()) {
         [SCITTDiagnostics recordBypassAnswer:@"mobileprovision lookup"];
         return nil;
     }
@@ -205,14 +217,44 @@
 // **An answer that is installed only where the process already has the selector.** Logos *adds* a
 // method to a class that lacks it: an added `-btd_isJailBroken` on UIDevice is a selector the app never
 // sends. The selector is declared by no class in the 46.4.0 or 47.1.0 dumps; it is a category method if it exists at all,
-// so the question is put to the runtime. (Two hooks were deleted outright: `+[IOSSecuritySuite amIJailbroken]` and
-// `-[NSObject jailbroken]` -- neither the class nor the selector string exists anywhere in `MusicallyCore` 47.1.0, so a
-// hook could only ever have added a method nobody sends.)
+// so the question is put to the runtime.
+//
+// **Two answers that are installed with no such question, because the owner asked for exactly that (0.29.0):**
+// `+[IOSSecuritySuite amIJailbroken]` and `-[NSObject jailbroken]`, both from VibeTok's table. **Measured first:**
+// neither the class nor the selector string exists anywhere in `MusicallyCore` 47.1.0 (a `strings` pass over the whole
+// 877 MB image), so on that build nothing sends either message and these two answer nobody. They were deleted in 0.24.0
+// for that reason and are back because a TikTok that links the detector later, or a third-party framework that probes the
+// selector, is then answered without a release. **The cost is real and is the one 0.24.0 named:** `-jailbroken` is added to
+// `NSObject`, so every object in the process answers `respondsToSelector:@selector(jailbroken)` YES.
+%group BypassWide
+
+%hook IOSSecuritySuite
+
++ (BOOL)amIJailbroken {
+    if (!SCITTBypassOn()) return %orig;
+    [SCITTDiagnostics recordBypassAnswer:@"IOSSecuritySuite amIJailbroken"];
+    return NO;
+}
+
+%end
+
+%hook NSObject
+
+- (BOOL)jailbroken {
+    if (!SCITTBypassOn()) return %orig;
+    [SCITTDiagnostics recordBypassAnswer:@"NSObject jailbroken"];
+    return NO;
+}
+
+%end
+
+%end
+
 %group BypassUIDevice
 %hook UIDevice
 
 - (BOOL)btd_isJailBroken {
-    if (!SCIPrefEnabled(SCIPrefBypass)) return %orig;
+    if (!SCITTBypassOn()) return %orig;
     [SCITTDiagnostics recordBypassAnswer:@"btd_isJailBroken"];
     return NO;
 }
@@ -222,6 +264,7 @@
 
 void SCITTInstallBypass(void) {
     %init(Bypass);
+    %init(BypassWide);
 
     NSMutableArray *absent = [NSMutableArray array];
     if (class_getInstanceMethod([UIDevice class], sel_registerName("btd_isJailBroken"))) {

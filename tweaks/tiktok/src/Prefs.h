@@ -16,10 +16,6 @@
 /// list to come back to on the status screen.
 #define SCIPrefDownloadButton   @"download_button"
 
-/// Whether the anti-tamper / jailbreak-detection cluster runs. Answers TikTok's own
-/// checks the way an unmodified phone would; touches nothing about payment.
-#define SCIPrefBypass           @"bypass"
-
 /// Three separate switches, not one -- a story's seen mark, a message's read receipt
 /// and a profile view are three different things reported to three different places,
 /// and turning one off should not silently touch the other two. Never touches what
@@ -48,6 +44,27 @@
 /// the device is on that experiment's allow list (the flag is sent with the profile request) and, only while the editor is
 /// resolving its state, supplies an empty background component so its controls exist. Off by default: it says something untrue.
 #define SCIPrefProfileBackground @"profile_background"
+
+/// Never tell the other person you are typing: `TIMInputStatusManager -sendInputStatusWithConversationID:inputStatus:` (`v28@0:8@16i24`, confirmed
+/// on 47.1.0) is not called, so nothing is sent. The conversation looks exactly as it did; only the "typing…" on their side is missing. Off by default.
+#define SCIPrefHideTyping       @"hide_typing"
+
+/// Ask before a message is deleted (`AWEIMMessageDataController -recallMessage:completion:`, `v32@0:8@16@?24`) and, separately, offer to take a
+/// deletion back (`AWEIMMessageListViewController -willDeleteMessage:`, `v24@0:8@16`, then TikTok's own `-undoDeleteMessage:completion:`). Off by default, both.
+#define SCIPrefConfirmDelete    @"confirm_delete_message"
+#define SCIPrefUndoDelete       @"undo_delete_message"
+
+/// A profile's follower and like counts written out in full (`1,234,567`) where TikTok abbreviates them (`1.2M`). The number comes from TikTok's own
+/// getters on the same component that draws it (`getFollowerCount` / `p_getLikeCount`, both `q16@0:8`) and is written only when that component has
+/// decided to show a count at all. Off by default.
+#define SCIPrefExactCounts      @"exact_counts"
+
+/// Pure black behind the keyboard while the system is dark (`UIKBBackdropView -setBackgroundColor:`). Off by default.
+#define SCIPrefOLEDKeyboard     @"oled_keyboard"
+
+/// Offer "use this video's sound as a voice message" in the menu the download button opens when held, and, once chosen, replace the **next** voice
+/// message recorded (`AVAudioRecorder -stop`) with that sound. Off by default: it changes what a recording sends.
+#define SCIPrefVoiceFromVideo   @"voice_from_video"
 
 #define SCIPrefVerboseLogging   @"verbose_logging"
 
@@ -286,3 +303,8 @@ static inline BOOL SCIPrefEnabled(NSString *key) {
 /// adds it to the account's favourites and saves nothing. A comment with a *photo* is not touched. Off by default.
 #define SCIPrefCommentSaveSticker @"comment_save_sticker"
 
+/// Whether the download button does anything when held. The menu it opens carries two kinds of row -- things to copy (`copy_menu`) and the sound
+/// to use as a voice message (`voice_from_video`) -- so a hold is worth following when either is on.
+static inline BOOL SCITTHoldMenuWanted(void) {
+    return SCIPrefEnabled(SCIPrefCopyMenu) || SCIPrefEnabled(SCIPrefVoiceFromVideo);
+}

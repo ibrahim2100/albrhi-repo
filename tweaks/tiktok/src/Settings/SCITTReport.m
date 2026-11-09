@@ -20,6 +20,10 @@
 #import "../Features/Lock/SCITTAppLock.h"
 #import "../Features/Feed/SCITTFeedFilters.h"
 #import "../Features/Messages/SCITTReadAlert.h"
+#import "../Features/Messages/SCITTMessages.h"
+#import "../Features/Messages/SCITTVoiceMessage.h"
+#import "../Features/Profile/SCITTExactCounts.h"
+#import "../Features/Interface/SCITTKeyboard.h"
 #import "SCITTSettingsEntry.h"
 #import "SCITTRowIcon.h"
 #import "../Features/Download/SCITTMedia.h"
@@ -155,6 +159,14 @@ static NSDictionary *SCIHeavyRow(NSString *title, NSString *value, NSString *ico
                        @"line.3.horizontal.decrease.circle", [UIColor systemRedColor]),
                 SCIRow(SCILocalized(@"status_read_alert"), SCITTReadAlertReport(),
                        @"bell.badge.fill", [UIColor systemTealColor]),
+                SCIRow(SCILocalized(@"status_messages"), SCITTMessagesReport(),
+                       @"message.fill", [UIColor systemTealColor]),
+                SCIRow(SCILocalized(@"status_voice"), SCITTVoiceReport(),
+                       @"waveform.badge.mic", [UIColor systemIndigoColor]),
+                SCIRow(SCILocalized(@"status_exact_counts"), SCITTExactCountsReport(),
+                       @"number.circle.fill", [UIColor systemIndigoColor]),
+                SCIRow(SCILocalized(@"status_keyboard"), SCITTKeyboardReport(),
+                       @"keyboard.fill", [UIColor systemGrayColor]),
                 SCIRow(SCILocalized(@"status_settings_entry"), SCITTSettingsEntryReport(),
                        @"gearshape.fill", [UIColor systemGrayColor]),
                 SCIRow(SCILocalized(@"status_watermark"), SCITTWatermarkReport(),
