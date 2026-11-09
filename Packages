@@ -995,10 +995,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tweak.roothide
 Replaces: com.albrhi.tweak.roothide
 Filename: debs/com.albrhi.tweak_4.8.2_iphoneos-arm64.deb
-Size: 515030
-MD5sum: 43211a2932fe414156d0b53f09fe4df6
-SHA1: a25641d50bb445675d8abb1c0b0ee3fb9b7ddb8c
-SHA256: 9966e15b4a6f10ced5920195738fe813d234702f843cae2b44ef11672bb8cf0e
+Size: 515078
+MD5sum: 39f0f191ffe175e619bac39cef0fd6d4
+SHA1: 4474cf4b80b837df681b7b41d3fd0f518e6135f8
+SHA256: f10a678b2e00287aadb49c656ed8e652a4b5d7be502f90936f37e0c0eff87476
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download anything, hide the noise, browse invisibly — in Arabic or English.
@@ -1067,10 +1067,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tweak
 Replaces: com.albrhi.tweak
 Filename: debs/com.albrhi.tweak.roothide_4.8.2_iphoneos-arm64e.deb
-Size: 515330
-MD5sum: 48b7f52d6c974b222e767f2a3a88757b
-SHA1: 850cde9860b2550a5a5eb8e59c86a0e13c24ab97
-SHA256: ff12c862e75201c6a6d4e72ae98006b45b625858b70c4fb4c595804e73afa10f
+Size: 515200
+MD5sum: f89981fb38fa85d0323be457c71577c9
+SHA1: 53032aaa22ad67b1c5e5e255254f9739d312d70e
+SHA256: 8398b87a2caa2d7d859d62a94deeab5aed5764b97d148eb8e05710f20d2b6aa6
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download anything, hide the noise, browse invisibly — in Arabic or English.
@@ -1139,10 +1139,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.twitter.roothide
 Replaces: com.albrhi.twitter.roothide
 Filename: debs/com.albrhi.twitter_0.22.1_iphoneos-arm64.deb
-Size: 104806
-MD5sum: 6e365a216dffb88ba5cd5597175f0993
-SHA1: e04540f1e2a6f6f89087fa4b76da653818219d89
-SHA256: 221298740914f0cdcda6066f21b2bb937812acae502536f451d31f6a805e1e98
+Size: 104712
+MD5sum: 39910dde061d4c418ea2cf9c7af42801
+SHA1: c59d7e5037753c96970a5cf800c591969c5b6f5b
+SHA256: e5c5b2b933b1af469f8f1321cc1b0fce24ba816fa219a9764d697db492fe1e53
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
@@ -1213,10 +1213,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.twitter
 Replaces: com.albrhi.twitter
 Filename: debs/com.albrhi.twitter.roothide_0.22.1_iphoneos-arm64e.deb
-Size: 104652
-MD5sum: 0be9787e8ea48c84620b429141b8b0e1
-SHA1: 54e8d9bdbe11526ae1288856e52f59f37e0748bf
-SHA256: 586a3b49c4724b0bf1ec2fac4cf902dd31a07ad67a983653627a03d4ef6d19cc
+Size: 104794
+MD5sum: 15315266f256f842738626fe551e4ee9
+SHA1: 4140a2fd61becd754c93a235eb5f58d3ea169617
+SHA256: 016b015e6e1d6833e21edfc829e32d0b00e9fcfb57aa17d058df118de9f33f62
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
@@ -1287,10 +1287,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.youtube.roothide
 Replaces: com.albrhi.youtube.roothide
 Filename: debs/com.albrhi.youtube_1.49.3_iphoneos-arm64.deb
-Size: 563406
-MD5sum: 7a4efcd7e88a04f772d55314b320364c
-SHA1: 611a00d424434c7f10339ed48c8c9e96924c0f32
-SHA256: 2d358d77768ca87533cbc0fcb39d05a83b8e1fa8ae0b9434bb3bce4243747d2f
+Size: 563598
+MD5sum: 24300f4bcce311e2984386e7ae63ca36
+SHA1: c55fc47f5036c4b58006ec49c45ba9c2b5ca5cf7
+SHA256: abddf6e4dd3a0b988abcdea8ba7301f4d851697507165ae8e3252f99e29765b6
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
@@ -1349,10 +1349,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.youtube
 Replaces: com.albrhi.youtube
 Filename: debs/com.albrhi.youtube.roothide_1.49.3_iphoneos-arm64e.deb
-Size: 563808
-MD5sum: d273bd0925ff87eb19e302ebf84fa456
-SHA1: 80d1aae937a1b1a3bb00a1c803b50151ceac61ab
-SHA256: f5db3a0c458372096cecc6a6deeaa4fdf67d79efc723c0e9abb3fb5e191d05e0
+Size: 563584
+MD5sum: fc21f1407c77dba498a304ab5801e7d3
+SHA1: ec7da40412d00f8d83679cd8d8d6431609e19b15
+SHA256: 9c47a8e53f11a66b53826f7c8110cb178b14dde12d477f0ba9eb48996bd17bc6
 Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
