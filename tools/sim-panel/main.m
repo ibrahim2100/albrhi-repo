@@ -10,7 +10,7 @@
 //  simulator's own Preferences.framework. Not real: *which apps are installed* (the simulator has only TikTok from this project's set, so
 //  the harness answers LSApplicationWorkspace with stand-in apps and their versions, and a stand-in has no icon), and Settings' own chrome.
 //
-//  Launch arguments:  -bundle <absolute path of AlbrhiPanel.bundle>   [-fakeapps NO]   [-AppleLanguages (ar)]
+//  Launch arguments:  -bundle <absolute path of AlbrhiPanel.bundle>   [-fakeapps NO]   [-push <inner page class>]   [-AppleLanguages (ar)]
 //
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
@@ -69,6 +69,10 @@ static NSArray *HarnessApps(void) {
 
     UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:controller];
     navigation.navigationBar.prefersLargeTitles = YES;
+
+    // -push <ClassName>: open one of the panel's inner pages straight away (SCIPanelGuideController, SCISpotifySettingsController...).
+    Class inner = NSClassFromString([defaults stringForKey:@"push"] ?: @"");
+    if (inner) [navigation pushViewController:[[inner alloc] init] animated:NO];
 
     self.root = navigation;
     return YES;
