@@ -3,45 +3,30 @@
 #import <UIKit/UIKit.h>
 
 #import "SCIPanelScan.h"
-#import "shared/src/Prefs/SCIPanelBadge.h"
-#import "shared/src/Prefs/SCIPanelHeader.h"
 #import "shared/src/Prefs/SCIPanelAppCell.h"
 #import "SCIPanelDomain.h"
 #import "shared/src/Prefs/SCIPanelButtonAction.h"
 #import "SCIPanelBackup.h"
 #import "SCIPanelUpdate.h"
 #import "SCIPanelGuideController.h"
+#import "Design/SCIPanelStyle.h"
+#import "Design/SCIPanelCells.h"
+#import "Design/SCIPanelHero.h"
 #import "Localization/SCILocalize.h"
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import <objc/message.h>
 #import <objc/runtime.h>
 
-NSString *SCIVersionString = @"v0.10.0";  // AlbrhiPanel
+NSString *SCIVersionString = @"v0.11.0";  // AlbrhiPanel
 
-///
-/// Albrhi's own control panel, in the iOS Settings app.
-///
-/// One switch per app Albrhi patches, and nothing else on the screen. This is the shape
-/// DLEasy has and it is the right one: a tweak's settings belong somewhere you can reach
-/// without opening the app it changes.
-///
-/// **The switch does not stop the dylib loading; it stops it doing anything.** Changing what
-/// gets injected means editing a root-owned filter file, and a preference bundle runs as
-/// `mobile`. Every Albrhi tweak instead reads its settings through one function, that
-/// function asks this switch first, and with it off every feature answers %orig — the app
-/// behaves exactly as though the tweak were not installed.
-///
-/// Standing down that way rather than skipping hook installation is deliberate. Hooks are
-/// installed from a dozen constructors whose order is undefined, so a gate on installation
-/// would sometimes catch half of them and leave the app patched in part. Installed-but-inert
-/// has no such state.
-///
-/// Copyright (C) Ibrahim Ismail AL-Rahn. GPLv3.
-///
 @interface SCIPanelRootController : PSListController <UIDocumentPickerDelegate>
 @end
 
-@implementation SCIPanelRootController
+@implementation SCIPanelRootController {
+    /// Where the update question stands, shown on its own row and nowhere else (never asked on page load; only on a tap).
+    NSInteger _updateState;      // 0 not asked, 1 asking, 2 current, 3 newer published, 4 unreachable, 5 published version known but nothing to compare
+    NSString *_updateLatest;
+}
 
 /// Named identically in shared/src/SCIPanelGate.m, which is the half that reads it. Two
 /// spellings of this string is a switch that appears to work and changes nothing.
@@ -54,55 +39,33 @@ static NSString *const kSCIPanelDomain = kSCIPanelPreferenceDomain;
 - (NSArray *)specifiers {
     NSArray<SCIPanelEntry *> *scanned = [SCIPanelScan entries];
     NSMutableArray *specifiers = [NSMutableArray array];
+    const CGFloat side = SCIPanelTileSide;
 
-    // **Two kinds of row, and mixing them read as one kind badly.**
-    //
-    // An app row is a switch: "does Albrhi touch Instagram". A tweak row pushes to a page and
-    // is not about an app at all -- Albrhi NextUp runs across SpringBoard and five media apps,
-    // and Albrhi CarPlay across SpringBoard and Camera. Sorted in among the apps they read as
-    // apps this project patches, which is the same misreading `SCIPanelGroupIdentifier` was
-    // added to fix one level down: it collapsed seven rows into one, and the one was still
-    // sitting in the wrong list.
-    //
-    // Split by what the entry declares rather than by a name list here, so a tweak that adds a
-    // page tomorrow lands in the right section without this file being edited.
+    // **Two kinds of row, split by what the entry declares and never by a name list here**, so a tweak that adds a page tomorrow lands in the
+    // right section without this file being edited. An app row is "does Albrhi touch Instagram"; a tweak row is a tweak that runs *across*
+    // apps (NextUp reads five media apps, Watch answers inside SpringBoard and the Watch app) and has a page of its own. A tweak that patches
+    // exactly one app belongs with the apps even when it also owns a page -- the icon says which case it is, because the scan sets it only
+    // when the filter named one real installed app.
     NSMutableArray<SCIPanelEntry *> *entries = [NSMutableArray array];
     NSMutableArray<SCIPanelEntry *> *features = [NSMutableArray array];
     for (SCIPanelEntry *entry in scanned) {
-        //
-        // **A page is not what decides the section; being about one app is.**
-        //
-        // The Tweaks section exists for a tweak that runs *across* apps -- NextUp reads five media
-        // apps, Watch answers inside SpringBoard and the Watch app -- where an app row would have
-        // to pick one of them to be about. A tweak that patches exactly one app belongs with the
-        // apps it is listed beside, whether or not it also wants a page: Albrhi for Spotify is
-        // collapsed into a group only so it can carry two switches, and that is a fact about its
-        // settings, not about what it patches.
-        //
-        // The icon is what says which case this is, because the scan sets it only when the filter
-        // named one real installed app.
-        //
-        if (entry.detailControllerClassName.length && !entry.appIcon) [features addObject:entry];
+        if (entry.detailControllerClassName.length && !SCIPanelIsKnownApp(entry.bundleIdentifier) && !entry.appInstalled) [features addObject:entry];
         else [entries addObject:entry];
     }
 
-    //
-    // **The master switch, above everything it governs.**
-    //
-    // Its own group, because it is not one of the apps: it decides whether any of them are asked
-    // about at all. When an app update breaks something, this is one handle instead of eight --
-    // and the moment it is needed is the worst moment to be hunting through rows.
-    //
-    PSSpecifier *masterGroup = [PSSpecifier preferenceSpecifierNamed:@""
-                                                             target:self
-                                                                set:NULL
-                                                                get:NULL
-                                                             detail:Nil
-                                                               cell:PSGroupCell
-                                                               edit:Nil];
-    [masterGroup setProperty:SCILocalized(@"master_footer") forKey:@"footerText"];
-    [specifiers addObject:masterGroup];
+    BOOL masterOn = [[self isMasterOn:nil] boolValue];
+    NSInteger on = 0;
+    for (SCIPanelEntry *entry in entries) {
+        if (entry.detailControllerClassName.length || !entry.appInstalled) continue;
+        if ([[self isOnForSpecifierWithIdentifier:entry.bundleIdentifier] boolValue]) on++;
+    }
 
+    //
+    // The master switch, above everything it governs. Its own group because it is not one of the apps: it decides whether any of them are
+    // asked about at all. When an app update breaks something this is one handle instead of eight -- and the moment it is needed is the worst
+    // moment to be hunting through rows. Its second line says what the switch is doing *now*.
+    //
+    [specifiers addObject:[self groupNamed:@"" footer:SCILocalized(@"master_footer")]];
     PSSpecifier *master = [PSSpecifier preferenceSpecifierNamed:SCILocalized(@"master_title")
                                                          target:self
                                                             set:@selector(setMaster:forSpecifier:)
@@ -110,67 +73,59 @@ static NSString *const kSCIPanelDomain = kSCIPanelPreferenceDomain;
                                                          detail:Nil
                                                            cell:PSSwitchCell
                                                            edit:Nil];
+    [master setProperty:[SCIPanelSwitchRowCell class] forKey:@"cellClass"];
+    [master setProperty:@72 forKey:@"height"];
+    [master setProperty:masterOn
+        ? SCIPanelSymbolTile(@"power", [UIColor colorWithRed:0.30 green:0.85 blue:0.48 alpha:1], [UIColor colorWithRed:0.10 green:0.66 blue:0.36 alpha:1], side)
+        : SCIPanelSymbolTile(@"power", [UIColor colorWithRed:0.62 green:0.62 blue:0.68 alpha:1], [UIColor colorWithRed:0.42 green:0.42 blue:0.48 alpha:1], side)
+                 forKey:SCIPanelRowTileKey];
+    [master setProperty:(!masterOn ? SCILocalized(@"master_status_off")
+                                   : (on > 0 ? (on == 1 ? SCILocalized(@"master_status_one") : [NSString stringWithFormat:SCILocalized(@"master_status_on"), (long)on])
+                                             : SCILocalized(@"master_status_none")))
+                 forKey:SCIPanelRowSubtitleKey];
+    [master setProperty:@(masterOn && on > 0 ? SCIPanelToneGood : SCIPanelToneQuiet) forKey:SCIPanelRowToneKey];
     [specifiers addObject:master];
 
-    PSSpecifier *group = [PSSpecifier preferenceSpecifierNamed:SCILocalized(@"section_apps")
-                                                        target:self
-                                                           set:NULL
-                                                           get:NULL
-                                                        detail:Nil
-                                                          cell:PSGroupCell
-                                                          edit:Nil];
-    // **A row that cannot act must not look as though it does.** With the master off, every
-    // switch below is still drawn at whatever it was set to, and every one of them is being
-    // ignored -- so the footer says so rather than leaving the page to imply otherwise.
-    [group setProperty:([[self isMasterOn:nil] boolValue] ? SCILocalized(@"apps_footer")
-                                                          : SCILocalized(@"apps_footer_master_off"))
-                forKey:@"footerText"];
-    [specifiers addObject:group];
+    //
+    // The apps. **Every row carries an icon, installed or not**: the phone's own when it gave one, otherwise a tile drawn here in the app's
+    // colours (SCIPanelAppTile) -- so a list never has a hole where a picture was promised and every row is the same size.
+    //
+    [specifiers addObject:[self groupNamed:SCILocalized(@"section_apps")
+                                    footer:(masterOn ? SCILocalized(@"apps_footer") : SCILocalized(@"apps_footer_master_off"))]];
 
     if (!entries.count) {
         PSSpecifier *none = [PSSpecifier preferenceSpecifierNamed:SCILocalized(@"apps_none")
-                                                           target:self
-                                                              set:NULL
-                                                              get:NULL
-                                                           detail:Nil
-                                                             cell:PSTitleValueCell
-                                                             edit:Nil];
+                                                           target:self set:NULL get:NULL detail:Nil cell:PSTitleValueCell edit:Nil];
+        [none setProperty:[SCIPanelRowCell class] forKey:@"cellClass"];
+        [none setProperty:@64 forKey:@"height"];
+        [none setProperty:SCIPanelSymbolTile(@"questionmark", [UIColor colorWithWhite:0.6 alpha:1], [UIColor colorWithWhite:0.42 alpha:1], side) forKey:SCIPanelRowTileKey];
         [specifiers addObject:none];
     }
 
     for (SCIPanelEntry *entry in entries) {
-        //
-        // **An app row that owns a page pushes to it instead of carrying a switch.**
-        //
-        // Giving it both would be two controls for one thing: the master switch already lives on
-        // the page, and a switch here would write `app_enabled_<bundleid>`, which a tweak gated on
-        // its own master never reads -- a switch that moves and changes nothing, which this project
-        // has shipped once and does not intend to again.
-        //
+        UIImage *tile = SCIPanelTileForEntry(entry, side);
+
+        // An app row that owns a page pushes to it instead of carrying a switch. Giving it both would be two controls for one thing: the
+        // master switch already lives on the page, and a switch here would write `app_enabled_<bundleid>`, which a tweak gated on its own
+        // master never reads -- a switch that moves and changes nothing, which this project has shipped once.
         if (entry.detailControllerClassName.length) {
             Class detailClass = NSClassFromString(entry.detailControllerClassName);
-
-            // Same reasoning as the Tweaks section below: a row whose page is missing is drawn,
-            // dimmed and explained. Installing a tweak before the panel update that carries its
-            // page is an ordinary Tuesday, and silence is the worst possible answer to it.
             PSSpecifier *link = [PSSpecifier preferenceSpecifierNamed:entry.appName
-                                                               target:self
-                                                                  set:NULL
-                                                                  get:NULL
+                                                               target:self set:NULL get:NULL
                                                                detail:detailClass
-                                                                 cell:(detailClass ? PSLinkCell
-                                                                                   : PSTitleValueCell)
+                                                                 cell:(detailClass ? PSLinkCell : PSTitleValueCell)
                                                                  edit:Nil];
-            if (!detailClass) {
-                [link setProperty:@NO forKey:@"enabled"];
-                [link setProperty:SCILocalized(@"tweak_page_missing") forKey:@"sciSubtitle"];
-                [link setProperty:@YES forKey:@"sciSubtitleIsWarning"];
-                [link setProperty:[SCIPanelAppCell class] forKey:@"cellClass"];
-            }
-
+            [link setProperty:[SCIPanelRowCell class] forKey:@"cellClass"];
+            [link setProperty:@64 forKey:@"height"];
+            [link setProperty:tile forKey:SCIPanelRowTileKey];
             [link setProperty:entry.bundleIdentifier forKey:@"sciBundleIdentifier"];
-            if (entry.appIcon) [link setProperty:entry.appIcon forKey:@"iconImage"];
-
+            if (!detailClass) {
+                // Installing a tweak before the panel update that carries its page is an ordinary Tuesday: the row is drawn, dimmed and
+                // explained, and silence is the worst possible answer to it.
+                [link setProperty:@NO forKey:@"enabled"];
+                [link setProperty:SCILocalized(@"tweak_page_missing") forKey:SCIPanelRowSubtitleKey];
+                [link setProperty:@(SCIPanelToneCaution) forKey:SCIPanelRowToneKey];
+            }
             [specifiers addObject:link];
             continue;
         }
@@ -182,278 +137,136 @@ static NSString *const kSCIPanelDomain = kSCIPanelPreferenceDomain;
                                                           detail:Nil
                                                             cell:PSSwitchCell
                                                             edit:Nil];
-
-        // An app that is not on the phone gets a switch that cannot be moved.
-        // Offering a live switch for an app you do not have is offering a control
-        // over nothing.
-        if (!entry.appInstalled) {
-            [row setProperty:@NO forKey:@"enabled"];
-        }
+        // An app that is not on the phone gets a switch that cannot be moved: a live switch for an app you do not have is a control over nothing.
+        if (!entry.appInstalled) [row setProperty:@NO forKey:@"enabled"];
 
         [row setProperty:entry.bundleIdentifier forKey:@"sciBundleIdentifier"];
+        // A Class, not its name: Preferences sends class messages to this property and a string there killed Settings once.
+        [row setProperty:[SCIPanelSwitchRowCell class] forKey:@"cellClass"];
+        [row setProperty:@64 forKey:@"height"];
+        [row setProperty:tile forKey:SCIPanelRowTileKey];
 
-        // Everything the versions section used to say, on the row it is about.
-        //
-        // The cell class is only set on switch rows: a row that pushes to its own page is a
-        // PSLinkCell and giving it a switch cell's class would replace the disclosure
-        // chevron with a switch that controls nothing.
-        BOOL warn = NO;
-        NSString *subtitle = [self subtitleForEntry:entry warning:&warn];
-        if (subtitle.length) {
-            [row setProperty:subtitle forKey:@"sciSubtitle"];
-            [row setProperty:@(warn) forKey:@"sciSubtitleIsWarning"];
-            // A Class, not its name.
-            //
-            // This was set to the string @"SCIPanelAppCell", and Preferences takes this
-            // property as a Class and sends class messages to it -- so it messaged an
-            // NSString and Settings died the moment the page was opened. The name reads
-            // identically in the source and is a completely different object.
-            [row setProperty:[SCIPanelAppCell class] forKey:@"cellClass"];
-        }
-
-        // The app's own icon, so the list is scanned by eye rather than read.
-        //
-        // Two rows of text that differ by one word are two rows a person has to read;
-        // the Instagram glyph and the YouTube glyph are told apart before reading starts.
-        // Nil is fine and means no picture, never a blank space where one was promised.
-        if (entry.appIcon) [row setProperty:entry.appIcon forKey:@"iconImage"];
-
+        // No second line: the versions and the "tested on" notes live in the Guide, where they are about one tweak at a time. An app that is not
+        // installed is a dimmed row with a switch that cannot be moved, and the footer says what that means.
         [specifiers addObject:row];
     }
 
     // The tweaks that own a page, under the apps they run across.
     if (features.count) {
-        PSSpecifier *featureGroup =
-            [PSSpecifier preferenceSpecifierNamed:SCILocalized(@"section_tweaks")
-                                           target:self
-                                              set:NULL
-                                              get:NULL
-                                           detail:Nil
-                                             cell:PSGroupCell
-                                             edit:Nil];
-        [featureGroup setProperty:SCILocalized(@"tweaks_footer") forKey:@"footerText"];
-        [specifiers addObject:featureGroup];
+        [specifiers addObject:[self groupNamed:SCILocalized(@"section_tweaks") footer:SCILocalized(@"tweaks_footer")]];
 
         for (SCIPanelEntry *entry in features) {
             Class detailClass = NSClassFromString(entry.detailControllerClassName);
+            UIImage *tile = SCIPanelTileForEntry(entry, side);
 
-            //
-            // **A row whose page is missing is shown and explained, not hidden.**
-            //
-            // The first version of this skipped the row outright, and that was wrong in the more
-            // common direction. Two different situations produce a nil detail class:
-            //
-            //  - The tweak is *gone* and its filter plist outlived the package -- Albrhi CarPlay,
-            //    removed from this repository, whose `AlbrhiCP.plist` still sits beside a dylib on
-            //    anyone who installed it. A row here would be a door drawn on a wall.
-            //  - The tweak is *newer than the panel*. Albrhi Watch ships as its own package while
-            //    its page lives in this bundle, so installing the tweak before the suite update
-            //    that carries the page is an ordinary Tuesday -- and hiding the row then tells
-            //    somebody who just installed a tweak that it did not install.
-            //
-            // The second is the one people actually meet, and silence is the worst possible answer
-            // to it. So the row is drawn, dimmed, and says why -- which is also true of the first
-            // case and costs nothing there.
-            //
-            if (!detailClass) {
-                PSSpecifier *stale = [PSSpecifier preferenceSpecifierNamed:entry.appName
-                                                                    target:self
-                                                                       set:NULL
-                                                                       get:NULL
-                                                                    detail:Nil
-                                                                      cell:PSTitleValueCell
-                                                                      edit:Nil];
-                [stale setProperty:@NO forKey:@"enabled"];
-                [stale setProperty:SCILocalized(@"tweak_page_missing") forKey:@"sciSubtitle"];
-                [stale setProperty:@YES forKey:@"sciSubtitleIsWarning"];
-                [stale setProperty:[SCIPanelAppCell class] forKey:@"cellClass"];
-                [stale setProperty:SCIPanelBadgeForGroup(entry.bundleIdentifier)
-                            forKey:@"iconImage"];
-                [specifiers addObject:stale];
-                continue;
-            }
+            // A row whose page is missing is shown and explained, not hidden: the tweak may be gone with its filter plist left behind (a door
+            // drawn on a wall), or newer than the panel (Watch ships on its own while its page lives in this bundle) -- the second is the one
+            // people meet, and hiding the row then tells somebody who just installed a tweak that it did not install.
             PSSpecifier *row = [PSSpecifier preferenceSpecifierNamed:entry.appName
-                                                              target:self
-                                                                 set:NULL
-                                                                 get:NULL
+                                                              target:self set:NULL get:NULL
                                                               detail:detailClass
-                                                                cell:PSLinkCell
+                                                                cell:(detailClass ? PSLinkCell : PSTitleValueCell)
                                                                 edit:Nil];
+            [row setProperty:[SCIPanelRowCell class] forKey:@"cellClass"];
+            [row setProperty:@64 forKey:@"height"];
+            [row setProperty:tile forKey:SCIPanelRowTileKey];
             [row setProperty:entry.bundleIdentifier forKey:@"sciBundleIdentifier"];
-
-            // Its own mark, drawn here. These rows had no icon at all: the scan reads an app
-            // icon by bundle identifier, and a group identifier names a tweak rather than an
-            // app, so nothing was ever found for them.
-            // The app's own icon when the group named one app, the drawn badge otherwise. A
-            // grouped row is not automatically iconless -- it is iconless when there is no app to
-            // take an icon from, which is a different condition and now asked separately.
-            [row setProperty:(entry.appIcon ?: SCIPanelBadgeForGroup(entry.bundleIdentifier))
-                      forKey:@"iconImage"];
+            if (!detailClass) {
+                [row setProperty:@NO forKey:@"enabled"];
+                [row setProperty:SCILocalized(@"tweak_page_missing") forKey:SCIPanelRowSubtitleKey];
+                [row setProperty:@(SCIPanelToneCaution) forKey:SCIPanelRowToneKey];
+            }
             [specifiers addObject:row];
         }
     }
 
     //
-    // Guide, update, backup: three things that are about Albrhi itself rather than about any one
-    // app, kept together above "About" for that reason.
+    // **Updates: one section, about Albrhi as a whole.** It used to be a button among the tools that answered in an alert; it is its own
+    // section now, shows where the question stands on the row itself, and is still only ever asked on a tap -- never on page load.
     //
-    PSSpecifier *toolsGroup = [PSSpecifier preferenceSpecifierNamed:SCILocalized(@"section_tools")
-                                                             target:self
-                                                                set:NULL
-                                                                get:NULL
-                                                             detail:Nil
-                                                               cell:PSGroupCell
-                                                               edit:Nil];
-    [toolsGroup setProperty:SCILocalized(@"tools_footer") forKey:@"footerText"];
-    [specifiers addObject:toolsGroup];
-
-    PSSpecifier *guide = [PSSpecifier preferenceSpecifierNamed:SCILocalized(@"guide_title")
-                                                        target:self
-                                                           set:NULL
-                                                           get:NULL
-                                                        detail:[SCIPanelGuideController class]
-                                                          cell:PSLinkCell
-                                                          edit:Nil];
-    [specifiers addObject:guide];
-
-    PSSpecifier *update = [PSSpecifier preferenceSpecifierNamed:SCILocalized(@"update_check")
-                                                         target:self
-                                                            set:NULL
-                                                            get:NULL
-                                                         detail:Nil
-                                                           cell:PSButtonCell
-                                                           edit:Nil];
+    [specifiers addObject:[self groupNamed:SCILocalized(@"section_updates") footer:SCILocalized(@"updates_footer")]];
+    PSSpecifier *update = [PSSpecifier preferenceSpecifierNamed:[NSString stringWithFormat:SCILocalized(@"update_row_title"), [self displayedVersion]]
+                                                         target:self set:NULL get:NULL detail:Nil cell:PSButtonCell edit:Nil];
     SCISetButtonAction(update, @selector(checkForUpdate));
+    [update setProperty:[SCIPanelRowCell class] forKey:@"cellClass"];
+    [update setProperty:@68 forKey:@"height"];
+    UIColor *updateTop = [UIColor colorWithRed:0.30 green:0.62 blue:1 alpha:1], *updateBottom = [UIColor colorWithRed:0.16 green:0.40 blue:0.92 alpha:1];
+    NSString *updateSymbol = @"arrow.triangle.2.circlepath";
+    NSString *updateLine = SCILocalized(@"update_idle");
+    SCIPanelTone updateTone = SCIPanelToneQuiet;
+    switch (_updateState) {
+        case 1: updateLine = SCILocalized(@"update_checking"); break;
+        case 2: updateLine = SCILocalized(@"update_inline_current"); updateTone = SCIPanelToneGood; updateSymbol = @"checkmark.seal.fill";
+                updateTop = [UIColor colorWithRed:0.30 green:0.85 blue:0.48 alpha:1]; updateBottom = [UIColor colorWithRed:0.10 green:0.66 blue:0.36 alpha:1]; break;
+        case 3: updateLine = [NSString stringWithFormat:SCILocalized(@"update_inline_available"), _updateLatest ?: @""]; updateTone = SCIPanelToneCaution; updateSymbol = @"arrow.down.circle.fill";
+                updateTop = [UIColor colorWithRed:1 green:0.66 blue:0.22 alpha:1]; updateBottom = [UIColor colorWithRed:0.95 green:0.45 blue:0.10 alpha:1]; break;
+        case 4: updateLine = SCILocalized(@"update_inline_unreachable"); updateTone = SCIPanelToneBad; updateSymbol = @"wifi.exclamationmark";
+                updateTop = [UIColor colorWithRed:1 green:0.45 blue:0.40 alpha:1]; updateBottom = [UIColor colorWithRed:0.86 green:0.25 blue:0.22 alpha:1]; break;
+        case 5: updateLine = [NSString stringWithFormat:SCILocalized(@"update_inline_latest_only"), _updateLatest ?: @""]; break;
+        default: break;
+    }
+    [update setProperty:SCIPanelSymbolTile(updateSymbol, updateTop, updateBottom, side) forKey:SCIPanelRowTileKey];
+    [update setProperty:updateLine forKey:SCIPanelRowSubtitleKey];
+    [update setProperty:@(updateTone) forKey:SCIPanelRowToneKey];
+    [update setProperty:@(_updateState == 1) forKey:SCIPanelRowBusyKey];
     [specifiers addObject:update];
 
+    //
+    // The guide and the backup: things about Albrhi itself rather than about any one app.
+    //
+    [specifiers addObject:[self groupNamed:SCILocalized(@"section_tools") footer:SCILocalized(@"tools_footer")]];
+
+    PSSpecifier *guide = [PSSpecifier preferenceSpecifierNamed:SCILocalized(@"guide_title")
+                                                        target:self set:NULL get:NULL detail:[SCIPanelGuideController class] cell:PSLinkCell edit:Nil];
+    [guide setProperty:[SCIPanelRowCell class] forKey:@"cellClass"];
+    [guide setProperty:@64 forKey:@"height"];
+    [guide setProperty:SCIPanelSymbolTile(@"book.fill", [UIColor colorWithRed:0.27 green:0.80 blue:0.78 alpha:1], [UIColor colorWithRed:0.10 green:0.58 blue:0.62 alpha:1], side) forKey:SCIPanelRowTileKey];
+    [specifiers addObject:guide];
+
     PSSpecifier *backup = [PSSpecifier preferenceSpecifierNamed:SCILocalized(@"backup_export")
-                                                         target:self
-                                                            set:NULL
-                                                            get:NULL
-                                                         detail:Nil
-                                                           cell:PSButtonCell
-                                                           edit:Nil];
+                                                         target:self set:NULL get:NULL detail:Nil cell:PSButtonCell edit:Nil];
     SCISetButtonAction(backup, @selector(exportSettings));
+    [backup setProperty:[SCIPanelRowCell class] forKey:@"cellClass"];
+    [backup setProperty:@64 forKey:@"height"];
+    [backup setProperty:SCIPanelSymbolTile(@"square.and.arrow.up.fill", [UIColor colorWithRed:0.62 green:0.46 blue:1 alpha:1], [UIColor colorWithRed:0.42 green:0.30 blue:0.86 alpha:1], side) forKey:SCIPanelRowTileKey];
     [specifiers addObject:backup];
 
     PSSpecifier *restore = [PSSpecifier preferenceSpecifierNamed:SCILocalized(@"backup_import")
-                                                          target:self
-                                                             set:NULL
-                                                             get:NULL
-                                                          detail:Nil
-                                                            cell:PSButtonCell
-                                                            edit:Nil];
+                                                          target:self set:NULL get:NULL detail:Nil cell:PSButtonCell edit:Nil];
     SCISetButtonAction(restore, @selector(importSettings));
+    [restore setProperty:[SCIPanelRowCell class] forKey:@"cellClass"];
+    [restore setProperty:@64 forKey:@"height"];
+    [restore setProperty:SCIPanelSymbolTile(@"square.and.arrow.down.fill", [UIColor colorWithRed:0.95 green:0.45 blue:0.72 alpha:1], [UIColor colorWithRed:0.82 green:0.26 blue:0.54 alpha:1], side) forKey:SCIPanelRowTileKey];
     [specifiers addObject:restore];
 
-    PSSpecifier *about = [PSSpecifier preferenceSpecifierNamed:SCILocalized(@"section_about")
-                                                        target:self
-                                                           set:NULL
-                                                           get:NULL
-                                                        detail:Nil
-                                                          cell:PSGroupCell
-                                                          edit:Nil];
-    [about setProperty:SCILocalized(@"about_note") forKey:@"footerText"];
-    [specifiers addObject:about];
+    [specifiers addObject:[self groupNamed:SCILocalized(@"section_about") footer:nil]];
+    [specifiers addObject:[self valueRow:SCILocalized(@"about_version") value:[self displayedVersion] symbol:@"number.circle.fill"]];
+    [specifiers addObject:[self valueRow:SCILocalized(@"about_author") value:SCILocalized(@"about_author_name") symbol:@"person.crop.circle.fill"]];
 
-    [specifiers addObject:[self valueRow:SCILocalized(@"about_version")
-                                   value:[self displayedVersion]]];
-    [specifiers addObject:[self valueRow:SCILocalized(@"about_author")
-                                   value:SCILocalized(@"about_author_name")]];
-
-    // Respring, in its own group so a destructive-looking button is never a mis-tap away
-    // from a row that does nothing.
-    PSSpecifier *restartGroup = [PSSpecifier preferenceSpecifierNamed:@""
-                                                               target:self
-                                                                  set:NULL
-                                                                  get:NULL
-                                                               detail:Nil
-                                                                 cell:PSGroupCell
-                                                                 edit:Nil];
-    [restartGroup setProperty:SCILocalized(@"respring_note") forKey:@"footerText"];
-    [specifiers addObject:restartGroup];
-
+    // Respring, in its own group so a destructive-looking button is never a mis-tap away from a row that does nothing.
+    [specifiers addObject:[self groupNamed:@"" footer:SCILocalized(@"respring_note")]];
     PSSpecifier *respring = [PSSpecifier preferenceSpecifierNamed:SCILocalized(@"respring")
-                                                           target:self
-                                                              set:NULL
-                                                              get:NULL
-                                                           detail:Nil
-                                                             cell:PSButtonCell
-                                                             edit:Nil];
+                                                           target:self set:NULL get:NULL detail:Nil cell:PSButtonCell edit:Nil];
     SCISetButtonAction(respring, @selector(confirmRespring));
-    [respring setProperty:@YES forKey:@"isDestructive"];
+    [respring setProperty:[SCIPanelRowCell class] forKey:@"cellClass"];
+    [respring setProperty:@64 forKey:@"height"];
+    [respring setProperty:@YES forKey:SCIPanelRowDestructiveKey];
+    [respring setProperty:SCIPanelSymbolTile(@"arrow.clockwise", [UIColor colorWithRed:1 green:0.45 blue:0.40 alpha:1], [UIColor colorWithRed:0.86 green:0.25 blue:0.22 alpha:1], side) forKey:SCIPanelRowTileKey];
     [specifiers addObject:respring];
 
-    // The name at the end, in the last footer, where a signature belongs.
-    //
-    // A value row already says who made it; this is the other thing — the licence and the
-    // credit SCInsta is owed, which is a condition of using it and not a courtesy. Both
-    // are in the package metadata too, and both being visible on the device matters more
-    // than either being tidy.
-    PSSpecifier *signature = [PSSpecifier preferenceSpecifierNamed:@""
-                                                            target:self
-                                                               set:NULL
-                                                               get:NULL
-                                                            detail:Nil
-                                                              cell:PSGroupCell
-                                                              edit:Nil];
-    [signature setProperty:SCILocalized(@"about_signature") forKey:@"footerText"];
-    [specifiers addObject:signature];
+    // The name at the end, in the last footer, where a signature belongs: the licence and the credit SCInsta is owed, which is a condition of
+    // using it and not a courtesy. Both are in the package metadata too, and both being visible on the device matters more than either being tidy.
+    [specifiers addObject:[self groupNamed:@"" footer:SCILocalized(@"about_signature")]];
 
     _specifiers = specifiers;
     return _specifiers;
 }
 
-/// What each tweak was built against, beside what is on the phone.
-///
-/// The section exists because "it stopped working after an update" is the single most
-/// common thing anyone reports, and this is the page that can answer it without a report
-/// being written at all. A row reads "410.1.0 · tested" when they agree and
-/// "412.0.0 · tested on 410.1.0" when they do not.
-///
-/// Nothing is disabled on a mismatch. Nothing is pinned to a version number anywhere in
-/// this project and a newer app usually works fine; the point is to show the one fact
-/// that explains it when it does not.
-///
-/// What a row says under the app's name.
-///
-/// This was a whole second section that listed every app again to state two version
-/// numbers. Two passes down the same list to answer one question about one app -- and the
-/// switch was in the first pass while the reason you might want to move it was in the
-/// second. It is one line under the name now, and the section is gone.
-///
-/// Every string it can produce is the one the old section used; nothing here changes what
-/// is said, only where. Returns nil when there is genuinely nothing to say, and the cell
-/// hides the line rather than reserving an empty one.
-- (NSString *)subtitleForEntry:(SCIPanelEntry *)entry warning:(BOOL *)warning {
-    if (warning) *warning = NO;
-
-    // A row with its own settings page speaks for itself there, and never declares a tested
-    // app version -- it does not target one real app the way the others do.
-    if (entry.detailControllerClassName.length) return nil;
-
-    if (!entry.appInstalled) return SCILocalized(@"versions_not_installed");
-
-    if (!entry.appVersion.length && !entry.testedVersion.length) {
-        return SCILocalized(@"versions_unknown");
-    }
-    if (!entry.appVersion.length) {
-        // Nothing to compare against. The tested version is still worth stating: it is what
-        // this tweak is for.
-        return [NSString stringWithFormat:SCILocalized(@"versions_tested_only"),
-                entry.testedVersion];
-    }
-    if (!entry.testedVersion.length) return entry.appVersion;
-
-    if ([entry runsTestedVersion]) {
-        return [NSString stringWithFormat:SCILocalized(@"versions_match"), entry.appVersion];
-    }
-
-    // The one case worth colouring: this build has not been verified against the app on the
-    // phone. A caution, not a fault -- see the cell for why it is amber and not red.
-    if (warning) *warning = YES;
-    return [NSString stringWithFormat:SCILocalized(@"versions_differ"),
-            entry.appVersion, entry.testedVersion];
+/// A group header. `name` empty draws none.
+- (PSSpecifier *)groupNamed:(NSString *)name footer:(NSString *)footer {
+    PSSpecifier *group = [PSSpecifier preferenceSpecifierNamed:name target:self set:NULL get:NULL detail:Nil cell:PSGroupCell edit:Nil];
+    if (footer.length) [group setProperty:footer forKey:@"footerText"];
+    return group;
 }
 
 /// A row showing a fixed value on the right.
@@ -463,7 +276,7 @@ static NSString *const kSCIPanelDomain = kSCIPanelPreferenceDomain;
 /// title and an empty space — "Made by" with nobody's name after it. A PSTitleValueCell
 /// asks its specifier for a value through the get selector; with none there is nothing
 /// to ask and nothing is what it draws. Every value row on this page was blank for it.
-- (PSSpecifier *)valueRow:(NSString *)title value:(NSString *)value {
+- (PSSpecifier *)valueRow:(NSString *)title value:(NSString *)value symbol:(NSString *)symbol {
     PSSpecifier *row = [PSSpecifier preferenceSpecifierNamed:title
                                                       target:self
                                                          set:NULL
@@ -472,6 +285,10 @@ static NSString *const kSCIPanelDomain = kSCIPanelPreferenceDomain;
                                                         cell:PSTitleValueCell
                                                         edit:Nil];
     [row setProperty:(value ?: @"") forKey:@"value"];
+    [row setProperty:(value ?: @"") forKey:SCIPanelRowValueKey];
+    [row setProperty:[SCIPanelRowCell class] forKey:@"cellClass"];
+    [row setProperty:@56 forKey:@"height"];
+    [row setProperty:SCIPanelSymbolTile(symbol, [UIColor colorWithRed:0.62 green:0.62 blue:0.70 alpha:1], [UIColor colorWithRed:0.42 green:0.42 blue:0.52 alpha:1], SCIPanelTileSide - 8) forKey:SCIPanelRowTileKey];
     return row;
 }
 
@@ -623,14 +440,10 @@ static NSString *const kSCIPanelDomain = kSCIPanelPreferenceDomain;
     // value and the switch looks broken.
     CFPreferencesAppSynchronize((__bridge CFStringRef)kSCIPanelDomain);
 
-    UIAlertController *note =
-        [UIAlertController alertControllerWithTitle:specifier.name
-                                            message:SCILocalized(@"switch_restart")
-                                     preferredStyle:UIAlertControllerStyleAlert];
-    [note addAction:[UIAlertAction actionWithTitle:SCILocalized(@"ok")
-                                             style:UIAlertActionStyleDefault
-                                           handler:nil]];
-    [self presentViewController:note animated:YES completion:nil];
+    // No alert. A dialog after every flip of a switch is a page that talks over its own controls; what the person needs to know -- that the app
+    // must be reopened -- is said once, under the list. The count in the card above is what changed, so that is redrawn.
+    [self reloadSpecifiers];
+    [self refreshHero];
 }
 
 // MARK: - The master switch
@@ -662,8 +475,7 @@ static NSString *const kSCIPanelDomain = kSCIPanelPreferenceDomain;
     // instant this changes. Rebuilt rather than edited: this page is built in one pass and a
     // second, partial update of it is how two descriptions of one state start to disagree.
     [self reloadSpecifiers];
-
-    [self say:specifier.name message:SCILocalized(@"switch_restart")];
+    [self refreshHero];
 }
 
 // MARK: - Backup
@@ -712,28 +524,18 @@ didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
 // MARK: - Updates
 
 - (void)checkForUpdate {
-    [self say:SCILocalized(@"update_check") message:SCILocalized(@"update_asking")];
+    if (_updateState == 1) return;
+    _updateState = 1;
+    [self reloadSpecifiers];
 
     SCIPanelCheckForUpdate(^(NSString *latest, NSString *installed, BOOL newer) {
-        // The alert already on screen is this page's own; dismissing it first means the answer
-        // never arrives behind something the user has to clear before reading it.
-        [self dismissViewControllerAnimated:YES completion:^{
-            NSString *message;
-
-            if (!latest.length) {
-                message = SCILocalized(@"update_unreachable");
-            } else if (newer) {
-                message = [NSString stringWithFormat:SCILocalized(@"update_available"), latest, installed];
-            } else if (!installed.length) {
-                // No dpkg to ask is not "up to date" -- it is a sideloaded device, where the
-                // published version is still the answer to what was asked.
-                message = [NSString stringWithFormat:SCILocalized(@"update_latest_only"), latest];
-            } else {
-                message = [NSString stringWithFormat:SCILocalized(@"update_current"), installed];
-            }
-
-            [self say:SCILocalized(@"update_check") message:message];
-        }];
+        // The answer is written on the row, where the question was asked: no alert to clear, nothing to read behind something else.
+        _updateLatest = latest;
+        if (!latest.length) _updateState = 4;                 // the question went unanswered -- deliberately not "up to date"
+        else if (newer) _updateState = 3;
+        else if (!installed.length) _updateState = 5;         // a sideloaded device: the published version is still the answer to what was asked
+        else _updateState = 2;
+        [self reloadSpecifiers];
     });
 }
 
@@ -755,34 +557,21 @@ didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
     self.title = SCILocalized(@"panel_title");
 }
 
-/// The header is fitted here rather than in -viewDidLoad.
-///
-/// A table header has to be given a frame, and the width to fit it to is the table's —
-/// which is not final until the view has been laid out. Fitting it in -viewDidLoad gives
-/// it the width of a view that has not been sized yet, and the header comes out either
-/// clipped or floating in the middle of the page.
+/// The header is fitted here rather than in -viewDidLoad: a table header has to be given a frame, and the width to fit it to is the table's,
+/// which is not final until the view has been laid out.
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
+    [self refreshHero];
+}
 
+/// Rebuilds the card when what it says changed (the width, the version, how many apps are on, the master switch), and only then:
+/// -viewDidLayoutSubviews runs constantly, and building a view on each pass would rebuild the card while somebody is scrolling past it.
+/// The tally is counted here, not cached, so the card can never disagree with the switches under it.
+- (void)refreshHero {
     UITableView *table = self.table;
     CGFloat width = table.bounds.size.width;
     if (width <= 0) return;
 
-    // Rebuilt only when the width actually changed -- on rotation, on an iPad split.
-    // -viewDidLayoutSubviews runs constantly, and building a view on each pass would
-    // rebuild the header while the user is scrolling past it.
-    if (table.tableHeaderView && ABS(table.tableHeaderView.frame.size.width - width) < 0.5) return;
-
-    // Counted here rather than cached, so the pill can never disagree with the switches
-    // below it -- -viewWillAppear reloads the specifiers on every return to this page, and
-    // a header holding its own tally would keep yesterday's answer.
-    // **Apps only, now that the tweaks with their own page sit in their own section.**
-    //
-    // The pill answers "how much of this is switched on", and it sat above a list of app
-    // switches while counting rows that are not app switches at all: Albrhi NextUp keeps its
-    // state in its own preference domain and never touches the panel's key, so it counted as
-    // off forever and the total it was measured against included it. A tally whose denominator
-    // holds rows the numerator cannot reach is wrong in both halves at once.
     NSInteger on = 0, total = 0;
     for (SCIPanelEntry *entry in [SCIPanelScan entries]) {
         if (entry.detailControllerClassName.length) continue;
@@ -790,12 +579,15 @@ didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
         total++;
         if ([[self isOnForSpecifierWithIdentifier:entry.bundleIdentifier] boolValue]) on++;
     }
+    BOOL masterOn = [[self isMasterOn:nil] boolValue];
 
-    UIView *header = [SCIPanelHeader viewForWidth:width
-                                          version:[self displayedVersion]
-                                               on:on
-                                               of:total];
-    if (header) table.tableHeaderView = header;
+    NSString *key = [NSString stringWithFormat:@"%.1f|%@|%ld|%ld|%d", width, [self displayedVersion], (long)on, (long)total, masterOn];
+    if (table.tableHeaderView && [objc_getAssociatedObject(table, "sciHeroKey") isEqualToString:key]) return;
+
+    UIView *header = [SCIPanelHero viewForWidth:width version:[self displayedVersion] on:on of:total masterOn:masterOn];
+    if (!header) return;
+    table.tableHeaderView = header;
+    objc_setAssociatedObject(table, "sciHeroKey", key, OBJC_ASSOCIATION_COPY_NONATOMIC);
 }
 
 - (void)viewWillAppear:(BOOL)animated {

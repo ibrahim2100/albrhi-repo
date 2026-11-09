@@ -11,14 +11,14 @@
 [![Rootless](https://img.shields.io/badge/rootless-supported-success.svg)](#-compatibility)
 [![roothide](https://img.shields.io/badge/roothide-supported-success.svg)](#-compatibility)
 
-[![Albrhi](https://img.shields.io/badge/Albrhi-1.111.0-blueviolet.svg)](suite/CHANGELOG.md)
+[![Albrhi](https://img.shields.io/badge/Albrhi-1.112.0-blueviolet.svg)](suite/CHANGELOG.md)
 [![Instagram](https://img.shields.io/badge/Instagram-4.8.2-orange.svg)](tweaks/instagram/CHANGELOG.md)
 [![YouTube](https://img.shields.io/badge/YouTube-1.49.3-red.svg)](tweaks/youtube/CHANGELOG.md)
 [![X](https://img.shields.io/badge/X-0.22.1-black.svg)](tweaks/twitter/CHANGELOG.md)
 [![TikTok](https://img.shields.io/badge/TikTok-0.29.0-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
 [![YT Music](https://img.shields.io/badge/YT%20Music-0.10.0-FF0000.svg)](tweaks/ytmusic/CHANGELOG.md)
 [![Spotify](https://img.shields.io/badge/Spotify-0.2.5-1DB954.svg)](tweaks/spotify/CHANGELOG.md)
-[![Panel](https://img.shields.io/badge/Panel-0.10.0-8E8E93.svg)](tweaks/panel/CHANGELOG.md)
+[![Panel](https://img.shields.io/badge/Panel-0.11.0-8E8E93.svg)](tweaks/panel/CHANGELOG.md)
 [![NextUp](https://img.shields.io/badge/NextUp-0.3.1-FF375F.svg)](tweaks/nextup/CHANGELOG.md)
 [![Watch](https://img.shields.io/badge/Watch-0.6.1-FF375F.svg)](tweaks/watch/CHANGELOG.md)
 [![Based on](https://img.shields.io/badge/based%20on-SCInsta-lightblue.svg)](https://github.com/SoCuul/SCInsta)
@@ -127,7 +127,7 @@ Developed by **Ibrahim Ismail AL-Rahn** ([@ibrahim2100](https://github.com/ibrah
 | **[X](#-albrhi-for-x)** | X / Twitter | 0.22.1 | ✅ | media downloads with a button you can place yourself, and fifteen-plus switches for what X does |
 | **[TikTok](#-albrhi-for-tiktok)** | TikTok | 0.29.0 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |
 | **[YouTube Music](#-albrhi-for-youtube-music)** | YouTube Music | 0.10.0 | ✅ | synced lyrics, saving tracks, no ads, background playback |
-| **[Panel](#-albrhi-panel)** | Settings | 0.10.0 | ✅ | the Albrhi page: a switch per app, a guide, backup |
+| **[Panel](#-albrhi-panel)** | Settings | 0.11.0 | ✅ | the Albrhi page: a switch per app, a guide, backup |
 | **[Spotify](#-albrhi-for-spotify)** | Spotify | 0.2.5 | — | no ads, no Premium popups, sponsored podcast segments skipped |
 | **[NextUp](#-albrhi-nextup)** | SpringBoard + five media apps | 0.3.1 | — | what plays next, on the Lock Screen — a GPLv3 port |
 | **[Watch](#-albrhi-watch)** | SpringBoard, Watch app | 0.6.1 | — | pair a newer watchOS than iOS expects, and hold watchOS 26 back — an MIT port |

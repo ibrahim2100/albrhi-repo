@@ -1373,6 +1373,8 @@ read off the device before a hook was written. watchOS 26.6 is refused, 11.x wou
 
 ### 5.10 Panel (`tweaks/panel`)
 
+**The page was redesigned in 0.11.0 (2026-11-09) and looked at in the simulator before anything was pushed (`tools/sim-panel/`, §3.6).** What a future edit must not undo: rows are drawn by `Design/SCIPanelCells.m` (a 44-point tile, own title and second line, mirrored once at the end for right-to-left; `PSTableCell`'s own title and image are hidden, not fought); **every app row has an icon whether or not the app is installed** (`SCIPanelAppTile`: the phone's icon when it really gave one, else a tile drawn in `Design/SCIPanelStyle.m` in the brand's colours -- stand-ins, nothing of another company's artwork is shipped; **the system answers an unknown app with a generic "no icon" picture, not nil, so an icon is compared with that placeholder before it is believed**); **updates are one section about Albrhi as a whole**, asked only on a tap and answered on the row; **no version numbers or "tested on" lines under app names** (the owner's request -- they live in the Guide, one card per tweak). Not touched: NextUp's and Watch's pages (separate bundles on the old shared `SCIPanelHeader`/`SCIPanelAppCell`). Measured: the iOS 16.1 runtime is unavailable here, so the look was seen on iOS 27, not on the owner's 16.1. **A `-Werror` unused variable only appeared in the device build (SDK 16.2), not in the simulator harness: build the panel for the device before pushing a change to it.**
+
 Settings › Albrhi: a switch per patched app (opt-in), a master switch (default on), a guide **built from the device** (the same scan as the main page, so it cannot
 describe a tweak that is not there), settings backup/restore through the share sheet (a file beside the preferences would be destroyed by the event it exists for;
 what it holds is stated; a file that is not ours is refused whole), an update check **on a tap** (never on page load; takes the highest published version rather
@@ -1427,7 +1429,7 @@ the licence symbol now fail on it.
 ## 7. Known state and open work
 
 **Versions** (move these with the four numbers, not after them): Instagram **4.8.2** · YouTube **1.49.3** · X **0.22.1** · TikTok **0.29.0** · YouTube Music **0.10.0** ·
-Panel **0.10.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.111.0**.
+Panel **0.11.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.112.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

@@ -2,7 +2,8 @@
 #import <Preferences/PSSpecifier.h>
 
 #import "SCIPanelScan.h"
-#import "shared/src/Prefs/SCIPanelBadge.h"
+#import "Design/SCIPanelStyle.h"
+#import "Design/SCIPanelCells.h"
 #import "Localization/SCILocalize.h"
 
 @implementation SCIPanelGuideController
@@ -35,87 +36,62 @@
     return table[name] ?: SCILocalized(@"guide_desc_unknown");
 }
 
-// The same row the main page draws, built the same way on purpose.
-//
-// The first draft of this used PSStaticTextCell with a "staticTextMessage" -- which renders a
-// paragraph, not a title beside a value -- and set three properties hoping one would land. The
-// panel already had a working title-and-value row; copying it is the whole fix.
-- (PSSpecifier *)valueRow:(NSString *)title value:(NSString *)value {
-    PSSpecifier *row = [PSSpecifier preferenceSpecifierNamed:title
-                                                      target:self
-                                                         set:NULL
-                                                         get:@selector(fixedValue:)
-                                                      detail:Nil
-                                                        cell:PSTitleValueCell
-                                                        edit:Nil];
-    [row setProperty:(value ?: @"") forKey:@"value"];
-    return row;
-}
-
-/// A row that shows what it was given and cannot be edited.
-- (id)fixedValue:(PSSpecifier *)specifier {
-    return [specifier propertyForKey:@"value"] ?: @"";
-}
-
 - (NSArray *)specifiers {
     if (_specifiers) return _specifiers;
 
     NSMutableArray *specifiers = [NSMutableArray array];
 
     PSSpecifier *intro = [PSSpecifier preferenceSpecifierNamed:@""
-                                                        target:self
-                                                           set:NULL
-                                                           get:NULL
-                                                        detail:Nil
-                                                          cell:PSGroupCell
-                                                          edit:Nil];
+                                                        target:self set:NULL get:NULL detail:Nil cell:PSGroupCell edit:Nil];
     [intro setProperty:SCILocalized(@"guide_intro") forKey:@"footerText"];
     [specifiers addObject:intro];
 
     NSArray<SCIPanelEntry *> *entries = [SCIPanelScan entries];
 
-    // One tweak, one group: its name as the header, the version facts as its rows, and what it
-    // does as the footer. A single flat list would put a description and a version number in
-    // the same row and make both harder to read than either alone.
+    // **One tweak, one card**: the app's tile and name with where its version stands on the second line, and what the tweak does underneath.
+    // It used to be a header and two value rows per tweak ("Verified against", "On this phone") -- two lines of a table to say one fact. The
+    // fact is the comparison, and it is now a sentence in the colour that says whether to care: green when the phone has what the tweak was
+    // verified on, amber when it does not (a caution -- a newer app usually still works), quiet when the app is not installed.
     for (SCIPanelEntry *entry in entries) {
-        PSSpecifier *group = [PSSpecifier preferenceSpecifierNamed:entry.appName
-                                                            target:self
-                                                               set:NULL
-                                                               get:NULL
-                                                            detail:Nil
-                                                              cell:PSGroupCell
-                                                              edit:Nil];
+        PSSpecifier *group = [PSSpecifier preferenceSpecifierNamed:@""
+                                                            target:self set:NULL get:NULL detail:Nil cell:PSGroupCell edit:Nil];
         [group setProperty:[self descriptionForTweak:entry.tweakName] forKey:@"footerText"];
         [specifiers addObject:group];
 
-        [specifiers addObject:[self valueRow:SCILocalized(@"guide_tested")
-                                       value:entry.testedVersion.length
-                                                 ? entry.testedVersion
-                                                 : SCILocalized(@"versions_unknown")]];
+        PSSpecifier *row = [PSSpecifier preferenceSpecifierNamed:entry.appName
+                                                          target:self set:NULL get:NULL detail:Nil cell:PSTitleValueCell edit:Nil];
+        [row setProperty:[SCIPanelRowCell class] forKey:@"cellClass"];
+        [row setProperty:@68 forKey:@"height"];
+        [row setProperty:SCIPanelTileForEntry(entry, SCIPanelTileSide) forKey:SCIPanelRowTileKey];
 
-        // **"Not installed" is an answer, and a blank is not.** An app that is absent explains
-        // a row that does nothing far better than an empty version does.
-        [specifiers addObject:[self valueRow:SCILocalized(@"guide_installed")
-                                       value:entry.appInstalled
-                                                 ? (entry.appVersion.length ? entry.appVersion
-                                                                            : SCILocalized(@"versions_unknown"))
-                                                 : SCILocalized(@"versions_not_installed")]];
+        NSString *line;
+        SCIPanelTone tone = SCIPanelToneQuiet;
+        if (!entry.appInstalled) {
+            line = SCILocalized(@"versions_not_installed");
+        } else if (entry.testedVersion.length && entry.appVersion.length && [entry runsTestedVersion]) {
+            line = [NSString stringWithFormat:SCILocalized(@"guide_line_match"), entry.appVersion];
+            tone = SCIPanelToneGood;
+        } else if (entry.testedVersion.length && entry.appVersion.length) {
+            line = [NSString stringWithFormat:SCILocalized(@"guide_line_differ"), entry.appVersion, entry.testedVersion];
+            tone = SCIPanelToneCaution;
+        } else if (entry.testedVersion.length) {
+            line = [NSString stringWithFormat:SCILocalized(@"guide_line_tested_only"), entry.testedVersion];
+        } else {
+            line = entry.appVersion.length ? entry.appVersion : SCILocalized(@"versions_unknown");
+        }
+        [row setProperty:line forKey:SCIPanelRowSubtitleKey];
+        [row setProperty:@(tone) forKey:SCIPanelRowToneKey];
+        [specifiers addObject:row];
     }
 
     if (!entries.count) {
         PSSpecifier *none = [PSSpecifier preferenceSpecifierNamed:SCILocalized(@"apps_none")
-                                                           target:self
-                                                              set:NULL
-                                                              get:NULL
-                                                           detail:Nil
-                                                             cell:PSGroupCell
-                                                             edit:Nil];
+                                                           target:self set:NULL get:NULL detail:Nil cell:PSGroupCell edit:Nil];
         [specifiers addObject:none];
     }
 
-    // Assigned to the ivar, never only returned. PSListController reads _specifiers directly in
-    // places an override's return value never reaches, and a page that skipped this shipped as
-    // a black screen once already.
+    // Assigned to the ivar, never only returned. PSListController reads _specifiers directly in places an override's return value never reaches,
+    // and a page that skipped this shipped as a black screen once already.
     _specifiers = specifiers;
     return _specifiers;
 }
