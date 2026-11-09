@@ -62,9 +62,10 @@
 /// Pure black behind the keyboard while the system is dark (`UIKBBackdropView -setBackgroundColor:`). Off by default.
 #define SCIPrefOLEDKeyboard     @"oled_keyboard"
 
-/// Offer "use this video's sound as a voice message" in the menu the download button opens when held, and, once chosen, replace the **next** voice
-/// message recorded (`AVAudioRecorder -stop`) with that sound. Off by default: it changes what a recording sends.
-#define SCIPrefVoiceFromVideo   @"voice_from_video"
+/// Two more rows in the menu the download button opens when held: **save the video as an audio file** (its own sound, `.m4a`) and **save the post's sound on
+/// its own** (the music or recording the post uses). Both go to the share sheet -- Photos does not take audio. Off by default. (0.29.0 had this as "use as a
+/// voice message", which swapped a recording; that was not what was asked for and is gone.)
+#define SCIPrefAudioSave        @"audio_save"
 
 #define SCIPrefVerboseLogging   @"verbose_logging"
 
@@ -304,7 +305,7 @@ static inline BOOL SCIPrefEnabled(NSString *key) {
 #define SCIPrefCommentSaveSticker @"comment_save_sticker"
 
 /// Whether the download button does anything when held. The menu it opens carries two kinds of row -- things to copy (`copy_menu`) and the sound
-/// to use as a voice message (`voice_from_video`) -- so a hold is worth following when either is on.
+/// to save (`audio_save`) -- so a hold is worth following when either is on.
 static inline BOOL SCITTHoldMenuWanted(void) {
-    return SCIPrefEnabled(SCIPrefCopyMenu) || SCIPrefEnabled(SCIPrefVoiceFromVideo);
+    return SCIPrefEnabled(SCIPrefCopyMenu) || SCIPrefEnabled(SCIPrefAudioSave);
 }

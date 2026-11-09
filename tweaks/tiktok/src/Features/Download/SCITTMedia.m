@@ -1404,6 +1404,10 @@ static NSArray<NSURL *> *SCITTAllLinksForVideoModel(id videoModel, NSString **ou
     [self captureModel:model];
 }
 
++ (NSURL *)soundURLForModel:(id)model {
+    return model ? SCITTAudioURLFromModel(model) : nil;
+}
+
 + (SCITTMediaItem *)itemForModel:(id)model {
     if (!model) return nil;
     SEL idSel = NSSelectorFromString(@"itemID");

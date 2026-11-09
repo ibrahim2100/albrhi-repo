@@ -21,7 +21,7 @@
 #import "../Features/Feed/SCITTFeedFilters.h"
 #import "../Features/Messages/SCITTReadAlert.h"
 #import "../Features/Messages/SCITTMessages.h"
-#import "../Features/Messages/SCITTVoiceMessage.h"
+#import "../Features/Audio/SCITTAudioSave.h"
 #import "../Features/Profile/SCITTExactCounts.h"
 #import "../Features/Interface/SCITTKeyboard.h"
 #import "SCITTSettingsEntry.h"
@@ -161,8 +161,8 @@ static NSDictionary *SCIHeavyRow(NSString *title, NSString *value, NSString *ico
                        @"bell.badge.fill", [UIColor systemTealColor]),
                 SCIRow(SCILocalized(@"status_messages"), SCITTMessagesReport(),
                        @"message.fill", [UIColor systemTealColor]),
-                SCIRow(SCILocalized(@"status_voice"), SCITTVoiceReport(),
-                       @"waveform.badge.mic", [UIColor systemIndigoColor]),
+                SCIRow(SCILocalized(@"status_audio"), SCITTAudioReport(),
+                       @"waveform", [UIColor systemIndigoColor]),
                 SCIRow(SCILocalized(@"status_exact_counts"), SCITTExactCountsReport(),
                        @"number.circle.fill", [UIColor systemIndigoColor]),
                 SCIRow(SCILocalized(@"status_keyboard"), SCITTKeyboardReport(),

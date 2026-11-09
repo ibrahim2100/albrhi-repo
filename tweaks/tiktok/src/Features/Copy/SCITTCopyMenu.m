@@ -7,13 +7,14 @@
 
 #import "../../UI/SCITTMark.h"
 #import "SCITTCopyMenu.h"
+#import "../../SCILog.h"
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import "../../UI/SCITTToast.h"
 #import "../../Localization/SCILocalize.h"
 #import "../../Prefs.h"
 #import "../Download/SCITTMedia.h"
-#import "../Messages/SCITTVoiceMessage.h"
+#import "../Audio/SCITTAudioSave.h"
 
 ///
 /// **A dropdown from the download button, rows that each copy one thing.**
@@ -152,16 +153,17 @@ static NSArray<SCITTCopyRow *> *SCITTRowsForModel(id model) {
         add(SCITTMakeRow(@"copy_profile_link", @"person.crop.circle", profile, YES), NO);
     }
 
-    // **Not a copy row: it prepares this video's sound as the next voice message** (SCITTVoiceMessage.m). The item is the one captured for *this*
-    // model (`+itemForModel:`, never "the newest capture", CLAUDE.md §5.4: the date had that fault), so the sound is the video that was held.
-    if (SCIPrefEnabled(SCIPrefVoiceFromVideo)) {
-        SCITTCopyRow *voice = SCITTMakeRow(@"voice_row_title", @"waveform.badge.mic", SCILocalized(@"voice_row_note"), NO);
-        voice.action = ^{
+    // **Not a copy row: it saves the sound** (SCITTAudioSave.m). One row, one meaning -- "save the audio of this post". The video's own track is taken
+    // when the video's link is known (the item captured for *this* model, `+itemForModel:`, never "the newest capture", CLAUDE.md §5.4); when it
+    // is not, the post's own sound is fetched instead, so the row never has nothing to do while the post has a sound.
+    if (SCIPrefEnabled(SCIPrefAudioSave)) {
+        SCITTCopyRow *audio = SCITTMakeRow(@"audio_row", @"waveform", SCILocalized(@"audio_row_note"), NO);
+        audio.action = ^{
             SCITTMediaItem *item = [SCITTMedia itemForModel:model];
-            if (item) SCITTVoicePrepareFromItem(item);
-            else [SCITTToast noticeWithText:SCILocalized(@"voice_nothing") symbol:@"questionmark.circle"];
+            if (item.candidates.count) SCITTAudioSaveVideoSound(item);
+            else SCITTAudioSavePostSound([SCITTMedia soundURLForModel:model], item.itemID ?: SCITTTextOf(SCITTObjectFor(model, @"itemID")));
         };
-        add(voice, YES);
+        add(audio, YES);
     }
     return rows;
 }
@@ -347,6 +349,7 @@ static __weak SCITTCopyDropdown *sciCopyShowing = nil;
         // An action row closes the menu at once and does its own work; its own banner reports progress and result.
         void (^action)(void) = control.row.action;
         sciCopyLastRow = control.row.title;
+        SCILogV(@"[Copy] action row chosen: %@", control.row.title);
         [self dismiss];
         action();
         return;

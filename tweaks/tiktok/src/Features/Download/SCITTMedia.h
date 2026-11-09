@@ -182,6 +182,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// visible video the neighbour's date (and the neighbour's file).
 + (SCITTMediaItem *)itemForModel:(id)model;
 
+/// The link of the post's own sound (`AWEAwemeModel.music.playURL`), for any post -- a video's item does not carry it (`audioURL` is set for photo posts
+/// only), so the "save the sound" row asks the model it was opened on. Nil when the post has no resolvable sound.
++ (nullable NSURL *)soundURLForModel:(id)model;
+
 + (void)forgetAll;
 
 /// What the resolution chain last did -- which step it reached, and where it stopped

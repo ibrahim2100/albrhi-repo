@@ -59,6 +59,7 @@
 - (id)message;
 - (id)cellViewModel;
 - (CAShapeLayer *)bubbleLayer;
+- (UIView *)bubbleView;
 // Added by the hook below (`%property` / `%new`), declared so the hook body can send them.
 @property (nonatomic, strong) id albrhiTintOriginal;
 - (void)albrhiSyncRecalledTint;
@@ -74,7 +75,6 @@ static NSUInteger sciVisitorsSeen = 0;
 /// fact is there to be kept rather than swallowed -- and keeping it is what lets the message be *marked* instead of quietly restored.
 /// A message shown as though nothing happened is the tweak deciding something on the reader's behalf without saying so, which is the same
 /// objection this project raised about a watch being told it was up to date.
-static BOOL sciBubbleTintInstalled = NO;
 static NSUInteger sciRecalledSeen = 0, sciRecalledStored = 0, sciTintApplied = 0, sciTintRestored = 0;
 static NSString *sciTintState = nil;
 
@@ -189,8 +189,9 @@ static BOOL SCITTEncodingMatches(Class cls, NSString *selectorName, NSString *ex
     id kept = [[SCITTRecalledStore shared] contentFor:identifier];
     if ([kept isKindOfClass:[NSDictionary class]]) content = kept;
 
-    // The bubble is tinted (SCITTRecalledBubble below) and that is the mark. Only where it could not be installed does the text itself carry one.
-    if (sciBubbleTintInstalled) return content;
+    // **The text carries the mark always, and the bubble's colour is added to it** (0.29.1). 0.29.0 made the colour the only mark and the owner's phone
+    // showed no mark at all: the bubble can be drawn from an image or a gradient that a fill colour never reaches, and a mark that depends on a surface nobody
+    // has looked at is a mark that can silently not be there. The text badge is the one that was confirmed on a device (`marked: 1 via key text`).
     if (![content isKindOfClass:[NSDictionary class]]) return content;
 
     // Recorded once, so the next release can name the key instead of matching a shape.
@@ -261,15 +262,27 @@ static BOOL SCITTEncodingMatches(Class cls, NSString *selectorName, NSString *ex
     }
 
     CAShapeLayer *layer = [self bubbleLayer];
-    if (![layer isKindOfClass:[CAShapeLayer class]]) return;
+    UIView *body = [self respondsToSelector:@selector(bubbleView)] ? [self bubbleView] : nil;
+    if (![layer isKindOfClass:[CAShapeLayer class]] && !body) return;
 
+    // **Both surfaces, because either can be the one that is visible**: the shape layer is the bubble's fill; `bubbleView` is the view that holds it (and the
+    // one VibeTok colours on the build it was written for). What the cell had is kept as a pair and put back together.
     if (recalled) {
-        if (!self.albrhiTintOriginal) self.albrhiTintOriginal = layer.fillColor ? (__bridge id)layer.fillColor : (id)[NSNull null];
-        layer.fillColor = [UIColor colorWithRed:0.93 green:0.30 blue:0.32 alpha:0.9].CGColor;
+        if (!self.albrhiTintOriginal) {
+            self.albrhiTintOriginal = @{
+                @"fill": layer.fillColor ? (__bridge id)layer.fillColor : (id)[NSNull null],
+                @"background": body.backgroundColor ?: (id)[NSNull null],
+            };
+        }
+        UIColor *tint = [UIColor colorWithRed:0.93 green:0.30 blue:0.32 alpha:0.9];
+        if (layer) layer.fillColor = tint.CGColor;
+        if (body) body.backgroundColor = tint;
         sciTintApplied++;
     } else if (self.albrhiTintOriginal) {
-        id original = self.albrhiTintOriginal;
-        layer.fillColor = [original isKindOfClass:[NSNull class]] ? NULL : (__bridge CGColorRef)original;
+        NSDictionary *original = self.albrhiTintOriginal;
+        id fill = original[@"fill"], background = original[@"background"];
+        if (layer) layer.fillColor = [fill isKindOfClass:[NSNull class]] ? NULL : (__bridge CGColorRef)fill;
+        if (body) body.backgroundColor = [background isKindOfClass:[NSNull class]] ? nil : background;
         self.albrhiTintOriginal = nil;
         sciTintRestored++;
     }
@@ -545,7 +558,6 @@ void SCITTInstallExtras(void) {
         && SCITTEncodingMatches(cellView, @"message", @"@16@0:8")
         && SCITTEncodingMatches(NSClassFromString(@"AWEIMMessage") ?: [NSObject class], @"serverMessageID", @"q16@0:8")) {
         %init(SCITTRecalledBubble);
-        sciBubbleTintInstalled = YES;
         sciTintState = @"installed: AWEIMTextMessageCellView";
         [installed addObject:@"AWEIMTextMessageCellView (recalled bubble tint)"];
     } else {
