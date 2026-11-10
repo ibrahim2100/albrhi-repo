@@ -26,7 +26,7 @@ P="$R/tweaks/panel"
 clang -bundle -fobjc-arc -target arm64-apple-ios15.0-simulator -isysroot "$SDK" -I"$R" -I"$THEOS/vendor/include" -I"$THEOS/include" -I"$P/src" \
   -Wno-deprecated-declarations -Wno-nullability-completeness -Wno-unused-function -Wno-unsupported-availability-guard -Wno-objc-method-access \
   $(find "$P/src" -type f -name '*.m') "$R/shared/src/Prefs/SCIPanelHeader.m" "$R/shared/src/Prefs/SCIPanelAppCell.m" "$R/shared/src/Prefs/SCIPanelButtonAction.m" \
-  "$R/shared/src/SCIKVC.m" "$R/shared/src/SCIPanelGate.m" \
+  "$R/shared/src/SCIKVC.m" "$R/shared/src/SCIPanelGate.m" "$R/shared/src/SCISafeLaunch.m" "$R/shared/src/SCISafeLaunchRule.m" "$R/shared/src/SCICard.m" \
   -framework UIKit -framework Foundation -framework CoreGraphics -framework Security -Wl,-undefined,dynamic_lookup \
   -o "$B/AlbrhiPanel" 2>&1 | grep -E "error" | head -20 || true
 test -f "$B/AlbrhiPanel"

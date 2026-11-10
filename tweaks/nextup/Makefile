@@ -45,6 +45,8 @@ AlbrhiNU_FILES = $(shell find src -type f -not -path 'src/Settings/*' -not -path
 # that fails takes the home screen rather than a feature.
 AlbrhiNU_FILES += $(ROOT)/shared/src/SCIKVC.m
 AlbrhiNU_FILES += $(ROOT)/shared/src/SCIPanelGate.m
+# The gate asks safe launch first, so these come with it (inert here: NextUp lives in SpringBoard and Apple's own apps).
+AlbrhiNU_FILES += $(ROOT)/shared/src/SCISafeLaunch.m $(ROOT)/shared/src/SCISafeLaunchRule.m $(ROOT)/shared/src/SCICard.m
 
 # ImageIO for the artwork downscale; the rest is what the row and the hooks draw with.
 AlbrhiNU_FRAMEWORKS = UIKit Foundation CoreGraphics QuartzCore ImageIO Security

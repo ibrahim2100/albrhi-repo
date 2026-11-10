@@ -25,6 +25,9 @@ TWEAK_NAME = AlbrhiYTM
 
 AlbrhiYTM_FILES = $(shell find src -type f \( -iname \*.x -o -iname \*.xm -o -iname \*.m \)) \
 	$(ROOT)/shared/src/SCIPanelGate.m \
+	$(ROOT)/shared/src/SCISafeLaunch.m \
+	$(ROOT)/shared/src/SCISafeLaunchRule.m \
+	$(ROOT)/shared/src/SCICard.m \
 	$(ROOT)/shared/src/SCIKVC.m \
 	$(ROOT)/shared/src/SCIResponder.m
 

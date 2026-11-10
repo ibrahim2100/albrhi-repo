@@ -259,6 +259,8 @@ must never be pushed**: committed to main it becomes the version CI reads and th
 `v1.76.0+1` — a red run for a build never meant to leave the Desktop. Strip it by editing the values back, never
 with `git checkout -- <file>` (that threw away a day's diagnostic marks once).
 
+**Build every target CI builds, not only the dylibs you changed -- measured 2026-11-10.** A new shared file reached the four standalone dylibs (`tools/build-dylibs.sh`, all green) and broke the Settings panel in CI (`Undefined symbols: _SCISafeLaunchPaused`): `tweaks/panel` links `shared/bundle.mk`, and NextUp and YouTube Music list `SCIPanelGate.m` in their own makefiles, so **a source that `SCIPanelGate.m` starts calling must be added in all four places** (`shared/tweak.mk`, `shared/bundle.mk`, `tweaks/ytmusic/Makefile`, `tweaks/nextup/Makefile`, and `tools/sim-panel/build.sh`). Before pushing anything under `shared/`: `bash build.sh panel rootless && bash build.sh nextup rootless && bash build.sh watch rootless && bash build.sh ytmusic rootless && bash tools/build-local.sh suite rootless`.
+
 **What compiling does not catch**, measured: `cellClass` set to a string where Preferences wants a Class (crashed
 Settings), a constraint built from `bounds` at construction time, an `objc_msgSend` cast to the wrong return
 type (crashed TikTok), and a hook signature guessed from a name. Compilation is the second of three gates; the

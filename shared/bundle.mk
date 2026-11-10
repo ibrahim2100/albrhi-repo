@@ -42,6 +42,8 @@ $(BUNDLE_NAME)_FILES += $(ROOT)/shared/src/Prefs/SCIPanelButtonAction.m
 
 $(BUNDLE_NAME)_FILES += $(ROOT)/shared/src/SCIKVC.m
 $(BUNDLE_NAME)_FILES += $(ROOT)/shared/src/SCIPanelGate.m
+# SCIPanelGate asks safe launch first (shared/src/SCISafeLaunch.h), so whoever links the gate links these too.
+$(BUNDLE_NAME)_FILES += $(ROOT)/shared/src/SCISafeLaunch.m $(ROOT)/shared/src/SCISafeLaunchRule.m $(ROOT)/shared/src/SCICard.m
 
 $(BUNDLE_NAME)_CFLAGS += -fobjc-arc \
 	-Wno-deprecated-declarations -Wno-nullability-completeness \
