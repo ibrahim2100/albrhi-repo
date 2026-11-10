@@ -44,6 +44,14 @@ static NSUInteger sciHoldBegan = 0, sciHoldFired = 0, sciHoldOnButton = 0, sciHo
 static NSString *sciHoldLastChain = nil;
 static NSString *sciHoldState = nil;
 
+/// **Why a hold did not reach half a second** (0.29.2). A phone's report said `holds begun 22, reached half a second 0`: the timer was started and never
+/// survived, and a single counter could not say who stopped it. Every way the timer can be cancelled is counted apart, while one is pending, plus the
+/// longest a finger stayed down and the farthest it drifted -- the stage before the one that failed (CLAUDE.md §5.1, the copy-by-press lesson).
+static BOOL sciHoldPending = NO;
+static NSTimeInterval sciHoldBeganAt = 0, sciHoldLongestDown = 0;
+static CGFloat sciHoldFarthest = 0;
+static NSUInteger sciHoldByMove = 0, sciHoldByLift = 0, sciHoldByFingers = 0, sciHoldBySystem = 0, sciHoldNoView = 0, sciHoldNotWanted = 0;
+
 /// Long-press recognisers switched off for the length of one touch that began on a download button, and how many touches that was.
 /// TikTok's own long-press (the panel with Report, Download and Clear display) recognises at the same half second as ours and opened
 /// under the copy menu; it is not asked to listen while a finger is on our button, and is given its ears back the moment the finger lifts.
@@ -139,8 +147,10 @@ static NSString *SCITTProfileTextAt(UIView *hit) {
 
 static void SCITTHoldFire(NSUInteger token) {
     if (token != sciHoldToken) return;
+    sciHoldPending = NO;
     UIView *hit = sciHoldView;
-    if (!hit || !SCITTHoldMenuWanted()) return;
+    if (!hit) { sciHoldNoView++; return; }
+    if (!SCITTHoldMenuWanted()) { sciHoldNotWanted++; return; }
     sciHoldFired++;
 
     if (SCITTCopyHoldOnDownloadButton(hit)) {
@@ -170,6 +180,7 @@ static void SCITTHoldObserve(UIWindow *window, UIEvent *event) {
     if (event.type != UIEventTypeTouches) return;
     NSSet<UITouch *> *all = event.allTouches;
     if (all.count != 1) {
+        if (sciHoldPending) { sciHoldPending = NO; sciHoldByFingers++; }
         sciHoldToken++;   // a second finger is a pinch or a swipe, never a hold
         SCITTRestoreRecognisers();
         return;
@@ -187,6 +198,8 @@ static void SCITTHoldObserve(UIWindow *window, UIEvent *event) {
             if (SCITTTouchIsOnCopyButton(hit)) SCITTSilenceForeignHolds(hit);
 
             sciHoldBegan++;
+            sciHoldPending = YES;
+            sciHoldBeganAt = touch.timestamp;
             sciHoldStart = point;
             sciHoldView = hit;
             sciHoldWindow = window;
@@ -199,11 +212,22 @@ static void SCITTHoldObserve(UIWindow *window, UIEvent *event) {
         case UITouchPhaseMoved: {
             if (window != sciHoldWindow) return;
             CGPoint point = [touch locationInView:window];
-            if (hypot(point.x - sciHoldStart.x, point.y - sciHoldStart.y) > 12) sciHoldToken++;
+            CGFloat drift = hypot(point.x - sciHoldStart.x, point.y - sciHoldStart.y);
+            if (sciHoldPending && drift > sciHoldFarthest) sciHoldFarthest = drift;
+            if (drift > 12) {
+                if (sciHoldPending) { sciHoldPending = NO; sciHoldByMove++; }
+                sciHoldToken++;
+            }
             break;
         }
         case UITouchPhaseEnded:
         case UITouchPhaseCancelled:
+            if (sciHoldPending) {
+                sciHoldPending = NO;
+                if (touch.phase == UITouchPhaseCancelled) sciHoldBySystem++; else sciHoldByLift++;
+                NSTimeInterval down = touch.timestamp - sciHoldBeganAt;
+                if (down > sciHoldLongestDown) sciHoldLongestDown = down;
+            }
             sciHoldToken++;
             SCITTRestoreRecognisers();
             break;
@@ -226,10 +250,14 @@ static void SCITTHoldObserve(UIWindow *window, UIEvent *event) {
 NSString *SCITTHoldReport(void) {
     NSMutableString *out = [NSMutableString stringWithFormat:
         @"%@; holds begun %lu, reached half a second %lu: on a download button %lu, profile text copied %lu, "
-        @"profile but no text %lu, not a profile %lu; TikTok's own long-press silenced for %lu touches on the button",
+        @"profile but no text %lu, not a profile %lu; TikTok's own long-press silenced for %lu touches on the button; "
+        @"timers stopped by: a drift over 12 pt %lu, a lift %lu, a second finger %lu, a system cancel %lu; at half a second: no view %lu, switch off %lu; "
+        @"longest finger-down before a lift %.2f s, farthest drift %.1f pt",
         sciHoldState ?: @"not installed",
         (unsigned long)sciHoldBegan, (unsigned long)sciHoldFired, (unsigned long)sciHoldOnButton, (unsigned long)sciHoldTextCopied,
-        (unsigned long)sciHoldMissed, (unsigned long)sciHoldNotProfile, (unsigned long)sciHoldSilenced];
+        (unsigned long)sciHoldMissed, (unsigned long)sciHoldNotProfile, (unsigned long)sciHoldSilenced,
+        (unsigned long)sciHoldByMove, (unsigned long)sciHoldByLift, (unsigned long)sciHoldByFingers, (unsigned long)sciHoldBySystem,
+        (unsigned long)sciHoldNoView, (unsigned long)sciHoldNotWanted, sciHoldLongestDown, (double)sciHoldFarthest];
     if (sciHoldRecognisers.length) [out appendFormat:@"; recognisers under the last touch on the button (* = silenced): %@", sciHoldRecognisers];
     if (sciHoldLastChain.length) [out appendFormat:@"; last miss: %@", sciHoldLastChain];
     return out;

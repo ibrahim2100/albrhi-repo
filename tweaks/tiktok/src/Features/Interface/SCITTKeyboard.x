@@ -6,6 +6,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <QuartzCore/QuartzCore.h>
 #import <objc/runtime.h>
 #import <string.h>
 #import "SCITTKeyboard.h"
@@ -43,6 +44,52 @@ static BOOL SCITTKeyboardShouldBeBlack(UIView *backdrop) {
 }
 static NSString *sciKeyboardState = nil;
 
+/// **What a keyboard backdrop looks like on a phone, written down.** 0.29.1's own report said `backdrop colours set 10, made black 10` beside a keyboard
+/// that stayed grey on the owner's iOS 16.1: the colour reaches the view and the view is not what is seen. Which layer is, is not knowable from this
+/// machine (the simulator runs iOS 27, where the same code works), so the first few backdrops are described here -- own class, frame, colour, the
+/// classes of its layers and views, its parents and its siblings -- and the next report names the one that is actually drawn.
+static NSMutableArray<NSString *> *sciKeyboardShapes = nil;
+
+static NSString *SCITTKeyboardShapeOf(UIView *view) {
+    NSMutableArray<NSString *> *layers = [NSMutableArray array];
+    for (CALayer *layer in view.layer.sublayers) {
+        if (layers.count >= 8) break;
+        NSString *name = NSStringFromClass([layer class]);
+        if (layer.filters.count) name = [name stringByAppendingFormat:@"(filters %lu)", (unsigned long)layer.filters.count];
+        if (layer.compositingFilter) name = [name stringByAppendingString:@"(composited)"];
+        [layers addObject:name];
+    }
+    NSMutableArray<NSString *> *views = [NSMutableArray array];
+    for (UIView *sub in view.subviews) {
+        if (views.count >= 8) break;
+        [views addObject:NSStringFromClass([sub class])];
+    }
+    NSMutableArray<NSString *> *parents = [NSMutableArray array];
+    NSMutableArray<NSString *> *siblings = [NSMutableArray array];
+    UIView *parent = view.superview;
+    for (NSInteger i = 0; parent && i < 4; i++, parent = parent.superview) {
+        [parents addObject:NSStringFromClass([parent class])];
+        if (i == 0) {
+            for (UIView *sibling in parent.subviews) {
+                if (siblings.count >= 8) break;
+                [siblings addObject:sibling == view ? @"[this]" : NSStringFromClass([sibling class])];
+            }
+        }
+    }
+    CGRect frame = view.frame;
+    return [NSString stringWithFormat:@"%@ %.0fx%.0f at y %.0f, alpha %.2f, layer colour %@, layers [%@], views [%@], parents [%@], siblings [%@]",
+            NSStringFromClass([view class]), frame.size.width, frame.size.height, frame.origin.y, view.alpha,
+            view.layer.backgroundColor ? @"set" : @"none", [layers componentsJoinedByString:@", "], [views componentsJoinedByString:@", "],
+            [parents componentsJoinedByString:@" < "], [siblings componentsJoinedByString:@", "]];
+}
+
+static void SCITTKeyboardNoteShape(UIView *view) {
+    if (!sciKeyboardShapes) sciKeyboardShapes = [NSMutableArray array];
+    if (sciKeyboardShapes.count >= 4) return;
+    NSString *shape = SCITTKeyboardShapeOf(view);
+    if (![sciKeyboardShapes containsObject:shape]) [sciKeyboardShapes addObject:shape];
+}
+
 %group SCITTKeyboardGroup
 %hook UIKBBackdropView
 
@@ -60,6 +107,7 @@ static NSString *sciKeyboardState = nil;
     %orig;
     if (self.window && SCITTKeyboardShouldBeBlack(self)) {
         sciKeyboardArrived++;
+        SCITTKeyboardNoteShape(self);
         // Through the hook above, so the count and the colour are one code path.
         [self setBackgroundColor:[UIColor blackColor]];
     }
@@ -69,8 +117,10 @@ static NSString *sciKeyboardState = nil;
 %end
 
 NSString *SCITTKeyboardReport(void) {
-    return [NSString stringWithFormat:@"%@; backdrop colours set %lu, made black %lu, backdrops arrived in a window and made black %lu",
-            sciKeyboardState ?: @"not installed", (unsigned long)sciKeyboardSeen, (unsigned long)sciKeyboardBlack, (unsigned long)sciKeyboardArrived];
+    NSString *base = [NSString stringWithFormat:@"%@; backdrop colours set %lu, made black %lu, backdrops arrived in a window and made black %lu",
+                      sciKeyboardState ?: @"not installed", (unsigned long)sciKeyboardSeen, (unsigned long)sciKeyboardBlack, (unsigned long)sciKeyboardArrived];
+    if (!sciKeyboardShapes.count) return base;
+    return [base stringByAppendingFormat:@"; backdrops seen: %@", [sciKeyboardShapes componentsJoinedByString:@" || "]];
 }
 
 void SCITTInstallKeyboard(void) {
