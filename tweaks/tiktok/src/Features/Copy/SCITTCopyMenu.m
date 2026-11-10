@@ -39,6 +39,7 @@
 ///
 
 static NSUInteger sciCopyAsked = 0, sciCopyOffered = 0, sciCopyEmpty = 0, sciCopyCopied = 0;
+static NSString *sciCopyLastRows = nil;   // the titles on the last menu that was drawn: "offered 4" says a menu opened, not what was on it
 static NSString *sciCopyVideoSource = nil, *sciCopyLastRow = nil;
 
 /// An object-returning accessor, asked only when the object has it and declares it as returning an object.
@@ -399,6 +400,9 @@ void SCITTShowCopyMenu(id awemeModel, UIView *anchor) {
     SCITTCopyDropdown *menu = [[SCITTCopyDropdown alloc] initWithRows:rows anchor:anchorFrame inWindow:window];
     if (!menu) return;
     sciCopyOffered++;
+    NSMutableArray<NSString *> *titles = [NSMutableArray array];
+    for (SCITTCopyRow *row in rows) [titles addObject:row.title ?: @"?"];
+    sciCopyLastRows = [titles componentsJoinedByString:@" | "];
     sciCopyShowing = menu;
     [window addSubview:menu];
     [menu present];
@@ -410,7 +414,8 @@ BOOL SCITTCopyMenuIsOpen(void) {
 
 NSString *SCITTCopyReport(void) {
     return [NSString stringWithFormat:@"menus asked %lu, offered %lu, nothing to offer %lu, rows copied %lu (last: %@); video link source: %@; "
-            @"links with the share's tracking removed: %lu",
+            @"links with the share's tracking removed: %lu; switches: copy menu %@, save audio %@; rows on the last menu: %@",
             (unsigned long)sciCopyAsked, (unsigned long)sciCopyOffered, (unsigned long)sciCopyEmpty, (unsigned long)sciCopyCopied,
-            sciCopyLastRow ?: @"—", sciCopyVideoSource ?: @"—", (unsigned long)sciCopyLinksCleaned];
+            sciCopyLastRow ?: @"—", sciCopyVideoSource ?: @"—", (unsigned long)sciCopyLinksCleaned,
+            SCIPrefEnabled(SCIPrefCopyMenu) ? @"on" : @"off", SCIPrefEnabled(SCIPrefAudioSave) ? @"on" : @"off", sciCopyLastRows ?: @"—"];
 }

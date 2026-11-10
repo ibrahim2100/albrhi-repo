@@ -34,7 +34,8 @@
 @interface UIKBBackdropView : UIView
 @end
 
-static NSUInteger sciKeyboardSeen = 0, sciKeyboardBlack = 0, sciKeyboardArrived = 0;
+static NSUInteger sciKeyboardSeen = 0, sciKeyboardBlack = 0, sciKeyboardArrived = 0, sciKeyboardCovered = 0;
+static const void *kSCITTKeyboardCoverKey = &kSCITTKeyboardCoverKey;
 
 static BOOL SCITTKeyboardShouldBeBlack(UIView *backdrop) {
     if (!SCIPrefEnabled(SCIPrefOLEDKeyboard)) return NO;
@@ -49,6 +50,39 @@ static NSString *sciKeyboardState = nil;
 /// machine (the simulator runs iOS 27, where the same code works), so the first few backdrops are described here -- own class, frame, colour, the
 /// classes of its layers and views, its parents and its siblings -- and the next report names the one that is actually drawn.
 static NSMutableArray<NSString *> *sciKeyboardShapes = nil;
+
+/// **The colour was never the thing seen (0.29.3, from 0.29.2's own report).** On iOS 16.1 the keyboard's body is a `UIKBBackdropView` whose layers are
+/// `[UICABackdropLayer (3 filters)]` plus a `_UIVisualEffectBackdropView` subview with a backdrop layer of its own, inside a `UIKBInputBackdropView`, and
+/// the key caps are *not* in that view (its only sibling is itself). A view's `backgroundColor` sits **under** its sublayers, and a backdrop layer paints
+/// the blurred, tinted screen over everything beneath it -- so `-setBackgroundColor:` reached the view ("made black 18") and nothing changed on screen.
+/// The grey is drawn by those filters. What does cover them is a plain black layer placed on top of them, still inside the keyboard's own backdrop so the
+/// keys (a different branch, drawn above it) are untouched. Only the *body* backdrop is covered -- the one whose parent is `UIKBInputBackdropView`;
+/// the 33x46 ones inside `UIKBBlurredKeyView` are the key caps' own backing and are left as before.
+static void SCITTKeyboardCover(UIView *backdrop, BOOL wanted) {
+    NSString *parent = backdrop.superview ? NSStringFromClass([backdrop.superview class]) : @"";
+    if (![parent isEqualToString:@"UIKBInputBackdropView"]) return;
+    CALayer *cover = objc_getAssociatedObject(backdrop, kSCITTKeyboardCoverKey);
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    if (!wanted) {
+        cover.hidden = YES;   // the switch went off, or the system went light, while the keyboard was up
+    } else {
+        if (!cover) {
+            // **A layer, never a subview: in the simulator (iOS 27) this class is a `UIVisualEffectView`, and its `-addSubview:` is forbidden and throws**
+            // -- the first version of this cover did exactly that and ended TikTok at the first keyboard. A sublayer cannot throw there.
+            cover = [CALayer layer];
+            cover.backgroundColor = [UIColor blackColor].CGColor;
+            cover.zPosition = 1000;   // above the backdrop layers and above any sublayer UIKit adds later
+            objc_setAssociatedObject(backdrop, kSCITTKeyboardCoverKey, cover, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            [backdrop.layer addSublayer:cover];
+            sciKeyboardCovered++;
+        }
+        cover.hidden = NO;
+        if (cover.superlayer != backdrop.layer) [backdrop.layer addSublayer:cover];
+        cover.frame = backdrop.bounds;
+    }
+    [CATransaction commit];
+}
 
 static NSString *SCITTKeyboardShapeOf(UIView *view) {
     NSMutableArray<NSString *> *layers = [NSMutableArray array];
@@ -111,14 +145,27 @@ static void SCITTKeyboardNoteShape(UIView *view) {
         // Through the hook above, so the count and the colour are one code path.
         [self setBackgroundColor:[UIColor blackColor]];
     }
+    if (self.window) SCITTKeyboardCover(self, SCITTKeyboardShouldBeBlack(self));
+}
+
+- (void)layoutSubviews {
+    %orig;
+    // Only a backdrop that already has a cover is touched, so this costs one associated-object read on every other layout.
+    CALayer *cover = objc_getAssociatedObject(self, kSCITTKeyboardCoverKey);
+    if (cover && !cover.hidden) {
+        [CATransaction begin];
+        [CATransaction setDisableActions:YES];
+        cover.frame = self.bounds;
+        [CATransaction commit];
+    }
 }
 
 %end
 %end
 
 NSString *SCITTKeyboardReport(void) {
-    NSString *base = [NSString stringWithFormat:@"%@; backdrop colours set %lu, made black %lu, backdrops arrived in a window and made black %lu",
-                      sciKeyboardState ?: @"not installed", (unsigned long)sciKeyboardSeen, (unsigned long)sciKeyboardBlack, (unsigned long)sciKeyboardArrived];
+    NSString *base = [NSString stringWithFormat:@"%@; backdrop colours set %lu, made black %lu, backdrops arrived in a window and made black %lu, covered by a black view %lu",
+                      sciKeyboardState ?: @"not installed", (unsigned long)sciKeyboardSeen, (unsigned long)sciKeyboardBlack, (unsigned long)sciKeyboardArrived, (unsigned long)sciKeyboardCovered];
     if (!sciKeyboardShapes.count) return base;
     return [base stringByAppendingFormat:@"; backdrops seen: %@", [sciKeyboardShapes componentsJoinedByString:@" || "]];
 }
