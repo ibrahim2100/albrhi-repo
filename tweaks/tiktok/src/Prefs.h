@@ -66,6 +66,8 @@
 /// its own** (the music or recording the post uses). Both go to the share sheet -- Photos does not take audio. Off by default. (0.29.0 had this as "use as a
 /// voice message", which swapped a recording; that was not what was asked for and is gone.)
 #define SCIPrefAudioSave        @"audio_save"
+#define SCIPrefBudgetVideos     @"budget_videos"    // a choice: 0 off, else the most videos a day before the card
+#define SCIPrefBudgetMinutes    @"budget_minutes"   // a choice: 0 off, else the most minutes a day before the card
 
 #define SCIPrefVerboseLogging   @"verbose_logging"
 

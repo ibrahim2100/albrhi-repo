@@ -28,10 +28,11 @@
 #import "Features/Messages/SCITTMessages.h"
 #import "Features/Profile/SCITTExactCounts.h"
 #import "Features/Interface/SCITTKeyboard.h"
+#import "Features/Budget/SCITTBudget.h"
 #import "Settings/SCITTSettingsEntry.h"
 #import "Settings/SCITTGesture.h"
 
-NSString *SCIVersionString = @"v0.29.3";  // AlbrhiTT
+NSString *SCIVersionString = @"v0.30.0";  // AlbrhiTT
 
 ///
 /// TESTED ON TikTok 46.4.0. Every class here was confirmed present in that build's own
@@ -112,6 +113,8 @@ NSString *SCIVersionString = @"v0.29.3";  // AlbrhiTT
         SCIPrefExactCounts: @NO,
         SCIPrefOLEDKeyboard: @NO,
         SCIPrefAudioSave: @NO,
+        SCIPrefBudgetVideos: @0,
+        SCIPrefBudgetMinutes: @0,
     }];
 
     NSLog(@"[AlbrhiTT] %@ loaded into %@", SCIVersionString,
@@ -154,5 +157,6 @@ NSString *SCIVersionString = @"v0.29.3";  // AlbrhiTT
     SCITTInstallMessages();
     SCITTInstallExactCounts();
     SCITTInstallKeyboard();
+    SCITTInstallBudget();
     SCITTInstallSettingsEntry();
 }

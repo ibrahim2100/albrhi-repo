@@ -3,6 +3,10 @@
 **Tested on YouTube 21.32.4.** Nothing is pinned to a version number: every class the
 tweak touches is looked up at runtime and skipped if it is not there.
 
+## v1.50.0
+
+- **حماية التشغيل:** لو التطبيق ما اشتغل مرتين ورا بعض، الأداة توقف نفسها وتسألك ترجعها.
+
 ## v1.49.3
 
 **«التالي» ما زال يبدأ الأغنية من وقت التي قبلها على الجهاز — الإصلاح الحقيقي.**

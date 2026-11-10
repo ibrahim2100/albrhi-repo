@@ -11,6 +11,7 @@
 #import "../Download/SCITTDownload.h"
 #import "../../Localization/SCILocalize.h"
 #import "../../SCILog.h"
+#import "shared/src/SCIFileName.h"
 #import "../../UI/SCITTToast.h"
 
 ///
@@ -80,15 +81,17 @@ static void SCITTAudioShare(NSURL *file, NSString *label) {
     SCILogV(@"[Audio] share sheet opened: %@ (%@)", label, file.lastPathComponent);
 }
 
-/// A file name a person can recognise in Files: the post's id, not a UUID.
-static NSURL *SCITTAudioTarget(NSString *itemID, NSString *kind, NSString *extension) {
-    NSString *name = [NSString stringWithFormat:@"TikTok %@ %@.%@", kind, itemID.length ? itemID : [[NSUUID UUID].UUIDString substringToIndex:8], extension];
+/// A file name a person can recognise in Files: `@account - the start of the caption - id.m4a` (SCIFileName, host-tested), and when the post says
+/// nothing about itself, "TikTok audio <id>" as before.
+static NSURL *SCITTAudioTarget(NSString *account, NSString *caption, NSString *itemID, NSString *kind, NSString *extension) {
+    NSString *id8 = itemID.length ? itemID : [[NSUUID UUID].UUIDString substringToIndex:8];
+    NSString *name = SCIFileNameBuild(account, caption, id8, extension, [NSString stringWithFormat:@"TikTok %@", kind]);
     return [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:name]];
 }
 
 #pragma mark - The video as audio
 
-static void SCITTAudioExport(NSURL *video, NSString *itemID) {
+static void SCITTAudioExport(NSURL *video, NSString *itemID, NSString *account, NSString *caption) {
     AVURLAsset *asset = [AVURLAsset URLAssetWithURL:video options:nil];
     if ([asset tracksWithMediaType:AVMediaTypeAudio].count == 0) {
         [[NSFileManager defaultManager] removeItemAtURL:video error:NULL];
@@ -97,7 +100,7 @@ static void SCITTAudioExport(NSURL *video, NSString *itemID) {
         return;
     }
 
-    NSURL *output = SCITTAudioTarget(itemID, @"audio", @"m4a");
+    NSURL *output = SCITTAudioTarget(account, caption, itemID, @"audio", @"m4a");
     [[NSFileManager defaultManager] removeItemAtURL:output error:NULL];
     AVAssetExportSession *export = [[AVAssetExportSession alloc] initWithAsset:asset presetName:AVAssetExportPresetAppleM4A];
     if (!export) {
@@ -120,7 +123,7 @@ static void SCITTAudioExport(NSURL *video, NSString *itemID) {
 }
 
 /// Fetches the candidates in turn and stops at the first that arrives as a file with sound in it (a picture, or a silent rendition, goes to the next).
-static void SCITTAudioFetchVideo(NSArray<NSURL *> *links, NSUInteger index, NSString *itemID) {
+static void SCITTAudioFetchVideo(NSArray<NSURL *> *links, NSUInteger index, NSString *itemID, NSString *account, NSString *caption) {
     if (index >= links.count) {
         SCITTAudioFail(@"audio_failed", @"no link produced a file with sound");
         return;
@@ -138,19 +141,19 @@ static void SCITTAudioFetchVideo(NSArray<NSURL *> *links, NSUInteger index, NSSt
             if (![[NSFileManager defaultManager] moveItemAtURL:location toURL:kept error:NULL]) kept = nil;
         }
         dispatch_async(dispatch_get_main_queue(), ^{
-            if (!kept) { SCITTAudioFetchVideo(links, index + 1, itemID); return; }
+            if (!kept) { SCITTAudioFetchVideo(links, index + 1, itemID, account, caption); return; }
             AVURLAsset *probe = [AVURLAsset URLAssetWithURL:kept options:nil];
             if ([probe tracksWithMediaType:AVMediaTypeAudio].count == 0) {
                 [[NSFileManager defaultManager] removeItemAtURL:kept error:NULL];
-                SCITTAudioFetchVideo(links, index + 1, itemID);
+                SCITTAudioFetchVideo(links, index + 1, itemID, account, caption);
                 return;
             }
-            SCITTAudioExport(kept, itemID);
+            SCITTAudioExport(kept, itemID, account, caption);
         });
     }] resume];
 }
 
-void SCITTAudioSaveVideoSound(SCITTMediaItem *item) {
+void SCITTAudioSaveVideoSound(SCITTMediaItem *item, NSString *account, NSString *caption) {
     SCILogV(@"[Audio] video sound asked: busy %d, links %lu", sciAudioBusy, (unsigned long)item.candidates.count);
     if (sciAudioBusy) return;
     NSArray<NSURL *> *links = item.candidates;
@@ -163,12 +166,12 @@ void SCITTAudioSaveVideoSound(SCITTMediaItem *item) {
     sciAudioBusy = YES;
     sciAudioStarted++;
     [SCITTToast showText:SCILocalized(@"audiosave_working") symbol:@"waveform" progress:-1];
-    SCITTAudioFetchVideo(links, 0, item.itemID);
+    SCITTAudioFetchVideo(links, 0, item.itemID, account, caption);
 }
 
 #pragma mark - The post's sound
 
-void SCITTAudioSavePostSound(NSURL *sound, NSString *itemID) {
+void SCITTAudioSavePostSound(NSURL *sound, NSString *itemID, NSString *account, NSString *caption) {
     SCILogV(@"[Audio] post sound asked: busy %d, url %@", sciAudioBusy, sound.host);
     if (sciAudioBusy) return;
     if (!sound) {
@@ -196,7 +199,7 @@ void SCITTAudioSavePostSound(NSURL *sound, NSString *itemID) {
             else if (!memcmp(b, "OggS", 4)) extension = @"ogg";
             else if (!memcmp(b, "RIFF", 4)) extension = @"wav";
         }
-        NSURL *file = SCITTAudioTarget(itemID, @"sound", extension);
+        NSURL *file = SCITTAudioTarget(account, caption, itemID, @"sound", extension);
         BOOL kept = head.length > 0;
         if (kept) {
             [[NSFileManager defaultManager] removeItemAtURL:file error:NULL];

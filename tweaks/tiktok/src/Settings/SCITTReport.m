@@ -22,6 +22,8 @@
 #import "../Features/Messages/SCITTReadAlert.h"
 #import "../Features/Messages/SCITTMessages.h"
 #import "../Features/Audio/SCITTAudioSave.h"
+#import "../Features/Budget/SCITTBudget.h"
+#import "shared/src/SCISafeLaunch.h"
 #import "../Features/Profile/SCITTExactCounts.h"
 #import "../Features/Interface/SCITTKeyboard.h"
 #import "SCITTSettingsEntry.h"
@@ -103,7 +105,7 @@ static NSDictionary *SCIHeavyRow(NSString *title, NSString *value, NSString *ico
             kSCISectionTitle: SCILocalized(@"section_overview"),
             kSCISectionRows: @[
                 SCIRow(SCILocalized(@"status_gate"),
-                       SCIPanelAllowsThisApp() ? SCILocalized(@"gate_on") : SCILocalized(@"gate_off"),
+                       [NSString stringWithFormat:@"%@ | safe launch: %@", SCIPanelAllowsThisApp() ? SCILocalized(@"gate_on") : SCILocalized(@"gate_off"), SCISafeLaunchReport()],
                        @"switch.2", [UIColor systemGrayColor]),
                 SCIRow(SCILocalized(@"diag_ads"), [SCITTDiagnostics adFilterState],
                        @"nosign", [UIColor systemRedColor]),
@@ -161,6 +163,8 @@ static NSDictionary *SCIHeavyRow(NSString *title, NSString *value, NSString *ico
                        @"bell.badge.fill", [UIColor systemTealColor]),
                 SCIRow(SCILocalized(@"status_messages"), SCITTMessagesReport(),
                        @"message.fill", [UIColor systemTealColor]),
+                SCIRow(SCILocalized(@"status_budget"), SCITTBudgetReport(),
+                       @"hourglass", [UIColor systemOrangeColor]),
                 SCIRow(SCILocalized(@"status_audio"), SCITTAudioReport(),
                        @"waveform", [UIColor systemIndigoColor]),
                 SCIRow(SCILocalized(@"status_exact_counts"), SCITTExactCountsReport(),

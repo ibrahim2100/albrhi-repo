@@ -161,8 +161,12 @@ static NSArray<SCITTCopyRow *> *SCITTRowsForModel(id model) {
         SCITTCopyRow *audio = SCITTMakeRow(@"audio_row", @"waveform", SCILocalized(@"audio_row_note"), NO);
         audio.action = ^{
             SCITTMediaItem *item = [SCITTMedia itemForModel:model];
-            if (item.candidates.count) SCITTAudioSaveVideoSound(item);
-            else SCITTAudioSavePostSound([SCITTMedia soundURLForModel:model], item.itemID ?: SCITTTextOf(SCITTObjectFor(model, @"itemID")));
+            // Only for the file name: who posted it, and the start of what they wrote.
+            id poster = SCITTObjectFor(model, @"author") ?: SCITTObjectFor(model, @"getAuthorModel");
+            NSString *account = SCITTTextOf(SCITTObjectFor(poster, @"uniqueIDForShow"));
+            NSString *words = SCITTTextOf(SCITTObjectFor(model, @"descriptionString"));
+            if (item.candidates.count) SCITTAudioSaveVideoSound(item, account, words);
+            else SCITTAudioSavePostSound([SCITTMedia soundURLForModel:model], item.itemID ?: SCITTTextOf(SCITTObjectFor(model, @"itemID")), account, words);
         };
         add(audio, YES);
     }

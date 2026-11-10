@@ -11,12 +11,12 @@
 [![Rootless](https://img.shields.io/badge/rootless-supported-success.svg)](#-compatibility)
 [![roothide](https://img.shields.io/badge/roothide-supported-success.svg)](#-compatibility)
 
-[![Albrhi](https://img.shields.io/badge/Albrhi-1.112.3-blueviolet.svg)](suite/CHANGELOG.md)
+[![Albrhi](https://img.shields.io/badge/Albrhi-1.113.0-blueviolet.svg)](suite/CHANGELOG.md)
 [![Instagram](https://img.shields.io/badge/Instagram-4.8.2-orange.svg)](tweaks/instagram/CHANGELOG.md)
-[![YouTube](https://img.shields.io/badge/YouTube-1.49.3-red.svg)](tweaks/youtube/CHANGELOG.md)
-[![X](https://img.shields.io/badge/X-0.22.1-black.svg)](tweaks/twitter/CHANGELOG.md)
-[![TikTok](https://img.shields.io/badge/TikTok-0.29.3-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
-[![YT Music](https://img.shields.io/badge/YT%20Music-0.10.0-FF0000.svg)](tweaks/ytmusic/CHANGELOG.md)
+[![YouTube](https://img.shields.io/badge/YouTube-1.50.0-red.svg)](tweaks/youtube/CHANGELOG.md)
+[![X](https://img.shields.io/badge/X-0.23.0-black.svg)](tweaks/twitter/CHANGELOG.md)
+[![TikTok](https://img.shields.io/badge/TikTok-0.30.0-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
+[![YT Music](https://img.shields.io/badge/YT%20Music-0.10.1-FF0000.svg)](tweaks/ytmusic/CHANGELOG.md)
 [![Spotify](https://img.shields.io/badge/Spotify-0.2.5-1DB954.svg)](tweaks/spotify/CHANGELOG.md)
 [![Panel](https://img.shields.io/badge/Panel-0.11.0-8E8E93.svg)](tweaks/panel/CHANGELOG.md)
 [![NextUp](https://img.shields.io/badge/NextUp-0.3.1-FF375F.svg)](tweaks/nextup/CHANGELOG.md)
@@ -123,10 +123,10 @@ Developed by **Ibrahim Ismail AL-Rahn** ([@ibrahim2100](https://github.com/ibrah
 | Tweak | Patches | Version | In `com.albrhi` | What it does |
 |---|---|---|:-:|---|
 | **[Instagram](#-albrhi-for-instagram)** | Instagram | 4.8.2 | ✅ | downloads, AV1 reels transcoded on the device, a quieter feed, watching stories without a receipt, unsent messages kept and marked |
-| **[YouTube](#-albrhi-for-youtube)** | YouTube | 1.49.3 | ✅ | downloads that survive app updates, their own Download Centre tab, no ads, SponsorBlock, background playback |
-| **[X](#-albrhi-for-x)** | X / Twitter | 0.22.1 | ✅ | media downloads with a button you can place yourself, and fifteen-plus switches for what X does |
-| **[TikTok](#-albrhi-for-tiktok)** | TikTok | 0.29.3 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |
-| **[YouTube Music](#-albrhi-for-youtube-music)** | YouTube Music | 0.10.0 | ✅ | synced lyrics, saving tracks, no ads, background playback |
+| **[YouTube](#-albrhi-for-youtube)** | YouTube | 1.50.0 | ✅ | downloads that survive app updates, their own Download Centre tab, no ads, SponsorBlock, background playback |
+| **[X](#-albrhi-for-x)** | X / Twitter | 0.23.0 | ✅ | media downloads with a button you can place yourself, and fifteen-plus switches for what X does |
+| **[TikTok](#-albrhi-for-tiktok)** | TikTok | 0.30.0 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |
+| **[YouTube Music](#-albrhi-for-youtube-music)** | YouTube Music | 0.10.1 | ✅ | synced lyrics, saving tracks, no ads, background playback |
 | **[Panel](#-albrhi-panel)** | Settings | 0.11.0 | ✅ | the Albrhi page: a switch per app, a guide, backup |
 | **[Spotify](#-albrhi-for-spotify)** | Spotify | 0.2.5 | — | no ads, no Premium popups, sponsored podcast segments skipped |
 | **[NextUp](#-albrhi-nextup)** | SpringBoard + five media apps | 0.3.1 | — | what plays next, on the Lock Screen — a GPLv3 port |
@@ -349,6 +349,11 @@ as an unmodified phone would.
 - **Profile background** *(off until you turn it on)* — TikTok has a profile-background editor built in and keeps
   it switched off from the server. This asks for it. **It tells TikTok your device is on that test list, which is
   not true**, so whether it works depends on TikTok for your account; the row says so.
+
+### ⏳ Daily watch limit · 🗂️ readable file names
+- **Daily limit** *(off until you choose)* — pick a number of videos or minutes; when you reach it a card shows what
+  you watched and lets you keep going or take a break. It never locks anything and everything stays on the phone.
+- Files you share (the audio of a video, for instance) are named `@account - start of the caption - id`.
 
 ### 🎛️ The settings screen
 Rebuilt in 0.20.0: an identity card, a two-column grid of categories, and a card per option with an icon,
@@ -578,7 +583,7 @@ A hook needs a device and there is no way around that. A parser does not.
 ```
 tweaks/<app>/     a complete tweak: Makefile, control, filter plist, src/, CHANGELOG.md
 suite/            com.albrhi — the combined package, and the preinst that clears the old ones
-shared/           Theos flags, build modes and the panel gate every tweak shares
+shared/           Theos flags, build modes, the panel gate, safe launch, the message card, file names and the watch limit — see shared/README.md
 docs/             investigations — what was measured, in what order, and what turned out wrong
 tools/            source checks, APT index, depictions, signing, .deb editing, the browser tools
 modules/ vendor/  third-party code, shared
@@ -588,6 +593,11 @@ extra-debs/       drop a .deb here and the source publishes it
 Adding a tweak means adding a directory under `tweaks/` — `tools/check.py` finds it, `./build.sh <name>`
 builds it, and `make-suite.sh` pulls it into `com.albrhi` automatically. Staying out takes a `.no-suite`
 marker, and a tweak with nothing to do with the suite gets a publishing workflow of its own.
+
+### 🛟 If an app stops starting
+Every app Albrhi is in is watched during start-up. If the app does not manage to start **twice in a row**, Albrhi
+installs nothing for the next launch and shows a card offering to bring it back. A crash later in a session that
+started fine is not its business, and nothing in your settings is touched.
 
 ### 🧰 The tools
 

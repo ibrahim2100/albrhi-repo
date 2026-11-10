@@ -1431,8 +1431,10 @@ the licence symbol now fail on it.
 
 ## 7. Known state and open work
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.8.2** · YouTube **1.49.3** · X **0.22.1** · TikTok **0.29.3** · YouTube Music **0.10.0** ·
-Panel **0.11.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.112.3**.
+**The next-features round (2026-11-10, branch `next/features-1-9`, built in its own worktree).** New shared modules, each with a host test of its rule: `SCIFileName` (`@account - caption - id.ext`, 47 checks), `SCISafeLaunch` (two launches in a row that neither became active for three seconds nor left on purpose => Albrhi stands down and offers the way back; **seen in the simulator**: two killed launches, the third paused, "Bring it back" restored the Albrhi button), `SCICard` and `SCIWatchBudget` (TikTok: two choices, videos and minutes per day, off by default; **seen in the simulator**: the card after the limit, "keep going" granted ten more). **Finding that shaped them: in TikTok on an Arabic account every system controller presented over the app comes out mirrored (UIAlertController, the Files and Reminders sheets) -- reproduced with stock TikTok, no tweak in it -- so anything Albrhi has to say is drawn by `SCICard`, a view of our own, never a system alert.** **Instagram was deliberately left out of this round (the owner's call: not sure yet) and is excluded from safe launch too** -- a readable share name for it was written and then removed again; the idea is in the git history of the branch. Not done, and why: Instagram "start on Following"/"open on Messages" and X "no refresh at start" need a signed-in account in the simulator to be seen working (selectors alone are not evidence); DeArrow cannot be done in YouTube 21's element-based UI without reading how titles are encoded; a YouTube experiment-flag page means thousands of hooks at launch, against the launch rules in 4.3.
+
+**Versions** (move these with the four numbers, not after them): Instagram **4.8.2** · YouTube **1.50.0** · X **0.23.0** · TikTok **0.30.0** · YouTube Music **0.10.1** ·
+Panel **0.11.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.113.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
