@@ -1,4 +1,5 @@
 #import "SCIPanelGate.h"
+#import "SCISafeLaunch.h"
 #import <dlfcn.h>
 
 /// The panel's own preference domain. Both sides name it here rather than each spelling it
@@ -158,6 +159,11 @@ BOOL SCIPanelMasterEnabled(void) {
 }
 
 BOOL SCIPanelAllowsThisApp(void) {
+    // Asked first, and by every tweak before its first hook: this also counts the launch (SCISafeLaunch).
+    if (SCISafeLaunchPaused()) {
+        sciGateSource = @"paused: the app did not start twice in a row (safe launch)";
+        return NO;
+    }
 #ifdef SCI_SELFCONTAINED
     // The opt-in reading above is right for com.albrhi, which installs four apps' worth of
     // hooks in one go -- silence should not read as consent for all of them at once. A

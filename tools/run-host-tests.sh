@@ -19,10 +19,10 @@ fi
 
 failed=()
 count=0
-for script in tweaks/*/tests/host/run.sh; do
+for script in shared/tests/host/run.sh tweaks/*/tests/host/run.sh; do
   [[ -f "$script" ]] || continue
   count=$((count + 1))
-  tweak="$(echo "$script" | cut -d/ -f2)"
+  tweak="$(echo "$script" | cut -d/ -f2)"; [[ "$script" == shared/* ]] && tweak="shared"
   echo "=== host tests: $tweak ==="
   if ! bash "$script"; then failed+=("$tweak"); fi
   echo

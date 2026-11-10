@@ -38,6 +38,12 @@ $(foreach T,$(TWEAK_NAME),\
 	$(eval $(T)_FILES += $(ROOT)/shared/src/SCIPanelGate.m)\
 	$(eval $(T)_FILES += $(ROOT)/shared/src/SCIKVC.m)\
 	$(eval $(T)_FILES += $(ROOT)/shared/src/SCIMediaSniff.m)\
+	$(eval $(T)_FILES += $(ROOT)/shared/src/SCIFileName.m)\
+	$(eval $(T)_FILES += $(ROOT)/shared/src/SCICard.m)\
+	$(eval $(T)_FILES += $(ROOT)/shared/src/SCISafeLaunch.m)\
+	$(eval $(T)_FILES += $(ROOT)/shared/src/SCIWatchBudget.m)\
+	$(eval $(T)_FILES += $(ROOT)/shared/src/SCIWatchBudgetRule.m)\
+	$(eval $(T)_FILES += $(ROOT)/shared/src/SCISafeLaunchRule.m)\
 	$(eval $(T)_FILES += $(ROOT)/shared/src/SCIResponder.m)\
 	$(eval $(T)_FRAMEWORKS += Security)\
 	$(eval $(T)_FILES += $(ROOT)/shared/src/SCISubstrateShim.m)\
