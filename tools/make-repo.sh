@@ -19,6 +19,7 @@
 
 set -euo pipefail
 
+MAKE_REPO_DIR="$(cd "$(dirname "$0")" && pwd)"   # absolute: the script changes directory before it needs this
 DEB_DIRS="${1:?deb directory required}"
 OUT_DIR="${2:?output directory required}"
 BASE_URL="${3:?base url required}"
@@ -123,6 +124,9 @@ fi
 cd "$OUT_DIR"
 
 dpkg-scanpackages -m debs /dev/null > Packages 2>/dev/null
+
+# dpkg-scanpackages drops SileoDepiction (see add-sileo-depiction.py for why this is an opt-in list and not every package).
+python3 "$MAKE_REPO_DIR/add-sileo-depiction.py" . "$BASE_URL" com.albrhi.whatsapp com.albrhi.whatsapp.roothide
 
 gzip  -9fkn Packages
 bzip2 -9fk  Packages
