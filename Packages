@@ -11,7 +11,6 @@ Size: 2706298
 MD5sum: 32ba10de6d44217c3ed7d5401937b6b6
 SHA1: 628d864f24f82c4ce108c409f89276ebdadda792
 SHA256: ecfcdae8be5edb2edfc82d91ee7c0deb9e2c0f7b9f85b52e1e298bb2e5646102
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
  .
@@ -62,9 +61,10 @@ Description: One tweak for Instagram, YouTube, X and TikTok, switched per app fr
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
+Section: Albrhi
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/albrhi.png
 
 Package: com.albrhi
 Version: 1.112.3
@@ -79,7 +79,6 @@ Size: 2707104
 MD5sum: a5e0482980ec533989af68a4bcd54066
 SHA1: cecfd909b02dd757fe4a62a712fb70aa9041f510
 SHA256: f8308af9bfb4b39d7efdc22b2f7b064eda14d2862d1e8074ceb612422ee29c54
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
  .
@@ -130,9 +129,10 @@ Description: One tweak for Instagram, YouTube, X and TikTok, switched per app fr
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
+Section: Albrhi
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/albrhi.png
 
 Package: com.albrhi
 Version: 1.113.0
@@ -147,7 +147,6 @@ Size: 2771586
 MD5sum: e1f0d3220c449795226f97b6c3447a67
 SHA1: e42c7ca7758e5661f8c050816c0b27fb337bae87
 SHA256: 73f5505b3df6884294779a3e643fc75dbb37c109d7514f9ba9c24e74d05ff92b
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
  .
@@ -198,9 +197,62 @@ Description: One tweak for Instagram, YouTube, X and TikTok, switched per app fr
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
+Section: Albrhi
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/albrhi.png
+
+Package: com.albrhi.nextup
+Version: 0.2.1
+Architecture: iphoneos-arm64
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 1224
+Depends: mobilesubstrate, preferenceloader, com.opa334.libsandy
+Conflicts: com.albrhi.nextup.roothide, com.yves.nextup3
+Replaces: com.albrhi.nextup.roothide
+Filename: debs/com.albrhi.nextup_0.2.1_iphoneos-arm64.deb
+Size: 202874
+MD5sum: f2fef08a1396d477dc61fa37ce52f312
+SHA1: aa11f38ae2136401d7316b5cf8c9b86dcde18250
+SHA256: bb90c27538ebb170db3b6c1117716247162bc1ddca1f2ce8dabb4777acde59f2
+Homepage: https://github.com/ibrahim2100/albrhi-repo
+Description: See and skip what plays next, from the Lock Screen.
+ .
+ ▍WHAT PLAYS NEXT, WITHOUT OPENING THE APP
+ A row under the now-playing controls showing the next track — its title, artist and
+ cover — on the Lock Screen, in Control Center and in the Dynamic Island. Tap the cover
+ to play it now, or skip it without ever opening the app.
+ .
+ ▍FIVE APPS
+ Apple Music, Apple Podcasts, YouTube, YouTube Music and Spotify. Each reads that app's
+ own playback queue, so the row shows what the app itself would play next — not a guess.
+ .
+ ▍ITS OWN ROW IN SETTINGS
+ Settings › Albrhi NextUp: a master switch, one per surface — Lock Screen,
+ Dynamic Island, Control Center — and one per app. Changes apply immediately, without a
+ respring.
+ .
+ iOS 14.2 through 26. Every hook is chosen at runtime from the iOS version and the host
+ process, so one build serves all of them.
+ .
+ ▍CREDIT — THIS IS A PORT, NOT AN ORIGINAL
+ Albrhi NextUp is a port of NextUp 3 by Yves (github.com/Yves000/NextUp3), used and
+ redistributed under the GNU GPL v3 — the same licence this project ships under, which
+ is what makes carrying the code over lawful where an unlicensed tweak could only be
+ read for architecture. The original design, the private-API research and very nearly
+ all of the implementation are Yves's work. What this port changes: the Settings pane
+ was rebuilt as the page this package ships, and the package was rebranded. Nothing
+ about the feature itself is this project's invention.
+ .
+ Ported and maintained by Ibrahim Ismail AL-Rahn. Open source under the GNU GPL
+ v3; the full licence text ships with the source.
+Tag: role::enduser
+Author: Yves <github.com/Yves000> (original NextUp 3), ported by Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.html
+Name: Albrhi NextUp (rootless)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
+Section: Media
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/nextup.png
 
 Package: com.albrhi.nextup
 Version: 0.3.0
@@ -215,7 +267,6 @@ Size: 217690
 MD5sum: 09ea184cb8d02af4c40e7e8a4aea0e13
 SHA1: 403f9a8e5d4de9f58cbe2b7e0ed9b14b5945b913
 SHA256: d4fe01b044cd294a05df0a7ee9ee6426e451dbb21482d6dd54c62936ec15ebc8
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: See and skip what plays next, from the Lock Screen.
  .
@@ -250,9 +301,10 @@ Description: See and skip what plays next, from the Lock Screen.
 Tag: role::enduser
 Author: Yves <github.com/Yves000> (original NextUp 3), ported by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi NextUp (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
+Section: Media
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/nextup.png
 
 Package: com.albrhi.nextup
 Version: 0.3.1
@@ -267,7 +319,6 @@ Size: 217544
 MD5sum: a7f37ff51f5d3edc063dd4e08c241b4b
 SHA1: 35a2342f84cb4161eaca74d9b00b502d6706e4d3
 SHA256: c67f621da85658c489086063d5127e875427e50615452e1960dfdc04d53ce2f8
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: See and skip what plays next, from the Lock Screen.
  .
@@ -302,9 +353,62 @@ Description: See and skip what plays next, from the Lock Screen.
 Tag: role::enduser
 Author: Yves <github.com/Yves000> (original NextUp 3), ported by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi NextUp (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
+Section: Media
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/nextup.png
+
+Package: com.albrhi.nextup.roothide
+Version: 0.2.1
+Architecture: iphoneos-arm64e
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 1224
+Depends: mobilesubstrate, preferenceloader, com.opa334.libsandy
+Conflicts: com.albrhi.nextup, com.yves.nextup3
+Replaces: com.albrhi.nextup
+Filename: debs/com.albrhi.nextup.roothide_0.2.1_iphoneos-arm64e.deb
+Size: 203038
+MD5sum: 13f720114cb1cded3eb45bb9bd1d2903
+SHA1: ffff45e900bca67ddac3ee774da6541524a41509
+SHA256: cf7f13fe5ef07c107aacf2e8e17140ddf5efadaec91fd938215f4f72c3b90093
+Homepage: https://github.com/ibrahim2100/albrhi-repo
+Description: See and skip what plays next, from the Lock Screen.
+ .
+ ▍WHAT PLAYS NEXT, WITHOUT OPENING THE APP
+ A row under the now-playing controls showing the next track — its title, artist and
+ cover — on the Lock Screen, in Control Center and in the Dynamic Island. Tap the cover
+ to play it now, or skip it without ever opening the app.
+ .
+ ▍FIVE APPS
+ Apple Music, Apple Podcasts, YouTube, YouTube Music and Spotify. Each reads that app's
+ own playback queue, so the row shows what the app itself would play next — not a guess.
+ .
+ ▍ITS OWN ROW IN SETTINGS
+ Settings › Albrhi NextUp: a master switch, one per surface — Lock Screen,
+ Dynamic Island, Control Center — and one per app. Changes apply immediately, without a
+ respring.
+ .
+ iOS 14.2 through 26. Every hook is chosen at runtime from the iOS version and the host
+ process, so one build serves all of them.
+ .
+ ▍CREDIT — THIS IS A PORT, NOT AN ORIGINAL
+ Albrhi NextUp is a port of NextUp 3 by Yves (github.com/Yves000/NextUp3), used and
+ redistributed under the GNU GPL v3 — the same licence this project ships under, which
+ is what makes carrying the code over lawful where an unlicensed tweak could only be
+ read for architecture. The original design, the private-API research and very nearly
+ all of the implementation are Yves's work. What this port changes: the Settings pane
+ was rebuilt as the page this package ships, and the package was rebranded. Nothing
+ about the feature itself is this project's invention.
+ .
+ Ported and maintained by Ibrahim Ismail AL-Rahn. Open source under the GNU GPL
+ v3; the full licence text ships with the source.
+Tag: role::enduser
+Author: Yves <github.com/Yves000> (original NextUp 3), ported by Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.html
+Name: Albrhi NextUp (roothide)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
+Section: Media
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/nextup.png
 
 Package: com.albrhi.nextup.roothide
 Version: 0.3.0
@@ -319,7 +423,6 @@ Size: 217334
 MD5sum: 8cd17c65b65c6db88f8ac5788f04de8c
 SHA1: c594581397e986a476e32552dc518b21fe26047e
 SHA256: 0144e7e55f1f40435452618419296eb411b6a80d8f8830c6dce3b53aa878ae28
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: See and skip what plays next, from the Lock Screen.
  .
@@ -354,9 +457,10 @@ Description: See and skip what plays next, from the Lock Screen.
 Tag: role::enduser
 Author: Yves <github.com/Yves000> (original NextUp 3), ported by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi NextUp (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
+Section: Media
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/nextup.png
 
 Package: com.albrhi.nextup.roothide
 Version: 0.3.1
@@ -371,7 +475,6 @@ Size: 217924
 MD5sum: 83547b7fb08a6ef05ea13d4e8c5869ca
 SHA1: b768b0d3783d727c65b82a864b36527c8de57172
 SHA256: 3874cf3b5e603a7e61248da471bd4fe499f9df0075f4685f29e29a410d5b5cc3
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: See and skip what plays next, from the Lock Screen.
  .
@@ -406,9 +509,10 @@ Description: See and skip what plays next, from the Lock Screen.
 Tag: role::enduser
 Author: Yves <github.com/Yves000> (original NextUp 3), ported by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi NextUp (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
+Section: Media
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/nextup.png
 
 Package: com.albrhi.roothide
 Version: 1.112.2
@@ -423,7 +527,6 @@ Size: 2703456
 MD5sum: 4fcdd04877589d469ee415f4bdb56915
 SHA1: 92b31aebfc23351485e6fd042ef547652fbb01c3
 SHA256: 5f57e946899efc5cc3f083936b70f3e528e4de4e9e72ff3d776c596e5b269ca3
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
  .
@@ -474,9 +577,10 @@ Description: One tweak for Instagram, YouTube, X and TikTok, switched per app fr
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
+Section: Albrhi
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/albrhi.png
 
 Package: com.albrhi.roothide
 Version: 1.112.3
@@ -491,7 +595,6 @@ Size: 2704074
 MD5sum: ac9582bd284061704b98e52f91931ed4
 SHA1: 0a88d1684890f260d96d3e0eb1924cb2abac96f7
 SHA256: 9f27d6ab251faf0c3e062ea91198670efa8c3843d39695fa6a7854feeecab3f7
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
  .
@@ -542,9 +645,10 @@ Description: One tweak for Instagram, YouTube, X and TikTok, switched per app fr
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
+Section: Albrhi
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/albrhi.png
 
 Package: com.albrhi.roothide
 Version: 1.113.0
@@ -559,7 +663,6 @@ Size: 2768648
 MD5sum: 0d5431dbec0923469ecc6ad03efaab50
 SHA1: 813d4f20efccdc2f9c8277dab1d0a1889d1d985f
 SHA256: a2a8ebe6792369e7d7fd0862e4d773ae41f0af3ea6b9701fe3334c1c7d60bdd7
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
  .
@@ -610,9 +713,10 @@ Description: One tweak for Instagram, YouTube, X and TikTok, switched per app fr
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
+Section: Albrhi
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/albrhi.png
 
 Package: com.albrhi.tiktok
 Version: 0.29.2
@@ -627,7 +731,6 @@ Size: 178900
 MD5sum: e35ce3ed087f1739a69dce073c675439
 SHA1: a706f54736a1b0ca3c00e852d09ec3f44616ff1f
 SHA256: 6f96001ec6d8c193072c5ece4feacaf07c0c443d73f479f00705c9e894af80eb
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
  unmodified phone would.
@@ -672,9 +775,10 @@ Description: No ads, downloads, privacy, and TikTok's own checks answered the wa
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for TikTok (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/tiktok.png
 
 Package: com.albrhi.tiktok
 Version: 0.29.3
@@ -689,7 +793,6 @@ Size: 179544
 MD5sum: 6da4ac04ab08ea9ddce2f8a5446261c3
 SHA1: 86c787cb20d0493fe3355ae293b87cadb50d8ec6
 SHA256: c763cba2656b9e474db67426069271d476eb4a048d6b632fc0cac7b2860206df
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
  unmodified phone would.
@@ -734,9 +837,10 @@ Description: No ads, downloads, privacy, and TikTok's own checks answered the wa
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for TikTok (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/tiktok.png
 
 Package: com.albrhi.tiktok
 Version: 0.30.0
@@ -751,7 +855,6 @@ Size: 188504
 MD5sum: e00d091da552fa8c9b214d3481a8e06d
 SHA1: c5032b70a7c82b3c9362994d285c1b18a7681f9b
 SHA256: b0828b8d4303d745399e1bdf8486d45c1a8a53fd673804950a4155a414d5d664
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
  unmodified phone would.
@@ -796,9 +899,10 @@ Description: No ads, downloads, privacy, and TikTok's own checks answered the wa
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for TikTok (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/tiktok.png
 
 Package: com.albrhi.tiktok.roothide
 Version: 0.29.2
@@ -813,7 +917,6 @@ Size: 178882
 MD5sum: 1f0ff7539f1fbf9f84437feb71cbf8b4
 SHA1: 63641c119d2133899d6d593caac2d07b7731c0c9
 SHA256: 6a56da8c45158e6baae3cc46ddf20bd765cb663ca329f0bd585fcd391d2b95a8
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
  unmodified phone would.
@@ -858,9 +961,10 @@ Description: No ads, downloads, privacy, and TikTok's own checks answered the wa
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for TikTok (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/tiktok.png
 
 Package: com.albrhi.tiktok.roothide
 Version: 0.29.3
@@ -875,7 +979,6 @@ Size: 179524
 MD5sum: 16d28560d515d196f2682069c6bce1cd
 SHA1: 44184b1ddd626ae393184e8774d3ad79b74ed84f
 SHA256: 94695d722b1fe4b5c01a43faa6627465ce13c2ed926275157174a9250b586e00
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
  unmodified phone would.
@@ -920,9 +1023,10 @@ Description: No ads, downloads, privacy, and TikTok's own checks answered the wa
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for TikTok (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/tiktok.png
 
 Package: com.albrhi.tiktok.roothide
 Version: 0.30.0
@@ -937,7 +1041,6 @@ Size: 188470
 MD5sum: 1b2d0cd46cce65c874c9d409d59f0b6d
 SHA1: 1cd7944f3f22577ef294767c5cc47d29b113bad6
 SHA256: cc31c4ce733f9afd024a04ca4585675e2da82c4049e392ef546b1363bf9c1fd4
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
  unmodified phone would.
@@ -982,9 +1085,10 @@ Description: No ads, downloads, privacy, and TikTok's own checks answered the wa
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for TikTok (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/tiktok.png
 
 Package: com.albrhi.tweak
 Version: 4.8.2
@@ -999,7 +1103,6 @@ Size: 515268
 MD5sum: 96a7bade0e9824d14ce8b8c7df09e0e0
 SHA1: e0fb07cc9b0002bc7607d04e7de49d1bd32a7186
 SHA256: 265c271c4a5778dabb275b8128a15029726689c9c1a88fec744546de311f0dc8
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download anything, hide the noise, browse invisibly — in Arabic or English.
  .
@@ -1054,9 +1157,10 @@ Description: Download anything, hide the noise, browse invisibly — in Arabic o
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for Instagram (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/instagram.png
 
 Package: com.albrhi.tweak.roothide
 Version: 4.8.2
@@ -1071,7 +1175,6 @@ Size: 515326
 MD5sum: 5f492e2f2fb77609d8e534bf42d3ec30
 SHA1: f9a07fd845480f4743a7dbaa34e5be5f17d747ec
 SHA256: 84f16a957aa0e9c4f74d42a76c18ba499d51cda8e80fbeccf309c4e33788044a
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download anything, hide the noise, browse invisibly — in Arabic or English.
  .
@@ -1126,9 +1229,10 @@ Description: Download anything, hide the noise, browse invisibly — in Arabic o
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for Instagram (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/instagram.png
 
 Package: com.albrhi.twitter
 Version: 0.22.1
@@ -1143,7 +1247,6 @@ Size: 104800
 MD5sum: ffec816afb33cbcffa05d8fdaed419a9
 SHA1: cb01dd98755b8d4cd02b2ebfb20802485632a2bc
 SHA256: ded5f07eb7e578170e0da26c14e44b4d1c47ea82ee90360c83e7ca30a3fed11c
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
  .
@@ -1200,9 +1303,10 @@ Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Ar
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for Twitter (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/twitter.png
 
 Package: com.albrhi.twitter
 Version: 0.23.0
@@ -1217,7 +1321,6 @@ Size: 112746
 MD5sum: 683c54d063ee4348a3e5ffdd004782ff
 SHA1: 285f9542c9275386a9c213038b27bba805ee2ea7
 SHA256: 560bf6a958799ff8b87f1d61860b84cc9a63430430dc319d4038069b704116aa
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
  .
@@ -1274,9 +1377,10 @@ Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Ar
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for Twitter (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/twitter.png
 
 Package: com.albrhi.twitter.roothide
 Version: 0.22.1
@@ -1291,7 +1395,6 @@ Size: 104660
 MD5sum: 1f2aae0cbc1639e8853cb1465eccdb53
 SHA1: 0e805b35fe015a4e8db7126fdb042c242f78c581
 SHA256: 145b57b85cd73722d77d04841a2185843ef1cb2af61524430e5aa24509883d32
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
  .
@@ -1348,9 +1451,10 @@ Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Ar
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for Twitter (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/twitter.png
 
 Package: com.albrhi.twitter.roothide
 Version: 0.23.0
@@ -1365,7 +1469,6 @@ Size: 112702
 MD5sum: 2816e729d62ec4263f99fe4661c55776
 SHA1: 61e47a073e872b27bee47de21532cb9cf2b9fa9e
 SHA256: 1481095ae2e49f42bbbbe6a54aca26d2e99fc957e9d9d1cd32056ed19f798ee8
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
  .
@@ -1422,9 +1525,264 @@ Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Ar
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for Twitter (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/twitter.png
+
+Package: com.albrhi.watch
+Version: 0.5.3
+Architecture: iphoneos-arm64
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 244
+Depends: mobilesubstrate, preferenceloader, firmware (>= 15.0)
+Conflicts: com.albrhi.watch.roothide, com.34306.watched, app.legizmo.moonstone, app.legizmo
+Replaces: com.albrhi.watch.roothide
+Filename: debs/com.albrhi.watch_0.5.3_iphoneos-arm64.deb
+Size: 26062
+MD5sum: 45e4a3a11324e034c3b963aa0a03f02e
+SHA1: c3ae8d2c1a485bb8ea57673c62075961f337d674
+SHA256: c570a30f3d51e387f02bc17160f889e346033e40ad4128e26da2a7e4a2b99bd6
+Homepage: https://github.com/ibrahim2100/albrhi-repo
+Description: Pair an Apple Watch running a watchOS your iPhone does not officially support.
+ .
+ ▍WHAT IT DOES
+ iOS refuses to pair with a watch whose watchOS is newer than it expects, and refuses to
+ install companion apps onto it. This answers those compatibility questions the way a
+ supported pairing would, so setup completes and apps install.
+ .
+ ▍SWITCHED ON FROM ALBRHI
+ Settings › Albrhi › Albrhi Watch. Nothing is patched until the master switch is on —
+ this touches pairing, so it is never on because it happened to be installed. A respring
+ button sits on the same page, since every change here takes effect at the next launch of
+ the process it lives in.
+ .
+ ▍CREDIT — THE PAIRING CORE IS SOMEONE ELSE'S WORK
+ The pairing gate, the capability answers and the NanoRegistry preference writes come
+ from watched by 34306 (github.com/34306/watched), used under the MIT licence, whose text
+ ships with this package as LICENSE-watched. What this project adds is the master switch,
+ the settings page, the diagnostics and the bilingual interface.
+ .
+ Maintained by Ibrahim Ismail AL-Rahn. Free and open source.
+Tag: role::enduser
+Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+Name: Albrhi Watch (rootless)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
+Section: System
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/watch.png
+
+Package: com.albrhi.watch
+Version: 0.6.0
+Architecture: iphoneos-arm64
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 536
+Depends: mobilesubstrate, preferenceloader, firmware (>= 15.0)
+Conflicts: com.albrhi.watch.roothide, com.34306.watched, app.legizmo.moonstone, app.legizmo
+Replaces: com.albrhi.watch.roothide
+Filename: debs/com.albrhi.watch_0.6.0_iphoneos-arm64.deb
+Size: 63210
+MD5sum: 9e94f9f3677b56fe29a33d812bcb7660
+SHA1: 0b93a7cec4a66e312bb7de5669c4ffbfe39148d1
+SHA256: e859b5ae87d0e55ec6542d00a4226724351a49758e9df8f2b6354ac44965ae83
+Homepage: https://github.com/ibrahim2100/albrhi-repo
+Description: Pair an Apple Watch running a watchOS your iPhone does not officially support.
+ .
+ ▍WHAT IT DOES
+ iOS refuses to pair with a watch whose watchOS is newer than it expects, and refuses to
+ install companion apps onto it. This answers those compatibility questions the way a
+ supported pairing would, so setup completes and apps install.
+ .
+ ▍SWITCHED ON FROM ALBRHI
+ Settings › Albrhi Watch. Nothing is patched until the master switch is on —
+ this touches pairing, so it is never on because it happened to be installed. A respring
+ button sits on the same page, since every change here takes effect at the next launch of
+ the process it lives in.
+ .
+ ▍CREDIT — THE PAIRING CORE IS SOMEONE ELSE'S WORK
+ The pairing gate, the capability answers and the NanoRegistry preference writes come
+ from watched by 34306 (github.com/34306/watched), used under the MIT licence, whose text
+ ships with this package as LICENSE-watched. What this project adds is the master switch,
+ the settings page, the diagnostics and the bilingual interface.
+ .
+ Maintained by Ibrahim Ismail AL-Rahn. Free and open source.
+Tag: role::enduser
+Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+Name: Albrhi Watch (rootless)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
+Section: System
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/watch.png
+
+Package: com.albrhi.watch
+Version: 0.6.1
+Architecture: iphoneos-arm64
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 536
+Depends: mobilesubstrate, preferenceloader, firmware (>= 15.0)
+Conflicts: com.albrhi.watch.roothide, com.34306.watched, app.legizmo.moonstone, app.legizmo
+Replaces: com.albrhi.watch.roothide
+Filename: debs/com.albrhi.watch_0.6.1_iphoneos-arm64.deb
+Size: 63212
+MD5sum: d70450d47006214a6116114466a79697
+SHA1: e20a5fcff828dd779edb7e5606e7303d38422555
+SHA256: 6d90a2b871d734cdcf86aba8d4f9ae22dc038c43d45d7e71b6a07d1dcc84e59d
+Homepage: https://github.com/ibrahim2100/albrhi-repo
+Description: Pair an Apple Watch running a watchOS your iPhone does not officially support.
+ .
+ ▍WHAT IT DOES
+ iOS refuses to pair with a watch whose watchOS is newer than it expects, and refuses to
+ install companion apps onto it. This answers those compatibility questions the way a
+ supported pairing would, so setup completes and apps install.
+ .
+ ▍SWITCHED ON FROM ALBRHI
+ Settings › Albrhi Watch. Nothing is patched until the master switch is on —
+ this touches pairing, so it is never on because it happened to be installed. A respring
+ button sits on the same page, since every change here takes effect at the next launch of
+ the process it lives in.
+ .
+ ▍CREDIT — THE PAIRING CORE IS SOMEONE ELSE'S WORK
+ The pairing gate, the capability answers and the NanoRegistry preference writes come
+ from watched by 34306 (github.com/34306/watched), used under the MIT licence, whose text
+ ships with this package as LICENSE-watched. What this project adds is the master switch,
+ the settings page, the diagnostics and the bilingual interface.
+ .
+ Maintained by Ibrahim Ismail AL-Rahn. Open source; the pairing core is used under
+ the MIT licence, whose text ships with this package.
+Tag: role::enduser
+Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+Name: Albrhi Watch (rootless)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
+Section: System
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/watch.png
+
+Package: com.albrhi.watch.roothide
+Version: 0.5.3
+Architecture: iphoneos-arm64e
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 244
+Depends: mobilesubstrate, preferenceloader, firmware (>= 15.0)
+Conflicts: com.albrhi.watch, com.34306.watched, app.legizmo.moonstone, app.legizmo
+Replaces: com.albrhi.watch
+Filename: debs/com.albrhi.watch.roothide_0.5.3_iphoneos-arm64e.deb
+Size: 26364
+MD5sum: dad63e4b0e3039da9267b927dd350dda
+SHA1: 65c9373dd0d8749627965b92b4f48756b87cafa4
+SHA256: 4a65f7239153edf82cd7ee3d7ee154216c05279e86b2399347c84a7b3dec72f9
+Homepage: https://github.com/ibrahim2100/albrhi-repo
+Description: Pair an Apple Watch running a watchOS your iPhone does not officially support.
+ .
+ ▍WHAT IT DOES
+ iOS refuses to pair with a watch whose watchOS is newer than it expects, and refuses to
+ install companion apps onto it. This answers those compatibility questions the way a
+ supported pairing would, so setup completes and apps install.
+ .
+ ▍SWITCHED ON FROM ALBRHI
+ Settings › Albrhi › Albrhi Watch. Nothing is patched until the master switch is on —
+ this touches pairing, so it is never on because it happened to be installed. A respring
+ button sits on the same page, since every change here takes effect at the next launch of
+ the process it lives in.
+ .
+ ▍CREDIT — THE PAIRING CORE IS SOMEONE ELSE'S WORK
+ The pairing gate, the capability answers and the NanoRegistry preference writes come
+ from watched by 34306 (github.com/34306/watched), used under the MIT licence, whose text
+ ships with this package as LICENSE-watched. What this project adds is the master switch,
+ the settings page, the diagnostics and the bilingual interface.
+ .
+ Maintained by Ibrahim Ismail AL-Rahn. Free and open source.
+Tag: role::enduser
+Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+Name: Albrhi Watch (roothide)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
+Section: System
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/watch.png
+
+Package: com.albrhi.watch.roothide
+Version: 0.6.0
+Architecture: iphoneos-arm64e
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 536
+Depends: mobilesubstrate, preferenceloader, firmware (>= 15.0)
+Conflicts: com.albrhi.watch, com.34306.watched, app.legizmo.moonstone, app.legizmo
+Replaces: com.albrhi.watch
+Filename: debs/com.albrhi.watch.roothide_0.6.0_iphoneos-arm64e.deb
+Size: 63454
+MD5sum: f0a5fd97b867a7a4866c1efdf8243e14
+SHA1: 7e062dd6dbcbfff2fe74a12d6f6f814ec96bae97
+SHA256: 9e3a101f5d440dcad9182ccde4a3056c895c26ed6a5f6f6435bef9584864396c
+Homepage: https://github.com/ibrahim2100/albrhi-repo
+Description: Pair an Apple Watch running a watchOS your iPhone does not officially support.
+ .
+ ▍WHAT IT DOES
+ iOS refuses to pair with a watch whose watchOS is newer than it expects, and refuses to
+ install companion apps onto it. This answers those compatibility questions the way a
+ supported pairing would, so setup completes and apps install.
+ .
+ ▍SWITCHED ON FROM ALBRHI
+ Settings › Albrhi Watch. Nothing is patched until the master switch is on —
+ this touches pairing, so it is never on because it happened to be installed. A respring
+ button sits on the same page, since every change here takes effect at the next launch of
+ the process it lives in.
+ .
+ ▍CREDIT — THE PAIRING CORE IS SOMEONE ELSE'S WORK
+ The pairing gate, the capability answers and the NanoRegistry preference writes come
+ from watched by 34306 (github.com/34306/watched), used under the MIT licence, whose text
+ ships with this package as LICENSE-watched. What this project adds is the master switch,
+ the settings page, the diagnostics and the bilingual interface.
+ .
+ Maintained by Ibrahim Ismail AL-Rahn. Free and open source.
+Tag: role::enduser
+Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+Name: Albrhi Watch (roothide)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
+Section: System
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/watch.png
+
+Package: com.albrhi.watch.roothide
+Version: 0.6.1
+Architecture: iphoneos-arm64e
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 536
+Depends: mobilesubstrate, preferenceloader, firmware (>= 15.0)
+Conflicts: com.albrhi.watch, com.34306.watched, app.legizmo.moonstone, app.legizmo
+Replaces: com.albrhi.watch
+Filename: debs/com.albrhi.watch.roothide_0.6.1_iphoneos-arm64e.deb
+Size: 63502
+MD5sum: 8d29b787db33fa2ae16c18f4b3bfc583
+SHA1: 2b0ad2ba3896f0644146cfe498f84a119bfc7e78
+SHA256: 92c9cb175db23065c10b077b4a827693ce3801d4715d8f6de1558582fa170dec
+Homepage: https://github.com/ibrahim2100/albrhi-repo
+Description: Pair an Apple Watch running a watchOS your iPhone does not officially support.
+ .
+ ▍WHAT IT DOES
+ iOS refuses to pair with a watch whose watchOS is newer than it expects, and refuses to
+ install companion apps onto it. This answers those compatibility questions the way a
+ supported pairing would, so setup completes and apps install.
+ .
+ ▍SWITCHED ON FROM ALBRHI
+ Settings › Albrhi Watch. Nothing is patched until the master switch is on —
+ this touches pairing, so it is never on because it happened to be installed. A respring
+ button sits on the same page, since every change here takes effect at the next launch of
+ the process it lives in.
+ .
+ ▍CREDIT — THE PAIRING CORE IS SOMEONE ELSE'S WORK
+ The pairing gate, the capability answers and the NanoRegistry preference writes come
+ from watched by 34306 (github.com/34306/watched), used under the MIT licence, whose text
+ ships with this package as LICENSE-watched. What this project adds is the master switch,
+ the settings page, the diagnostics and the bilingual interface.
+ .
+ Maintained by Ibrahim Ismail AL-Rahn. Open source; the pairing core is used under
+ the MIT licence, whose text ships with this package.
+Tag: role::enduser
+Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+Name: Albrhi Watch (roothide)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
+Section: System
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/watch.png
 
 Package: com.albrhi.whatsapp
 Version: 0.3.0
@@ -1437,7 +1795,6 @@ Size: 126118
 MD5sum: ec5c6b36cb1cb1956fa1f7ea4eb7a35d
 SHA1: 35c07dcdfdea490af95141b6675c2e1fcfb47f4a
 SHA256: 5c6de8570fd141927aebdea345e5a1add7a1d018f08f60179a03b50df8ce9541
-Section: Tweaks
 Homepage: https://ibrahim2100.github.io/albrhi-repo/
 Description: Privacy for WhatsApp, in your hands.
  .
@@ -1459,9 +1816,10 @@ Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.html
 SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.json
-Icon: https://ibrahim2100.github.io/albrhi-repo/whatsapp/icon.png
 Name: Albrhi for WhatsApp (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.json
+Section: WhatsApp
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/whatsapp.png
 
 Package: com.albrhi.whatsapp.roothide
 Version: 0.3.0
@@ -1474,7 +1832,6 @@ Size: 125216
 MD5sum: 8be9e53915463e3fb89bd4b8711c0f1f
 SHA1: 5bb70b3ec952fa96dd05154b1fbfb740332bab93
 SHA256: d3e800b92ba08775364572bd5b39cb7773ce4b9da350dcdef1e5da5a1d94898e
-Section: Tweaks
 Homepage: https://ibrahim2100.github.io/albrhi-repo/
 Description: Privacy for WhatsApp, in your hands.
  .
@@ -1496,9 +1853,10 @@ Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.html
 SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.json
-Icon: https://ibrahim2100.github.io/albrhi-repo/whatsapp/icon.png
 Name: Albrhi for WhatsApp (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.json
+Section: WhatsApp
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/whatsapp.png
 
 Package: com.albrhi.youtube
 Version: 1.49.3
@@ -1513,7 +1871,6 @@ Size: 563254
 MD5sum: 0b2f4727eb0cb7c936732f84c2cf1c0a
 SHA1: 119ad35c0aba730dd87566ccd611da1557e46d23
 SHA256: b42081b844426d9b7924972d1bea21fc86690affb3bc6eb916ca532be7ab928f
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
  .
@@ -1558,9 +1915,10 @@ Description: Download videos, no ads, skip the sponsored parts, background playb
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for YouTube (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/youtube.png
 
 Package: com.albrhi.youtube
 Version: 1.50.0
@@ -1575,7 +1933,6 @@ Size: 570484
 MD5sum: 610411de8ad3c2e38899985f417cce77
 SHA1: cfefc35ca9f7501f1f982bca708055eb8b074d1e
 SHA256: 5545d244f2b896d8bc6fc12d88706c1637542921c0ff422ff51327993e5f0ab1
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
  .
@@ -1620,9 +1977,10 @@ Description: Download videos, no ads, skip the sponsored parts, background playb
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for YouTube (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/youtube.png
 
 Package: com.albrhi.youtube.roothide
 Version: 1.49.3
@@ -1637,7 +1995,6 @@ Size: 563430
 MD5sum: 84369f3988eb2f0cd0aa8d0bcd64b13f
 SHA1: 302edbbbca9ee66931ed45409bf8e324faddefe3
 SHA256: 46749428d0950cd109de4a1ccb873b162e2335cc13508b995d412f3d7309295e
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
  .
@@ -1682,9 +2039,10 @@ Description: Download videos, no ads, skip the sponsored parts, background playb
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for YouTube (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/youtube.png
 
 Package: com.albrhi.youtube.roothide
 Version: 1.50.0
@@ -1699,7 +2057,6 @@ Size: 570906
 MD5sum: 69f0402c6b2d9f9259907262241dd7d5
 SHA1: 1444f5dd50f68a7bd714b2ca8a61cb8dc8b6daf6
 SHA256: 079babfaac12ad8cd2ae7470b91833ad7043598efeb4de853939e2498babbd08
-Section: Tweaks
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
  .
@@ -1744,9 +2101,10 @@ Description: Download videos, no ads, skip the sponsored parts, background playb
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.html
-Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for YouTube (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.json
+Section: Single apps
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/youtube.png
 
 Package: com.junesiphone.designer
 Version: 1.5.5
