@@ -1,0 +1,55 @@
+{
+  "class": "FeaturedBannersView",
+  "itemSize": "{263, 148}",
+  "itemCornerRadius": 10,
+  "banners": [
+    {
+      "url": "https://ibrahim2100.github.io/albrhi-repo/featured/albrhi.jpg",
+      "title": "Albrhi",
+      "package": "com.albrhi.roothide",
+      "hideShadow": false
+    },
+    {
+      "url": "https://ibrahim2100.github.io/albrhi-repo/featured/whatsapp.jpg",
+      "title": "WhatsApp",
+      "package": "com.albrhi.whatsapp.roothide",
+      "hideShadow": false
+    },
+    {
+      "url": "https://ibrahim2100.github.io/albrhi-repo/featured/instagram.jpg",
+      "title": "Instagram",
+      "package": "com.albrhi.tweak.roothide",
+      "hideShadow": false
+    },
+    {
+      "url": "https://ibrahim2100.github.io/albrhi-repo/featured/youtube.jpg",
+      "title": "YouTube",
+      "package": "com.albrhi.youtube.roothide",
+      "hideShadow": false
+    },
+    {
+      "url": "https://ibrahim2100.github.io/albrhi-repo/featured/tiktok.jpg",
+      "title": "TikTok",
+      "package": "com.albrhi.tiktok.roothide",
+      "hideShadow": false
+    },
+    {
+      "url": "https://ibrahim2100.github.io/albrhi-repo/featured/twitter.jpg",
+      "title": "X",
+      "package": "com.albrhi.twitter.roothide",
+      "hideShadow": false
+    },
+    {
+      "url": "https://ibrahim2100.github.io/albrhi-repo/featured/nextup.jpg",
+      "title": "NextUp",
+      "package": "com.albrhi.nextup.roothide",
+      "hideShadow": false
+    },
+    {
+      "url": "https://ibrahim2100.github.io/albrhi-repo/featured/watch.jpg",
+      "title": "Watch",
+      "package": "com.albrhi.watch.roothide",
+      "hideShadow": false
+    }
+  ]
+}
