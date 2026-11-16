@@ -1458,6 +1458,7 @@ Description: Privacy for WhatsApp, in your hands.
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.json
 Icon: https://ibrahim2100.github.io/albrhi-repo/whatsapp/icon.png
 Name: Albrhi for WhatsApp (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.json
@@ -1494,6 +1495,7 @@ Description: Privacy for WhatsApp, in your hands.
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.json
 Icon: https://ibrahim2100.github.io/albrhi-repo/whatsapp/icon.png
 Name: Albrhi for WhatsApp (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.json
