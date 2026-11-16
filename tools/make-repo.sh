@@ -142,6 +142,12 @@ if [ -d "$MAKE_REPO_DIR/../brand/icons/512" ]; then
     python3 "$MAKE_REPO_DIR/tidy-index.py" . "$BASE_URL" "$MAKE_REPO_DIR/../brand/catalog.json"
 fi
 
+# Sileo's featured banners (the carousel at the top of the source's page): pictures from brand/out/featured, the list from the packages that really are in the index.
+if [ -d "$MAKE_REPO_DIR/../brand/out/featured" ]; then
+    mkdir -p featured && cp "$MAKE_REPO_DIR"/../brand/out/featured/*.jpg featured/
+    python3 "$MAKE_REPO_DIR/make-featured.py" . "$BASE_URL"
+fi
+
 gzip  -9fkn Packages
 bzip2 -9fk  Packages
 xz    -9fk  Packages 2>/dev/null || true

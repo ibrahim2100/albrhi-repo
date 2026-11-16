@@ -217,3 +217,22 @@ for slug, page, *_ in TWEAK_CARDS:
     subprocess.run(['sips', '-s', 'format', 'jpeg', '-s', 'formatOptions', '82', '--resampleWidth', '1000', os.path.join(OUT, 'cards', page + '.png'), '--out', os.path.join(web, 'wide-' + slug + '.jpg')],
                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 print('cards-web: sileo headers + wide')
+
+# ---------------------------------------------------------------- Sileo's featured banners (the carousel at the top of the source's page): sileo-featured.json, 263 x 148 pt, drawn here at 1052 x 592
+# Sileo writes the package's title over the bottom-left of the image itself, and its documentation advises against text inside a banner, so these carry NO text:
+# the product's icon large on the right, its glyph faded behind it, its colour as the light; the bottom-left stays empty for Sileo's title.
+FEATURED = ['albrhi', 'whatsapp', 'instagram', 'youtube', 'tiktok', 'twitter', 'nextup', 'watch']
+fdir = os.path.join(OUT, 'featured'); os.makedirs(fdir, exist_ok=True)
+for slug in FEATURED:
+    acc = ACC[slug]
+    html = ('<!doctype html><meta charset="utf-8"><style>%s</style><body style="width:1052px;height:592px;position:relative;overflow:hidden;color:#fff;'
+            'background:radial-gradient(620px 520px at 72%% 42%%,%s66,transparent 70%%),radial-gradient(520px 380px at 0%% 100%%,%s22,transparent 70%%),linear-gradient(150deg,#0a1812,#04100a 55%%,#020a06)">'
+            '<div style="position:absolute;inset:0;opacity:.07;background-image:radial-gradient(#fff 1.2px,transparent 1.4px);background-size:30px 30px"></div>'
+            '<img src="../icons/%s.png" style="position:absolute;left:560px;top:-90px;width:640px;height:640px;border-radius:150px;opacity:.13;transform:rotate(-14deg)">'
+            '<img src="../icons/%s.png" style="position:absolute;left:640px;top:104px;width:300px;height:300px;border-radius:70px;box-shadow:0 0 110px %sa0,0 26px 60px rgba(0,0,0,.55)">'
+            '<div style="position:absolute;left:0;right:0;bottom:0;height:230px;background:linear-gradient(0deg,rgba(0,0,0,.55),transparent)"></div></body>'
+            ) % (CSS, acc, acc, slug, slug, acc)
+    png = os.path.join(TMP, 'feat-' + slug + '.png')
+    render(html, png, 1052, 592)
+    subprocess.run(['sips', '-s', 'format', 'jpeg', '-s', 'formatOptions', '84', png, '--out', os.path.join(fdir, slug + '.jpg')], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+print('featured banners')
