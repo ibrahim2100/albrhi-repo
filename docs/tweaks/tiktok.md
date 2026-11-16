@@ -1,6 +1,6 @@
 [← Albrhi](../../README.md)
 
-<img src="../../brand/icons/512/tiktok.png" width="84" align="right" alt="">
+<p align="center"><img src="../../brand/out/cards/tiktok.png" width="100%" alt="Albrhi for TikTok"></p>
 
 # 🎵 Albrhi for TikTok
 

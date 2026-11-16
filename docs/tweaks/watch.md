@@ -1,6 +1,6 @@
 [← Albrhi](../../README.md)
 
-<img src="../../brand/icons/512/watch.png" width="84" align="right" alt="">
+<p align="center"><img src="../../brand/out/cards/watch.png" width="100%" alt="Albrhi Watch"></p>
 
 # ⌚ Albrhi Watch
 

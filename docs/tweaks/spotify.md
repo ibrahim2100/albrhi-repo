@@ -1,6 +1,6 @@
 [← Albrhi](../../README.md)
 
-<img src="../../brand/icons/512/spotify.png" width="84" align="right" alt="">
+<p align="center"><img src="../../brand/out/cards/spotify.png" width="100%" alt="Albrhi for Spotify"></p>
 
 # 🎧 Albrhi for Spotify
 

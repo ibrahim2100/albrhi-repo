@@ -1,6 +1,6 @@
 [← Albrhi](../../README.md)
 
-<img src="../../brand/icons/512/instagram.png" width="84" align="right" alt="">
+<p align="center"><img src="../../brand/out/cards/instagram.png" width="100%" alt="Albrhi for Instagram"></p>
 
 # ✨ Albrhi for Instagram
 

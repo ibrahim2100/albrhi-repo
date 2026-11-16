@@ -1,6 +1,6 @@
 [← Albrhi](../../README.md)
 
-<img src="../../brand/icons/512/ytmusic.png" width="84" align="right" alt="">
+<p align="center"><img src="../../brand/out/cards/youtube-music.png" width="100%" alt="Albrhi for YouTube Music"></p>
 
 # 🎼 Albrhi for YouTube Music
 

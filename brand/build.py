@@ -137,3 +137,40 @@ def render_scaled(html, out, w, h, scale):
 render_scaled(hero, os.path.join(OUT, 'hero.png'), 1600, 800, 1)
 render_scaled(hero, os.path.join(OUT, 'social-preview.png'), 1600, 800, 0.8)
 print('hero, social-preview')
+
+# ---------------------------------------------------------------- one header card per tweak page (docs/tweaks/<slug>.md), 1600 x 560
+# No version numbers in the pictures: they would be stale at the next release; the page text carries them.
+COLORS = {s: (t, b, m) for s, n, t, b, m in FAMILY + EXTRA}
+ACC = {'instagram': '#FFC25A', 'youtube': '#FF8E84', 'twitter': '#B6C4D6', 'tiktok': '#25F4EE', 'ytmusic': '#FF9EC6', 'panel': '#B9C5DA', 'spotify': '#C2F56F', 'nextup': '#B3A8FF', 'watch': '#7CD2FF'}
+TWEAK_CARDS = [
+ # slug, docs page, title, arabic line, english line, four features, corner badge
+ ('instagram', 'instagram', 'Albrhi for Instagram', 'حمّل كل شي وتصفّح بهدوء', 'Download anything, hide the noise, browse invisibly.', ['Downloads', 'Stories, no receipt', 'Unsent messages kept', 'A quieter feed'], 'INSIDE ALBRHI'),
+ ('youtube', 'youtube', 'Albrhi for YouTube', 'تحميل بلا إعلانات وتشغيل بالخلفية', 'Downloads that last, no ads, SponsorBlock, background play.', ['Download Centre tab', 'No ads', 'SponsorBlock', 'Background play'], 'INSIDE ALBRHI'),
+ ('twitter', 'x', 'Albrhi for X', 'حمّل الوسائط وتحكّم بمفاتيح X', 'Save any video, photo or GIF, and switch off what X does.', ['Media downloads', 'A button you place', 'Feature switches', 'Fewer ads'], 'INSIDE ALBRHI'),
+ ('tiktok', 'tiktok', 'Albrhi for TikTok', 'زر تحميل في الفيد وخصوصية أكثر', 'A download button in the feed, photo posts, privacy.', ['Download button', 'Photo posts', 'No ads', 'Privacy'], 'INSIDE ALBRHI'),
+ ('ytmusic', 'youtube-music', 'Albrhi for YouTube Music', 'كلمات متزامنة وحفظ الأغاني', 'Synced lyrics, saving tracks, no ads.', ['Synced lyrics', 'Save tracks', 'No ads', 'Background play'], 'INSIDE ALBRHI'),
+ ('panel', 'panel', 'Albrhi Panel', 'كل شي من مكان واحد في الإعدادات', 'Settings › Albrhi: a switch per app, a guide, backup.', ['A switch per app', 'A guide', 'Backup', 'Off until you turn it on'], 'INSIDE ALBRHI'),
+ ('spotify', 'spotify', 'Albrhi for Spotify', 'بدون إعلانات ولا مقاطع ممولة', 'No ads, no Premium pop-ups, sponsored podcast parts skipped.', ['No ads', 'No pop-ups', 'Podcast SponsorBlock', 'Swift and Orion'], 'NOT PUBLISHED'),
+ ('nextup', 'nextup', 'Albrhi NextUp', 'شوف وش يشتغل بعده من شاشة القفل', 'See and skip what plays next, from the Lock Screen.', ['What plays next', 'Lock Screen', 'Five media apps', 'A GPLv3 port'], 'OWN PACKAGE'),
+ ('watch', 'watch', 'Albrhi Watch', 'اربط ساعة بنظام أحدث من جوالك', 'Pair an Apple Watch running a newer watchOS.', ['Newer watchOS', 'Pairing gate', 'Update hold', 'An MIT port'], 'OWN PACKAGE'),
+]
+os.makedirs(os.path.join(OUT, 'cards'), exist_ok=True)
+for slug, page, title, ar, en, feats, badge in TWEAK_CARDS:
+    top = glow = ACC[slug]
+    chips = ''.join('<span style="display:inline-block;margin:0 12px 12px 0;padding:10px 20px;border-radius:99px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:23px;font-weight:600">%s</span>' % f for f in feats)
+    bcol = '#7CF2B3' if badge == 'INSIDE ALBRHI' else ('#FFC76A' if badge == 'NOT PUBLISHED' else '#9CC7FF')
+    html = ('<!doctype html><meta charset="utf-8"><style>%s</style><body style="width:1600px;height:560px;position:relative;overflow:hidden;color:#fff;'
+            'background:radial-gradient(760px 520px at 88%% 40%%,%s55,transparent 70%%),radial-gradient(640px 420px at 6%% 0%%,%s33,transparent 70%%),linear-gradient(160deg,#08140f,#04100a 55%%,#020a06)">'
+            '<div style="position:absolute;inset:0;opacity:.06;background-image:radial-gradient(#fff 1.2px,transparent 1.4px);background-size:34px 34px"></div>'
+            '<img src="../icons/%s.png" style="position:absolute;right:-70px;top:-10px;width:620px;height:620px;border-radius:146px;opacity:.20;transform:rotate(-12deg);filter:blur(1px)">'
+            '<img src="../icons/%s.png" style="position:absolute;left:92px;top:96px;width:232px;height:232px;border-radius:54px;box-shadow:0 0 90px %s88,0 22px 56px rgba(0,0,0,.55)">'
+            '<div style="position:absolute;left:372px;top:80px;width:1100px">'
+            '<div style="font-size:78px;font-weight:800;letter-spacing:-3px;line-height:1.04">%s</div>'
+            '<div style="font-family:\'SF Arabic\',\'Geeza Pro\',-apple-system,sans-serif;font-size:42px;font-weight:700;color:%s;margin-top:14px;direction:ltr">%s</div>'
+            '<div style="font-size:29px;color:rgba(255,255,255,.76);margin-top:12px;font-weight:500">%s</div></div>'
+            '<div style="position:absolute;left:92px;top:388px;width:1300px">%s</div>'
+            '<div style="position:absolute;right:70px;top:54px;padding:8px 18px;border-radius:99px;border:1.5px solid %s;color:%s;font-size:17px;letter-spacing:2.6px;font-weight:700;background:rgba(0,0,0,.25)">%s</div>'
+            '<div style="position:absolute;left:92px;bottom:30px;font-size:19px;color:rgba(255,255,255,.5);font-family:ui-monospace,Menlo,monospace">ibrahim2100.github.io/albrhi-repo</div></body>'
+            ) % (CSS, glow, top, slug, slug, glow, title, top, ar, en, chips, bcol, bcol, badge)
+    render(html, os.path.join(OUT, 'cards', page + '.png'), 1600, 560)
+    print('card', page)

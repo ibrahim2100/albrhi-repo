@@ -1,6 +1,6 @@
 [← Albrhi](../../README.md)
 
-<img src="../../brand/icons/512/twitter.png" width="84" align="right" alt="">
+<p align="center"><img src="../../brand/out/cards/x.png" width="100%" alt="Albrhi for X"></p>
 
 # 🐦 Albrhi for X
 
