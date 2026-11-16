@@ -65,11 +65,16 @@ inside one package, three stand apart.
 - Repo `github.com/ibrahim2100/albrhi-repo` · source `https://ibrahim2100.github.io/albrhi-repo/` ·
   browser tools at `…/deb-edit/`. The tested app versions are the newest builds the owner's phone
   accepts, not a ceiling: nothing is pinned, every class is looked up at runtime.
+- **The source's look is one family, defined in `brand/`** (`python3 brand/build.py`): one icon template, one stroke and a signature dot, a hue and a glyph per product (generic glyphs, no other company's logo), and `brand/catalog.json`, which says which icon and which Sileo
+  section each package id gets. Until 2026-11-16 every package showed one generic orange download arrow in one section "Tweaks", so the source read as one tool repeated. **Applied at index time, not in the packages:** `make-repo.sh` copies `brand/icons/512` to `icons/` and runs
+  `tools/tidy-index.py`, so no package is rebuilt and old versions follow; the source's own icon is `tools/logo.png` (the override `make-logo.py` already honoured), and `tools/repo-index.html` is the landing page (one card per product, roothide and rootless as chips, a neutral tile and a
+  "third-party" tag for a package that is not ours). A new product needs its glyph in `brand/build.py`, a line in the catalogue and a rebuild of the family. **The fetch of published releases was paginating nothing:** one API page (100) was the whole window, and Watch's newest release sits at
+  position 130 of the newest-first listing, so every run but Watch's own wrote an index without Watch (and without NextUp 0.2.1); it is `gh api --paginate` now.
 - **`com.albrhi` is the front door for the social apps.** One install, one update, and a new tweak
   arrives inside it. It declares `Conflicts`/`Replaces` on the individual identities (rootless and
   roothide: tweak, youtube, twitter, tiktok, ytmusic, panel) and on `com.dvntm.ytmultimate`, and
-  `suite/DEBIAN/preinst` removes them itself (see *Package managers*). The individual packages are
-  **no longer served**; their old releases remain on the releases page as history.
+  `suite/DEBIAN/preinst` removes them itself (see *Package managers*). **The individual packages are still published and listed** (the index showed them all along, and this file said
+  "no longer served" until 2026-11-16: people who installed one would have stopped getting updates if that had been true), but they sit in their own Sileo section, **Single apps**, apart from the front door.
 - **`tools/make-suite.sh` merges every `tweaks/*/control` automatically**, skipping any directory
   with a `.no-suite` marker — **Spotify, NextUp and Watch** carry it. Joining the suite is the
   default and costs a version bump in `suite/control`; staying out needs the marker *and* matching

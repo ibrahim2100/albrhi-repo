@@ -128,6 +128,12 @@ dpkg-scanpackages -m debs /dev/null > Packages 2>/dev/null
 # dpkg-scanpackages drops SileoDepiction (see add-sileo-depiction.py for why this is an opt-in list and not every package).
 python3 "$MAKE_REPO_DIR/add-sileo-depiction.py" . "$BASE_URL" com.albrhi.whatsapp com.albrhi.whatsapp.roothide
 
+# The icon family and the sections (brand/): copied into the output so the files the catalogue names are always beside the index that names them.
+if [ -d "$MAKE_REPO_DIR/../brand/icons/512" ]; then
+    mkdir -p icons && cp "$MAKE_REPO_DIR"/../brand/icons/512/*.png icons/
+    python3 "$MAKE_REPO_DIR/tidy-index.py" . "$BASE_URL" "$MAKE_REPO_DIR/../brand/catalog.json"
+fi
+
 gzip  -9fkn Packages
 bzip2 -9fk  Packages
 xz    -9fk  Packages 2>/dev/null || true

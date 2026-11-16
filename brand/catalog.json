@@ -1,0 +1,13 @@
+{
+  "_": "Which icon and which Sileo section each package gets in the APT index. Applied by tools/tidy-index.py at index time, so no package has to be rebuilt and old versions follow too. icon = a file in brand/icons/512 (published as icons/<icon>.png).",
+  "packages": [
+    {"ids": ["com.albrhi", "com.albrhi.roothide"],                 "icon": "albrhi",    "section": "Albrhi"},
+    {"ids": ["com.albrhi.whatsapp", "com.albrhi.whatsapp.roothide"], "icon": "whatsapp",  "section": "WhatsApp"},
+    {"ids": ["com.albrhi.nextup", "com.albrhi.nextup.roothide"],     "icon": "nextup",    "section": "Media"},
+    {"ids": ["com.albrhi.watch", "com.albrhi.watch.roothide"],       "icon": "watch",     "section": "System"},
+    {"ids": ["com.albrhi.tweak", "com.albrhi.tweak.roothide"],       "icon": "instagram", "section": "Single apps"},
+    {"ids": ["com.albrhi.youtube", "com.albrhi.youtube.roothide"],   "icon": "youtube",   "section": "Single apps"},
+    {"ids": ["com.albrhi.twitter", "com.albrhi.twitter.roothide"],   "icon": "twitter",   "section": "Single apps"},
+    {"ids": ["com.albrhi.tiktok", "com.albrhi.tiktok.roothide"],     "icon": "tiktok",    "section": "Single apps"}
+  ]
+}

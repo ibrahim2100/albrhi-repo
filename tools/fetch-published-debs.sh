@@ -173,10 +173,11 @@ com.albrhi.locket           com.albrhi.locket.roothide
 # tag-namespace rule in CLAUDE.md -- so grouping by it needs no new bookkeeping.
 SCAN=15
 
-# How many releases to ask the API for. Larger than the window because the window is applied
-# per namespace afterwards, and a slow publisher's newest release can sit a long way down one
-# combined listing.
-FETCH=100
+# One page of the releases API is 100 releases, and **that was being used as the window**: the suite publishes so often that Watch's newest release
+# (`watch-v0.6.1`) sits at position 130 of the newest-first listing, so every run that was not Watch's own gathered an index without Watch and the next
+# Watch run put it back (found 2026-11-16 while tidying the source: the live Packages had no Watch while its releases were fine). The listing is now
+# paginated in full, and the per-namespace window below does what it always claimed to do.
+PER_PAGE=100
 
 is_withheld() {
     local candidate="$1" withheld
@@ -194,7 +195,7 @@ trap 'rm -rf "$staging"' EXIT
 # project's releases have been published as prereleases before.
 # The namespace is the tag up to its version: `locket-v0.4.1` -> `locket`, `v1.42.0` -> the
 # suite's own unnamed one. Newest first within each, then the newest SCAN of each are kept.
-tags=$(gh api "repos/${REPO}/releases?per_page=${FETCH}" \
+tags=$(gh api --paginate "repos/${REPO}/releases?per_page=${PER_PAGE}" \
        --jq '.[] | select(.draft == false) | .tag_name' \
      | awk -v keep="$SCAN" '
            {
