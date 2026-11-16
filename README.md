@@ -6,23 +6,23 @@
 </p>
 
 <p align="center">
-[![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-iOS%2015%2B-lightgrey.svg)](#-compatibility)
-[![Rootless](https://img.shields.io/badge/rootless-supported-success.svg)](#-compatibility)
-[![roothide](https://img.shields.io/badge/roothide-supported-success.svg)](#-compatibility)
+<a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-GPLv3-blue.svg"></a>
+<a href="#-compatibility"><img alt="Platform" src="https://img.shields.io/badge/platform-iOS%2015%2B-lightgrey.svg"></a>
+<a href="#-compatibility"><img alt="Rootless" src="https://img.shields.io/badge/rootless-supported-success.svg"></a>
+<a href="#-compatibility"><img alt="roothide" src="https://img.shields.io/badge/roothide-supported-success.svg"></a>
 </p>
 
 <p align="center">
-[![Albrhi](https://img.shields.io/badge/Albrhi-1.113.0-blueviolet.svg)](suite/CHANGELOG.md)
-[![Instagram](https://img.shields.io/badge/Instagram-4.8.2-orange.svg)](tweaks/instagram/CHANGELOG.md)
-[![YouTube](https://img.shields.io/badge/YouTube-1.50.0-red.svg)](tweaks/youtube/CHANGELOG.md)
-[![X](https://img.shields.io/badge/X-0.23.0-black.svg)](tweaks/twitter/CHANGELOG.md)
-[![TikTok](https://img.shields.io/badge/TikTok-0.30.0-ff0050.svg)](tweaks/tiktok/CHANGELOG.md)
-[![YT Music](https://img.shields.io/badge/YT%20Music-0.10.1-FF0000.svg)](tweaks/ytmusic/CHANGELOG.md)
-[![Spotify](https://img.shields.io/badge/Spotify-0.2.5-1DB954.svg)](tweaks/spotify/CHANGELOG.md)
-[![Panel](https://img.shields.io/badge/Panel-0.11.0-8E8E93.svg)](tweaks/panel/CHANGELOG.md)
-[![NextUp](https://img.shields.io/badge/NextUp-0.3.1-FF375F.svg)](tweaks/nextup/CHANGELOG.md)
-[![Watch](https://img.shields.io/badge/Watch-0.6.1-FF375F.svg)](tweaks/watch/CHANGELOG.md)
+<a href="suite/CHANGELOG.md"><img alt="Albrhi" src="https://img.shields.io/badge/Albrhi-1.113.0-blueviolet.svg"></a>
+<a href="tweaks/instagram/CHANGELOG.md"><img alt="Instagram" src="https://img.shields.io/badge/Instagram-4.8.2-orange.svg"></a>
+<a href="tweaks/youtube/CHANGELOG.md"><img alt="YouTube" src="https://img.shields.io/badge/YouTube-1.50.0-red.svg"></a>
+<a href="tweaks/twitter/CHANGELOG.md"><img alt="X" src="https://img.shields.io/badge/X-0.23.0-black.svg"></a>
+<a href="tweaks/tiktok/CHANGELOG.md"><img alt="TikTok" src="https://img.shields.io/badge/TikTok-0.30.0-ff0050.svg"></a>
+<a href="tweaks/ytmusic/CHANGELOG.md"><img alt="YT Music" src="https://img.shields.io/badge/YT%20Music-0.10.1-FF0000.svg"></a>
+<a href="tweaks/spotify/CHANGELOG.md"><img alt="Spotify" src="https://img.shields.io/badge/Spotify-0.2.5-1DB954.svg"></a>
+<a href="tweaks/panel/CHANGELOG.md"><img alt="Panel" src="https://img.shields.io/badge/Panel-0.11.0-8E8E93.svg"></a>
+<a href="tweaks/nextup/CHANGELOG.md"><img alt="NextUp" src="https://img.shields.io/badge/NextUp-0.3.1-FF375F.svg"></a>
+<a href="tweaks/watch/CHANGELOG.md"><img alt="Watch" src="https://img.shields.io/badge/Watch-0.6.1-FF375F.svg"></a>
 </p>
 
 ---
