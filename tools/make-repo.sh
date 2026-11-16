@@ -123,10 +123,18 @@ fi
 
 cd "$OUT_DIR"
 
+# Packages whose JSON depiction exists beside the index (the script still checks the file). Every product in the catalogue: both flavours of each.
+SILEO_DEPICTION_PACKAGES="$(python3 -c "import json,sys;print(' '.join(i for p in json.load(open(sys.argv[1]))['packages'] for i in p['ids']))" "$MAKE_REPO_DIR/../brand/catalog.json")"
+
 dpkg-scanpackages -m debs /dev/null > Packages 2>/dev/null
 
 # dpkg-scanpackages drops SileoDepiction (see add-sileo-depiction.py for why this is an opt-in list and not every package).
-python3 "$MAKE_REPO_DIR/add-sileo-depiction.py" . "$BASE_URL" com.albrhi.whatsapp com.albrhi.whatsapp.roothide
+# The header cards (brand/out/cards-web) are what the depictions show at the top; the two individual packages that never had a depiction get a small one first.
+if [ -d "$MAKE_REPO_DIR/../brand/out/cards-web" ]; then
+    mkdir -p cards && cp "$MAKE_REPO_DIR"/../brand/out/cards-web/*.jpg cards/
+    python3 "$MAKE_REPO_DIR/make-stub-depictions.py" . "$BASE_URL"
+fi
+python3 "$MAKE_REPO_DIR/add-sileo-depiction.py" . "$BASE_URL" $SILEO_DEPICTION_PACKAGES
 
 # The icon family and the sections (brand/): copied into the output so the files the catalogue names are always beside the index that names them.
 if [ -d "$MAKE_REPO_DIR/../brand/icons/512" ]; then

@@ -141,9 +141,10 @@ print('hero, social-preview')
 # ---------------------------------------------------------------- one header card per tweak page (docs/tweaks/<slug>.md), 1600 x 560
 # No version numbers in the pictures: they would be stale at the next release; the page text carries them.
 COLORS = {s: (t, b, m) for s, n, t, b, m in FAMILY + EXTRA}
-ACC = {'instagram': '#FFC25A', 'youtube': '#FF8E84', 'twitter': '#B6C4D6', 'tiktok': '#25F4EE', 'ytmusic': '#FF9EC6', 'panel': '#B9C5DA', 'spotify': '#C2F56F', 'nextup': '#B3A8FF', 'watch': '#7CD2FF'}
+ACC = {'instagram': '#FFC25A', 'youtube': '#FF8E84', 'twitter': '#B6C4D6', 'tiktok': '#25F4EE', 'ytmusic': '#FF9EC6', 'panel': '#B9C5DA', 'spotify': '#C2F56F', 'nextup': '#B3A8FF', 'watch': '#7CD2FF', 'albrhi': '#7CF2B3'}
 TWEAK_CARDS = [
  # slug, docs page, title, arabic line, english line, four features, corner badge
+ ('albrhi', 'albrhi', 'Albrhi', 'ثبّتها مرة وحدة وخذ كل الأدوات', 'One install: Instagram, YouTube, X, TikTok, YouTube Music and the panel.', ['Five apps', 'One panel', 'One update', 'Free'], 'THE FRONT DOOR'),
  ('instagram', 'instagram', 'Albrhi for Instagram', 'حمّل كل شي وتصفّح بهدوء', 'Download anything, hide the noise, browse invisibly.', ['Downloads', 'Stories, no receipt', 'Unsent messages kept', 'A quieter feed'], 'INSIDE ALBRHI'),
  ('youtube', 'youtube', 'Albrhi for YouTube', 'تحميل بلا إعلانات وتشغيل بالخلفية', 'Downloads that last, no ads, SponsorBlock, background play.', ['Download Centre tab', 'No ads', 'SponsorBlock', 'Background play'], 'INSIDE ALBRHI'),
  ('twitter', 'x', 'Albrhi for X', 'حمّل الوسائط وتحكّم بمفاتيح X', 'Save any video, photo or GIF, and switch off what X does.', ['Media downloads', 'A button you place', 'Feature switches', 'Fewer ads'], 'INSIDE ALBRHI'),
@@ -158,7 +159,7 @@ os.makedirs(os.path.join(OUT, 'cards'), exist_ok=True)
 for slug, page, title, ar, en, feats, badge in TWEAK_CARDS:
     top = glow = ACC[slug]
     chips = ''.join('<span style="display:inline-block;margin:0 12px 12px 0;padding:10px 20px;border-radius:99px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:23px;font-weight:600">%s</span>' % f for f in feats)
-    bcol = '#7CF2B3' if badge == 'INSIDE ALBRHI' else ('#FFC76A' if badge == 'NOT PUBLISHED' else '#9CC7FF')
+    bcol = '#7CF2B3' if badge in ('INSIDE ALBRHI', 'THE FRONT DOOR') else ('#FFC76A' if badge == 'NOT PUBLISHED' else '#9CC7FF')
     html = ('<!doctype html><meta charset="utf-8"><style>%s</style><body style="width:1600px;height:560px;position:relative;overflow:hidden;color:#fff;'
             'background:radial-gradient(760px 520px at 88%% 40%%,%s55,transparent 70%%),radial-gradient(640px 420px at 6%% 0%%,%s33,transparent 70%%),linear-gradient(160deg,#08140f,#04100a 55%%,#020a06)">'
             '<div style="position:absolute;inset:0;opacity:.06;background-image:radial-gradient(#fff 1.2px,transparent 1.4px);background-size:34px 34px"></div>'
@@ -174,3 +175,10 @@ for slug, page, title, ar, en, feats, badge in TWEAK_CARDS:
             ) % (CSS, glow, top, slug, slug, glow, title, top, ar, en, chips, bcol, bcol, badge)
     render(html, os.path.join(OUT, 'cards', page + '.png'), 1600, 560)
     print('card', page)
+
+# web copies for the Sileo depiction headers: 1200 wide JPEG, published as cards/<slug>.jpg (the card for a package id is named in brand/catalog.json)
+web = os.path.join(OUT, 'cards-web'); os.makedirs(web, exist_ok=True)
+for slug, page, *_ in TWEAK_CARDS:
+    subprocess.run(['sips', '-s', 'format', 'jpeg', '-s', 'formatOptions', '82', '--resampleWidth', '1200',
+                    os.path.join(OUT, 'cards', page + '.png'), '--out', os.path.join(web, slug + '.jpg')], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+print('cards-web')

@@ -7,7 +7,8 @@ Why this exists: `dpkg-scanpackages` writes `Depiction:` but drops `SileoDepicti
 .debs and in no line of Packages), so Sileo has only ever been shown the HTML page and never a package's native JSON depiction. Turning it on for
 every package at once was **not** done: the old individual tiktok and twitter packages still in the index point at depictions that are 404, and a
 foreign package in the source points at a file that is not JSON; Sileo would show an error where it now shows a page. So it is an opt-in list, and
-a package gets the field only when the file it names exists in <output-dir> (nothing is asked of the network).
+a package gets the field only when the file it names exists in <output-dir> (nothing is asked of the network). The file named is the one in the .deb's
+control, or when it has none, the JSON twin of the `Depiction:` page (depictions/x.html -> depictions/x.json), so packages built before the field existed need no rebuild.
 """
 import os, subprocess, sys
 
@@ -23,6 +24,9 @@ for i, st in enumerate(stanzas):
         continue
     deb = os.path.join(out, fields['Filename'])
     url = subprocess.run(['dpkg-deb', '-f', deb, 'SileoDepiction'], capture_output=True, text=True).stdout.strip()
+    if not url and fields.get('Depiction', '').startswith(base + '/') and fields['Depiction'].endswith('.html'):
+        # the package carries none in its control file (every one built before this existed): the JSON is the HTML page's twin
+        url = fields['Depiction'][:-len('.html')] + '.json'
     if not url.startswith(base + '/') or not os.path.isfile(os.path.join(out, url[len(base) + 1:])):
         skipped.append((fields['Package'], url or 'no SileoDepiction in the control file'))
         continue

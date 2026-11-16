@@ -202,10 +202,11 @@ CARPLAY_FEATURES = [
 # Everything that differs between the two package pages, in one place.
 TWEAKS = {
     'instagram': {
+        'card': 'instagram',                      # brand/out/cards-web/<card>.jpg, the header image
         'slug': 'albrhi',                       # the existing filename; URLs in
                                                 # control already point at it
         'title': 'Albrhi',
-        'accent': '#E8590C',
+        'accent': '#F0447A',
         'features': INSTAGRAM_FEATURES,
         'tagline': '**Download anything, hide the noise, browse invisibly** — in '
                    'Arabic or English.\n\nAlbrhi puts a download button where '
@@ -228,6 +229,7 @@ TWEAKS = {
                       'sponsored by Instagram or Meta Platforms._',
     },
     'albrhi': {
+        'card': 'albrhi',                      # brand/out/cards-web/<card>.jpg, the header image
         # The combined package: everything Albrhi makes, in one .deb, chosen per app
         # from Settings. It takes the 'albrhi' slug because that is the URL control
         # has always pointed at and the one already in people's package managers.
@@ -235,7 +237,7 @@ TWEAKS = {
         # longer describes what the source serves.
         'slug': 'albrhi',
         'title': 'Albrhi',
-        'accent': '#E8590C',
+        'accent': '#2AD078',
         'features': ALBRHI_FEATURES,
         'tagline': '**One tweak for Instagram and YouTube**, switched per app from '
                    'Settings.\n\nInstall one thing and update one thing. Settings › '
@@ -256,9 +258,10 @@ TWEAKS = {
                       'sponsored by Instagram, Meta Platforms or Google._',
     },
     'youtube': {
+        'card': 'youtube',                      # brand/out/cards-web/<card>.jpg, the header image
         'slug': 'albrhi-youtube',
         'title': 'Albrhi for YouTube',
-        'accent': '#FF0021',                    # the red the tweak's own panel uses
+        'accent': '#FF5A4F',                    # the red the tweak's own panel uses
         'features': YOUTUBE_FEATURES,
         'tagline': '**No ads, skip the sponsored parts, background playback** — in '
                    'Arabic or English.\n\nHooked on YouTube\'s model and service '
@@ -286,9 +289,10 @@ TWEAKS = {
                       'Google._',
     },
     'watch': {
+        'card': 'watch',                      # brand/out/cards-web/<card>.jpg, the header image
         'slug': 'albrhi-watch',                  # matches control's Depiction URLs
         'title': 'Albrhi Watch',
-        'accent': '#FF375F',
+        'accent': '#3DAEF5',
         'features': WATCH_FEATURES,
         'tagline': '**Pair an Apple Watch running a watchOS your iPhone does not '
                    'officially support** — setup completes, and companion apps '
@@ -314,9 +318,10 @@ TWEAKS = {
                       'Apple._',
     },
     'nextup': {
+        'card': 'nextup',                      # brand/out/cards-web/<card>.jpg, the header image
         'slug': 'albrhi-nextup',                 # matches control's Depiction URLs
         'title': 'Albrhi NextUp',
-        'accent': '#FF375F',
+        'accent': '#7C6CFF',
         'features': NEXTUP_FEATURES,
         'tagline': '**See and skip what plays next, from the Lock Screen** — the '
                    'title, artist and cover of the coming track, under the '
@@ -523,6 +528,7 @@ depiction = {
     'minVersion': '0.1',
     'class': 'DepictionTabView',
     'tintColor': ACCENT,
+    'headerImage': base_url + '/cards/%s.jpg' % CONFIG['card'],
     'tabs': [
         {'class': 'DepictionStackView', 'tabname': 'Details', 'views': details},
         {'class': 'DepictionStackView', 'tabname': "What's New",
@@ -552,6 +558,7 @@ body{margin:0;padding:24px 18px 60px;background:var(--bg);color:var(--fg);
 font:16px/1.55 -apple-system,BlinkMacSystemFont,system-ui,sans-serif}
 main{max-width:620px;margin:0 auto}
 h1{font-size:28px;margin:0 0 4px}
+.hero{display:block;width:100%%;border-radius:14px;margin:0 0 20px}
 .v{color:var(--muted);font-family:ui-monospace,Menlo,monospace;font-size:13px}
 .beta{display:inline-block;font-size:11px;font-weight:700;color:var(--accent);
 background:color-mix(in srgb,var(--accent) 14%%,transparent);padding:3px 9px;
@@ -562,6 +569,7 @@ hr{border:0;border-top:1px solid var(--line);margin:26px 0}
 footer{color:var(--muted);font-size:13px;margin-top:30px}
 a{color:var(--accent)}
 </style></head><body><main>
+<img class="hero" src="%(hero)s" alt="">
 <h1>%(title)s<span class="beta">BETA</span></h1>
 <div class="v">%(version)s · by Ibrahim Ismail AL-Rahn</div>
 <hr>
@@ -579,7 +587,7 @@ diagnostics page writes the report for you.</p>
 """ % {'version': version, 'accent': ACCENT, 'features': html_features,
      'repo': REPO, 'issues': ISSUES, 'title': CONFIG['title'],
      'tagline': CONFIG['html_tagline'], 'tested': CONFIG['tested'],
-     'footer': CONFIG['footer_html']}
+     'footer': CONFIG['footer_html'], 'hero': base_url + '/cards/%s.jpg' % CONFIG['card']}
 
 with open(os.path.join(out_dir, 'depictions', CONFIG['slug'] + '.html'), 'w', encoding='utf-8') as f:
     f.write(html)
