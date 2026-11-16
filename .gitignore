@@ -74,3 +74,4 @@ tweaks/*/shared/
 # pattern is a second line of defence, not the arrangement.
 *licence-ec-private.pem
 *.p8
+brand/.build/
