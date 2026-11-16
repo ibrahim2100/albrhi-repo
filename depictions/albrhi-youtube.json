@@ -1,7 +1,8 @@
 {
   "minVersion": "0.1",
   "class": "DepictionTabView",
-  "tintColor": "#FF0021",
+  "tintColor": "#FF5A4F",
+  "headerImage": "https://ibrahim2100.github.io/albrhi-repo/cards/youtube.jpg",
   "tabs": [
     {
       "class": "DepictionStackView",
@@ -120,12 +121,12 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
-          "title": "v1.12.2",
+          "title": "v1.50.0",
           "useBoldText": true
         },
         {
           "class": "DepictionMarkdownView",
-          "markdown": "• Adds a line to Diagnostics that lists what is actually on screen after you change tabs.",
+          "markdown": "• **حماية التشغيل:**",
           "useSpacing": true
         },
         {
@@ -134,12 +135,12 @@
         },
         {
           "class": "DepictionSubheaderView",
-          "title": "v1.12.1",
+          "title": "v1.49.3",
           "useBoldText": true
         },
         {
           "class": "DepictionMarkdownView",
-          "markdown": "• Really fixes the app getting stuck on one page.",
+          "markdown": "• **«التالي» ما زال يبدأ الأغنية من وقت التي قبلها على الجهاز — الإصلاح الحقيقي.**",
           "useSpacing": true
         },
         {
@@ -148,12 +149,12 @@
         },
         {
           "class": "DepictionSubheaderView",
-          "title": "v1.12.0",
+          "title": "v1.49.2",
           "useBoldText": true
         },
         {
           "class": "DepictionMarkdownView",
-          "markdown": "• Removes \"Ask for plain streams\" from the player settings.",
+          "markdown": "• **«التالي» في مشغّل مركز التحميلات كان يبدأ المقطع التالي من الدقيقة التي توقف عندها السابق، لا من بدايته: مُصلَح.**",
           "useSpacing": true
         },
         {
@@ -169,7 +170,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.12.2"
+          "text": "1.50.0"
         },
         {
           "class": "DepictionTableTextView",
@@ -202,13 +203,13 @@
         {
           "class": "DepictionTableButtonView",
           "title": "Source code",
-          "action": "https://github.com/ibrahim2100/Albrhi-Repo",
+          "action": "https://github.com/ibrahim2100/albrhi-repo",
           "openExternal": true
         },
         {
           "class": "DepictionTableButtonView",
           "title": "Report an issue",
-          "action": "https://github.com/ibrahim2100/Albrhi-Repo/issues/new",
+          "action": "https://github.com/ibrahim2100/albrhi-repo/issues/new",
           "openExternal": true
         },
         {

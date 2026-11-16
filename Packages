@@ -61,6 +61,7 @@ Description: One tweak for Instagram, YouTube, X and TikTok, switched per app fr
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Name: Albrhi (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Section: Albrhi
@@ -129,6 +130,7 @@ Description: One tweak for Instagram, YouTube, X and TikTok, switched per app fr
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Name: Albrhi (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Section: Albrhi
@@ -197,6 +199,7 @@ Description: One tweak for Instagram, YouTube, X and TikTok, switched per app fr
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Name: Albrhi (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Section: Albrhi
@@ -249,6 +252,7 @@ Description: See and skip what plays next, from the Lock Screen.
 Tag: role::enduser
 Author: Yves <github.com/Yves000> (original NextUp 3), ported by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
 Name: Albrhi NextUp (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
 Section: Media
@@ -301,6 +305,7 @@ Description: See and skip what plays next, from the Lock Screen.
 Tag: role::enduser
 Author: Yves <github.com/Yves000> (original NextUp 3), ported by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
 Name: Albrhi NextUp (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
 Section: Media
@@ -353,6 +358,7 @@ Description: See and skip what plays next, from the Lock Screen.
 Tag: role::enduser
 Author: Yves <github.com/Yves000> (original NextUp 3), ported by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
 Name: Albrhi NextUp (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
 Section: Media
@@ -405,6 +411,7 @@ Description: See and skip what plays next, from the Lock Screen.
 Tag: role::enduser
 Author: Yves <github.com/Yves000> (original NextUp 3), ported by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
 Name: Albrhi NextUp (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
 Section: Media
@@ -457,6 +464,7 @@ Description: See and skip what plays next, from the Lock Screen.
 Tag: role::enduser
 Author: Yves <github.com/Yves000> (original NextUp 3), ported by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
 Name: Albrhi NextUp (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
 Section: Media
@@ -509,6 +517,7 @@ Description: See and skip what plays next, from the Lock Screen.
 Tag: role::enduser
 Author: Yves <github.com/Yves000> (original NextUp 3), ported by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
 Name: Albrhi NextUp (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-nextup.json
 Section: Media
@@ -577,6 +586,7 @@ Description: One tweak for Instagram, YouTube, X and TikTok, switched per app fr
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Name: Albrhi (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Section: Albrhi
@@ -645,6 +655,7 @@ Description: One tweak for Instagram, YouTube, X and TikTok, switched per app fr
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Name: Albrhi (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Section: Albrhi
@@ -713,6 +724,7 @@ Description: One tweak for Instagram, YouTube, X and TikTok, switched per app fr
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Name: Albrhi (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Section: Albrhi
@@ -775,6 +787,7 @@ Description: No ads, downloads, privacy, and TikTok's own checks answered the wa
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
 Name: Albrhi for TikTok (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
 Section: Single apps
@@ -837,6 +850,7 @@ Description: No ads, downloads, privacy, and TikTok's own checks answered the wa
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
 Name: Albrhi for TikTok (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
 Section: Single apps
@@ -899,6 +913,7 @@ Description: No ads, downloads, privacy, and TikTok's own checks answered the wa
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
 Name: Albrhi for TikTok (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
 Section: Single apps
@@ -961,6 +976,7 @@ Description: No ads, downloads, privacy, and TikTok's own checks answered the wa
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
 Name: Albrhi for TikTok (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
 Section: Single apps
@@ -1023,6 +1039,7 @@ Description: No ads, downloads, privacy, and TikTok's own checks answered the wa
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
 Name: Albrhi for TikTok (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
 Section: Single apps
@@ -1085,6 +1102,7 @@ Description: No ads, downloads, privacy, and TikTok's own checks answered the wa
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
 Name: Albrhi for TikTok (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-tiktok.json
 Section: Single apps
@@ -1157,6 +1175,7 @@ Description: Download anything, hide the noise, browse invisibly — in Arabic o
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Name: Albrhi for Instagram (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Section: Single apps
@@ -1229,6 +1248,7 @@ Description: Download anything, hide the noise, browse invisibly — in Arabic o
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn (based on SCInsta by SoCuul, GPLv3)
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Name: Albrhi for Instagram (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.json
 Section: Single apps
@@ -1303,6 +1323,7 @@ Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Ar
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.json
 Name: Albrhi for Twitter (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.json
 Section: Single apps
@@ -1377,6 +1398,7 @@ Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Ar
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.json
 Name: Albrhi for Twitter (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.json
 Section: Single apps
@@ -1451,6 +1473,7 @@ Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Ar
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.json
 Name: Albrhi for Twitter (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.json
 Section: Single apps
@@ -1525,6 +1548,7 @@ Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Ar
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.json
 Name: Albrhi for Twitter (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.json
 Section: Single apps
@@ -1567,6 +1591,7 @@ Description: Pair an Apple Watch running a watchOS your iPhone does not official
 Tag: role::enduser
 Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
 Name: Albrhi Watch (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
 Section: System
@@ -1609,6 +1634,7 @@ Description: Pair an Apple Watch running a watchOS your iPhone does not official
 Tag: role::enduser
 Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
 Name: Albrhi Watch (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
 Section: System
@@ -1652,6 +1678,7 @@ Description: Pair an Apple Watch running a watchOS your iPhone does not official
 Tag: role::enduser
 Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
 Name: Albrhi Watch (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
 Section: System
@@ -1694,6 +1721,7 @@ Description: Pair an Apple Watch running a watchOS your iPhone does not official
 Tag: role::enduser
 Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
 Name: Albrhi Watch (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
 Section: System
@@ -1736,6 +1764,7 @@ Description: Pair an Apple Watch running a watchOS your iPhone does not official
 Tag: role::enduser
 Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
 Name: Albrhi Watch (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
 Section: System
@@ -1779,6 +1808,7 @@ Description: Pair an Apple Watch running a watchOS your iPhone does not official
 Tag: role::enduser
 Author: 34306 (pairing core, MIT), packaged and extended by Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
 Name: Albrhi Watch (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-watch.json
 Section: System
@@ -1915,6 +1945,7 @@ Description: Download videos, no ads, skip the sponsored parts, background playb
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.json
 Name: Albrhi for YouTube (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.json
 Section: Single apps
@@ -1977,6 +2008,7 @@ Description: Download videos, no ads, skip the sponsored parts, background playb
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.json
 Name: Albrhi for YouTube (rootless)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.json
 Section: Single apps
@@ -2039,6 +2071,7 @@ Description: Download videos, no ads, skip the sponsored parts, background playb
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.json
 Name: Albrhi for YouTube (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.json
 Section: Single apps
@@ -2101,6 +2134,7 @@ Description: Download videos, no ads, skip the sponsored parts, background playb
 Tag: role::enduser
 Author: Ibrahim Ismail AL-Rahn
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.json
 Name: Albrhi for YouTube (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-youtube.json
 Section: Single apps

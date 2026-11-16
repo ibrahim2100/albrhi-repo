@@ -1,0 +1,44 @@
+{
+  "minVersion": "0.1",
+  "class": "DepictionTabView",
+  "tintColor": "#8FA3BA",
+  "headerImage": "https://ibrahim2100.github.io/albrhi-repo/cards/twitter.jpg",
+  "tabs": [
+    {
+      "class": "DepictionStackView",
+      "tabname": "Details",
+      "views": [
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English. . X does not decide what to show you in the screens themselves. It asks one place — its own list of switches — and every part of the app obeys the answer. This tweak sits at that one place. . ▍SAVE VIDEOS, PHOTOS AND GIFS A download button sits on the video itself, in the corner beside play and mute. Tap it and the video is in Photos, at the best quality X offers. Photos save at the size they were uploaded — not the smaller one the timeline was showing you. . And a list under a two-finger hold holds everything X has shown you since you opened it, newest first — the same save, from the model rather than a button, so it keeps working on a build where X has renamed the video view. . ▍WHAT IT SHOWS Every switch the app asked about while you were using it, the answer it was given, and how many times it asked. Nothing is guessed and nothing is written down in advance: the list is whatever your copy of X actually looked up on your phone. . ▍READY-MADE FEATURES Twenty-seven switches in plain language: hide ads, hide the Promote button, hide Grok, stop X translating by itself, hide Premium ads, send less about you, clean up the interface, hide view counts, hide Spaces, stop GIFs playing alone, pinch to zoom in the timeline, more gestures, more tabs, keep your likes private, open faster, and more. Each one sets a group of X's own switches at once, and each says what it does before you turn it on. . ▍OR ANSWER ANY SWITCH YOURSELF Tap any switch in the list and set it on or off. Your own answer always beats a feature, and one button undoes everything. . ▍HOW TO OPEN IT Hold two fingers anywhere in X. . ▍WHY THIS WAY Other tweaks change a screen at a time, and stop working the day X renames that screen. This one sits where X makes the decision, so it keeps working when the screens change. . TESTED ON X 12.14 and 12.15. Nothing is pinned to a version number: every class is looked up at runtime and skipped if it is not there. . Every switch a feature touches is one a real phone reported. What each one does is read from its name, so if something looks wrong, turn the feature off and X goes straight back to normal. . The switch layer was found from the published work of BandarHL (BHTwitter) and TWIGalaxy, whose choice of where to hook this app is credited. No code is taken from either. The timeline section filter, the typing-indicator and screenshot switches, the number displays and the interface switches follow NeoFreeBird by orionblur, a GPLv3 BHTwitter fork written against newer X builds, carried over under the same licence. . Developed by Ibrahim Ismail AL-Rahn. Open source under the GNU GPL v3.",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "حمّل الوسائط وتحكّم بمفاتيح X",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSeparatorView"
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "This package is the single-app build. The same tweak is inside **Albrhi** (`com.albrhi`): one install, one update, and every other app tweak. Install that one unless you only want this app.",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionTableButtonView",
+          "title": "The full page",
+          "action": "https://github.com/ibrahim2100/albrhi-repo/blob/main/docs/tweaks/x.md",
+          "openExternal": "true"
+        },
+        {
+          "class": "DepictionTableButtonView",
+          "title": "Report an issue",
+          "action": "https://github.com/ibrahim2100/albrhi-repo/issues",
+          "openExternal": "true"
+        }
+      ]
+    }
+  ]
+}

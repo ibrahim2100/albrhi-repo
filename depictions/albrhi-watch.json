@@ -1,7 +1,8 @@
 {
   "minVersion": "0.1",
   "class": "DepictionTabView",
-  "tintColor": "#FF375F",
+  "tintColor": "#3DAEF5",
+  "headerImage": "https://ibrahim2100.github.io/albrhi-repo/cards/watch.jpg",
   "tabs": [
     {
       "class": "DepictionStackView",

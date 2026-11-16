@@ -1,0 +1,44 @@
+{
+  "minVersion": "0.1",
+  "class": "DepictionTabView",
+  "tintColor": "#25F4EE",
+  "headerImage": "https://ibrahim2100.github.io/albrhi-repo/cards/tiktok.jpg",
+  "tabs": [
+    {
+      "class": "DepictionStackView",
+      "tabname": "Details",
+      "views": [
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "No ads, downloads, privacy, and TikTok's own checks answered the way an unmodified phone would. . ▍NO ADS A feed item TikTok's own server marked as an ad never becomes an object at all — refused at the model itself, the moment it is built, rather than a view hidden after the fact. A separate splash-ad surface is suppressed too. . ▍DOWNLOAD One button, right beside like, comment and share, on the video actually on screen. Saved straight into Photos — no list to open, no second place to look. . ▍PRIVACY Three separate switches, not one — a story's seen mark, a message's read receipt and a profile view report to three different places, so turning one off never touches the other two. Never touches what this device's own screen shows. . ▍HIDES THE JAILBREAK TikTok asks many places whether the device is modified: a direct jailbreak check, its signing information, whether the app looks like a genuine App Store build, whether an embedded provisioning profile exists, and more. Each is answered the way it would be on an unmodified phone. Nothing here touches a purchase, a receipt or a subscription — deliberately, even where a reference tweak names a jailbreak check living inside that surface. . ▍SEE WHAT IT CAUGHT Hold two fingers anywhere in TikTok for a real settings screen: a switch and an explanation for every feature, and live numbers behind each hook. Arabic and English. . TESTED ON TikTok 46.4.0. Nothing is pinned to a version number: every class is looked up at runtime and skipped if it is not there. . Architecture was read from BandarHL's and al3raQe's published BHTikTok source (github.com/BandarHL/BHTikTok, github.com/al3raQe/BHTikTok) and from two further compiled references, NA9 For TikTok and VibeTok — none carry a LICENSE file, so all are read for where TikTok is hookable only, the same cautious way this project treats every unlicensed reference. No code is taken from any of them; every class named here was independently confirmed present in TikTok's own binary before being hooked. . Developed by Ibrahim Ismail AL-Rahn. Open source under the GNU GPL v3.",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "زر تحميل في الفيد وخصوصية أكثر",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSeparatorView"
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "This package is the single-app build. The same tweak is inside **Albrhi** (`com.albrhi`): one install, one update, and every other app tweak. Install that one unless you only want this app.",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionTableButtonView",
+          "title": "The full page",
+          "action": "https://github.com/ibrahim2100/albrhi-repo/blob/main/docs/tweaks/tiktok.md",
+          "openExternal": "true"
+        },
+        {
+          "class": "DepictionTableButtonView",
+          "title": "Report an issue",
+          "action": "https://github.com/ibrahim2100/albrhi-repo/issues",
+          "openExternal": "true"
+        }
+      ]
+    }
+  ]
+}
