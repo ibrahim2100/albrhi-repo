@@ -107,6 +107,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.113.1",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **الأدوات منسوبة لأصحابها بشكل صحيح.**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.113.0",
           "useBoldText": true
         },
@@ -132,20 +146,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.112.2",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **تيك توك 0.29.2 — إصدار تشخيص للضغط المطوّل والكيبورد الأسود (لا علاج فيه: تقرير هاتفك قال إن الهوك يعمل والأثر لا يظهر، ولا أخمّن).**",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -156,7 +156,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.113.0"
+          "text": "1.113.1"
         },
         {
           "class": "DepictionTableTextView",
@@ -165,7 +165,7 @@
         },
         {
           "class": "DepictionTableTextView",
-          "title": "Instagram tweak based on",
+          "title": "Instagram tweak began from",
           "text": "SCInsta by SoCuul"
         },
         {
