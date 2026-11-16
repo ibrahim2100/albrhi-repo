@@ -1426,6 +1426,78 @@ Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Name: Albrhi for Twitter (roothide)
 Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-twitter.json
 
+Package: com.albrhi.whatsapp
+Version: 0.3.0
+Architecture: iphoneos-arm64
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 692
+Depends: mobilesubstrate
+Filename: debs/com.albrhi.whatsapp_0.3.0_iphoneos-arm64.deb
+Size: 126118
+MD5sum: ec5c6b36cb1cb1956fa1f7ea4eb7a35d
+SHA1: 35c07dcdfdea490af95141b6675c2e1fcfb47f4a
+SHA256: 5c6de8570fd141927aebdea345e5a1add7a1d018f08f60179a03b50df8ce9541
+Section: Tweaks
+Homepage: https://ibrahim2100.github.io/albrhi-repo/
+Description: Privacy for WhatsApp, in your hands.
+ .
+ Hold back what leaves your phone and keep what others take back: no blue
+ ticks, no typing, no "seen" on statuses, no "played" on voice notes, and the
+ messages somebody deletes for everyone stay, marked with a small red bin.
+ .
+ Edited messages show every version, view-once media can be viewed again,
+ statuses get an eye and a save button, and each privacy switch can apply to
+ everyone, to chosen chats, or to a single person. Three profiles, Ghost,
+ Quiet and Keeper, set the switches in one go. Arabic and English.
+ .
+ Every switch is off until you turn it on and says what it costs. It only
+ withholds, and never sends anything untrue.
+ .
+ Developed by Ibrahim Ismail AL-Rahn. Free to use; all rights reserved. Not
+ affiliated with WhatsApp or Meta.
+Tag: role::enduser
+Author: Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.html
+Icon: https://ibrahim2100.github.io/albrhi-repo/whatsapp/icon.png
+Name: Albrhi for WhatsApp (rootless)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.json
+
+Package: com.albrhi.whatsapp.roothide
+Version: 0.3.0
+Architecture: iphoneos-arm64e
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 692
+Depends: mobilesubstrate
+Filename: debs/com.albrhi.whatsapp.roothide_0.3.0_iphoneos-arm64e.deb
+Size: 125216
+MD5sum: 8be9e53915463e3fb89bd4b8711c0f1f
+SHA1: 5bb70b3ec952fa96dd05154b1fbfb740332bab93
+SHA256: d3e800b92ba08775364572bd5b39cb7773ce4b9da350dcdef1e5da5a1d94898e
+Section: Tweaks
+Homepage: https://ibrahim2100.github.io/albrhi-repo/
+Description: Privacy for WhatsApp, in your hands.
+ .
+ Hold back what leaves your phone and keep what others take back: no blue
+ ticks, no typing, no "seen" on statuses, no "played" on voice notes, and the
+ messages somebody deletes for everyone stay, marked with a small red bin.
+ .
+ Edited messages show every version, view-once media can be viewed again,
+ statuses get an eye and a save button, and each privacy switch can apply to
+ everyone, to chosen chats, or to a single person. Three profiles, Ghost,
+ Quiet and Keeper, set the switches in one go. Arabic and English.
+ .
+ Every switch is off until you turn it on and says what it costs. It only
+ withholds, and never sends anything untrue.
+ .
+ Developed by Ibrahim Ismail AL-Rahn. Free to use; all rights reserved. Not
+ affiliated with WhatsApp or Meta.
+Tag: role::enduser
+Author: Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.html
+Icon: https://ibrahim2100.github.io/albrhi-repo/whatsapp/icon.png
+Name: Albrhi for WhatsApp (roothide)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.json
+
 Package: com.albrhi.youtube
 Version: 1.49.3
 Architecture: iphoneos-arm64
