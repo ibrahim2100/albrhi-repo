@@ -48,6 +48,18 @@
   h1 { font-size: 38px; line-height: 1.05; letter-spacing: -0.03em; margin: 0; }
   .lede { color: var(--muted); font-size: 16px; margin: 4px 0 0; }
 
+
+  /* the moving rows of cards: every tool, two rows going opposite ways, full width of the screen. Hover or touch pauses; reduced motion stops them and lets the row scroll by hand. */
+  .reel { margin: 6px calc(50% - 50vw) 8px; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); }
+  .lane { display: flex; gap: 14px; width: max-content; padding: 7px 0; animation: drift 60s linear infinite; }
+  .lane.back { animation-direction: reverse; animation-duration: 74s; }
+  .reel:hover .lane, .reel:active .lane { animation-play-state: paused; }
+  .lane a { display: block; flex: none; width: min(78vw, 400px); border-radius: 16px; overflow: hidden; line-height: 0; box-shadow: 0 10px 26px rgba(0, 0, 0, .28); transition: transform .35s cubic-bezier(.2, .8, .2, 1), box-shadow .35s; }
+  .lane a:hover { transform: translateY(-6px) scale(1.035) rotate(-.6deg); box-shadow: 0 20px 40px rgba(0, 0, 0, .4); }
+  .lane img { width: 100%; height: auto; display: block; }
+  @keyframes drift { to { transform: translateX(calc(-50% - 7px)); } }
+  @media (prefers-reduced-motion: reduce) { .reel { overflow-x: auto; -webkit-mask-image: none; mask-image: none; } .lane { animation: none; } }
+
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px; margin: 0 0 18px; }
   h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 0 0 12px; font-weight: 700; }
   .url {
@@ -90,7 +102,10 @@
     </div>
   </header>
 
-  <div class="card">
+  <div class="reel" aria-label="The tools in this source"><div class="lane" id="lane1"></div></div>
+  <div class="reel"><div class="lane back" id="lane2"></div></div>
+
+  <div class="card" style="margin-top:18px">
     <h2>Add this source</h2>
     <span class="url" id="repo-url">…</span>
     <a class="btn" id="sileo" href="#">Add to Sileo</a>
@@ -129,6 +144,28 @@
     'Free to use. Most tweaks are open source (<a href="https://github.com/' + owner + '/' + project + '">source on GitHub</a>); ' +
     '<a href="https://github.com/' + owner + '/albrhi-whatsapp">Albrhi for WhatsApp</a> is closed source.' +
     '<br>Not affiliated with any of the apps these tweaks modify.';
+
+
+  // The moving rows. Each card is the tool's wide picture (cards/wide-<name>.jpg, published beside this page) and opens that tool's page.
+  // A lane is its cards twice in a row, so the loop (a shift of exactly half) has no seam. A picture that is missing is dropped, never a broken box.
+  var GH = 'https://github.com/' + location.hostname.split('.')[0] + '/';
+  var CARDS = [['albrhi', 'albrhi-repo'], ['instagram', 'albrhi-repo/blob/main/docs/tweaks/instagram.md'], ['youtube', 'albrhi-repo/blob/main/docs/tweaks/youtube.md'],
+               ['tiktok', 'albrhi-repo/blob/main/docs/tweaks/tiktok.md'], ['twitter', 'albrhi-repo/blob/main/docs/tweaks/x.md'], ['whatsapp', 'albrhi-whatsapp'],
+               ['ytmusic', 'albrhi-repo/blob/main/docs/tweaks/youtube-music.md'], ['nextup', 'albrhi-repo/blob/main/docs/tweaks/nextup.md'], ['watch', 'albrhi-repo/blob/main/docs/tweaks/watch.md'],
+               ['panel', 'albrhi-repo/blob/main/docs/tweaks/panel.md']];
+  function fill(id, list) {
+    var lane = document.getElementById(id);
+    [0, 1].forEach(function (copy) {
+      list.forEach(function (c) {
+        var a = document.createElement('a'); a.href = GH + c[1]; a.target = '_blank'; a.rel = 'noopener';
+        if (copy) a.setAttribute('aria-hidden', 'true'), a.tabIndex = -1;
+        var img = new Image(); img.alt = copy ? '' : c[0]; img.loading = 'lazy'; img.src = base + 'cards/wide-' + c[0] + '.jpg';
+        img.onerror = function () { a.parentNode && a.parentNode.removeChild(a); };
+        a.appendChild(img); lane.appendChild(a);
+      });
+    });
+  }
+  fill('lane1', CARDS.slice(0, 5)); fill('lane2', CARDS.slice(5));
 
   // The order of the groups and one line about each. A section the page has never heard of (a foreign package) still shows, after these.
   var ORDER = ['Albrhi', 'WhatsApp', 'Media', 'System', 'Single apps'];
