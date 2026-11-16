@@ -48,7 +48,16 @@ inside one package, three stand apart.
 | `tweaks/spotify` | `com.albrhi.spotify` | Spotify — **Swift and Orion, the only one** | built by hand; **not published** (no workflow) |
 | `tweaks/nextup` | `com.albrhi.nextup` | SpringBoard + five media apps — what plays next | own package, `nextup-v*` releases — **a GPLv3 port** |
 | `tweaks/watch` | `com.albrhi.watch` | SpringBoard + Watch app — pairing a newer watchOS | own package, `watch-v*` releases — **an MIT port** |
+| *(not in this repository)* | `com.albrhi.whatsapp` | WhatsApp — tested on **26.44.72** | own package, `whatsapp-v*` releases — **source private**, published here as compiled packages only |
 
+- **Albrhi for WhatsApp is the one tweak whose source is not here, and not published anywhere.** Three places, each with one job (the Watusi pattern: a public face, closed source):
+  `github.com/ibrahim2100/albrhi-whatsapp-src` is **private** (the code; private licence: free to use, all rights reserved; it reads a few files of `shared/src` from this repository by path);
+  `github.com/ibrahim2100/albrhi-whatsapp` is **public and holds no source** (README, art, LICENSE, issue forms, changelog, releases with both `.deb`s — `tools/publish-public.sh` there builds that set from a fixed list and refuses any other file);
+  and **this repository's source** carries the packages: `tools/publish.sh` / `publish-pages.sh` in the private repo create the release `whatsapp-v<version>` here (`--latest=false`, so the suite stays "Latest"), put
+  `whatsapp/icon.png`, `whatsapp/art/sileo/*.jpg` and `depictions/albrhi-whatsapp.{json,html}` on `gh-pages`, and run `buildsuite.yml` by hand to rebuild the index.
+  **Nothing here builds or knows it:** the index gather is per tag namespace, so `whatsapp-v*` is found like `nextup-v*`; it is not in `tweaks/`, so there is no `.no-suite` marker and the suite never merges it; and `make-repo.sh` only
+  wipes `debs/`, so the `whatsapp/` and `depictions/` folders on `gh-pages` survive every run. Do not "tidy" those folders away or move the source in. (The repo that was first named `albrhi-whatsapp` was renamed to `-src`
+  the day the public one was made; the name now belongs to the public repository.)
 - Repo `github.com/ibrahim2100/albrhi-repo` · source `https://ibrahim2100.github.io/albrhi-repo/` ·
   browser tools at `…/deb-edit/`. The tested app versions are the newest builds the owner's phone
   accepts, not a ceiling: nothing is pinned, every class is looked up at runtime.
@@ -1436,7 +1445,7 @@ the licence symbol now fail on it.
 **The next-features round (2026-11-10, branch `next/features-1-9`, built in its own worktree).** New shared modules, each with a host test of its rule: `SCIFileName` (`@account - caption - id.ext`, 47 checks), `SCISafeLaunch` (two launches in a row that neither became active for three seconds nor left on purpose => Albrhi stands down and offers the way back; **seen in the simulator**: two killed launches, the third paused, "Bring it back" restored the Albrhi button), `SCICard` and `SCIWatchBudget` (TikTok: two choices, videos and minutes per day, off by default; **seen in the simulator**: the card after the limit, "keep going" granted ten more). **Finding that shaped them: in TikTok on an Arabic account every system controller presented over the app comes out mirrored (UIAlertController, the Files and Reminders sheets) -- reproduced with stock TikTok, no tweak in it -- so anything Albrhi has to say is drawn by `SCICard`, a view of our own, never a system alert.** **Instagram was deliberately left out of this round (the owner's call: not sure yet) and is excluded from safe launch too** -- a readable share name for it was written and then removed again; the idea is in the git history of the branch. Not done, and why: Instagram "start on Following"/"open on Messages" and X "no refresh at start" need a signed-in account in the simulator to be seen working (selectors alone are not evidence); DeArrow cannot be done in YouTube 21's element-based UI without reading how titles are encoded; a YouTube experiment-flag page means thousands of hooks at launch, against the launch rules in 4.3.
 
 **Versions** (move these with the four numbers, not after them): Instagram **4.8.2** · YouTube **1.50.0** · X **0.23.0** · TikTok **0.30.0** · YouTube Music **0.10.1** ·
-Panel **0.11.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · suite **1.113.0**.
+Panel **0.11.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · WhatsApp **0.3.0** (private repository, published here) · suite **1.113.0**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces
