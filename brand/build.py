@@ -141,7 +141,7 @@ print('hero, social-preview')
 # ---------------------------------------------------------------- one header card per tweak page (docs/tweaks/<slug>.md), 1600 x 560
 # No version numbers in the pictures: they would be stale at the next release; the page text carries them.
 COLORS = {s: (t, b, m) for s, n, t, b, m in FAMILY + EXTRA}
-ACC = {'instagram': '#FFC25A', 'youtube': '#FF8E84', 'twitter': '#B6C4D6', 'tiktok': '#25F4EE', 'ytmusic': '#FF9EC6', 'panel': '#B9C5DA', 'spotify': '#C2F56F', 'nextup': '#B3A8FF', 'watch': '#7CD2FF', 'albrhi': '#7CF2B3'}
+ACC = {'instagram': '#FFC25A', 'youtube': '#FF8E84', 'twitter': '#B6C4D6', 'tiktok': '#25F4EE', 'ytmusic': '#FF9EC6', 'panel': '#B9C5DA', 'spotify': '#C2F56F', 'nextup': '#B3A8FF', 'watch': '#7CD2FF', 'albrhi': '#7CF2B3', 'whatsapp': '#7CF2B3'}
 TWEAK_CARDS = [
  # slug, docs page, title, arabic line, english line, four features, corner badge
  ('albrhi', 'albrhi', 'Albrhi', 'ثبّتها مرة وحدة وخذ كل الأدوات', 'One install: Instagram, YouTube, X, TikTok, YouTube Music and the panel.', ['Five apps', 'One panel', 'One update', 'Free'], 'THE FRONT DOOR'),
@@ -152,6 +152,7 @@ TWEAK_CARDS = [
  ('ytmusic', 'youtube-music', 'Albrhi for YouTube Music', 'كلمات متزامنة وحفظ الأغاني', 'Synced lyrics, saving tracks, no ads.', ['Synced lyrics', 'Save tracks', 'No ads', 'Background play'], 'INSIDE ALBRHI'),
  ('panel', 'panel', 'Albrhi Panel', 'كل شي من مكان واحد في الإعدادات', 'Settings › Albrhi: a switch per app, a guide, backup.', ['A switch per app', 'A guide', 'Backup', 'Off until you turn it on'], 'INSIDE ALBRHI'),
  ('spotify', 'spotify', 'Albrhi for Spotify', 'بدون إعلانات ولا مقاطع ممولة', 'No ads, no Premium pop-ups, sponsored podcast parts skipped.', ['No ads', 'No pop-ups', 'Podcast SponsorBlock', 'Swift and Orion'], 'NOT PUBLISHED'),
+ ('whatsapp', 'whatsapp', 'Albrhi for WhatsApp', 'خصوصيتك بيدك', 'Privacy, kept in your hands. Ghost mode, deleted things stay.', ['No blue ticks', 'Ghost profile', 'Deleted things stay', 'Free'], 'OWN PACKAGE'),
  ('nextup', 'nextup', 'Albrhi NextUp', 'شوف وش يشتغل بعده من شاشة القفل', 'See and skip what plays next, from the Lock Screen.', ['What plays next', 'Lock Screen', 'Five media apps', 'A GPLv3 port'], 'OWN PACKAGE'),
  ('watch', 'watch', 'Albrhi Watch', 'اربط ساعة بنظام أحدث من جوالك', 'Pair an Apple Watch running a newer watchOS.', ['Newer watchOS', 'Pairing gate', 'Update hold', 'An MIT port'], 'OWN PACKAGE'),
 ]
@@ -176,9 +177,43 @@ for slug, page, title, ar, en, feats, badge in TWEAK_CARDS:
     render(html, os.path.join(OUT, 'cards', page + '.png'), 1600, 560)
     print('card', page)
 
-# web copies for the Sileo depiction headers: 1200 wide JPEG, published as cards/<slug>.jpg (the card for a package id is named in brand/catalog.json)
+# ---------------------------------------------------------------- Sileo headers (1500 x 720, shown 1200 x 576) and the wide web copies for the landing page
+# Sileo fills its header area and crops what does not fit, on which side and by how much depends on the phone: so NOTHING that matters is near an edge.
+# Everything sits in one centred group, inside the middle 64% of the width and the middle 46% of the height; the edges carry only a soft glow and a faded icon.
+HEAD = {  # slug: (line above the name, the name, arabic, english, chips)
+ 'albrhi': ('iOS tweaks by', 'Albrhi', 'ثبّتها مرة وحدة وخذ كل الأدوات', 'One install, five apps, one panel.', ['Free', 'Bilingual', 'Native']),
+ 'instagram': ('Albrhi for', 'Instagram', 'حمّل كل شي وتصفّح بهدوء', 'Download anything, browse invisibly.', ['Downloads', 'Stories', 'Unsent kept']),
+ 'youtube': ('Albrhi for', 'YouTube', 'تحميل بلا إعلانات وتشغيل بالخلفية', 'Downloads, no ads, SponsorBlock.', ['Download tab', 'No ads', 'Background']),
+ 'twitter': ('Albrhi for', 'X', 'حمّل الوسائط وتحكّم بمفاتيح X', 'Save any video, photo or GIF.', ['Downloads', 'Switches', 'Fewer ads']),
+ 'tiktok': ('Albrhi for', 'TikTok', 'زر تحميل في الفيد وخصوصية أكثر', 'A download button in the feed.', ['Download', 'Photo posts', 'Privacy']),
+ 'ytmusic': ('Albrhi for', 'YouTube Music', 'كلمات متزامنة وحفظ الأغاني', 'Synced lyrics, saving tracks.', ['Lyrics', 'Save', 'No ads']),
+ 'panel': ('Albrhi', 'Panel', 'كل شي من مكان واحد في الإعدادات', 'Settings, Albrhi: a switch per app.', ['Switches', 'Guide', 'Backup']),
+ 'spotify': ('Albrhi for', 'Spotify', 'بدون إعلانات ولا مقاطع ممولة', 'No ads, no pop-ups.', ['No ads', 'Podcasts', 'Swift']),
+ 'nextup': ('Albrhi', 'NextUp', 'شوف وش يشتغل بعده من شاشة القفل', 'See what plays next, on the Lock Screen.', ['Next track', 'Lock Screen', 'GPLv3']),
+ 'watch': ('Albrhi', 'Watch', 'اربط ساعة بنظام أحدث من جوالك', 'Pair a watch with a newer watchOS.', ['Newer watchOS', 'Pairing', 'MIT']),
+}
 web = os.path.join(OUT, 'cards-web'); os.makedirs(web, exist_ok=True)
+for slug, (pre, name, ar, en, chips_) in HEAD.items():
+    acc = ACC[slug]
+    size = 112 if len(name) <= 9 else 86
+    chips = ''.join('<span style="display:inline-block;margin:0 9px;padding:9px 20px;border-radius:99px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:25px;font-weight:600">%s</span>' % c for c in chips_)
+    html = ('<!doctype html><meta charset="utf-8"><style>%s</style><body style="width:1500px;height:720px;position:relative;overflow:hidden;color:#fff;'
+            'background:radial-gradient(800px 560px at 50%% 50%%,%s40,transparent 70%%),linear-gradient(160deg,#08140f,#04100a 55%%,#020a06)">'
+            '<div style="position:absolute;inset:0;opacity:.06;background-image:radial-gradient(#fff 1.2px,transparent 1.4px);background-size:34px 34px"></div>'
+            '<img src="../icons/%s.png" style="position:absolute;left:50%%;top:50%%;width:900px;height:900px;margin:-450px 0 0 -450px;border-radius:210px;opacity:.07;transform:rotate(-10deg)">'
+            '<div style="position:absolute;left:0;right:0;top:50%%;transform:translateY(-50%%);text-align:center">'
+            '<div style="display:inline-flex;align-items:center;gap:44px;text-align:left">'
+            '<img src="../icons/%s.png" style="width:190px;height:190px;border-radius:44px;flex:none;box-shadow:0 0 80px %s88,0 20px 50px rgba(0,0,0,.55)">'
+            '<div><div style="font-size:38px;font-weight:600;color:%s;letter-spacing:-.5px;line-height:1">%s</div>'
+            '<div style="font-size:%dpx;font-weight:800;letter-spacing:-4px;line-height:1.02;margin-top:2px;white-space:nowrap">%s</div>'
+            '<div style="font-family:\'SF Arabic\',\'Geeza Pro\',-apple-system,sans-serif;font-size:40px;font-weight:700;color:%s;margin-top:6px;direction:ltr">%s</div>'
+            '<div style="font-size:26px;color:rgba(255,255,255,.72);margin-top:4px;font-weight:500">%s</div></div></div>'
+            '<div style="margin-top:34px">%s</div></div></body>') % (CSS, acc, slug, slug, acc, acc, pre, size, name, acc, ar, en, chips)
+    png = os.path.join(TMP, 'head-' + slug + '.png')
+    render(html, png, 1500, 720)
+    subprocess.run(['sips', '-s', 'format', 'jpeg', '-s', 'formatOptions', '84', '--resampleWidth', '1200', png, '--out', os.path.join(web, slug + '.jpg')], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+# the wide cards, for the landing page's moving rows
 for slug, page, *_ in TWEAK_CARDS:
-    subprocess.run(['sips', '-s', 'format', 'jpeg', '-s', 'formatOptions', '82', '--resampleWidth', '1200',
-                    os.path.join(OUT, 'cards', page + '.png'), '--out', os.path.join(web, slug + '.jpg')], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-print('cards-web')
+    subprocess.run(['sips', '-s', 'format', 'jpeg', '-s', 'formatOptions', '82', '--resampleWidth', '1000', os.path.join(OUT, 'cards', page + '.png'), '--out', os.path.join(web, 'wide-' + slug + '.jpg')],
+                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+print('cards-web: sileo headers + wide')
