@@ -275,6 +275,18 @@
         },
         {
           "class": "DepictionTableButtonView",
+          "title": "Project page",
+          "action": "https://github.com/ibrahim2100/albrhi-whatsapp",
+          "openExternal": true
+        },
+        {
+          "class": "DepictionTableButtonView",
+          "title": "Report an issue",
+          "action": "https://github.com/ibrahim2100/albrhi-whatsapp/issues/new/choose",
+          "openExternal": true
+        },
+        {
+          "class": "DepictionTableButtonView",
           "title": "Instagram — @Ib.11p",
           "action": "https://instagram.com/Ib.11p",
           "openExternal": true
