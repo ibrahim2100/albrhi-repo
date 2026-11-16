@@ -1,6 +1,6 @@
 Package: com.albrhi
 Name: Albrhi (rootless)
-Version: 1.113.0
+Version: 1.113.1
 Description: One tweak for Instagram, YouTube, X and TikTok, switched per app from Settings.
  .
  Everything Albrhi makes for social apps, in a single package. Install this and you have
@@ -43,13 +43,13 @@ Description: One tweak for Instagram, YouTube, X and TikTok, switched per app fr
  .
  Arabic and English throughout.
  .
- Developed by Ibrahim Ismail AL-Rahn. The Instagram tweak is an educational and corrective
- derivative of SCInsta by SoCuul, rebuilt with AI assistance to improve code quality,
- design, performance and user experience. Open source under the GNU GPL v3, with
- original authorship credited and preserved.
+ Developed by Ibrahim Ismail AL-Rahn. Open source under the GNU GPL v3. Where a tweak
+ carries code from another open-source project, that project is credited in Settings,
+ Albrhi, About and in NOTICE.md; the Instagram tweak began from SCInsta by SoCuul and
+ has since grown far beyond it.
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
-Author: Ibrahim Ismail AL-Rahn (Instagram tweak based on SCInsta by SoCuul, GPLv3)
+Author: Ibrahim Ismail AL-Rahn
 Section: Tweaks
 Icon: https://ibrahim2100.github.io/albrhi-repo/CydiaIcon.png
 Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi.html

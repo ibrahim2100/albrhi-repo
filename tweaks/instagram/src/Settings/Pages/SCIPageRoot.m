@@ -169,7 +169,7 @@
                                          icon:[SCISymbol symbolWithName:@"chevron.left.forwardslash.chevron.right" color:[SCIUtils SCIColor_Primary] size:20.0]
                                           url:SCIRepoURL]
             ],
-            @"footer": [NSString stringWithFormat:@"Albrhi %@ · BETA  ·  by Ibrahim Ismail AL-Rahn\nBased on SCInsta by SoCuul — GPLv3\n\nInstagram v%@",
+            @"footer": [NSString stringWithFormat:@"Albrhi %@ · BETA  ·  by Ibrahim Ismail AL-Rahn\nBegan from SCInsta by SoCuul — GPLv3\n\nInstagram v%@",
                         SCIVersionString, [SCIUtils IGVersionString]]
         }];
         return @[@{

@@ -13,14 +13,14 @@
 </p>
 
 <p align="center">
-<a href="suite/CHANGELOG.md"><img alt="Albrhi" src="https://img.shields.io/badge/Albrhi-1.113.0-blueviolet.svg"></a>
-<a href="tweaks/instagram/CHANGELOG.md"><img alt="Instagram" src="https://img.shields.io/badge/Instagram-4.8.2-orange.svg"></a>
+<a href="suite/CHANGELOG.md"><img alt="Albrhi" src="https://img.shields.io/badge/Albrhi-1.113.1-blueviolet.svg"></a>
+<a href="tweaks/instagram/CHANGELOG.md"><img alt="Instagram" src="https://img.shields.io/badge/Instagram-4.8.3-orange.svg"></a>
 <a href="tweaks/youtube/CHANGELOG.md"><img alt="YouTube" src="https://img.shields.io/badge/YouTube-1.50.0-red.svg"></a>
 <a href="tweaks/twitter/CHANGELOG.md"><img alt="X" src="https://img.shields.io/badge/X-0.23.0-black.svg"></a>
 <a href="tweaks/tiktok/CHANGELOG.md"><img alt="TikTok" src="https://img.shields.io/badge/TikTok-0.30.0-ff0050.svg"></a>
 <a href="tweaks/ytmusic/CHANGELOG.md"><img alt="YT Music" src="https://img.shields.io/badge/YT%20Music-0.10.1-FF0000.svg"></a>
 <a href="tweaks/spotify/CHANGELOG.md"><img alt="Spotify" src="https://img.shields.io/badge/Spotify-0.2.5-1DB954.svg"></a>
-<a href="tweaks/panel/CHANGELOG.md"><img alt="Panel" src="https://img.shields.io/badge/Panel-0.11.0-8E8E93.svg"></a>
+<a href="tweaks/panel/CHANGELOG.md"><img alt="Panel" src="https://img.shields.io/badge/Panel-0.11.1-8E8E93.svg"></a>
 <a href="tweaks/nextup/CHANGELOG.md"><img alt="NextUp" src="https://img.shields.io/badge/NextUp-0.3.1-FF375F.svg"></a>
 <a href="tweaks/watch/CHANGELOG.md"><img alt="Watch" src="https://img.shields.io/badge/Watch-0.6.1-FF375F.svg"></a>
 </p>
@@ -53,12 +53,12 @@ WhatsApp, NextUp and Watch are their own packages; the same four social tweaks a
 
 | Tweak | | Version | In Albrhi | What it does |
 |---|:-:|---|:-:|---|
-| **[Instagram](docs/tweaks/instagram.md)** | <img src="brand/icons/512/instagram.png" width="44" alt=""> | 4.8.2 | ✅ | downloads, a quieter feed, stories without a receipt, unsent messages kept and marked |
+| **[Instagram](docs/tweaks/instagram.md)** | <img src="brand/icons/512/instagram.png" width="44" alt=""> | 4.8.3 | ✅ | downloads, a quieter feed, stories without a receipt, unsent messages kept and marked |
 | **[YouTube](docs/tweaks/youtube.md)** | <img src="brand/icons/512/youtube.png" width="44" alt=""> | 1.50.0 | ✅ | a Download Centre tab, no ads, SponsorBlock, background playback |
 | **[X](docs/tweaks/x.md)** | <img src="brand/icons/512/twitter.png" width="44" alt=""> | 0.23.0 | ✅ | media downloads with a button you place yourself, plus switches for what X does |
 | **[TikTok](docs/tweaks/tiktok.md)** | <img src="brand/icons/512/tiktok.png" width="44" alt=""> | 0.30.0 | ✅ | a download button in the feed, photo posts, no ads, privacy |
 | **[YouTube Music](docs/tweaks/youtube-music.md)** | <img src="brand/icons/512/ytmusic.png" width="44" alt=""> | 0.10.1 | ✅ | synced lyrics, saving tracks, no ads |
-| **[Panel](docs/tweaks/panel.md)** | <img src="brand/icons/512/panel.png" width="44" alt=""> | 0.11.0 | ✅ | Settings › Albrhi: a switch per app, a guide, backup |
+| **[Panel](docs/tweaks/panel.md)** | <img src="brand/icons/512/panel.png" width="44" alt=""> | 0.11.1 | ✅ | Settings › Albrhi: a switch per app, a guide, backup |
 | **[Spotify](docs/tweaks/spotify.md)** | <img src="brand/icons/512/spotify.png" width="44" alt=""> | 0.2.5 | — | no ads, sponsored podcast segments skipped (not published yet) |
 | **[NextUp](docs/tweaks/nextup.md)** | <img src="brand/icons/512/nextup.png" width="44" alt=""> | 0.3.1 | — | what plays next, on the Lock Screen (a GPLv3 port) |
 | **[Watch](docs/tweaks/watch.md)** | <img src="brand/icons/512/watch.png" width="44" alt=""> | 0.6.1 | — | pair a newer watchOS than iOS expects (an MIT port) |
@@ -113,13 +113,14 @@ enter and nothing to renew. An install that has not been updated yet keeps worki
 
 ## 📚 Read more
 
-[Usage](docs/usage.md) · [Sideloading](docs/sideloading.md) · [Building](docs/building.md) · [How it is made](docs/how-it-is-made.md) · [Roadmap](docs/roadmap.md) · [Contributing](docs/contributing.md) · [Evidence and investigations](docs/README.md) · [Project rules (CLAUDE.md)](CLAUDE.md)
+[Usage](docs/usage.md) · [Sideloading](docs/sideloading.md) · [Building](docs/building.md) · [How it is made](docs/how-it-is-made.md) · [Roadmap](docs/roadmap.md) · [Contributing](docs/contributing.md) · [Who made what](NOTICE.md) · [Evidence and investigations](docs/README.md) · [Project rules (CLAUDE.md)](CLAUDE.md)
 
 ---
 
 ## 🙏 Credits
 
-- **[SoCuul](https://github.com/SoCuul)** — author of [SCInsta](https://github.com/SoCuul/SCInsta), the project Albrhi is derived from.
+- **Ibrahim Ismail AL-Rahn** — Albrhi: every tweak, the bilingual layer, the Download Centres and the download and transcode engines, the panel, the source and its design.
+- **[SoCuul](https://github.com/SoCuul)** — author of [SCInsta](https://github.com/SoCuul/SCInsta), where the **Instagram tweak** began (GPLv3). The other tweaks are not derived from it.
 - **[YTKACE](https://github.com/itzzace/ytkace)** by itzzace (MIT) — the direct download method and several ad gates; **YTPlaybackFix** by Mark02 (MIT) — the playback-error recovery approach.
 - **[iSponsorBlock](https://github.com/Galactic-Dev/iSponsorBlock)** by Galactic Dev (GPLv3) — the coloured progress-bar markers; **[SponsorBlock](https://sponsor.ajay.app)** by Ajay Ramachandran — the segment database (CC BY-NC-SA 4.0).
 - **[YTMusicUltimate](https://github.com/dayanch96/YTMusicUltimate)** by **dayanch96** and **[YTMEnhanced](https://github.com/py233/YTMEnhanced)** by **py233** (GPLv3) — the YouTube Music hooks and synced-lyrics module. Their Premium claim deliberately is not carried over.
@@ -150,8 +151,10 @@ enter and nothing to renew. An install that has not been updated yet keeps worki
 
 ## ⚖️ License
 
-Albrhi is a derivative work of SCInsta, distributed under the **GNU General Public License v3.0**
-([LICENSE](LICENSE)). The source stays open, modifications are documented, and original authorship is
-preserved as the licence requires. The released builds are free to run.
+Copyright © Ibrahim Ismail AL-Rahn. Albrhi is distributed under the **GNU General Public License v3.0**
+([LICENSE](LICENSE)); the released builds are free to run. Code that comes from other projects keeps its authors
+and its licence: the Instagram tweak began from SCInsta (GPLv3), **Albrhi NextUp** is a port of NextUp 3, and
+**Albrhi Watch** carries the MIT-licensed pairing core of *watched*. What came from where, tweak by tweak, is in
+**[NOTICE.md](NOTICE.md)**.
 
 *Albrhi is not affiliated with, endorsed by or sponsored by Instagram, Meta Platforms, Inc., Google, YouTube, X Corp., TikTok or Spotify.*

@@ -118,9 +118,12 @@ inside one package, three stand apart.
 
 **Provenance.** Four kinds of source, treated differently, and the difference is the licence:
 
-- **SCInsta (GPLv3, SoCuul)** is the ancestor of the Instagram tweak. Credit is a licence
+- **SCInsta (GPLv3, SoCuul)** is the ancestor of the **Instagram tweak, and of nothing else.** Credit is a licence
   obligation, not a courtesy: it stays in-app, in the README, in the package metadata and in source
-  headers. Never remove it.
+  headers. Never remove it. **And never widen it:** until 2026-11-17 the suite's `control`, its Sileo page, the panel's About and the README
+  all said *Albrhi* was derived from SCInsta, which made months of the owner's own work (X, TikTok, YouTube, the panel, the engines) read as someone else's. The words are
+  "began from", on the Instagram tweak only; every other piece of carried-over code is named per tweak in **`NOTICE.md`**, which is where a new port or reference gets its line.
+  Copyright of the project is the owner's; what the GPL requires (the licence text, upstream notices in carried files) is kept, and nothing else is claimed for anyone.
 - **GPL and MIT code that is carried over**: NextUp 3 by Yves (GPLv3), EeveeSpotify's ad blockers
   (GPLv3), NeoFreeBird by orionblur (GPLv3 — a BHTwitter fork, so the *same* licence as BHTwitter's
   original ideas but a licence that lets code be carried: X's section filter, typing/screenshot
@@ -1454,8 +1457,8 @@ the licence symbol now fail on it.
 
 **The next-features round (2026-11-10, branch `next/features-1-9`, built in its own worktree).** New shared modules, each with a host test of its rule: `SCIFileName` (`@account - caption - id.ext`, 47 checks), `SCISafeLaunch` (two launches in a row that neither became active for three seconds nor left on purpose => Albrhi stands down and offers the way back; **seen in the simulator**: two killed launches, the third paused, "Bring it back" restored the Albrhi button), `SCICard` and `SCIWatchBudget` (TikTok: two choices, videos and minutes per day, off by default; **seen in the simulator**: the card after the limit, "keep going" granted ten more). **Finding that shaped them: in TikTok on an Arabic account every system controller presented over the app comes out mirrored (UIAlertController, the Files and Reminders sheets) -- reproduced with stock TikTok, no tweak in it -- so anything Albrhi has to say is drawn by `SCICard`, a view of our own, never a system alert.** **Instagram was deliberately left out of this round (the owner's call: not sure yet) and is excluded from safe launch too** -- a readable share name for it was written and then removed again; the idea is in the git history of the branch. Not done, and why: Instagram "start on Following"/"open on Messages" and X "no refresh at start" need a signed-in account in the simulator to be seen working (selectors alone are not evidence); DeArrow cannot be done in YouTube 21's element-based UI without reading how titles are encoded; a YouTube experiment-flag page means thousands of hooks at launch, against the launch rules in 4.3.
 
-**Versions** (move these with the four numbers, not after them): Instagram **4.8.2** · YouTube **1.50.0** · X **0.23.0** · TikTok **0.30.0** · YouTube Music **0.10.1** ·
-Panel **0.11.0** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · WhatsApp **0.3.0** (private repository, published here) · suite **1.113.0**.
+**Versions** (move these with the four numbers, not after them): Instagram **4.8.3** · YouTube **1.50.0** · X **0.23.0** · TikTok **0.30.0** · YouTube Music **0.10.1** ·
+Panel **0.11.1** · Spotify **0.2.5** (unpublished) · NextUp **0.3.1** · Watch **0.6.1** · WhatsApp **0.3.0** (private repository, published here) · suite **1.113.1**.
 
 **Confirmed on a device:** the YouTube direct route (1.34.0) and, before it, the Download Centre tab, History, the in-player save button and the action-row Save;
 Instagram unsent-message keeping and its badge (410), story-seen hiding (439), story/repost downloads; X's draggable button, Communities/Profile tabs and Hide Spaces

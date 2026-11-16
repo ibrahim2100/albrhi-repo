@@ -222,9 +222,9 @@ TWEAKS = {
                        'pinned to a version number, so newer builds should work. '
                        'If one misbehaves, Settings › Diagnostics writes the bug '
                        'report for you.',
-        'rows': [('Based on', 'SCInsta by SoCuul')],
-        'footer_html': 'GPLv3 · based on SCInsta by SoCuul · not affiliated with '
-                       'Instagram or Meta.',
+        'rows': [('Began from', 'SCInsta by SoCuul')],
+        'footer_html': 'GPLv3 · by Ibrahim Ismail AL-Rahn · began from SCInsta by SoCuul · not '
+                       'affiliated with Instagram or Meta.',
         'disclaimer': '_Free and open source. Not affiliated with, endorsed by or '
                       'sponsored by Instagram or Meta Platforms._',
     },
@@ -251,9 +251,9 @@ TWEAKS = {
                        '**21.30.5**. Nothing here is pinned to a version number: the '
                        'tweak looks for what it needs while the app runs, so other '
                        'versions should work too.',
-        'rows': [('Instagram tweak based on', 'SCInsta by SoCuul')],
-        'footer_html': 'GPLv3 · Instagram tweak based on SCInsta by SoCuul · not '
-                       'affiliated with Instagram, Meta or Google.',
+        'rows': [('Instagram tweak began from', 'SCInsta by SoCuul')],
+        'footer_html': 'GPLv3 · by Ibrahim Ismail AL-Rahn · the Instagram tweak began from SCInsta '
+                       'by SoCuul · not affiliated with Instagram, Meta or Google.',
         'disclaimer': '_Free and open source. Not affiliated with, endorsed by or '
                       'sponsored by Instagram, Meta Platforms or Google._',
     },

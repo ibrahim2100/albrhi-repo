@@ -56,10 +56,10 @@ the build script and the APT index.
 `com.albrhi` is built by `tools/make-suite.sh`, which picks up every `tweaks/*/control` automatically.
 A tweak stays out of it only by carrying a `.no-suite` marker — Spotify, NextUp and Watch do.
 
-> Albrhi is an **educational and corrective derivative** of [SCInsta](https://github.com/SoCuul/SCInsta)
-> by **SoCuul**, developed with AI assistance to improve code quality, design, performance and user
-> experience — while fully respecting the original project, its authors and its licence. Original
-> authorship is credited in-app, in this README, in the package metadata and in the source headers.
+> Albrhi is written by **Ibrahim Ismail AL-Rahn**. One tweak, the Instagram one, began from
+> [SCInsta](https://github.com/SoCuul/SCInsta) by **SoCuul** (GPLv3) and is credited as such in-app, in the
+> package metadata and in the source headers; the rest of the project is not derived from it. Every
+> piece of code carried over from another open-source project is listed in [NOTICE.md](../NOTICE.md).
 
 <details>
 <summary><b>Tweaks that used to be here</b></summary>

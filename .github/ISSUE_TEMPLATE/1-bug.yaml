@@ -1,94 +1,65 @@
-name: 🐛 Bug Report
-description: "Notice something isn't working quite right? Help improve the tweak by reporting issues that you experience."
+name: 🐛 Report a problem
+description: Something does not work, or works differently from what the page says.
 title: 'bug: '
 labels:
   - bug
-assignees:
-  - SoCuul
 body:
   - type: markdown
     attributes:
       value: |
-        <br>
-        
-        >[!TIP]
-        > If you are looking for support with the tweak, make sure to visit the [SCInsta discussions page](https://github.com/SoCuul/SCInsta/discussions) to get help.
-  - type: checkboxes
-    id: before-start
+        Thanks. Every tweak has a diagnostics page that writes a report of what attached on your phone; pasting it answers most questions before they are asked. Please do not post private messages, names or phone numbers.
+  - type: dropdown
+    id: tweak
     attributes:
-      label: Before creating a bug report...
-      description: 'Please make sure you have done the following steps:'
-      options:
-        - label: >-
-            I have read through the
-            [FAQ](https://github.com/SoCuul/SCInsta/wiki/FAQ)
-          required: true
-        - label: I have made sure this issue has not already been reported previously
-          required: true
-        - label: >-
-            I have made sure this issue is present in the latest version of
-            SCInsta
-          required: true
-        - label: >-
-            I am confident that this bug presents unintended behaviour within
-            the tweak
-          required: true
-  - type: textarea
-    id: description
-    attributes:
-      label: Description
-      description: A clear and concise description of the problem
-      placeholder: >-
-        Provide as much information about the issue you are experiencing as
-        possible!
-    validations:
-      required: true
-  - type: textarea
-    id: reproduction
-    attributes:
-      label: Minimal Reproduction
-      description: Provide steps and relevant information to reproduce the problem
-      placeholder: >-
-        If possible, providing screenshots & videos are extremely helpful when
-        trying to fix an issue
-    validations:
-      required: true
-  - type: markdown
-    attributes:
-      value: '---'
-  - type: input
-    id: info-scinsta-version
-    attributes:
-      label: SCInsta Version
-      description: This can be found at the bottom of the tweak settings
-      placeholder: e.g. v0.7.0
+      label: Which tweak
+      options: [Albrhi for Instagram, Albrhi for YouTube, Albrhi for X, Albrhi for TikTok, Albrhi for YouTube Music, Albrhi Panel, Albrhi NextUp, Albrhi Watch, Other]
     validations:
       required: true
   - type: input
-    id: info-instagram-version
+    id: albrhi-version
     attributes:
-      label: Instagram Version
-      description: This can be found as well at the bottom of the tweak settings
-      placeholder: e.g. 382.0.0
+      label: Albrhi version
+      description: The package version in Sileo, or the bottom of the tweak's settings
+      placeholder: e.g. 1.113.0
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: The app's version
+      description: The version of the app the tweak patches
+      placeholder: e.g. Instagram 410.1.0
     validations:
       required: true
   - type: dropdown
-    id: info-install-type
+    id: install-type
     attributes:
-      label: Install Type
-      description: The method used to use to install SCInsta
+      label: Install type
       options:
+        - Jailbroken (roothide)
+        - Jailbroken (rootless)
+        - Jailbroken (rootful)
         - Sideloaded
         - TrollStore
-        - Jailbroken (Rootless)
-        - Jailbroken (Rootful)
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and iOS
+      placeholder: e.g. iPhone 14, iOS 16.1
     validations:
       required: true
   - type: textarea
-    id: info-device-info
+    id: description
     attributes:
-      label: Device Info
-      description: Details about the phone running the tweak
-      value: |-
-        Model: [e.g. iPhone 15 Pro]
-        iOS Version: [e.g. 18.4]
+      label: What happened
+      description: What you did, what you expected, what you saw. Screenshots and videos help.
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: The diagnostics report
+      description: From the tweak's diagnostics page, if it has one
+      render: text

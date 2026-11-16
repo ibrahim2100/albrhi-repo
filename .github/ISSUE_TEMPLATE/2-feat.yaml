@@ -1,39 +1,33 @@
-name: ✨ Feature Request
-description: Have an idea for a new feature/enhancement? Let us know!
+name: ✨ Suggest a feature
+description: An idea for something a tweak could do.
 title: 'feat: '
 labels:
   - enhancement
-assignees:
-  - SoCuul
 body:
-  - type: checkboxes
-    id: before-start
+  - type: dropdown
+    id: tweak
     attributes:
-      label: Before creating a feature request...
-      description: 'Please make sure you have done the following steps:'
-      options:
-        - label: >-
-            I have read through the
-            [FAQ](https://github.com/SoCuul/SCInsta/wiki/FAQ)
-          required: true
-        - label: I have made sure this feature has not already been already suggested
-          required: true
+      label: Which tweak
+      options: [Albrhi for Instagram, Albrhi for YouTube, Albrhi for X, Albrhi for TikTok, Albrhi for YouTube Music, Albrhi NextUp, Albrhi Watch, A new app]
+    validations:
+      required: true
   - type: textarea
     id: description
     attributes:
-      label: Description
-      description: A clear and concise description of the problem or missing functionality
+      label: What is missing
+      description: A clear description of the problem or the missing feature
     validations:
       required: true
   - type: textarea
     id: solution
     attributes:
-      label: Describe the solution you'd like
-      description: If you have a solution in mind, please describe it
+      label: How you would like it to work
     validations:
       required: true
-  - type: textarea
-    id: alternatives
+  - type: checkboxes
+    id: before
     attributes:
-      label: Describe alternatives you've considered
-      description: Have you considered any alternative solutions or workarounds?
+      label: Before sending
+      options:
+        - label: I looked for this feature in the settings and in the existing issues.
+          required: true

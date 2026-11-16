@@ -17,7 +17,7 @@
 #import <objc/message.h>
 #import <objc/runtime.h>
 
-NSString *SCIVersionString = @"v0.11.0";  // AlbrhiPanel
+NSString *SCIVersionString = @"v0.11.1";  // AlbrhiPanel
 
 @interface SCIPanelRootController : PSListController <UIDocumentPickerDelegate>
 @end
