@@ -30,6 +30,9 @@ GLYPH = {
  # skip to the next, the dot waits under it
  'nextup': '<path d="M152 140 L152 332 L304 236 Z" fill="#fff" stroke="#fff" stroke-width="30" stroke-linejoin="round"/><path d="M360 140 V332" %s stroke-width="44"/><circle cx="256" cy="422" r="26" fill="#fff"/>' % W,
  # a watch: the hub is the dot
+ 'ytmusic': '<circle cx="204" cy="352" r="56" fill="#fff"/><path d="M260 352 V156 L376 196 V258" %s stroke-width="40"/><circle cx="376" cy="258" r="0" fill="#fff"/>' % W,
+ 'panel': '<path d="M122 170 H390" stroke="#fff" stroke-opacity=".42" stroke-width="30" stroke-linecap="round"/><path d="M122 256 H390" stroke="#fff" stroke-opacity=".42" stroke-width="30" stroke-linecap="round"/><path d="M122 342 H390" stroke="#fff" stroke-opacity=".42" stroke-width="30" stroke-linecap="round"/><circle cx="196" cy="170" r="38" fill="#fff"/><circle cx="326" cy="256" r="38" fill="#fff"/><circle cx="238" cy="342" r="38" fill="#fff"/>',
+ 'spotify': '<path d="M132 300 V212 M194 340 V172 M256 380 V132 M318 330 V182 M380 290 V222" %s stroke-width="40"/><circle cx="256" cy="440" r="0" fill="#fff"/>' % W,
  'watch': '<circle cx="256" cy="256" r="122" %s stroke-width="40"/><path d="M256 256 V190" %s stroke-width="30"/><path d="M256 256 L304 284" %s stroke-width="30"/><circle cx="256" cy="256" r="22" fill="#fff"/><path d="M214 116 L224 72 H288 L298 116" %s stroke-width="30"/><path d="M214 396 L224 440 H288 L298 396" %s stroke-width="30"/>' % (W, W, W, W, W),
 }
 # (slug, name, top colour, bottom colour, optional middle)
@@ -42,6 +45,12 @@ FAMILY = [
  ('whatsapp',  'for WhatsApp',      '#34E7B2', '#067A66', None),
  ('nextup',    'NextUp',            '#9686FF', '#3524B5', None),
  ('watch',     'Watch',             '#5CC8FF', '#1259B8', None),
+]
+# icons the README draws but the source does not list: YouTube Music and Panel ship inside Albrhi, Spotify is not published
+EXTRA = [
+ ('ytmusic',   'YouTube Music',     '#FF7BB0', '#A8104A', None),
+ ('panel',     'Panel',             '#93A1B8', '#364159', None),
+ ('spotify',   'Spotify',           '#C2F56F', '#2F7A12', None),
 ]
 
 def svg(slug, top, bot, mid):
@@ -61,7 +70,7 @@ def render(html, out, w, h, transparent=False):
     if transparent: cmd.append('--default-background-color=00000000')
     subprocess.run(cmd + ['--screenshot=' + out, 'file://' + path], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-for slug, name, top, bot, mid in FAMILY:
+for slug, name, top, bot, mid in FAMILY + EXTRA:
     s = svg(slug, top, bot, mid)
     open(os.path.join(ICONS, slug + '.svg'), 'w').write(s)
     render('<style>html,body{margin:0;background:transparent}</style>' + s, os.path.join(ICONS, slug + '.png'), 1024, 1024, True)
@@ -88,3 +97,43 @@ render(sheet, os.path.join(OUT, 'family.png'), 1700, 800)
 print('sheet')
 # the source's own icon is the master mark
 subprocess.run(['sips', '--resampleWidth', '512', os.path.join(ICONS, 'albrhi.png'), '--out', os.path.join(OUT, 'source.png')], check=True, stdout=subprocess.DEVNULL)
+
+# ---------------------------------------------------------------- the repository's hero and social preview (1600 x 800, and the same at 1280 x 640)
+import math
+CX, CY = 1160, 420
+R1, R2, SZ = 212, 335, 96
+NAMES = {'albrhi': 'Albrhi', 'instagram': 'Instagram', 'youtube': 'YouTube', 'twitter': 'X', 'tiktok': 'TikTok', 'whatsapp': 'WhatsApp', 'nextup': 'NextUp', 'watch': 'Watch'}
+def orbit_icon(slug, r, deg, size):
+    x = CX + r * math.cos(math.radians(deg)); y = CY + r * math.sin(math.radians(deg))
+    return ('<div style="position:absolute;left:%dpx;top:%dpx;width:%dpx;text-align:center;transform:translate(-50%%,-%dpx)">'
+            '<img src="../icons/%s.png" style="width:%dpx;height:%dpx;display:block;margin:0 auto;border-radius:%dpx;box-shadow:0 18px 40px rgba(0,0,0,.45)">'
+            '<div style="margin-top:9px;font-size:19px;font-weight:600;color:#cfeedd">%s</div></div>') % (x, y, size + 60, size // 2, slug, size, size, int(size * .235), NAMES[slug])
+inner = [('instagram', -135), ('youtube', -45), ('tiktok', 45), ('twitter', 135)]
+outer = [('whatsapp', -90), ('nextup', 24), ('watch', 156)]
+cluster = ('<svg style="position:absolute;left:0;top:0" width="1600" height="800" viewBox="0 0 1600 800">'
+           '<circle cx="%d" cy="%d" r="%d" fill="rgba(42,208,120,.08)" stroke="rgba(124,242,179,.6)" stroke-width="2.5"/>'
+           '<circle cx="%d" cy="%d" r="%d" fill="none" stroke="rgba(124,242,179,.34)" stroke-width="2.5" stroke-dasharray="2 13" stroke-linecap="round"/></svg>') % (CX, CY, R1, CX, CY, R2)
+for slug, deg in inner: cluster += orbit_icon(slug, R1, deg, SZ)
+for slug, deg in outer: cluster += orbit_icon(slug, R2, deg, SZ)
+cluster += ('<img src="../icons/albrhi.png" style="position:absolute;left:%dpx;top:%dpx;width:136px;height:136px;border-radius:32px;box-shadow:0 0 90px rgba(42,208,120,.6),0 20px 50px rgba(0,0,0,.5)">') % (CX - 68, CY - 68)
+legend = ('<div style="position:absolute;right:70px;bottom:40px;font-size:18px;color:rgba(255,255,255,.62);line-height:1.8">'
+          '<span style="display:inline-block;width:26px;border-top:3px solid rgba(124,242,179,.8);vertical-align:middle;margin-right:10px"></span>inside the Albrhi package<br>'
+          '<span style="display:inline-block;width:26px;border-top:3px dotted rgba(124,242,179,.6);vertical-align:middle;margin-right:10px"></span>their own packages</div>')
+chips = ''.join('<span style="display:inline-block;margin:0 10px 10px 0;padding:9px 18px;border-radius:99px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#d8f5e5;font-size:21px;font-weight:600">%s</span>' % c
+                for c in ('Bilingual', 'Native', 'Free'))
+left = ('<div style="position:absolute;left:92px;top:200px;width:680px">'
+        '<div style="font-size:170px;font-weight:800;letter-spacing:-7px;line-height:1">Albrhi</div>'
+        '<div style="font-family:\'SF Arabic\',\'Geeza Pro\',-apple-system,sans-serif;font-size:80px;font-weight:700;color:#7CF2B3;margin-top:6px">البرهي</div>'
+        '<div style="font-size:32px;color:rgba(255,255,255,.78);margin-top:20px;font-weight:500">iOS tweaks, built in the open.</div>'
+        '<div style="margin-top:30px">%s</div></div>') % chips
+foot = '<div style="position:absolute;left:92px;bottom:44px;font-size:21px;color:rgba(255,255,255,.55);font-family:ui-monospace,Menlo,monospace">ibrahim2100.github.io/albrhi-repo</div>'
+hero = ('<!doctype html><meta charset="utf-8"><style>%s</style><body style="width:1600px;height:800px;position:relative;overflow:hidden;color:#fff;'
+        'background:radial-gradient(900px 600px at 78%% 50%%,rgba(42,208,120,.30),transparent 70%%),radial-gradient(700px 500px at 8%% 0%%,rgba(20,160,140,.22),transparent 70%%),linear-gradient(160deg,#071a11,#04100a 60%%,#020a06)">'
+        '<div style="position:absolute;inset:0;opacity:.07;background-image:radial-gradient(#fff 1.2px,transparent 1.4px);background-size:34px 34px"></div>%s%s%s%s</body>') % (CSS, left, cluster, legend, foot)
+def render_scaled(html, out, w, h, scale):
+    path = os.path.join(TMP, os.path.basename(out) + '.html'); open(path, 'w', encoding='utf-8').write(html)
+    subprocess.run([CHROME, '--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=%s' % scale, '--window-size=%d,%d' % (w, h), '--virtual-time-budget=3000',
+                    '--screenshot=' + out, 'file://' + path], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+render_scaled(hero, os.path.join(OUT, 'hero.png'), 1600, 800, 1)
+render_scaled(hero, os.path.join(OUT, 'social-preview.png'), 1600, 800, 0.8)
+print('hero, social-preview')

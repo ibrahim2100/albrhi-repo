@@ -1,7 +1,9 @@
 # docs/
 
-Not the user guide (that is the root `README.md`) and not the rules (that is `CLAUDE.md`). This folder is the **evidence**: what was
+The root `README.md` is the short front page, `CLAUDE.md` holds the rules. This folder holds the longer guides below and the **evidence**: what was
 measured, in what order, and what turned out wrong.
+
+**Guides:** [`tweaks/`](tweaks/) (one page per tweak) · [`usage.md`](usage.md) · [`sideloading.md`](sideloading.md) · [`building.md`](building.md) · [`how-it-is-made.md`](how-it-is-made.md) · [`roadmap.md`](roadmap.md) · [`contributing.md`](contributing.md) · [`known-issues.md`](known-issues.md)
 
 | file | what it is |
 |---|---|

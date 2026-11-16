@@ -1,6 +1,6 @@
 # Building Albrhi
 
-The short version lives in the README ([Building](README.md#-building)). This file is the longer one:
+The short version lives in the README ([Building](docs/building.md)). This file is the longer one:
 what to install once, what to run before pushing, and what CI does with it.
 The reasoning behind each rule — what broke, and why it is a rule — is in [CLAUDE.md](CLAUDE.md) §3.
 
