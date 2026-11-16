@@ -1,0 +1,299 @@
+{
+  "minVersion": "0.1",
+  "class": "DepictionTabView",
+  "tintColor": "#2AD078",
+  "headerImage": "https://ibrahim2100.github.io/albrhi-repo/whatsapp/art/sileo/header.jpg",
+  "tabs": [
+    {
+      "class": "DepictionStackView",
+      "tabname": "Details",
+      "views": [
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "**Privacy for WhatsApp, in your hands.** Albrhi only ever *withholds*: it holds back what would leave your phone, or refuses a delete order that arrives. It never sends anything untrue. Every switch is **off until you turn it on**, and says in one line what it costs.",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "**البرهي للواتساب: خصوصيتك بيدك.** الأداة تمنع فقط: تمسك اللي كان بيطلع من جوالك، أو ترفض أمر حذف وصلها. ما ترسل شي غير صحيح أبداً. كل مفتاح مطفي لين تشغّله، ويقول لك سطر واحد وش ثمنه.",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionScreenshotsView",
+          "itemCornerRadius": 16,
+          "itemSize": "{210, 373.33}",
+          "screenshots": [
+            {
+              "accessibilityText": "Privacy, kept in your hands: the main page",
+              "url": "https://ibrahim2100.github.io/albrhi-repo/whatsapp/art/sileo/card-1-privacy.jpg"
+            },
+            {
+              "accessibilityText": "Profiles: Ghost, Quiet, Keeper",
+              "url": "https://ibrahim2100.github.io/albrhi-repo/whatsapp/art/sileo/card-2-profiles.jpg"
+            },
+            {
+              "accessibilityText": "No blue ticks, no typing, no played",
+              "url": "https://ibrahim2100.github.io/albrhi-repo/whatsapp/art/sileo/card-3-receipts.jpg"
+            },
+            {
+              "accessibilityText": "Deleted messages stay, edited ones show",
+              "url": "https://ibrahim2100.github.io/albrhi-repo/whatsapp/art/sileo/card-4-deleted.jpg"
+            },
+            {
+              "accessibilityText": "Statuses without a trace",
+              "url": "https://ibrahim2100.github.io/albrhi-repo/whatsapp/art/sileo/card-5-status.jpg"
+            }
+          ]
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionHeaderView",
+          "title": "Beta, honestly"
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Tested on **WhatsApp 26.44.72**, on a jailbroken iPhone (roothide) and in the iOS Simulator. *Verified* means watched working end to end; *beta* means hooked on the right path and counted, but not yet watched from the other side. The settings page shows a BETA tag until a feature has been.",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSeparatorView"
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "No blue ticks",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "They do not see blue ticks when you read. You still see theirs. Separate from WhatsApp's own switch.  \n_beta_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "No typing or recording",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "The other side is not told that you are typing or recording.  \n_beta_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "No “played” on voice notes",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "You listen and the sender's microphone does not turn blue.  \n_beta_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Keep deleted messages",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "A message deleted for everyone stays on this phone, with a small red bin beside it. Tap the bin for the whole story of the deletion.  \n_verified_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Edited messages",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "A small pencil beside an edited message opens every version: before, after, and when.  \n_beta_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "View once: view again",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "View-once photos and videos open like ordinary media. The sender is not told until you press the eye.  \n_beta_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Keep disappearing messages",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Timed messages stay, with a small hourglass. Installed and the app runs normally; not yet seen on a message that really expired.  \n_unproven_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Statuses",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "No “seen” on statuses, deleted statuses stay, and the viewer gets an eye (mark seen when you choose) and an arrow (save to Photos).  \n_beta · save verified_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Per person and per group",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Each privacy switch can apply to everyone, only to chosen chats, or to everyone except them. A card at the top of a contact's info page does it for that person.  \n_beta_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Forwarding",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Hide the “Forwarded” label, and an ∞ button that lifts the five-chat forward limit. Heavy forwarding can get an account restricted: the switch says so.  \n_beta_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Profiles and search",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Ghost, Quiet and Keeper set the switches in one go. Search finds any switch by its words, in Arabic or English.  \n_works_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        }
+      ]
+    },
+    {
+      "class": "DepictionStackView",
+      "tabname": "What's New",
+      "views": [
+        {
+          "class": "DepictionSubheaderView",
+          "title": "0.3.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• Receipts, held back: no blue ticks, no “typing…” or “recording…”, no “played” on voice notes, and no “seen” on statuses.\n• Deleted stays: a message deleted for everyone stays on your phone with a small red bin. Tap the bin for the whole story: when it was sent, when it was deleted, by whom.\n• Edited shows: a small pencil beside an edited message opens every version, before and after.\n• View once, again: view-once photos and videos open like ordinary media, and the sender is told only when you press the eye.\n• Statuses: deleted statuses stay, and the viewer gets an eye (mark seen when you choose) and an arrow (save to Photos).\n• Per person and per group: each privacy switch can apply to everyone, to chosen chats, or to everyone except them, and a card at the top of a contact’s info page does it for that person.\n• Forwarding: hide the “Forwarded” label, and an ∞ button that lifts the five-chat limit (heavy forwarding can get an account restricted, and the switch says so).\n• Disappearing messages that stay, marked with an hourglass (installed, not yet seen on a message that really expired).\n• Profiles and search: Ghost, Quiet and Keeper set the switches in one go; search finds any switch by its words; the interface is in Arabic or English.",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 8
+        }
+      ]
+    },
+    {
+      "class": "DepictionStackView",
+      "tabname": "Info",
+      "views": [
+        {
+          "class": "DepictionTableTextView",
+          "title": "Version",
+          "text": "0.3.0"
+        },
+        {
+          "class": "DepictionTableTextView",
+          "title": "Developer",
+          "text": "Ibrahim Ismail AL-Rahn"
+        },
+        {
+          "class": "DepictionTableTextView",
+          "title": "Works with",
+          "text": "WhatsApp 26.44.72"
+        },
+        {
+          "class": "DepictionTableTextView",
+          "title": "Packages",
+          "text": "roothide and rootless"
+        },
+        {
+          "class": "DepictionTableTextView",
+          "title": "Licence",
+          "text": "Free to use · all rights reserved"
+        },
+        {
+          "class": "DepictionSeparatorView"
+        },
+        {
+          "class": "DepictionTableButtonView",
+          "title": "Instagram — @Ib.11p",
+          "action": "https://instagram.com/Ib.11p",
+          "openExternal": true
+        },
+        {
+          "class": "DepictionTableButtonView",
+          "title": "Telegram — @Ib11p",
+          "action": "https://t.me/Ib11p",
+          "openExternal": true
+        },
+        {
+          "class": "DepictionSeparatorView"
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Albrhi is not affiliated with, endorsed by or connected to WhatsApp LLC or Meta. “WhatsApp” is a trademark of its owner. Modifying an app can get an account restricted; you use this at your own risk. Free to use; all rights reserved by the author.",
+          "useSpacing": true
+        }
+      ]
+    }
+  ]
+}
