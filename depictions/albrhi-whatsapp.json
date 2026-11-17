@@ -10,12 +10,12 @@
       "views": [
         {
           "class": "DepictionMarkdownView",
-          "markdown": "**Privacy for WhatsApp, in your hands.** Albrhi only ever *withholds*: it holds back what would leave your phone, or refuses a delete order that arrives. It never sends anything untrue. Every switch is **off until you turn it on**, and says in one line what it costs.",
+          "markdown": "**Privacy and comfort for WhatsApp, in your hands.** The privacy switches only *withhold*: they hold back what would leave your phone, or refuse a delete order that arrives, and never send anything untrue. The other features (status row, swipe buttons, themes, app lock, hidden chats, seconds in times, scheduled messages…) are what you choose to turn on, and the few that send something or change what the other side sees say so on their page. Every switch is **off until you turn it on**, and says in one line what it costs.",
           "useSpacing": true
         },
         {
           "class": "DepictionMarkdownView",
-          "markdown": "**البرهي للواتساب: خصوصيتك بيدك.** الأداة تمنع فقط: تمسك اللي كان بيطلع من جوالك، أو ترفض أمر حذف وصلها. ما ترسل شي غير صحيح أبداً. كل مفتاح مطفي لين تشغّله، ويقول لك سطر واحد وش ثمنه.",
+          "markdown": "**البرهي للواتساب: خصوصيتك وراحتك بيدك.** مفاتيح الخصوصية تمنع فقط: تمسك اللي كان بيطلع من جوالك، أو ترفض أمر حذف وصلها، وما ترسل شي غير صحيح أبداً. وباقي المزايا (صف الحالات، أزرار السحب، الثيمات، قفل التطبيق، المحادثات المخفية، الثواني في الأوقات، الرسائل المجدولة…) تشغّلها بنفسك، واللي يرسل شي أو يغيّر اللي يشوفه الطرف الثاني يقول لك في صفحته. كل مفتاح مطفي لين تشغّله، ويقول لك سطر واحد وش ثمنه.",
           "useSpacing": true
         },
         {
@@ -207,6 +207,146 @@
         },
         {
           "class": "DepictionSubheaderView",
+          "title": "Deleted statuses are marked",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "A status that was deleted and is still here shows a red bin and when it was deleted, beside its time in the viewer.  \n_verified_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Status row in Chats",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Everybody's statuses in a row right under the search bar: a green ring until you watch, yours first, new on the left and watched ones at the end. A tap opens WhatsApp's own viewer.  \n_verified_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Chat swipe buttons",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Choose the buttons under a swipe on a chat (delete, clear, mute, read, lock, favourite, block, hide, archive, more) and their order; the last one runs on a full swipe. WhatsApp asks before delete, clear and block.  \n_verified_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Themes",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Eleven colour themes (Ocean, Royal, Rose, Sunset, Gold, Graphite, Midnight…) and pure black in dark mode, by recolouring WhatsApp's green. Colours, not a re-skin: wallpapers and pictures that are green stay.  \n_beta_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Seconds in times",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Message times, the chat list, the status viewer and more show seconds (9:43:27 AM).  \n_verified_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "App lock and hidden chats",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Face ID or your passcode to open WhatsApp; chosen chats leave the list and open after Face ID.  \n_verified_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Ask first",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "“Call X?”, “Send this sticker?”, “Send this voice message?” before it happens.  \n_verified_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Hide tabs, clean look",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Take Updates, Calls or Communities out of the bottom bar; no floating Meta AI button; the search bar says “Search”.  \n_verified_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Scheduled messages and auto-reply",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Write now and send at a time you pick (WhatsApp must be running); an auto-reply for chats you choose. They send real messages from your account: try them on a chat you control.  \n_beta · scheduled verified_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Fake location, HD photos, stay alive, delivery ticks, backup",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "Pick the place “Send my location” reads (the other side sees it, so use it knowing that); send photos at full quality; keep WhatsApp running in the background (it costs battery); hold back the delivery tick; back up and restore your settings.  \n_beta_",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 6
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "Profiles and search",
           "useBoldText": true
         },
@@ -227,12 +367,12 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
-          "title": "0.3.0",
+          "title": "0.5.0",
           "useBoldText": true
         },
         {
           "class": "DepictionMarkdownView",
-          "markdown": "• Receipts, held back: no blue ticks, no “typing…” or “recording…”, no “played” on voice notes, and no “seen” on statuses.\n• Deleted stays: a message deleted for everyone stays on your phone with a small red bin. Tap the bin for the whole story: when it was sent, when it was deleted, by whom.\n• Edited shows: a small pencil beside an edited message opens every version, before and after.\n• View once, again: view-once photos and videos open like ordinary media, and the sender is told only when you press the eye.\n• Statuses: deleted statuses stay, and the viewer gets an eye (mark seen when you choose) and an arrow (save to Photos).\n• Per person and per group: each privacy switch can apply to everyone, to chosen chats, or to everyone except them, and a card at the top of a contact’s info page does it for that person.\n• Forwarding: hide the “Forwarded” label, and an ∞ button that lifts the five-chat limit (heavy forwarding can get an account restricted, and the switch says so).\n• Disappearing messages that stay, marked with an hourglass (installed, not yet seen on a message that really expired).\n• Profiles and search: Ghost, Quiet and Keeper set the switches in one go; search finds any switch by its words; the interface is in Arabic or English.",
+          "markdown": "• Status row in Chats: everybody's statuses in a row right under the search bar. A green ring until you watch one, yours first, new ones on the left and watched ones at the end; a tap opens WhatsApp's own viewer.\n• Deleted statuses are marked: a status that was deleted and is still on your phone shows a red bin and when it was deleted, beside its time.\n• Chat swipe buttons: choose the buttons under a swipe on a chat (delete, clear, mute, read, lock, favourite, block, hide, archive, more) and their order. The last one runs on a full swipe, and WhatsApp asks before it deletes, clears or blocks.\n• Seconds in times: message times, the chat list, the status viewer and more show seconds (9:43:27 AM).\n• Themes: eleven colour themes (Ocean, Royal, Rose, Sunset, Gold, Graphite, Midnight…) and pure black in dark mode, by recolouring WhatsApp's green. Colours, not a re-skin (beta).\n• Protection: an app lock (Face ID or your passcode) and hidden chats that open after Face ID.\n• Ask first: “Call X?”, “Send this sticker?” and “Send this voice message?” before it happens.\n• A cleaner WhatsApp: take Updates, Calls or Communities out of the bottom bar, no floating Meta AI button, and the search bar says “Search”.\n• Scheduled messages and auto-reply: write now and send at a time you pick (WhatsApp must be running), and an auto-reply for chats you choose. They send real messages from your account: try them on a chat you control.\n• Also: a fake place for “Send my location”, photos at full quality, keeping WhatsApp running in the background, holding back the delivery tick, and a backup of your settings (all beta).",
           "useSpacing": true
         },
         {
@@ -248,7 +388,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "0.3.0"
+          "text": "0.5.0"
         },
         {
           "class": "DepictionTableTextView",
