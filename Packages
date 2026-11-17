@@ -1873,6 +1873,44 @@ Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-what
 Section: WhatsApp
 Icon: https://ibrahim2100.github.io/albrhi-repo/icons/whatsapp.png
 
+Package: com.albrhi.whatsapp
+Version: 0.5.0
+Architecture: iphoneos-arm64
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 1152
+Depends: mobilesubstrate
+Filename: debs/com.albrhi.whatsapp_0.5.0_iphoneos-arm64.deb
+Size: 221994
+MD5sum: 03d9388520d72ea33d60e64d0418a2ee
+SHA1: f70b14fc8b826966418ff1f45a24d0fb987eadda
+SHA256: 17458c672c72c3b069327e1afd417951c39347dac5efba687bf4fa4865d97ebf
+Homepage: https://ibrahim2100.github.io/albrhi-repo/
+Description: Privacy for WhatsApp, in your hands.
+ .
+ Hold back what leaves your phone and keep what others take back: no blue
+ ticks, no typing, no "seen" on statuses, no "played" on voice notes, and the
+ messages somebody deletes for everyone stay, marked with a small red bin.
+ .
+ Edited messages show every version, view-once media can be viewed again,
+ statuses get an eye and a save button, and each privacy switch can apply to
+ everyone, to chosen chats, or to a single person. Three profiles, Ghost,
+ Quiet and Keeper, set the switches in one go. Arabic and English.
+ .
+ Every switch is off until you turn it on and says what it costs. The privacy
+ switches only withhold; the few features that send something, scheduled
+ messages, auto-reply and a chosen location, say so.
+ .
+ Developed by Ibrahim Ismail AL-Rahn. Free to use; all rights reserved. Not
+ affiliated with WhatsApp or Meta.
+Tag: role::enduser
+Author: Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.json
+Name: Albrhi for WhatsApp (rootless)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.json
+Section: WhatsApp
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/whatsapp.png
+
 Package: com.albrhi.whatsapp.roothide
 Version: 0.3.0
 Architecture: iphoneos-arm64e
@@ -1898,6 +1936,44 @@ Description: Privacy for WhatsApp, in your hands.
  .
  Every switch is off until you turn it on and says what it costs. It only
  withholds, and never sends anything untrue.
+ .
+ Developed by Ibrahim Ismail AL-Rahn. Free to use; all rights reserved. Not
+ affiliated with WhatsApp or Meta.
+Tag: role::enduser
+Author: Ibrahim Ismail AL-Rahn
+Depiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.html
+SileoDepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.json
+Name: Albrhi for WhatsApp (roothide)
+Sileodepiction: https://ibrahim2100.github.io/albrhi-repo/depictions/albrhi-whatsapp.json
+Section: WhatsApp
+Icon: https://ibrahim2100.github.io/albrhi-repo/icons/whatsapp.png
+
+Package: com.albrhi.whatsapp.roothide
+Version: 0.5.0
+Architecture: iphoneos-arm64e
+Maintainer: Ibrahim Ismail AL-Rahn <ibrahimalrahan01@gmail.com>
+Installed-Size: 1152
+Depends: mobilesubstrate
+Filename: debs/com.albrhi.whatsapp.roothide_0.5.0_iphoneos-arm64e.deb
+Size: 222444
+MD5sum: 39eafd6dd48220483306e0362b21f809
+SHA1: 238c306608c5f6ddb01ad5a88d9335d71da5bfc2
+SHA256: 563bfe19f70ab743ce5bc2850efb994a71a43b35c74b94008fe64d6e332ca9a1
+Homepage: https://ibrahim2100.github.io/albrhi-repo/
+Description: Privacy for WhatsApp, in your hands.
+ .
+ Hold back what leaves your phone and keep what others take back: no blue
+ ticks, no typing, no "seen" on statuses, no "played" on voice notes, and the
+ messages somebody deletes for everyone stay, marked with a small red bin.
+ .
+ Edited messages show every version, view-once media can be viewed again,
+ statuses get an eye and a save button, and each privacy switch can apply to
+ everyone, to chosen chats, or to a single person. Three profiles, Ghost,
+ Quiet and Keeper, set the switches in one go. Arabic and English.
+ .
+ Every switch is off until you turn it on and says what it costs. The privacy
+ switches only withhold; the few features that send something, scheduled
+ messages, auto-reply and a chosen location, say so.
  .
  Developed by Ibrahim Ismail AL-Rahn. Free to use; all rights reserved. Not
  affiliated with WhatsApp or Meta.
