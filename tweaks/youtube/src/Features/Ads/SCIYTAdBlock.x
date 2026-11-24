@@ -45,50 +45,13 @@ static BOOL SCIMayAlterRequests(void) {
     return SCIYTAppIsActive();
 }
 
-%hook YTAdsInnerTubeContextDecorator
-
-- (void)decorateContext:(id)context {
-    SCIYTLaunchMark(@"ads: decorateContext");
-
-    if (!SCIPrefEnabled(SCIPrefHideAds) || !SCIMayAlterRequests()) {
-        %orig;
-        return;
-    }
-}
-
-%end
-
 //
-// **The same decision on the class that carries it in 21.41.5.** `YTAdsInnerTubeContextDecorator` is not in that build's binary; the
-// class that answers `-decorateContext:` (`v24@0:8@16`) is `YTAdsInnerTubeContextDecoratorImpl`. Found by running tools/objc-diff.py
-// --check on this tweak against 21.41.5, which listed the old name among the hooks that attach to nothing. Both names stay: a build
-// that has the old one is served by the hook above.
+// **The request decorators are not hooked here any more.** They were three `%hook` blocks on `-decorateContext:`; 21.47.6 renamed the selector
+// (`-decorateContext:serviceType:`) and moved the account-scoped one to `...Impl`, so a block written as `%hook` stopped meaning anything -- Logos *adds* a
+// method the class does not declare, nothing calls it, and the app went back to asking for ads. They are runtime gates now (`SCIYTAdGates.m`), each
+// installed only where the build declares the selector with the expected encoding, and counted in the report. The same decision as before: during the launch
+// the call goes through untouched, and from the first moment the app is active it is skipped.
 //
-%hook YTAdsInnerTubeContextDecoratorImpl
-
-- (void)decorateContext:(id)context {
-    SCIYTLaunchMark(@"ads: decorateContext (impl)");
-
-    if (!SCIPrefEnabled(SCIPrefHideAds) || !SCIMayAlterRequests()) {
-        %orig;
-        return;
-    }
-}
-
-%end
-
-%hook YTAccountScopedAdsInnerTubeContextDecorator
-
-- (void)decorateContext:(id)context {
-    SCIYTLaunchMark(@"ads: decorateContext (account)");
-
-    if (!SCIPrefEnabled(SCIPrefHideAds) || !SCIMayAlterRequests()) {
-        %orig;
-        return;
-    }
-}
-
-%end
 
 %hook YTAdShieldUtils
 

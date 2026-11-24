@@ -1,6 +1,6 @@
 Package: com.albrhi.youtube
 Name: Albrhi for YouTube (rootless)
-Version: 1.50.0
+Version: 1.51.0
 Architecture: iphoneos-arm64
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
  .
@@ -29,7 +29,7 @@ Description: Download videos, no ads, skip the sponsored parts, background playb
  and a card that says whether everything attached to your build. The report is also
  written to Documents/AlbrhiYT-report.txt.
  .
- TESTED ON YouTube 21.30.5. Nothing is pinned to a version number: every class is
+ TESTED ON YouTube 21.47.6. Nothing is pinned to a version number: every class is
  looked up at runtime and skipped if it is not there.
  .
  DOWNLOADS

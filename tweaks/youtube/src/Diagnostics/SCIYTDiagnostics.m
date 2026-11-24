@@ -11,6 +11,7 @@
 #import "../Features/Download/SCIYTDownload.h"
 #import "../Features/Download/Center/SCIYTWatch.h"
 #import "../Features/Playback/SCIYTPoProbe.h"
+#import "../Features/Account/SCIYTSignInFix.h"
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import "../Features/Tabs/SCIYTTabBar.h"
@@ -861,8 +862,15 @@ static void SCIProbeAdSlots(id response) {
 /// download paths, the settings model -- and none of those failing means a feature is
 /// broken, so none of them may turn the identity badge amber.
 + (BOOL)featuresAttached {
+    // The request decorator has had three names (YTAdsInnerTubeContextDecorator, ...Impl, and since 21.47 an account-scoped ...Impl); any one counts.
+    BOOL decorator = objc_getClass("YTAdsInnerTubeContextDecorator") || objc_getClass("YTAdsInnerTubeContextDecoratorImpl")
+        || objc_getClass("YTAccountScopedAdsInnerTubeContextDecoratorImpl");
+    if (!decorator) {
+        SCILogV(@"audit: no request decorator class is in this build");
+        return NO;
+    }
+
     NSArray *required = @[
-        @"YTAdsInnerTubeContextDecorator",
         @"YTAdShieldUtils",
         @"YTIPlayerResponse",
         @"YTLocalPlaybackController",
@@ -1129,6 +1137,7 @@ static NSMutableArray<NSString *> *sciStreamAttempts = nil;
 
     [out appendFormat:@"%@\n  %@\n  %@\n\n", SCILocalized(@"diag_playback_fix"), [self playbackFixState], [SCIYTWatch report]];
     [out appendFormat:@"%@\n", SCIYTPoProbeReport()];
+    [out appendFormat:@"%@\n%@\n", SCILocalized(@"diag_signin"), SCIYTSignInReport()];
 
     // Above the streams section on purpose: it says what was asked of the streaming protocol,
     // and the section below says what came back. Read the other way round they are two
