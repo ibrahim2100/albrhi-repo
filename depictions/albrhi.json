@@ -107,6 +107,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.117.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **iOS 27:**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.116.0",
           "useBoldText": true
         },
@@ -132,20 +146,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.114.0",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **شكل زر التحميل في تيك توك:**",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -156,7 +156,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.116.0"
+          "text": "1.117.0"
         },
         {
           "class": "DepictionTableTextView",
