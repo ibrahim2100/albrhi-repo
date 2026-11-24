@@ -325,11 +325,43 @@ static void SCIYTPivotPrepare(UIView *bar, id renderer) {
     }
 }
 
+///
+/// **The Centre page comes down whenever the bar stops saying our name, whichever door says so.**
+///
+/// `-setSelectedPivotIdentifier:` and `-didTapItemWithRenderer:` were the two doors this knew, and on iOS 27 the glass bar has more: its items can be
+/// icon-only (`YTFloatingBarExperiment +isIconsOnly`), which tap through `-didTapItemWithIconOnlyItemRenderer:…` and not `-didTapItemWithRenderer:`,
+/// and the bars themselves select through `-selectItemWithPivotIdentifier:` (a tap, a drag of the selection pill, or the app restoring a tab). A tab
+/// chosen through a door that was not hooked left our page in the content area on top of every page YouTube then showed. **Reported by the owner on
+/// iOS 27; not reproduced in the simulator with a signed-out account (taps and a pill drag all came back to Home), so the cause is an inference.**
+/// Every door that names a pivot other than ours now takes the page down, and counts that it did, so a report says which door it was.
+///
+static NSUInteger sciCentreDroppedBy[3] = {0, 0, 0};   // classic bar select, controller update, glass bar select
+
+static void SCIYTCentreSelectionChanged(NSString *identifier, NSUInteger door) {
+    if (![identifier isKindOfClass:[NSString class]] || identifier.length == 0) return;
+    if ([identifier isEqualToString:kSCIPivotIdentifier]) return;
+    if (![SCIYTDownloadCenter isShownInPivotBar]) return;
+
+    [SCIYTDownloadCenter removeFromPivotBar];
+    sciPivotBeforeOurs = nil;
+    if (door < 3) sciCentreDroppedBy[door]++;
+}
+
+NSString *SCIYTCentreDropReport(void) {
+    return [NSString stringWithFormat:@"page taken down by: bar select %lu, controller update %lu, glass bar select %lu",
+            (unsigned long)sciCentreDroppedBy[0], (unsigned long)sciCentreDroppedBy[1], (unsigned long)sciCentreDroppedBy[2]];
+}
+
 %hook YTPivotBarView
 
 - (void)setRenderer:(id)renderer {
     SCIYTPivotPrepare((UIView *)self, renderer);
     %orig;
+}
+
+- (void)selectItemWithPivotIdentifier:(NSString *)identifier {
+    %orig;
+    SCIYTCentreSelectionChanged(identifier, 0);
 }
 
 %end
@@ -341,6 +373,11 @@ static void SCIYTPivotPrepare(UIView *bar, id renderer) {
 - (void)setRenderer:(id)renderer {
     SCIYTPivotPrepare((UIView *)self, renderer);
     %orig;
+}
+
+- (void)selectItemWithPivotIdentifier:(NSString *)identifier {
+    %orig;
+    SCIYTCentreSelectionChanged(identifier, 2);
 }
 
 %end
@@ -480,6 +517,12 @@ static void SCIReportContentStack(UIViewController *bar) {
 @end
 
 %hook YTPivotBarViewController
+
+// The bar's own "show this item as selected" step, reached by taps, pill drags and restores alike.
+- (void)updateViewsWithSelectedPivotIdentifier:(NSString *)identifier {
+    %orig;
+    SCIYTCentreSelectionChanged(identifier, 1);
+}
 
 /// The one place every route through the bar passes.
 ///

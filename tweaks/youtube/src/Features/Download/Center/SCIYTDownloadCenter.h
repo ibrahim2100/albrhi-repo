@@ -37,6 +37,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Takes it down again, when another tab is chosen.
 + (void)removeFromPivotBar;
 
+/// Whether the Centre page is in the content area now (its view is in a window, which is what "on top of every page" means).
++ (BOOL)isShownInPivotBar;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -114,33 +114,28 @@ static UIView *SCIFindActionBar(UIView *overlay) {
 %end
 
 
-%hook YTReelWatchPlaybackOverlayView
-
-- (instancetype)initWithFrame:(CGRect)frame
-                    reelModel:(id)reelModel
-             ghostViewManager:(id)ghostViewManager
-              parentResponder:(id)parentResponder {
-    id overlay = %orig;
-
-    // Kept weakly: the overlay does not own its model and must not start.
-    if (overlay && reelModel) {
-        objc_setAssociatedObject(overlay, &kSCIShortsModel, reelModel,
-                                 OBJC_ASSOCIATION_ASSIGN);
-    }
-    return overlay;
-}
-
-- (void)layoutActionBar {
-    %orig;
-
+/// The placement, shared by every door that lays the overlay out. **`-layoutActionBar` alone was the only one** and, on 21.47.6 under iOS 27 (the owner reported the
+/// button gone there), nothing says that method still runs on every layout of the overlay, so `-layoutSubviews` calls this too. The action bar is read from its own ivar
+/// (`_actionBarComponentView`, confirmed in the 21.47.6 class dump) before the shape search, which stays as the fallback, and the button is only brought to the front
+/// when something has been added above it.
+static void SCIYTPlaceShortsButton(UIView *overlayArg) {
     if (!SCIPrefEnabled(SCIPrefShortsButton)) return;
 
-    UIView *overlay = (UIView *)self;
+    UIView *overlay = overlayArg;
     if (overlay.bounds.size.width <= 0) return;
 
-    UIView *bar = SCIFindActionBar(overlay);
+    UIView *bar = nil;
+    @try {
+        id declared = SCISafeValueForKey(overlay, @"_actionBarComponentView");
+        UIView *candidate = [declared isKindOfClass:UIView.class] ? declared : nil;
+        CGRect f = candidate.frame;
+        // Only when it is the narrow trailing column it is meant to be; a view spanning the overlay would put the button in the middle of the picture.
+        if (candidate && candidate.superview == overlay && !candidate.hidden && f.size.width > 0
+            && f.size.width < overlay.bounds.size.width * 0.30 && CGRectGetMidX(f) > overlay.bounds.size.width * 0.65) bar = candidate;
+    } @catch (__unused NSException *exception) { }
+    if (!bar) bar = SCIFindActionBar(overlay);
 
-    UIButton *button = objc_getAssociatedObject(self, &kSCIShortsButton);
+    UIButton *button = objc_getAssociatedObject(overlay, &kSCIShortsButton);
 
     // Re-added when the overlay has cleared its subviews, which it does between clips.
     // Remembering the button and not checking it is still in the view is how it appears on
@@ -167,7 +162,7 @@ static UIView *SCIFindActionBar(UIView *overlay) {
          forControlEvents:UIControlEventTouchUpInside];
 
         [overlay addSubview:button];
-        objc_setAssociatedObject(self, &kSCIShortsButton, button, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(overlay, &kSCIShortsButton, button, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 
         // The button carries its overlay so the tap can find the right model. Weak, because
         // the overlay already owns the button.
@@ -201,7 +196,34 @@ static UIView *SCIFindActionBar(UIView *overlay) {
 
     // Brought to the front each pass: the overlay re-adds its own views on layout and ours
     // would end up behind them.
-    [overlay bringSubviewToFront:button];
+    if (overlay.subviews.lastObject != button) [overlay bringSubviewToFront:button];
+}
+
+
+%hook YTReelWatchPlaybackOverlayView
+
+- (instancetype)initWithFrame:(CGRect)frame
+                    reelModel:(id)reelModel
+             ghostViewManager:(id)ghostViewManager
+              parentResponder:(id)parentResponder {
+    id overlay = %orig;
+
+    // Kept weakly: the overlay does not own its model and must not start.
+    if (overlay && reelModel) {
+        objc_setAssociatedObject(overlay, &kSCIShortsModel, reelModel,
+                                 OBJC_ASSOCIATION_ASSIGN);
+    }
+    return overlay;
+}
+
+- (void)layoutActionBar {
+    %orig;
+    SCIYTPlaceShortsButton((UIView *)self);
+}
+
+- (void)layoutSubviews {
+    %orig;
+    SCIYTPlaceShortsButton((UIView *)self);
 }
 
 %end

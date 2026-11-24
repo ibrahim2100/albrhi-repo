@@ -240,6 +240,7 @@ static void SCIBuildTables(void) {
 
         @"diag_sabr": @"Streaming protocol (SABR)",
         @"diag_signin": @"Sign-in (a copy installed as an IPA)",
+        @"diag_push": @"Notifications (why an IPA gets none)",
         @"diag_sabr_classes": @"reload context: %@   onesie context: %@",
         @"diag_sabr_never": @"Neither gate was consulted. Forcing them would change nothing.",
         @"diag_sabr_gate": @"%@ — asked %lu times, YouTube said %@",
@@ -790,6 +791,7 @@ static void SCIBuildTables(void) {
 
         @"diag_sabr": @"بروتوكول البثّ (SABR)",
         @"diag_signin": @"تسجيل الدخول (نسخة مثبّتة بملف IPA)",
+        @"diag_push": @"الإشعارات (ليش ما تجي في نسخة IPA)",
         @"diag_sabr_classes": @"سياق إعادة التحميل: %@   سياق الطلب: %@",
         @"diag_sabr_never": @"لم يُسأل أيّ من البوّابتين. فرضهما لن يُغيّر شيئاً.",
         @"diag_sabr_gate": @"%@ — سُئلت %lu مرّة، وجواب يوتيوب %@",
