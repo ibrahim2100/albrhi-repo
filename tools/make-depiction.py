@@ -246,9 +246,9 @@ TWEAKS = {
         'html_tagline': '<strong>One tweak for Instagram and YouTube</strong> — '
                         'switched per app from Settings.',
         'app': 'Instagram and YouTube',
-        'tested': 'Instagram 410, 439, 441 · YouTube 21.30.5',
+        'tested': 'Instagram 410, 439, 441 · YouTube 21.47.6',
         'tested_note': 'Tested on Instagram **410, 439 and 441**, and YouTube '
-                       '**21.30.5**. Nothing here is pinned to a version number: the '
+                       '**21.47.6**. Nothing here is pinned to a version number: the '
                        'tweak looks for what it needs while the app runs, so other '
                        'versions should work too.',
         'rows': [('Instagram tweak began from', 'SCInsta by SoCuul')],
@@ -271,8 +271,8 @@ TWEAKS = {
         'html_tagline': '<strong>No ads, skip the sponsored parts, background '
                         'playback</strong> — in Arabic or English.',
         'app': 'YouTube',
-        'tested': 'YouTube 21.30.5',
-        'tested_note': 'Tested on YouTube **21.30.5**. Nothing is pinned to a '
+        'tested': 'YouTube 21.47.6',
+        'tested_note': 'Tested on YouTube **21.47.6**. Nothing is pinned to a '
                        'version number: every class is looked up at runtime and '
                        'skipped if it is not there. Hold two fingers anywhere for '
                        'the settings, and the diagnostics page says what attached '
