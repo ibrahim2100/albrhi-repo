@@ -107,6 +107,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.118.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **مركز التحميلات**\n• **سبب غياب الإشعارات في نسخة IPA:**\n• **زر تحميل الشورتس**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.117.0",
           "useBoldText": true
         },
@@ -132,20 +146,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.115.0",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **الإعلانات رجعت تظهر في يوتيوب 21.47.6 — أُصلحت:**\n• **تسجيل الدخول للنسخة المثبّتة بملف IPA:**",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -156,7 +156,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.117.0"
+          "text": "1.118.0"
         },
         {
           "class": "DepictionTableTextView",
