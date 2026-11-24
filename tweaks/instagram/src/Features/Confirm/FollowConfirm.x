@@ -1,3 +1,4 @@
+#import "../../Compat/SCIResolve.h"
 #import "../../Utils.h"
 #import "../../InstagramHeaders.h"
 
@@ -137,7 +138,46 @@ static void hooked_listSectionController(id self, SEL _cmd, id arg1, id arg2) {
     orig_listSectionController(self, _cmd, arg1, arg2);
 }
 
+///
+/// **`IGFollowController` is a Swift class in 450.1.0 and 456.0.0 and its `-_didPressFollowButton` is gone**; it declares two entry points
+/// instead (`-didPressFollowButtonFromControlEvent`, `v16@0:8`, and `-didPressFollowButtonWith:`, `v24@0:8@16`). Both are asked first. They are
+/// two ways in (a control event and a model), found in a class dump of 456; **whether one calls the other through the Objective-C layer was not
+/// established** (the only references to either sit in one Swift thunk), so if a follow ever asks twice the Diagnostics counter says so. Bound
+/// through the resolver, and only where the class declares the selector.
+///
+%group SCIgIGFollowControllerSwift
+%hook IGFollowController
+- (void)didPressFollowButtonFromControlEvent {
+    if ([SCIUtils getBoolPref:@"follow_confirm"]) {
+        SCILogV(@"[SCInsta] Confirm follow triggered (Swift controller, control event)");
+        [SCIUtils showConfirmation:^(void) {
+            %orig;
+        }];
+    } else {
+        return %orig;
+    }
+}
+- (void)didPressFollowButtonWith:(id)arg1 {
+    if ([SCIUtils getBoolPref:@"follow_confirm"]) {
+        SCILogV(@"[SCInsta] Confirm follow triggered (Swift controller, model)");
+        [SCIUtils showConfirmation:^(void) {
+            %orig;
+        }];
+    } else {
+        return %orig;
+    }
+}
+%end
+%end
+
 %ctor {
+    %init;
+
+    Class followController = SCIResolveClass(@"IGFollowController");
+    if (followController && class_getInstanceMethod(followController, NSSelectorFromString(@"didPressFollowButtonFromControlEvent"))) {
+        %init(SCIgIGFollowControllerSwift, IGFollowController = followController);
+    }
+
     Class cls = objc_getClass("IGDirectDetailMembersKit.IGDirectThreadDetailsMembersListViewController");
     if (!cls) return;
 

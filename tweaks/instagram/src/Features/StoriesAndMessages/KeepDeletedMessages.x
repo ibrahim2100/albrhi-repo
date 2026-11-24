@@ -1,3 +1,4 @@
+#import "../../Compat/SCIResolve.h"
 #import <objc/message.h>
 #import <objc/runtime.h>
 #import "../../Utils.h"
@@ -550,6 +551,11 @@ static BOOL SCIAskBeforeRefresh(id inbox, SEL selector) {
     return YES;
 }
 
+// **450.1.0 and 456.0.0 have this class only as a Swift class** (`_TtC<n><Module><n><Name>`), so a plain `%hook` on the name attached to nothing and the
+// feature went quiet with no error. Bound through the resolver like the other twenty-five (plain name first, so 410 is unchanged). Found by comparing the
+// class dumps of 410 and 456 and asking, for every hooked class that is missing, whether a Swift class of the same name declares the selector we hook.
+%group SCIgIGDirectInboxViewController
+
 %hook IGDirectInboxViewController
 
 // The newer build.
@@ -569,3 +575,12 @@ static BOOL SCIAskBeforeRefresh(id inbox, SEL selector) {
 }
 
 %end
+
+%end
+
+%ctor {
+    %init;
+
+    Class inbox = SCIResolveClass(@"IGDirectInboxViewController");
+    if (inbox) %init(SCIgIGDirectInboxViewController, IGDirectInboxViewController = inbox);
+}

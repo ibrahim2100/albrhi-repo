@@ -1,3 +1,4 @@
+#import "../../Compat/SCIResolve.h"
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import "../../Utils.h"
@@ -608,12 +609,19 @@ static UIContextMenuActionProvider SCICopyWrapProvider(UIContextMenuActionProvid
 
 %end
 
+// **450.1.0 and 456.0.0 have this class only as a Swift class** (`_TtC<n><Module><n><Name>`), so a plain `%hook` on the name attached to nothing and the
+// feature went quiet with no error. Bound through the resolver like the other twenty-five (plain name first, so 410 is unchanged). Found by comparing the
+// class dumps of 410 and 456 and asking, for every hooked class that is missing, whether a Swift class of the same name declares the selector we hook.
+%group SCIgIGCommentCell
+
 %hook IGCommentCell
 
 - (void)bindViewModel:(id)viewModel {
     %orig;
     SCIRememberComment(self, viewModel);
 }
+
+%end
 
 %end
 
@@ -633,3 +641,12 @@ static UIContextMenuActionProvider SCICopyWrapProvider(UIContextMenuActionProvid
 }
 
 %end
+
+%ctor {
+    // The hooks outside the groups (`UIWindow`, `UIContextMenuConfiguration`): written out because a file that initialises a group does not
+    // initialise the default one for you.
+    %init;
+
+    Class commentCell = SCIResolveClass(@"IGCommentCell");
+    if (commentCell) %init(SCIgIGCommentCell, IGCommentCell = commentCell);
+}

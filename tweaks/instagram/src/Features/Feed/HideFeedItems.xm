@@ -244,7 +244,18 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
     return %orig;
 }
 %end
+%group SCIgIGStoryAdsOptInTextView
 %hook IGStoryAdsOptInTextView
+// 450.1.0 / 456.0.0 (Swift class `_TtC12IGStoryAdsUI23IGStoryAdsOptInTextView`): a third argument was added.
+- (id)initWithBrandedContentStyledString:(id)arg1 sponsoredPostLabel:(id)arg2 adTransparencyDisclaimerStyledString:(id)arg3 {
+    if ([SCIUtils getBoolPref:@"hide_ads"]) {
+        SCILogV(@"[SCInsta] Removing ads");
+
+        return nil;
+    }
+
+    return %orig;
+}
 - (id)initWithBrandedContentStyledString:(id)arg1 sponsoredPostLabel:(id)arg2 {
     if ([SCIUtils getBoolPref:@"hide_ads"]) {
         SCILogV(@"[SCInsta] Removing ads");
@@ -255,6 +266,8 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
     return %orig;
 }
 %end
+%end
+
 %hook IGSundialAdsResponseParser
 - (id)parsedObjectFromResponse:(id)arg1 {
     if ([SCIUtils getBoolPref:@"hide_ads"]) {
@@ -373,6 +386,8 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
     if (chainingFeedViewController) %init(SCIgIGChainingFeedViewController, IGChainingFeedViewController = chainingFeedViewController);
     Class storyAdsManager = SCIResolveClass(@"IGStoryAdsManager");
     if (storyAdsManager) %init(SCIgIGStoryAdsManager, IGStoryAdsManager = storyAdsManager);
+    Class storyAdsOptIn = SCIResolveClass(@"IGStoryAdsOptInTextView");
+    if (storyAdsOptIn) %init(SCIgIGStoryAdsOptInTextView, IGStoryAdsOptInTextView = storyAdsOptIn);
     Class exploreListKitDataSource = SCIResolveClass(@"IGExploreListKitDataSource");
     if (exploreListKitDataSource) %init(SCIgIGExploreListKitDataSource, IGExploreListKitDataSource = exploreListKitDataSource);
 }

@@ -1,3 +1,4 @@
+#import "../../Compat/SCIResolve.h"
 #import "../../InstagramHeaders.h"
 #import "../../Tweak.h"
 #import "../../Utils.h"
@@ -42,6 +43,10 @@
 %end
 
 // Messages seen logic
+// **450.1.0 and 456.0.0 have this class only as a Swift class** (`_TtC<n><Module><n><Name>`), so a plain `%hook` on the name attached to nothing and the
+// feature went quiet with no error. Bound through the resolver like the other twenty-five (plain name first, so 410 is unchanged). Found by comparing the
+// class dumps of 410 and 456 and asking, for every hooked class that is missing, whether a Swift class of the same name declares the selector we hook.
+%group SCIgIGDirectThreadViewListAdapterDataSource
 %hook IGDirectThreadViewListAdapterDataSource
 - (BOOL)shouldUpdateLastSeenMessage {
     if ([SCIUtils getBoolPref:@"remove_lastseen"]) {
@@ -50,6 +55,7 @@
     
     return %orig;
 }
+%end
 %end
 
 ///
@@ -339,3 +345,10 @@ static void SCIUpdateVisualSeenIcon(UIButton *button) {
 }
 
 %end
+
+%ctor {
+    %init;
+
+    Class listAdapter = SCIResolveClass(@"IGDirectThreadViewListAdapterDataSource");
+    if (listAdapter) %init(SCIgIGDirectThreadViewListAdapterDataSource, IGDirectThreadViewListAdapterDataSource = listAdapter);
+}

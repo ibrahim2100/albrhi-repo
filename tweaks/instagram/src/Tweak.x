@@ -232,6 +232,22 @@ shouldPersistLastBugReportId:(id)arg6
 }
 %end
 
+// **450.1.0 and 456.0.0 moved the screenshot callback to the viewer's event handler** (and a Swift logger beside it): same selector, now `void`
+// (`v40@0:8@16@24q32`), on classes that did not carry it in 410. The three above are kept for the older builds.
+%hook IGDirectVisualMessageViewerEventHandler
+- (void)visualMessageViewerController:(id)arg1 didDetectScreenshotForVisualMessage:(id)arg2 atIndex:(NSInteger)arg3 {
+    SCREENSHOT_GUARD_VOID();
+    %orig;
+}
+%end
+
+%hook _TtC38IGDirectVisualMessageViewerEventLogger38IGDirectVisualMessageViewerEventLogger
+- (void)visualMessageViewerController:(id)arg1 didDetectScreenshotForVisualMessage:(id)arg2 atIndex:(NSInteger)arg3 {
+    SCREENSHOT_GUARD_VOID();
+    %orig;
+}
+%end
+
 %hook IGDirectVisualMessageScreenshotSafetyLogger
 - (id)initWithUserSession:(id)arg1 entryPoint:(NSInteger)arg2 {
     if ([SCIUtils getBoolPref:@"remove_screenshot_alert"]) {
