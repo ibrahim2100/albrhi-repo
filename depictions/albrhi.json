@@ -107,6 +107,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.114.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **شكل زر التحميل في تيك توك:**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.113.1",
           "useBoldText": true
         },
@@ -132,20 +146,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.112.3",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **تيك توك 0.29.3 — الكيبورد الأسود: غطاء أسود فوق طبقات الـbackdrop (تقرير هاتفك كشف أن اللون كان يصل ولا يُرى)، وسطر الحالة يبيّن مفتاحي القائمة وصفوفها.**",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -156,7 +156,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.113.1"
+          "text": "1.114.0"
         },
         {
           "class": "DepictionTableTextView",
