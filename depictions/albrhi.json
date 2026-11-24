@@ -23,7 +23,7 @@
         },
         {
           "class": "DepictionMarkdownView",
-          "markdown": "Tested on Instagram **410, 439 and 441**, and YouTube **21.30.5**. Nothing here is pinned to a version number: the tweak looks for what it needs while the app runs, so other versions should work too.",
+          "markdown": "Tested on Instagram **410, 439 and 441**, and YouTube **21.47.6**. Nothing here is pinned to a version number: the tweak looks for what it needs while the app runs, so other versions should work too.",
           "useSpacing": true
         },
         {
@@ -107,6 +107,20 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.115.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **الإعلانات رجعت تظهر في يوتيوب 21.47.6 — أُصلحت:**\n• **تسجيل الدخول للنسخة المثبّتة بملف IPA:**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.114.0",
           "useBoldText": true
         },
@@ -132,20 +146,6 @@
         {
           "class": "DepictionSpacerView",
           "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.113.0",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **حد المشاهدة اليومي**\n• **أسماء ملفات مفهومة**\n• **حماية التشغيل**",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
         }
       ]
     },
@@ -156,7 +156,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.114.0"
+          "text": "1.115.0"
         },
         {
           "class": "DepictionTableTextView",
@@ -176,7 +176,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Tested on",
-          "text": "Instagram 410, 439, 441 · YouTube 21.30.5"
+          "text": "Instagram 410, 439, 441 · YouTube 21.47.6"
         },
         {
           "class": "DepictionSeparatorView"
