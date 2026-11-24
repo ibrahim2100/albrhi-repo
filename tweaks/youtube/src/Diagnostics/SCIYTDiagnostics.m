@@ -12,6 +12,7 @@
 #import "../Features/Download/Center/SCIYTWatch.h"
 #import "../Features/Playback/SCIYTPoProbe.h"
 #import "../Features/Account/SCIYTSignInFix.h"
+NSString *SCIYTFloatingBarReport(void);
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import "../Features/Tabs/SCIYTTabBar.h"
@@ -1074,7 +1075,7 @@ static NSMutableArray<NSString *> *sciStreamAttempts = nil;
 
     // Which counter buttons were seen and what each said before anything was written into
     // button -- or on none -- this is the line that says why.
-    [out appendFormat:@"%@\n  %@\n\n", SCILocalized(@"diag_tab"), [self tabState]];
+    [out appendFormat:@"%@\n  %@\n  glass tab bar (iOS 27): %@\n\n", SCILocalized(@"diag_tab"), [self tabState], SCIYTFloatingBarReport()];
     [out appendFormat:@"  %@\n", SCIYTTabBarReport()];
     [out appendFormat:@"  %@\n\n", SCIYTHistoryTabReport()];
 

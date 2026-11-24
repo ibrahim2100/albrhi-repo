@@ -13,9 +13,9 @@
 </p>
 
 <p align="center">
-<a href="suite/CHANGELOG.md"><img alt="Albrhi" src="https://img.shields.io/badge/Albrhi-1.116.0-blueviolet.svg"></a>
+<a href="suite/CHANGELOG.md"><img alt="Albrhi" src="https://img.shields.io/badge/Albrhi-1.117.0-blueviolet.svg"></a>
 <a href="tweaks/instagram/CHANGELOG.md"><img alt="Instagram" src="https://img.shields.io/badge/Instagram-4.8.3-orange.svg"></a>
-<a href="tweaks/youtube/CHANGELOG.md"><img alt="YouTube" src="https://img.shields.io/badge/YouTube-1.51.0-red.svg"></a>
+<a href="tweaks/youtube/CHANGELOG.md"><img alt="YouTube" src="https://img.shields.io/badge/YouTube-1.51.1-red.svg"></a>
 <a href="tweaks/twitter/CHANGELOG.md"><img alt="X" src="https://img.shields.io/badge/X-0.23.0-black.svg"></a>
 <a href="tweaks/tiktok/CHANGELOG.md"><img alt="TikTok" src="https://img.shields.io/badge/TikTok-0.31.1-ff0050.svg"></a>
 <a href="tweaks/ytmusic/CHANGELOG.md"><img alt="YT Music" src="https://img.shields.io/badge/YT%20Music-0.10.1-FF0000.svg"></a>
@@ -54,7 +54,7 @@ WhatsApp, NextUp and Watch are their own packages; the same four social tweaks a
 | Tweak | | Version | In Albrhi | What it does |
 |---|:-:|---|:-:|---|
 | **[Instagram](docs/tweaks/instagram.md)** | <img src="brand/icons/512/instagram.png" width="44" alt=""> | 4.8.3 | ✅ | downloads, a quieter feed, stories without a receipt, unsent messages kept and marked |
-| **[YouTube](docs/tweaks/youtube.md)** | <img src="brand/icons/512/youtube.png" width="44" alt=""> | 1.51.0 | ✅ | a Download Centre tab, no ads, SponsorBlock, background playback |
+| **[YouTube](docs/tweaks/youtube.md)** | <img src="brand/icons/512/youtube.png" width="44" alt=""> | 1.51.1 | ✅ | a Download Centre tab, no ads, SponsorBlock, background playback |
 | **[X](docs/tweaks/x.md)** | <img src="brand/icons/512/twitter.png" width="44" alt=""> | 0.23.0 | ✅ | media downloads with a button you place yourself, plus switches for what X does |
 | **[TikTok](docs/tweaks/tiktok.md)** | <img src="brand/icons/512/tiktok.png" width="44" alt=""> | 0.31.1 | ✅ | a download button in the feed, photo posts, no ads, privacy |
 | **[YouTube Music](docs/tweaks/youtube-music.md)** | <img src="brand/icons/512/ytmusic.png" width="44" alt=""> | 0.10.1 | ✅ | synced lyrics, saving tracks, no ads |

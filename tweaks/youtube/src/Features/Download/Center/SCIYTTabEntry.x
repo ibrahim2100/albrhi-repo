@@ -179,24 +179,23 @@ static BOOL SCIPaintIcon(UIView *view) {
 
 #pragma mark - The bar
 
-/// Declared because the deferred re-application sends `-setRenderer:` to the bar itself: inside a
-/// `%hook` Logos only forward-declares the class, and a message sent to it needs a complete type.
+/// Declared because the hooks below only forward-declare the classes, and a hook body may not send them a message.
 @interface YTPivotBarView : UIView
-- (void)setRenderer:(id)renderer;
+@end
+@interface YTFloatingPivotBarView : UIView
 @end
 
-%hook YTPivotBarView
+///
+/// **What happens to the array of tabs, for either bar.** Called from `-setRenderer:` *before* `%orig`, so YouTube builds its tabs from the array this
+/// leaves behind. Written once and shared, because 21.47.6 has two bars: the classic `YTPivotBarView`, and `YTFloatingPivotBarView`, the glass bar
+/// iOS 27 gets (`ios27EnableLiquidGlass`, `YTFloatingBarExperiment`). A bar of the second kind has no `-setRenderer:` of ours on it, so on iOS 27 the
+/// tab was never added: the bar was hooked, and the bar on screen was a different class.
+///
+static void SCIYTPivotPrepare(UIView *bar, id renderer) {
 
-- (void)setRenderer:(id)renderer {
-    if (!renderer) {
-        %orig;
-        return;
-    }
+    if (!renderer) return;
 
-    if (SCIYTStoodDown() || !SCIPrefEnabled(SCIPrefPivotBar)) {
-        %orig;
-        return;
-    }
+    if (SCIYTStoodDown() || !SCIPrefEnabled(SCIPrefPivotBar)) return;
 
     //
     // **Not during the launch. The same change, made a second later.**
@@ -214,25 +213,23 @@ static BOOL SCIPaintIcon(UIView *view) {
     // who can switch it off.
     //
     if (!SCIYTAppIsActive()) {
-        %orig;
-
         // **Asked for once per bar.** The re-application calls this same method again, and
         // YouTube calls it itself on every page style change, rotation and account switch -- so
         // without this a bar can queue one deferred rebuild per call and then rebuild itself
         // once per queued block. A device reported YouTube stuck again after a licence and a
         // settings change, cured by clearing the app's data; the only state on this path that
         // clearing removes is the stored tab arrangement below.
-        if (objc_getAssociatedObject(self, &kSCIDeferredOnce)) return;
-        objc_setAssociatedObject(self, &kSCIDeferredOnce, @YES, OBJC_ASSOCIATION_RETAIN);
+        if (objc_getAssociatedObject(bar, &kSCIDeferredOnce)) return;
+        objc_setAssociatedObject(bar, &kSCIDeferredOnce, @YES, OBJC_ASSOCIATION_RETAIN);
 
-        __weak YTPivotBarView *weakBar = self;
+        __weak UIView *weakBar = bar;
         __weak id weakRenderer = renderer;
         SCIYTWhenActive(^{
-            YTPivotBarView *bar = weakBar;
+            UIView *again = weakBar;
             id held = weakRenderer;
             // Both gone means the bar was rebuilt while we waited, and YouTube's own rebuild
             // will have come back through here with the app active. Nothing to do.
-            if (bar && held) [bar setRenderer:held];
+            if (again && held) ((void (*)(id, SEL, id))objc_msgSend)(again, @selector(setRenderer:), held);
         });
         return;
     }
@@ -326,11 +323,61 @@ static BOOL SCIPaintIcon(UIView *view) {
         [SCIYTDiagnostics recordTabState:
             [NSString stringWithFormat:@"refused: %@", exception.reason ?: @"?"]];
     }
+}
 
+%hook YTPivotBarView
+
+- (void)setRenderer:(id)renderer {
+    SCIYTPivotPrepare((UIView *)self, renderer);
     %orig;
 }
 
 %end
+
+// The glass bar. Its own group, installed only where the class is in the build and answers `-setRenderer:` with the encoding the classic bar's does.
+%group SCIYTFloatingBar
+%hook YTFloatingPivotBarView
+
+- (void)setRenderer:(id)renderer {
+    SCIYTPivotPrepare((UIView *)self, renderer);
+    %orig;
+}
+
+%end
+%end
+
+static BOOL sciFloatingBarInstalled = NO;
+static NSString *sciFloatingBarNote = @"not tried";
+
+static void SCIYTTryInstallFloatingBar(void) {
+    if (sciFloatingBarInstalled) return;
+    Class bar = NSClassFromString(@"YTFloatingPivotBarView");
+    if (!bar) { sciFloatingBarNote = @"class not in this build"; return; }
+    Method method = class_getInstanceMethod(bar, @selector(setRenderer:));
+    const char *encoding = method ? method_getTypeEncoding(method) : NULL;
+    if (!encoding || strcmp(encoding, "v24@0:8@16") != 0) {
+        sciFloatingBarNote = [NSString stringWithFormat:@"-setRenderer: %s", encoding ? "has another encoding" : "is missing"];
+        return;
+    }
+    %init(SCIYTFloatingBar);
+    sciFloatingBarInstalled = YES;
+    sciFloatingBarNote = @"installed";
+}
+
+/// What the report says about the glass bar.
+NSString *SCIYTFloatingBarReport(void) {
+    return sciFloatingBarNote;
+}
+
+%ctor {
+    %init;
+    SCIYTTryInstallFloatingBar();
+    // A class that is not there yet at load is asked again once the app has launched.
+    if (!sciFloatingBarInstalled) {
+        [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidFinishLaunchingNotification object:nil queue:nil
+                                                      usingBlock:^(NSNotification *note) { SCIYTTryInstallFloatingBar(); }];
+    }
+}
 
 
 #pragma mark - The tab itself
