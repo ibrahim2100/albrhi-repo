@@ -12,7 +12,9 @@
 #import "../Features/Download/Center/SCIYTWatch.h"
 #import "../Features/Playback/SCIYTPoProbe.h"
 #import "../Features/Account/SCIYTSignInFix.h"
+#import "../Features/Account/SCIYTPush.h"
 NSString *SCIYTFloatingBarReport(void);
+NSString *SCIYTCentreDropReport(void);
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import "../Features/Tabs/SCIYTTabBar.h"
@@ -1075,7 +1077,7 @@ static NSMutableArray<NSString *> *sciStreamAttempts = nil;
 
     // Which counter buttons were seen and what each said before anything was written into
     // button -- or on none -- this is the line that says why.
-    [out appendFormat:@"%@\n  %@\n  glass tab bar (iOS 27): %@\n\n", SCILocalized(@"diag_tab"), [self tabState], SCIYTFloatingBarReport()];
+    [out appendFormat:@"%@\n  %@\n  glass tab bar (iOS 27): %@\n  %@\n\n", SCILocalized(@"diag_tab"), [self tabState], SCIYTFloatingBarReport(), SCIYTCentreDropReport()];
     [out appendFormat:@"  %@\n", SCIYTTabBarReport()];
     [out appendFormat:@"  %@\n\n", SCIYTHistoryTabReport()];
 
@@ -1139,6 +1141,7 @@ static NSMutableArray<NSString *> *sciStreamAttempts = nil;
     [out appendFormat:@"%@\n  %@\n  %@\n\n", SCILocalized(@"diag_playback_fix"), [self playbackFixState], [SCIYTWatch report]];
     [out appendFormat:@"%@\n", SCIYTPoProbeReport()];
     [out appendFormat:@"%@\n%@\n", SCILocalized(@"diag_signin"), SCIYTSignInReport()];
+    [out appendFormat:@"%@\n%@\n", SCILocalized(@"diag_push"), SCIYTPushReport()];
 
     // Above the streams section on purpose: it says what was asked of the streaming protocol,
     // and the section below says what came back. Read the other way round they are two

@@ -83,6 +83,11 @@ static __weak UIView *sciAttachedView = nil;
     return YES;
 }
 
++ (BOOL)isShownInPivotBar {
+    UIView *view = sciAttachedView;
+    return view && view.superview != nil;
+}
+
 + (void)removeFromPivotBar {
     UIViewController *page = sciAttached;
 
