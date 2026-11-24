@@ -7,7 +7,7 @@
          and shown beside the installed version, so a mismatch is visible before it
          becomes a bug report. Substrate ignores keys it does not know. -->
     <key>SCITestedVersion</key>
-    <string>46.4.0</string>
+    <string>47.8.0</string>
 
     <key>Filter</key>
     <dict>

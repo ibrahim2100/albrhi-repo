@@ -1,6 +1,6 @@
 Package: com.albrhi.tiktok
 Name: Albrhi for TikTok (rootless)
-Version: 0.31.0
+Version: 0.31.1
 Architecture: iphoneos-arm64
 Description: No ads, downloads, privacy, and TikTok's own checks answered the way an
  unmodified phone would.
@@ -31,7 +31,7 @@ Description: No ads, downloads, privacy, and TikTok's own checks answered the wa
  Hold two fingers anywhere in TikTok for a real settings screen: a switch and an
  explanation for every feature, and live numbers behind each hook. Arabic and English.
  .
- TESTED ON TikTok 46.4.0. Nothing is pinned to a version number: every class is looked up
+ TESTED ON TikTok 47.8.0. Nothing is pinned to a version number: every class is looked up
  at runtime and skipped if it is not there.
  .
  Architecture was read from BandarHL's and al3raQe's published BHTikTok source

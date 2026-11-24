@@ -66,6 +66,8 @@
 @end
 
 static NSString *sciExtrasState = nil;
+/// How many times each engine class was asked to loop and refused (a tally per class, so the report says which one the feed really uses).
+static NSUInteger sciLoopRefusedPlayer = 0, sciLoopRefusedOwn = 0, sciLoopRefusedMain = 0, sciLoopRefusedEngine = 0, sciLoopRefusedSystem = 0, sciLoopRefusedAdapter = 0;
 static NSUInteger sciVisitorsSeen = 0;
 
 /// The messages whose sender took them back, by `serverMessageID` -- **kept in a file now** (`SCITTRecalledStore`, 0.29.0), so a message
@@ -363,14 +365,16 @@ NSArray<NSString *> *SCITTVisitorLog(void) {
 
 NSString *SCITTExtrasReport(void) {
     return [NSString stringWithFormat:
-            @"%@; visitors remembered: %lu (%lu seen this launch); recalled messages kept in the file: %lu (new this launch %lu, with content %lu), marked by text: %lu%@%@; bubble tint: %@ (applied %lu, put back %lu)",
+            @"%@; visitors remembered: %lu (%lu seen this launch); recalled messages kept in the file: %lu (new this launch %lu, with content %lu), marked by text: %lu%@%@; bubble tint: %@ (applied %lu, put back %lu); loops refused (feed engine): main %lu, engine %lu, player %lu, own %lu, system %lu, adapter %lu",
             sciExtrasState ?: @"not installed",
             (unsigned long)SCITTVisitorLog().count, (unsigned long)sciVisitorsSeen,
             (unsigned long)[SCITTRecalledStore shared].count, (unsigned long)sciRecalledSeen, (unsigned long)sciRecalledStored,
             (unsigned long)sciMarkedCount,
             sciMarkedKey ? [@" via key " stringByAppendingString:sciMarkedKey] : @"",
             sciContentKeys ? [@"; content keys: " stringByAppendingString:sciContentKeys] : @"",
-            sciTintState ?: @"not installed", (unsigned long)sciTintApplied, (unsigned long)sciTintRestored];
+            sciTintState ?: @"not installed", (unsigned long)sciTintApplied, (unsigned long)sciTintRestored,
+            (unsigned long)sciLoopRefusedMain, (unsigned long)sciLoopRefusedEngine, (unsigned long)sciLoopRefusedPlayer,
+            (unsigned long)sciLoopRefusedOwn, (unsigned long)sciLoopRefusedSystem, (unsigned long)sciLoopRefusedAdapter];
 }
 
 //
@@ -444,6 +448,7 @@ NSString *SCITTExtrasReport(void) {
 
 - (void)setLooping:(BOOL)looping {
     if (SCIPrefEnabled(SCIPrefNoLoop)) {
+        if (looping) sciLoopRefusedPlayer++;
         %orig(NO);
         return;
     }
@@ -465,6 +470,7 @@ NSString *SCITTExtrasReport(void) {
 
 - (void)setLooping:(BOOL)looping {
     if (SCIPrefEnabled(SCIPrefNoLoop)) {
+        if (looping) sciLoopRefusedOwn++;
         %orig(NO);
         return;
     }
@@ -486,6 +492,7 @@ NSString *SCITTExtrasReport(void) {
 
 - (void)setLooping:(BOOL)looping {
     if (SCIPrefEnabled(SCIPrefNoLoop)) {
+        if (looping) sciLoopRefusedSystem++;
         %orig(NO);
         return;
     }
@@ -507,10 +514,70 @@ NSString *SCITTExtrasReport(void) {
 
 - (void)setLooping:(BOOL)looping {
     if (SCIPrefEnabled(SCIPrefNoLoop)) {
+        if (looping) sciLoopRefusedAdapter++;
         %orig(NO);
         return;
     }
     %orig;
+}
+
+%end
+
+%end
+
+//
+// **47.8.0 retired `TTVideoEngineOwnPlayer` and the feed's player became `TTKMainOwnPlayer`** (measured 2026-11-24 by diffing the class
+// dumps of 47.1.0 and 47.8.0: the old class is gone, the new one carries 491 of its 504 methods and `setLooping:` / `looping` / `setLoop:` with the
+// same encodings), so every loop setter this feature held was on a class the feed no longer plays through and "do not repeat" quietly did nothing.
+// `TTVideoEngine` is the engine object both generations drive; it gets the same pair so a rename of the player underneath it costs nothing.
+//
+%group SCITTNoLoopMain
+
+%hook TTKMainOwnPlayer
+
+- (void)setLooping:(BOOL)looping {
+    if (SCIPrefEnabled(SCIPrefNoLoop)) {
+        if (looping) sciLoopRefusedMain++;
+        %orig(NO);
+        return;
+    }
+    %orig;
+}
+
+- (BOOL)looping {
+    if (!SCIPrefEnabled(SCIPrefNoLoop)) return %orig;
+    return NO;
+}
+
+- (void)setLoop:(BOOL)loop {
+    if (SCIPrefEnabled(SCIPrefNoLoop)) {
+        if (loop) sciLoopRefusedMain++;
+        %orig(NO);
+        return;
+    }
+    %orig;
+}
+
+%end
+
+%end
+
+%group SCITTNoLoopEngine
+
+%hook TTVideoEngine
+
+- (void)setLooping:(BOOL)looping {
+    if (SCIPrefEnabled(SCIPrefNoLoop)) {
+        if (looping) sciLoopRefusedEngine++;
+        %orig(NO);
+        return;
+    }
+    %orig;
+}
+
+- (BOOL)looping {
+    if (!SCIPrefEnabled(SCIPrefNoLoop)) return %orig;
+    return NO;
 }
 
 %end
@@ -592,6 +659,8 @@ void SCITTInstallExtras(void) {
         { "TTVideoEngineOwnPlayer",   "setLooping:", "v20@0:8B16", 1 },
         { "TTVideoEngineSYSAVPlayer", "setLooping:", "v20@0:8B16", 2 },
         { "TTVideoEngineAdapter",     "setLooping:", "v20@0:8B16", 3 },
+        { "TTKMainOwnPlayer",         "setLooping:", "v20@0:8B16", 4 },
+        { "TTVideoEngine",            "setLooping:", "v20@0:8B16", 5 },
     };
 
     for (size_t i = 0; i < sizeof(loops) / sizeof(loops[0]); i++) {
@@ -606,6 +675,8 @@ void SCITTInstallExtras(void) {
             case 1: %init(SCITTNoLoopOwn); break;
             case 2: %init(SCITTNoLoopSystem); break;
             case 3: %init(SCITTNoLoopAdapter); break;
+            case 4: if (SCITTEncodingMatches(engine, @"setLoop:", @"v20@0:8B16") && SCITTEncodingMatches(engine, @"looping", @"B16@0:8")) %init(SCITTNoLoopMain); else { [skipped addObject:@"TTKMainOwnPlayer -setLoop:/-looping"]; continue; } break;
+            case 5: if (SCITTEncodingMatches(engine, @"looping", @"B16@0:8")) %init(SCITTNoLoopEngine); else { [skipped addObject:@"TTVideoEngine -looping"]; continue; } break;
         }
         [installed addObject:[NSString stringWithFormat:@"%s -setLooping: (no loop)", loops[i].name]];
     }

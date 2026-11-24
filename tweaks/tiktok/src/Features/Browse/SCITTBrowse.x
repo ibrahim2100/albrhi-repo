@@ -40,6 +40,9 @@
 @interface TTKPlayInteractionTikBotElement : NSObject
 @end
 
+@interface AWEFeedTikBotButton : UIButton
+@end
+
 @interface TTKMediaMusicComponent : NSObject
 @end
 
@@ -62,7 +65,7 @@ static NSString *sciBrowseState = nil;
 
 // Tallies, one per answer. A tally on the path that executes -- "installed" beside zero is a finding.
 static NSUInteger sciWarningsHidden = 0;
-static NSUInteger sciTikBotRefused = 0;
+static NSUInteger sciTikBotRefused = 0, sciTikBotViewsHidden = 0;
 static NSUInteger sciUnmuteArmed = 0, sciUnmuteAnswered = 0;
 static NSUInteger sciAdvanceSeen = 0, sciAdvanceDone = 0, sciAdvanceNoFeed = 0, sciAdvanceTooSoon = 0;
 static NSUInteger sciFollowAsked = 0, sciFollowApplied = 0, sciFollowSkippedPending = 0, sciFollowNotFound = 0, sciFollowStoredWon = 0;
@@ -102,19 +105,52 @@ static BOOL SCITTBrowseHas(Class cls, const char *selector, const char *encoding
 
 #pragma mark - The TikBot button
 
+/// "Hide the TikBot button" and "Hide TikTok AI (Tako)" both take it away (the Tako row's note says so).
+static BOOL SCITTTikBotHidden(void) {
+    return SCIPrefEnabled(SCIPrefHideTikBot) || SCIPrefEnabled(SCIPrefHideTako);
+}
+
 %group SCITTBrowseTikBot
 %hook TTKPlayInteractionTikBotElement
 
 - (BOOL)p_shouldShowtikBotButton {
-    if (!SCIPrefEnabled(SCIPrefHideTikBot)) return %orig;
+    if (!SCITTTikBotHidden()) return %orig;
     sciTikBotRefused++;
     return NO;
 }
 
 - (BOOL)p_shouldShowTikbotButtonStatic {
-    if (!SCIPrefEnabled(SCIPrefHideTikBot)) return %orig;
+    if (!SCITTTikBotHidden()) return %orig;
     sciTikBotRefused++;
     return NO;
+}
+
+%end
+%end
+
+// **The button itself, as well as the question.** 47.8.0 gave the element a Tako entry plugin and a relay component beside it
+// (`-takoEntryPlugin`, `-relayComponent`, `-searchTikBotCapability`), and a phone on 47.8.0 showed the TikBot button at the bottom left of the
+// screen: the two "should this be shown" answers above no longer decide whether the button is *built and added*, and a button the rail does
+// not lay out lands at the origin of the view it was added to. So the view is refused as well -- hidden when it reaches a window and kept hidden
+// against any later `-setHidden:NO` or fade-in -- and its touches go nowhere. This is the second door, not a replacement of the first.
+%group SCITTBrowseTikBotView
+%hook AWEFeedTikBotButton
+
+- (void)didMoveToWindow {
+    %orig;
+    if (!SCITTTikBotHidden() || !self.window) return;
+    sciTikBotViewsHidden++;
+    self.hidden = YES;
+    self.alpha = 0;
+    self.userInteractionEnabled = NO;
+}
+
+- (void)setHidden:(BOOL)hidden {
+    %orig(hidden || SCITTTikBotHidden());
+}
+
+- (void)setAlpha:(CGFloat)alpha {
+    %orig(SCITTTikBotHidden() ? 0 : alpha);
 }
 
 %end
@@ -324,12 +360,12 @@ static NSString *const kSCITTFollowTrippedKey = @"albrhi_tt_following_tripped";
 
 NSString *SCITTBrowseReport(void) {
     return [NSString stringWithFormat:
-        @"%@; warnings hidden %lu; TikBot refused %lu; "
+        @"%@; warnings hidden %lu; TikBot refused %lu (views hidden %lu); "
         @"unmute armed %lu, answered %lu; advance: loop notices %lu, scrolled %lu, no feed on screen %lu, too soon or a copy menu open %lu; "
         @"following: asked %lu, applied %lu (index %ld; live row said %ld; remembered index preferred over it %lu times), not found %lu, "
         @"skipped after an unfinished launch %lu; bio asked %lu",
         sciBrowseState ?: @"not installed",
-        (unsigned long)sciWarningsHidden, (unsigned long)sciTikBotRefused,
+        (unsigned long)sciWarningsHidden, (unsigned long)sciTikBotRefused, (unsigned long)sciTikBotViewsHidden,
         (unsigned long)sciUnmuteArmed, (unsigned long)sciUnmuteAnswered,
         (unsigned long)sciAdvanceSeen, (unsigned long)sciAdvanceDone, (unsigned long)sciAdvanceNoFeed, (unsigned long)sciAdvanceTooSoon,
         (unsigned long)sciFollowAsked, (unsigned long)sciFollowApplied, (long)sciFollowLastIndex,
@@ -363,6 +399,13 @@ void SCITTInstallBrowse(void) {
         [installed addObject:@"tikbot"];
     } else {
         [skipped addObject:@"TTKPlayInteractionTikBotElement -p_shouldShow…"];
+    }
+    Class botButton = NSClassFromString(@"AWEFeedTikBotButton");
+    if (botButton && [botButton isSubclassOfClass:[UIButton class]]) {
+        %init(SCITTBrowseTikBotView);
+        [installed addObject:@"tikbot view"];
+    } else {
+        [skipped addObject:@"AWEFeedTikBotButton"];
     }
 
     if (SCITTBrowseHas(NSClassFromString(@"TTKMediaMusicComponent"), "muteMusicIfNeeded", "v16@0:8")

@@ -185,6 +185,58 @@ static BOOL SCITTCleanClassMethod(Class cls, const char *selector, const char *e
 %end
 %end
 
+// **47.8.0 moved the question to plugins that did not exist before** (`FeedTakoEntryPluginImpl`, `TabDataCenterTakoEntryPluginImpl`, and the
+// service object behind them, `TikTokTakoEntryInnerService`), each answering the same entrance question, plus `shouldShowFYPTabOrSearchInflow
+// TakoEntrance` for the Tako item in the tab corners. Measured by diffing the class dumps of 47.1.0 and 47.8.0. They are answered NO beside the
+// three that were already answered, so whichever the layout reads decides the same.
+%group SCITTCleanTakoFeedPlugin
+%hook _TtC17TikTokFeedImplExt23FeedTakoEntryPluginImpl
+
+- (BOOL)shouldShowTakoEntranceWithAwemeModel:(id)model referString:(id)refer playlistPreviousPage:(id)page {
+    if (!SCIPrefEnabled(SCIPrefHideTako)) return %orig;
+    sciTakoFeed++;
+    return NO;
+}
+
+- (BOOL)shouldShowFYPTabOrSearchInflowTakoEntrance {
+    if (!SCIPrefEnabled(SCIPrefHideTako)) return %orig;
+    sciTakoFeed++;
+    return NO;
+}
+
+%end
+%end
+
+%group SCITTCleanTakoTabPlugin
+%hook _TtC26TikTokTabDataCenterImplExt32TabDataCenterTakoEntryPluginImpl
+
+- (BOOL)shouldShowFYPTabOrSearchInflowTakoEntrance {
+    if (!SCIPrefEnabled(SCIPrefHideTako)) return %orig;
+    sciTakoFeed++;
+    return NO;
+}
+
+%end
+%end
+
+%group SCITTCleanTakoInnerService
+%hook TikTokTakoEntryInnerService
+
+- (BOOL)shouldShowTakoEntranceWithAwemeModel:(id)model referString:(id)refer playlistPreviousPage:(id)page {
+    if (!SCIPrefEnabled(SCIPrefHideTako)) return %orig;
+    sciTakoFeed++;
+    return NO;
+}
+
+- (BOOL)shouldShowFYPTabOrSearchInflowTakoEntrance {
+    if (!SCIPrefEnabled(SCIPrefHideTako)) return %orig;
+    sciTakoFeed++;
+    return NO;
+}
+
+%end
+%end
+
 // The bar under a video and the banner above it.
 %group SCITTCleanTakoBottomBar
 %hook TTKFeedBottomBarTakoManager
@@ -414,6 +466,26 @@ void SCITTInstallClean(void) {
         [installed addObject:@"tako plugin"];
     } else {
         [skipped addObject:@"FeedInteractionTakoEntryPluginImpl"];
+    }
+    Class feedPlugin = NSClassFromString(@"_TtC17TikTokFeedImplExt23FeedTakoEntryPluginImpl");
+    if (SCITTCleanInstance(feedPlugin, kTakoEntrance, "B40@0:8@16@24@32") && SCITTCleanInstance(feedPlugin, "shouldShowFYPTabOrSearchInflowTakoEntrance", "B16@0:8")) {
+        %init(SCITTCleanTakoFeedPlugin);
+        [installed addObject:@"tako feed plugin"];
+    } else {
+        [skipped addObject:@"FeedTakoEntryPluginImpl"];
+    }
+    if (SCITTCleanInstance(NSClassFromString(@"_TtC26TikTokTabDataCenterImplExt32TabDataCenterTakoEntryPluginImpl"), "shouldShowFYPTabOrSearchInflowTakoEntrance", "B16@0:8")) {
+        %init(SCITTCleanTakoTabPlugin);
+        [installed addObject:@"tako tab plugin"];
+    } else {
+        [skipped addObject:@"TabDataCenterTakoEntryPluginImpl"];
+    }
+    Class innerService = NSClassFromString(@"TikTokTakoEntryInnerService");
+    if (SCITTCleanInstance(innerService, kTakoEntrance, "B40@0:8@16@24@32") && SCITTCleanInstance(innerService, "shouldShowFYPTabOrSearchInflowTakoEntrance", "B16@0:8")) {
+        %init(SCITTCleanTakoInnerService);
+        [installed addObject:@"tako inner service"];
+    } else {
+        [skipped addObject:@"TikTokTakoEntryInnerService"];
     }
     Class bar = NSClassFromString(@"TTKFeedBottomBarTakoManager");
     if (SCITTCleanInstance(bar, "shouldShowTakoBottomBarWith:", "B24@0:8@16") && SCITTCleanInstance(bar, "shouldShowWithData:", "B24@0:8@16")) {
