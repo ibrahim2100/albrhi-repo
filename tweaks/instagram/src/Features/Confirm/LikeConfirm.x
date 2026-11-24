@@ -13,6 +13,17 @@
 
 // Liking posts
 %hook IGUFIButtonBarView
+// 450.1.0 dropped the sender argument (`-_onLikeButtonPressed`, `v16@0:8`); 410 and 439 still have the one-argument form below.
+- (void)_onLikeButtonPressed {
+    if ([SCIUtils getBoolPref:@"like_confirm"]) {
+        SCILogV(@"[SCInsta] Confirm post like triggered");
+        [SCIUtils showConfirmation:^(void) {
+            %orig;
+        }];
+    } else {
+        return %orig;
+    }
+}
 - (void)_onLikeButtonPressed:(id)arg1 {
     if ([SCIUtils getBoolPref:@"like_confirm"]) {
         SCILogV(@"[SCInsta] Confirm post like triggered");

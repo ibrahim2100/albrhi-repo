@@ -46,6 +46,17 @@ static BOOL SCIShouldHideCallButton(UIView *button) {
 // rather than placing a call.
 %hook IGDirectThreadCallButtonsCoordinator
 
+// 450.1.0 dropped the sender argument of both (`-_didTapAudioButton`, `-_didTapVideoButton`: `v16@0:8`).
+- (void)_didTapAudioButton {
+    if ([SCIUtils getBoolPref:@"hide_voice_call_button"]) return;
+    %orig;
+}
+
+- (void)_didTapVideoButton {
+    if ([SCIUtils getBoolPref:@"hide_video_call_button"]) return;
+    %orig;
+}
+
 - (void)_didTapAudioButton:(id)sender {
     if ([SCIUtils getBoolPref:@"hide_voice_call_button"]) return;
     %orig;

@@ -100,6 +100,11 @@ static BOOL sci_shouldAutoScrollToObject(id self, SEL _cmd, id object, NSUIntege
         SCIForceGate(feed, @"_shouldAutoScrollAfterSwipeBack", YES); // 410
         SCIForceGate(engine, @"shouldForceEnableAutoScroll", YES);  // 439
         SCIForceGate(engine, @"isAutoAdvanceEnabled", YES);
+        // 450.1.0: the engine (`IGSundialAutoScroll`) answers `-isEnabled` and no longer `-isAutoAdvanceEnabled`; the feed lost
+        // every `_…AutoScroll…` method and gained `-autoScrollBlockedByIncorrectLoopCount`. Both guarded like the rest, so a build
+        // without them is skipped. **Read from the class dump of 450.1.0, not seen working** (no signed-in session in the simulator).
+        SCIForceGate(engine, @"isEnabled", YES);
+        SCIForceGate(feed, @"autoScrollBlockedByIncorrectLoopCount", NO);
 
         // Blocked/disabled gates → NO.
         SCIForceGate(feed, @"_isAutoScrollingBlocked", NO);         // 410

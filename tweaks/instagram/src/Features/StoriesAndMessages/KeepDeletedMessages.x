@@ -361,6 +361,16 @@ static void SCIDefuseThreadUpdates(id updates, NSInteger depth) {
 // back here.
 %hook IGDirectRealtimeIrisDeltaApplicator
 
+// 450.1.0: the one-argument apply is gone; this one carries a block that reports when the update was applied in memory.
+- (void)_applyThreadUpdates:(id)updates appliedInMemoryBlock:(id)block {
+    if (SCIWantsToKeepUnsent()) {
+        [SCIDiagnostics recordUnsendPath:@"iris applyThreadUpdates+block" detail:NSStringFromClass([updates class])];
+        SCIDefuseThreadUpdates(updates, 0);
+    }
+
+    %orig;
+}
+
 - (void)_applyThreadUpdates:(id)updates {
     if (SCIWantsToKeepUnsent()) {
         [SCIDiagnostics recordUnsendPath:@"iris applyThreadUpdates" detail:NSStringFromClass([updates class])];

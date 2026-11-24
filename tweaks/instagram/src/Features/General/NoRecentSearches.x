@@ -81,6 +81,24 @@
 %end
 %end
 
+///
+/// **450.1.0's initialiser for the same storage** -- `initWithDiskManager:directRepo:launcherSet:` -- has lost the user map and the current
+/// user, so neither earlier hook attaches on it. Same rule as the 410 group: installed only where the class declares exactly this selector.
+///
+%group SCIgDirectRecentStorage450
+%hook IGDirectRecipientRecentSearchStorage
+- (id)initWithDiskManager:(id)arg1 directRepo:(id)arg2 launcherSet:(id)arg3 {
+    if ([SCIUtils getBoolPref:@"no_recent_searches"]) {
+        SCILogV(@"[SCInsta] Disabling recent searches (450 recipient storage)");
+
+        return nil;
+    }
+
+    return %orig;
+}
+%end
+%end
+
 %ctor {
     // The hooks outside the groups below. Logos writes this call itself for
     // a file with no %ctor -- and stops the moment there is one, so leaving
@@ -96,5 +114,9 @@
     SEL variant410 = NSSelectorFromString(@"initWithDiskManager:directRepo:userMap:currentUser:launcherSet:");
     if (recipientStorage && class_getInstanceMethod(recipientStorage, variant410)) {
         %init(SCIgDirectRecentStorage410, IGDirectRecipientRecentSearchStorage = recipientStorage);
+    }
+    SEL variant450 = NSSelectorFromString(@"initWithDiskManager:directRepo:launcherSet:");
+    if (recipientStorage && class_getInstanceMethod(recipientStorage, variant450)) {
+        %init(SCIgDirectRecentStorage450, IGDirectRecipientRecentSearchStorage = recipientStorage);
     }
 }
