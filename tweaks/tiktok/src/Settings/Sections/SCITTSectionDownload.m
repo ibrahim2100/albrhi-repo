@@ -17,6 +17,7 @@
 #import "../SCITTBadge.h"
 #import "../../UI/SCITTWelcome.h"
 #import "../../Tweak.h"
+#import "../../Features/Download/SCITTButtonStyle.h"
 #import "../../Prefs.h"
 #import "../../Localization/SCILocalize.h"
 #import <objc/runtime.h>
@@ -24,6 +25,19 @@
 
 @interface SCITTSectionDownload : NSObject
 @end
+
+/// One option per design, each with a picture of itself. The first (the tool's own mark) is the default and stores nothing.
+static NSArray<NSDictionary *> *SCITTButtonStyleOptions(void) {
+    NSMutableArray *options = [NSMutableArray array];
+    for (NSUInteger i = 0; i < SCITTButtonStyleCount(); i++) {
+        [options addObject:@{
+            @"value": i == 0 ? @"" : SCITTButtonStyleID(i),
+            @"title": SCILocalized(SCITTButtonStyleNameKey(i)),
+            @"image": SCITTButtonStylePreview(i, 28),
+        }];
+    }
+    return options;
+}
 
 @implementation SCITTSectionDownload
 
@@ -40,6 +54,30 @@
                     kSCIRowTitle: SCILocalized(@"row_download_button"),
                     kSCIRowNote: SCILocalized(@"row_download_button_note"),
                     kSCIRowIcon: @"arrow.down",
+                    kSCIRowColor: SCIAccent(),
+                },
+                @{
+                    kSCIRowKind: kSCIKindChoice,
+                    kSCIRowPref: SCIPrefButtonStyle,
+                    kSCIRowOptions: SCITTButtonStyleOptions(),
+                    kSCIRowChoiceFooter: SCILocalized(@"button_style_footer"),
+                    kSCIRowTitle: SCILocalized(@"row_button_style"),
+                    kSCIRowNote: SCILocalized(@"row_button_style_note"),
+                    kSCIRowIcon: @"paintbrush",
+                    kSCIRowColor: SCIAccent(),
+                },
+                @{
+                    kSCIRowKind: kSCIKindChoice,
+                    kSCIRowPref: SCIPrefButtonLabel,
+                    kSCIRowOptions: @[
+                        @{@"value": @"",     @"title": SCILocalized(@"btn_label_name")},
+                        @{@"value": @"word", @"title": SCILocalized(@"btn_label_word")},
+                        @{@"value": @"none", @"title": SCILocalized(@"btn_label_none")},
+                    ],
+                    kSCIRowChoiceFooter: SCILocalized(@"button_label_footer"),
+                    kSCIRowTitle: SCILocalized(@"row_button_label"),
+                    kSCIRowNote: SCILocalized(@"row_button_label_note"),
+                    kSCIRowIcon: @"textformat",
                     kSCIRowColor: SCIAccent(),
                 },
                 @{

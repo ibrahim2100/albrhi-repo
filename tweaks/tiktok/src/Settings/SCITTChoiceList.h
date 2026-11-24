@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 NSString *SCITTChoiceCurrentTitle(NSArray<NSDictionary *> *options, NSString *pref);
 
 /// A plain list of options with a check mark on the current one. Picking stores the value (the first option removes the key)
-/// and goes back. Options are dictionaries `{@"value": NSString or NSNumber, @"title": NSString}`.
+/// and goes back. Options are dictionaries `{@"value": NSString or NSNumber, @"title": NSString}`, and may carry `@"image": UIImage` (a template picture shown beside the title).
 @interface SCITTChoiceList : UITableViewController
 
 - (instancetype)initWithTitle:(NSString *)title pref:(NSString *)pref options:(NSArray<NSDictionary *> *)options footer:(nullable NSString *)footer;

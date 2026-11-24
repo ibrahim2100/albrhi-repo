@@ -16,6 +16,11 @@
 /// list to come back to on the status screen.
 #define SCIPrefDownloadButton   @"download_button"
 
+/// The design the download button wears (`SCITTButtonStyle.h`) and the text under it. Both are choices; the first option of each is the default and
+/// removes the key. A value this build does not know is read as the default, so an old preference can never leave the button without a glyph.
+#define SCIPrefButtonStyle      @"button_style"
+#define SCIPrefButtonLabel      @"button_label"
+
 /// Three separate switches, not one -- a story's seen mark, a message's read receipt
 /// and a profile view are three different things reported to three different places,
 /// and turning one off should not silently touch the other two. Never touches what

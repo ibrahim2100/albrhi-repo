@@ -230,3 +230,89 @@ int main(void) {
 EOM
 clang -fobjc-arc -Wall -I"$ROOT" -framework Foundation "$OUT/Store.m" "$ROOT/tweaks/tiktok/src/Features/Messages/SCITTRecalledStore.m" -o "$OUT/store-test"
 "$OUT/store-test"
+
+# --- The download button's designs (SCITTButtonStyle.m is Core Graphics only, compiled as it ships) --------------------
+# Each design is drawn into a bitmap and measured: it must put ink on the picture, not nearly all of it, stay off the very edge, differ from every
+# other design, and (for the solid ones) really have the arrow cut out. A design that drew nothing would ship as an invisible button.
+cat > "$OUT/Style.m" <<'EOM'
+#import <Foundation/Foundation.h>
+#import <CoreGraphics/CoreGraphics.h>
+#import "tweaks/tiktok/src/Features/Download/SCITTButtonStyle.h"
+
+static int fails = 0;
+#define CHECK(x, ...) do { NSString *what_ = [NSString stringWithFormat:__VA_ARGS__]; if (!(x)) { printf("FAIL  %s\n", what_.UTF8String); fails++; } else printf("ok    %s\n", what_.UTF8String); } while (0)
+
+enum { S = 64 };
+
+static NSData *Render(NSUInteger index) {
+    NSMutableData *pixels = [NSMutableData dataWithLength:S * S * 4];
+    CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
+    CGContextRef c = CGBitmapContextCreate(pixels.mutableBytes, S, S, 8, S * 4, space, (CGBitmapInfo)kCGImageAlphaPremultipliedLast);
+    CGColorSpaceRelease(space);
+    CGContextSetRGBFillColor(c, 1, 1, 1, 1);
+    CGContextSetRGBStrokeColor(c, 1, 1, 1, 1);
+    SCITTButtonStyleDraw(index, c, S);
+    CGContextRelease(c);
+    return pixels;
+}
+
+static double Ink(NSData *pixels, int x0, int y0, int x1, int y1) {
+    const uint8_t *p = pixels.bytes;
+    int on = 0, total = 0;
+    for (int y = y0; y < y1; y++) for (int x = x0; x < x1; x++) { total++; if (p[(y * S + x) * 4 + 3] > 127) on++; }
+    return total ? (double)on / total : 0;
+}
+
+int main(void) {
+    @autoreleasepool {
+        NSUInteger n = SCITTButtonStyleCount();
+        CHECK(n >= 6, @"there are several designs to choose from");
+        NSMutableSet *ids = [NSMutableSet set];
+        NSMutableArray<NSData *> *all = [NSMutableArray array];
+        for (NSUInteger i = 0; i < n; i++) {
+            NSString *label = SCITTButtonStyleID(i);
+            [ids addObject:label];
+            NSData *d = Render(i);
+            [all addObject:d];
+            double whole = Ink(d, 0, 0, S, S);
+            CHECK(whole > 0.08 && whole < 0.85, @"%@ puts ink on the picture, and not all of it (%.0f%%)", label, whole * 100);
+            // Nothing on the outermost pixels: a glyph touching the edge is clipped by the rail's own box.
+            CHECK(Ink(d, 0, 0, S, 1) == 0 && Ink(d, 0, S - 1, S, S) == 0 && Ink(d, 0, 0, 1, S) == 0 && Ink(d, S - 1, 0, S, S) == 0,
+                  @"%@ stays off the edge", label);
+            CHECK([SCITTButtonStyleNameKey(i) hasPrefix:@"btn_style_"], @"%@ has a name key", label);
+            CHECK(SCITTButtonStyleIndexForID(label) == i, @"%@ is found again by its stored value", label);
+        }
+        CHECK(ids.count == n, @"every design has its own stored value");
+        for (NSUInteger i = 0; i < n; i++) for (NSUInteger j = i + 1; j < n; j++)
+            if ([all[i] isEqualToData:all[j]]) { printf("FAIL  %s and %s draw the same picture\n", SCITTButtonStyleID(i).UTF8String, SCITTButtonStyleID(j).UTF8String); fails++; }
+
+        // The solid designs have the arrow *cut out*: the middle of the circle is open where its stem runs, while the rim is solid.
+        NSUInteger circle = SCITTButtonStyleIndexForID(@"circle");
+        NSUInteger square = SCITTButtonStyleIndexForID(@"square");
+        NSUInteger badge = SCITTButtonStyleIndexForID(@"badge");
+        NSUInteger cloud = SCITTButtonStyleIndexForID(@"cloud");
+        for (NSNumber *which in @[@(circle), @(square), @(badge), @(cloud)]) {
+            NSData *d = all[which.unsignedIntegerValue];
+            CHECK(Ink(d, S / 2 - 1, S * 38 / 100, S / 2 + 2, S * 55 / 100) < 0.2, @"%@ has the arrow cut out of its middle", SCITTButtonStyleID(which.unsignedIntegerValue));
+        }
+        CHECK(Ink(all[circle], 6, S / 2 - 2, 9, S / 2 + 2) > 0.9, @"the circle's rim is solid");
+
+        // What is stored maps to a design; nothing stored, or a value this build does not know, is the default and never "no glyph".
+        CHECK(SCITTButtonStyleIndexForID(nil) == 0 && SCITTButtonStyleIndexForID(@"") == 0 && SCITTButtonStyleIndexForID(@"from-a-newer-build") == 0, @"an unknown or missing value reads as the default design");
+        CHECK(SCITTButtonStyleIndexForID(@"CIRCLE") == circle, @"the stored value is matched without regard to case");
+        CHECK([SCITTButtonStyleID(0) isEqualToString:@"mark"], @"the default design is the tool's own mark");
+        CHECK(SCITTButtonStyleID(n + 5).length > 0 && SCITTButtonStyleNameKey(n + 5).length > 0, @"an index out of range still names something");
+        NSData *none = Render(n + 5);
+        CHECK(Ink(none, 0, 0, S, S) == 0, @"an index out of range draws nothing rather than crashing");
+
+        CHECK(SCITTButtonLabelModeForID(nil) == SCITTButtonLabelName && SCITTButtonLabelModeForID(@"") == SCITTButtonLabelName, @"no stored label is the tool's name");
+        CHECK(SCITTButtonLabelModeForID(@"word") == SCITTButtonLabelWord && SCITTButtonLabelModeForID(@"none") == SCITTButtonLabelNone, @"the other two labels are read");
+        CHECK(SCITTButtonLabelModeForID(@"something else") == SCITTButtonLabelName, @"an unknown label reads as the default");
+
+        printf(fails ? "\n%d FAILED (button designs)\n" : "button designs: all passed\n", fails);
+        return fails ? 1 : 0;
+    }
+}
+EOM
+clang -fobjc-arc -Wall -I"$ROOT" -framework Foundation -framework CoreGraphics "$OUT/Style.m" "$ROOT/tweaks/tiktok/src/Features/Download/SCITTButtonStyle.m" -o "$OUT/style-test"
+"$OUT/style-test"

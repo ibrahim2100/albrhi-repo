@@ -41,7 +41,7 @@ Developed by **Ibrahim Ismail AL-Rahn** ([@ibrahim2100](https://github.com/ibrah
 | **[Instagram](tweaks/instagram.md)** | Instagram | 4.8.2 | ✅ | downloads, AV1 reels transcoded on the device, a quieter feed, watching stories without a receipt, unsent messages kept and marked |
 | **[YouTube](tweaks/youtube.md)** | YouTube | 1.50.0 | ✅ | downloads that survive app updates, their own Download Centre tab, no ads, SponsorBlock, background playback |
 | **[X](tweaks/x.md)** | X / Twitter | 0.23.0 | ✅ | media downloads with a button you can place yourself, and fifteen-plus switches for what X does |
-| **[TikTok](tweaks/tiktok.md)** | TikTok | 0.30.0 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |
+| **[TikTok](tweaks/tiktok.md)** | TikTok | 0.31.0 | ✅ | a download button in the feed, photo posts, no ads, confirmations, privacy |
 | **[YouTube Music](tweaks/youtube-music.md)** | YouTube Music | 0.10.1 | ✅ | synced lyrics, saving tracks, no ads, background playback |
 | **[Panel](tweaks/panel.md)** | Settings | 0.11.0 | ✅ | the Albrhi page: a switch per app, a guide, backup |
 | **[Spotify](tweaks/spotify.md)** | Spotify | 0.2.5 | — | no ads, no Premium popups, sponsored podcast segments skipped |

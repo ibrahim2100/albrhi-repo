@@ -53,7 +53,12 @@ NSString *SCITTChoiceCurrentTitle(NSArray<NSDictionary *> *options, NSString *pr
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"choice"] ?: [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"choice"];
-    cell.textLabel.text = self.options[(NSUInteger)indexPath.row][@"title"];
+    NSDictionary *option = self.options[(NSUInteger)indexPath.row];
+    cell.textLabel.text = option[@"title"];
+    // An option may carry a picture of itself (the download button's designs do): drawn as a template, so it follows light and dark.
+    UIImage *picture = [option[@"image"] isKindOfClass:UIImage.class] ? option[@"image"] : nil;
+    cell.imageView.image = picture;
+    cell.imageView.tintColor = [UIColor labelColor];
     cell.accessoryType = indexPath.row == SCITTChoiceIndex(self.options, self.pref) ? UITableViewCellAccessoryCheckmark : UITableViewCellAccessoryNone;
     return cell;
 }

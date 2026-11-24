@@ -2,10 +2,10 @@
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import "SCITTButton.h"
+#import "SCITTButtonStyle.h"
 #import "SCITTMedia.h"
 #import "SCITTDownload.h"
 #import "../Copy/SCITTCopyMenu.h"
-#import "../../UI/SCITTMark.h"
 #import "../../TikTokHeaders.h"
 #import "../../Prefs.h"
 #import "../../Localization/SCILocalize.h"
@@ -52,6 +52,53 @@ static BOOL sciCellSurfaceWorks = NO;
 
 static const NSInteger kSCIRailButtonTag = 0x5C17;
 static const void *kSCIItemKey = &kSCIItemKey;
+
+/// The two pieces of the rail button that wear the chosen design (`SCITTButtonStyle.h`): the glyph and the text under it.
+static const NSInteger kSCIRailGlyphTag = 0x5C1A;
+static const NSInteger kSCIRailCaptionTag = 0x5C1B;
+static const void *kSCIStyleAppliedKey = &kSCIStyleAppliedKey;
+
+/// Every rail button that has been dressed, weakly, so a change in Settings reaches the buttons already on screen without waiting for a layout pass.
+static NSHashTable<UIButton *> *sciStyledButtons;
+static NSUInteger sciStyleApplied = 0;
+static NSString *sciStyleLast;
+
+static NSString *SCITTCaptionForMode(SCITTButtonLabelMode mode) {
+    switch (mode) {
+        case SCITTButtonLabelWord: return SCILocalized(@"rail_download_word");
+        case SCITTButtonLabelNone: return nil;
+        default:                   return SCILocalized(@"rail_download");
+    }
+}
+
+/// Dresses a rail button in the design and the text chosen **now**. Free when nothing changed (one string compare), so it can run on every layout
+/// pass of the rail, which is what keeps a recycled button right after a change in Settings.
+static void SCITTApplyButtonStyle(UIButton *button) {
+    UIImageView *glyph = (UIImageView *)[button viewWithTag:kSCIRailGlyphTag];
+    UILabel *caption = (UILabel *)[button viewWithTag:kSCIRailCaptionTag];
+    if (![glyph isKindOfClass:UIImageView.class] || ![caption isKindOfClass:UILabel.class]) return;
+
+    NSUInteger style = SCITTButtonStyleCurrent();
+    SCITTButtonLabelMode mode = SCITTButtonLabelCurrent();
+    NSString *key = [NSString stringWithFormat:@"%lu|%lu", (unsigned long)style, (unsigned long)mode];
+    if ([objc_getAssociatedObject(button, kSCIStyleAppliedKey) isEqual:key]) return;
+    objc_setAssociatedObject(button, kSCIStyleAppliedKey, key, OBJC_ASSOCIATION_COPY_NONATOMIC);
+
+    glyph.image = SCITTButtonStyleImage(style, 32, [UIColor whiteColor]);
+    NSString *text = SCITTCaptionForMode(mode);
+    caption.text = text;
+    caption.hidden = text.length == 0;
+    // With no text under it the glyph would sit high in its slot; the slot is the height of TikTok's own items, which carry a count.
+    glyph.transform = caption.hidden ? CGAffineTransformMakeTranslation(0, 7) : CGAffineTransformIdentity;
+
+    sciStyleApplied++;
+    sciStyleLast = [NSString stringWithFormat:@"%@ · %@", SCITTButtonStyleID(style),
+                    mode == SCITTButtonLabelNone ? @"no text" : (mode == SCITTButtonLabelWord ? @"Download" : @"name")];
+}
+
+static void SCITTRefreshStyledButtons(void) {
+    for (UIButton *button in sciStyledButtons.allObjects) SCITTApplyButtonStyle(button);
+}
 
 static BOOL sciRailPresent = NO;
 
@@ -995,6 +1042,7 @@ static void SCITTPlaceRailButton(UIStackView *stack) {
             [stack insertArrangedSubview:existing atIndex:MIN(wanted, stack.arrangedSubviews.count)];
             sciRailPlacement = [NSString stringWithFormat:@"moved to index %lu (the rail had filled in)", (unsigned long)wanted];
         }
+        SCITTApplyButtonStyle(existing);
         SCITTApplyRailVisibility(stack);
         SCITTRaiseRailButton(stack, existing);
         return;
@@ -1041,14 +1089,17 @@ static void SCITTPlaceRailButton(UIStackView *stack) {
     // shape as like / comment / bookmark / share: a filled white glyph, and a short caption where they have a count.
     // The glyph is the tool's own mark (`SCITTMark.h`: an A whose crossbar bends into a download arrow), drawn heavier than on the settings page so it
     // holds its own beside TikTok's solid icons, in the same white.
-    UIImageView *glyph = [[UIImageView alloc] initWithImage:SCITTMarkImageWeighted(32, [UIColor whiteColor], 0.115)];
+    UIImageView *glyph = [[UIImageView alloc] initWithImage:SCITTButtonStyleImage(SCITTButtonStyleCurrent(), 32, [UIColor whiteColor])];
+    glyph.tag = kSCIRailGlyphTag;
     glyph.contentMode = UIViewContentModeCenter;
     glyph.translatesAutoresizingMaskIntoConstraints = NO;
     glyph.userInteractionEnabled = NO;   // never takes the tap meant for the button
     [button addSubview:glyph];
 
     UILabel *caption = [[UILabel alloc] init];
-    caption.text = SCILocalized(@"rail_download");
+    caption.tag = kSCIRailCaptionTag;
+    caption.text = SCITTCaptionForMode(SCITTButtonLabelCurrent());
+    caption.hidden = caption.text.length == 0;
     caption.font = [UIFont systemFontOfSize:10.5 weight:UIFontWeightSemibold];   // 'Download' at 13 and at 11.5 ran to the screen edge; TikTok's counts are 3-5 characters
     caption.textColor = [UIColor whiteColor];
     caption.textAlignment = NSTextAlignmentCenter;
@@ -1077,6 +1128,10 @@ static void SCITTPlaceRailButton(UIStackView *stack) {
         piece.layer.shadowRadius = 2;
         piece.layer.shadowOffset = CGSizeMake(0, 1);
     }
+
+    if (!sciStyledButtons) sciStyledButtons = [NSHashTable weakObjectsHashTable];
+    [sciStyledButtons addObject:button];
+    SCITTApplyButtonStyle(button);   // sets the glyph's offset when there is no text; the design itself was drawn above
 
     [button addTarget:[SCITTButtonTarget shared]
                action:@selector(tapped:)
@@ -1403,8 +1458,8 @@ static BOOL sciCellItemFromCell = NO;
             UIImageSymbolConfiguration *config =
                 [UIImageSymbolConfiguration configurationWithPointSize:27
                                                                 weight:UIImageSymbolWeightSemibold];
-            [button setImage:[UIImage systemImageNamed:@"arrow.down.circle.fill"
-                                     withConfiguration:config]
+            (void)config;
+            [button setImage:SCITTButtonStyleImage(SCITTButtonStyleCurrent(), 27, [UIColor whiteColor])
                     forState:UIControlStateNormal];
 
             // White with a shadow: the video underneath is arbitrary, and a shadow keeps the
@@ -1595,7 +1650,8 @@ static UIButton *SCITTMakeDownloadButton(void) {
     UIImageSymbolConfiguration *config =
         [UIImageSymbolConfiguration configurationWithPointSize:17
                                                         weight:UIImageSymbolWeightBold];
-    [button setImage:[UIImage systemImageNamed:@"arrow.down" withConfiguration:config]
+    (void)config;
+    [button setImage:SCITTButtonStyleImage(SCITTButtonStyleCurrent(), 22, [UIColor whiteColor])
             forState:UIControlStateNormal];
 
     button.tintColor = [UIColor whiteColor];
@@ -1896,6 +1952,20 @@ static void SCITTRelayoutDateBesideName(UIView *nameButton) {
 %end
 
 void SCITTInstallButton(void) {
+    // A change in Settings reaches the buttons already on screen. The notification fires for **every** write to the app's defaults (TikTok writes
+    // plenty), so the work is coalesced into one pass on the main queue and each button only compares two numbers.
+    static BOOL refreshPending = NO;
+    [[NSNotificationCenter defaultCenter] addObserverForName:NSUserDefaultsDidChangeNotification object:nil queue:nil usingBlock:^(NSNotification *note) {
+        @synchronized ([NSNull null]) {
+            if (refreshPending) return;
+            refreshPending = YES;
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            @synchronized ([NSNull null]) { refreshPending = NO; }
+            SCITTRefreshStyledButtons();
+        });
+    }];
+
     if (NSClassFromString(@"AWEPlayInteractionAuthorUserNameButton")) {
         %init(AuthorName);
     }
@@ -2040,6 +2110,9 @@ NSString *SCITTButtonReport(void) {
     [out appendFormat:@"; %@; layouts that waited for the column to fill: %lu", sciRailPlacement ?: @"not placed yet", (unsigned long)sciRailWaiting];
 
     if (sciRailContents) [out appendFormat:@"; rail: %@", sciRailContents];
+
+    [out appendFormat:@" | design: %@ (dressed %lu times)",
+        sciStyleLast ?: [NSString stringWithFormat:@"%@ · not dressed yet", SCITTButtonStyleID(SCITTButtonStyleCurrent())], (unsigned long)sciStyleApplied];
 
     return out;
 }
