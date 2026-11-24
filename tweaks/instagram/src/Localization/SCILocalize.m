@@ -52,7 +52,7 @@ static NSDictionary *_arTable = nil;
         @"wn_beta_badge": @"BETA",
         @"wn_w5_title": @"If something breaks",
         @"wn_w5_detail": @"Settings → Diagnostics → the speech bubble. It writes the bug report for you, with everything needed to fix it.",
-        @"wn_beta_note": @"Beta · tested on Instagram 410.1.0, the newest build our ageing test phone will accept. Newer should work. Tell us if it doesn't.",
+        @"wn_beta_note": @"Beta · tested on Instagram 410.1.0. Support for 456.0.0 is new and BETA: it was written from the app's code and has not been seen on a device yet. Tell us what doesn't work.",
 
         // General section
         @"hide_ads_title": @"Hide ads",
@@ -312,7 +312,7 @@ static NSDictionary *_arTable = nil;
         @"p_dm_videocall_t": @"Hide video call button",
         @"p_dm_videocall_s": @"Removes it from the chat header",
         @"compat_title": @"Newer Instagram than tested",
-        @"compat_body": @"You are on Instagram %@, and Albrhi was tested up to %@. It will most likely work fine — but if something misbehaves, tell the developer so it can be fixed. Settings → Diagnostics writes the report for you.",
+        @"compat_body": @"You are on Instagram %@, and Albrhi was tested up to %@. Support for 456.0.0 is BETA (read from the app's code, not yet seen on a device) — if something misbehaves, tell the developer so it can be fixed. Settings → Diagnostics writes the report for you.",
         @"compat_report": @"Report an issue",
         @"compat_ok": @"Got it",
         @"update_check_t": @"Check for updates",
@@ -652,7 +652,7 @@ static NSDictionary *_arTable = nil;
         @"wn_beta_badge": @"نسخة تجريبية",
         @"wn_w5_title": @"لو تعطّل شيء",
         @"wn_w5_detail": @"الإعدادات ← التشخيص ← أيقونة الفقاعة. تكتب لك البلاغ كاملًا بكل ما يلزم لإصلاحه.",
-        @"wn_beta_note": @"نسخة تجريبية · جُرّبت على انستقرام 410.1.0، وهو أحدث إصدار يقبله هاتف التجارب المتقاعد لدينا. الأحدث يُفترض أن يعمل. أخبرنا إن لم يفعل.",
+        @"wn_beta_note": @"نسخة تجريبية · جُرّبت على انستقرام 410.1.0. دعم 456.0.0 جديد وتجريبي: كُتب من قراءة كود التطبيق ولم يُرَ على جهاز بعد. أخبرنا بما لا يعمل.",
 
         // عام
         @"hide_ads_title": @"إخفاء الإعلانات",
@@ -912,7 +912,7 @@ static NSDictionary *_arTable = nil;
         @"p_dm_videocall_t": @"إخفاء زر مكالمة الفيديو",
         @"p_dm_videocall_s": @"يزيله من ترويسة المحادثة",
         @"compat_title": @"إنستقرام أحدث من المُختبَر",
-        @"compat_body": @"أنت على إنستقرام %@، وAlbrhi مُختبَرة حتى %@. الأرجح أن كل شيء يعمل — وإن اختلّ شيء فأخبر المطوّر ليُصلَح. الإعدادات ← التشخيص يكتب البلاغ عنك.",
+        @"compat_body": @"أنت على إنستقرام %@، وAlbrhi مُختبَرة حتى %@. دعم 456.0.0 تجريبي (كُتب من قراءة كود التطبيق ولم يُرَ على جهاز بعد) — وإن اختلّ شيء فأخبر المطوّر ليُصلَح. الإعدادات ← التشخيص يكتب البلاغ عنك.",
         @"compat_report": @"أبلغ عن خلل",
         @"compat_ok": @"حسنًا",
         @"update_check_t": @"تحقّق من وجود تحديث",
