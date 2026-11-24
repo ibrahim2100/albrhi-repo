@@ -1,3 +1,4 @@
+#import "../../Compat/SCIResolve.h"
 #import <objc/runtime.h>
 #import "../../Utils.h"
 #import "shared/src/SCIKVC.h"
@@ -160,6 +161,10 @@ void SCIUnsentRememberKey(id key) {
     });
 }
 
+// **A Swift class in 450.1.0 and 456.0.0** (`_TtC19IGDirectMessageCell19IGDirectMessageCell`), so the plain `%hook` attached to nothing and a held-back unsent
+// message was never marked. Bound through the resolver; and 456's bind point lost its last argument (`…ringViewSpecFactory:mobileConfig:`, `v40@0:8@16@24@32`,
+// where 410 had `launcherSet:`), so both are hooked and the body is shared. Read from the class dumps; not seen on a screen.
+%group SCIgIGDirectMessageCell
 %hook IGDirectMessageCell
 
 - (void)layoutSubviews {
@@ -189,4 +194,31 @@ void SCIUnsentRememberKey(id key) {
     SCIApplyMark(cell, marked);
 }
 
+- (void)configureWithViewModel:(id)viewModel ringViewSpecFactory:(id)factory mobileConfig:(id)mobileConfig {
+    %orig;
+
+    UIView *cell = (UIView *)self;
+    if (![SCIUtils getBoolPref:@"keep_unsent_messages"]) {
+        SCIApplyMark(cell, NO);
+        return;
+    }
+
+    NSArray<NSString *> *ids = SCIIdsForViewModel(viewModel);
+    objc_setAssociatedObject(cell, kSCICellMessageIds, ids, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    @synchronized (SCIMarked()) { [sCells addObject:cell]; }
+
+    BOOL marked = SCIIsMarked(ids);
+    if (marked) [SCIDiagnostics privacyCount:@"Unsent · marked message drawn"];
+    SCIApplyMark(cell, marked);
+}
+
 %end
+
+%end
+
+%ctor {
+    %init;
+
+    Class messageCell = SCIResolveClass(@"IGDirectMessageCell");
+    if (messageCell) %init(SCIgIGDirectMessageCell, IGDirectMessageCell = messageCell);
+}

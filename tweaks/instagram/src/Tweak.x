@@ -836,6 +836,55 @@ shouldPersistLastBugReportId:(id)arg6
 }
 %end
 
+// **Instagram 456.0.0's reels sidebar is a Swift class whose handlers lost their underscore and their argument** (`-didTapLikeButton`, `v16@0:8`; `-didTapRepostButton`;
+// `-didLongPressLikeButton:` / `-didLongPressRepostButton:` keep one argument). The four hooks above name 410's selectors and attached to nothing there. The same four
+// confirmations, bound through the resolver and installed only where the class declares them, so 410 and 439 are untouched. Read from the 456 class dump; not seen working.
+%group SCIgVerticalUFISwift
+%hook IGSundialViewerVerticalUFI
+- (void)didTapLikeButton {
+    if ([SCIUtils getBoolPref:@"like_confirm_reels"]) {
+        SCILogV(@"[SCInsta] Confirm reels like triggered (456 sidebar)");
+        [SCIUtils showConfirmation:^(void) {
+            %orig;
+        }];
+    }
+    else {
+        return %orig;
+    }
+}
+
+- (void)didLongPressLikeButton:(id)arg1 {
+    if ([SCIUtils getBoolPref:@"like_confirm_reels"]) {
+        SCILogV(@"[SCInsta] Confirm reels like triggered (long press ignored, 456 sidebar)");
+    }
+    else {
+        return %orig;
+    }
+}
+
+- (void)didTapRepostButton {
+    if ([SCIUtils getBoolPref:@"repost_confirm"]) {
+        SCILogV(@"[SCInsta] Confirm repost triggered (456 sidebar)");
+        [SCIUtils showConfirmation:^(void) {
+            %orig;
+        }];
+    }
+    else {
+        return %orig;
+    }
+}
+
+- (void)didLongPressRepostButton:(id)arg1 {
+    if ([SCIUtils getBoolPref:@"repost_confirm"]) {
+        SCILogV(@"[SCInsta] Confirm repost triggered (long press ignored, 456 sidebar)");
+    }
+    else {
+        return %orig;
+    }
+}
+%end
+%end
+
 /////////////////////////////////////////////////////////////////////////////
 
 // FLEX explorer gesture handler
@@ -886,6 +935,10 @@ shouldPersistLastBugReportId:(id)arg6
     if (directInboxListAdapterDataSource) %init(SCIgIGDirectInboxListAdapterDataSource, IGDirectInboxListAdapterDataSource = directInboxListAdapterDataSource);
     Class searchListKitDataSource = SCIResolveClass(@"IGSearchListKitDataSource");
     if (searchListKitDataSource) %init(SCIgIGSearchListKitDataSource, IGSearchListKitDataSource = searchListKitDataSource);
+    Class verticalUFI = SCIResolveClass(@"IGSundialViewerVerticalUFI");
+    if (verticalUFI && class_getInstanceMethod(verticalUFI, NSSelectorFromString(@"didTapLikeButton"))) {
+        %init(SCIgVerticalUFISwift, IGSundialViewerVerticalUFI = verticalUFI);
+    }
     Class mainStoryTrayDataSource = SCIResolveClass(@"IGMainStoryTrayDataSource");
     if (mainStoryTrayDataSource) %init(SCIgIGMainStoryTrayDataSource, IGMainStoryTrayDataSource = mainStoryTrayDataSource);
 }

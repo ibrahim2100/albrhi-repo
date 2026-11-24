@@ -50,7 +50,31 @@ NSArray *filterSurfacesArray(NSArray *surfaces) {
 }
 %end
 
+/// Like `filterSurfacesArray`, for an array that may hold anything: only a surface can be filtered out, and an answer that would leave nothing is not used.
+static NSArray *SCIFilterNativeSurfaces(NSArray *surfaces) {
+    if (![surfaces isKindOfClass:[NSArray class]] || surfaces.count == 0) return surfaces;
+
+    NSMutableArray *kept = [NSMutableArray arrayWithCapacity:surfaces.count];
+    for (id item in surfaces) {
+        if ([item isKindOfClass:%c(IGMainAppSurfaceIntent)] && !isSurfaceShown(item)) continue;
+        [kept addObject:item];
+    }
+    return kept.count ? kept : surfaces;
+}
+
 %hook IGTabBarController
+
+// **On iOS 26 and 27 Instagram 456 draws its tabs with a real `UITabBarController` (the system's Liquid Glass bar).** `IGTabBarController` gained
+// `_installOrUpdateNativeTabBarController`, `_usesNativeTabBarController`, `_nativeTabDescriptors` and a Swift `IGNativeTabBarControllerCoordinator`, and
+// that bar never goes through `_layoutTabBar` / `_buttonForTabBarSurface:` below, so hiding a tab did nothing on a phone that takes the native path.
+// `-_nativeOrderedSurfacesForHorizontalSizeClass:` is where the native bar asks which surfaces it shows (once for each size class), so the filter is
+// applied to its answer. **Read from the 456.0.0 class dump (the same method names are what Rocket 4.27.2's tab-bar component loads); not seen on a
+// screen** -- the simulator cannot sign in, and a signed-out Instagram has no tab bar.
+- (id)_nativeOrderedSurfacesForHorizontalSizeClass:(NSInteger)sizeClass {
+    id original = %orig;
+    return SCIFilterNativeSurfaces(original);
+}
+
 - (void)_layoutTabBar {
     // Prevents the wrong icon from being shown as selected because of mismatched surface array indexes
     NSArray *_tabBarSurfaces = [SCIUtils getIvarForObj:self name:"_tabBarSurfaces"];
