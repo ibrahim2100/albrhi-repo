@@ -49,6 +49,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// What the inline button resolved the post's media to, or nil if it found nothing.
 + (void)recordButtonMediaClass:(nullable NSString *)className;
 
+/// When a press found no media: the objects the walk went through (the bar, its delegates, the enclosing cell and controller) with the names of the
+/// fields on each that could hold a model, so the next report says where the media actually is. Written only on that failure, once per press.
++ (void)recordButtonChain:(nullable NSString *)chain;
+
 /// Which branch a download took: "video" or "photo". A photo post reported as
 /// video means the emptiness check is failing again.
 + (void)recordDownloadKind:(NSString *)kind;

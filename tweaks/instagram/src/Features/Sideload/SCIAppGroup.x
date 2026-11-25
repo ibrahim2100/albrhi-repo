@@ -13,9 +13,8 @@
 /// **The second half of "signed in until the app is closed".** The first half is the keychain (`SCIKeychain.m`). The other place Instagram keeps what
 /// it needs across launches is its *app group*, `group.com.burbn.instagram`: a shared folder and a shared `NSUserDefaults` suite. A re-signed copy
 /// does not hold that group, so `-[NSFileManager containerURLForSecurityApplicationGroupIdentifier:]` answers nil and a group suite does not persist
-/// (cfprefsd refuses it); Instagram then loses what it wrote there, and code that expects a folder reads nil. The same two places are where the
-/// public `zxPluginsInject` shim (the "sideload fix" RyukGram ships; unlicensed, read for architecture only, nothing copied) redirects: the group's
-/// folder becomes a folder inside the app, and a group suite is opened over that folder.
+/// (cfprefsd refuses it); Instagram then loses what it wrote there, and code that expects a folder reads nil. The fix is at those two places: the group's folder becomes a
+/// folder inside the app, and a group suite is opened over that folder.
 ///
 /// Here, **only when the system answers "no container"** (a group the app really holds is left alone, so a store build, a jailbreak or a correctly
 /// signed copy see no difference). The folder is `<Application Support>/AlbrhiAppGroups/<group>`.

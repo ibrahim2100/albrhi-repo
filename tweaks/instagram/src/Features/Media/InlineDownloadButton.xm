@@ -147,6 +147,104 @@ static void SCIConsiderMedia(id candidate, id *best, id *firstSeen) {
     if ([SCIMediaDownloader hasPlayableVideo:video]) *best = candidate;
 }
 
+/// An ivar by name, whatever its declared type: the name as given, then without a leading underscore, then Swift's `$__lazy_storage_$_<name>` (a lazy
+/// var). **Swift ivars carry no usable type encoding (`?`), and Instagram 457 keeps the reels cell's media in exactly such ivars (`videoAccess`,
+/// `$__lazy_storage_$_overlayController`)**, so the typed scan below cannot see them. Only names this file chooses are read this way, and the value is
+/// accepted only if it is an `IGMedia`; read through `object_getIvar`, which runs no code.
+static id SCINamedIvar(id owner, NSString *name) {
+    if (!owner || !name.length) return nil;
+    Class cls = object_getClass(owner);
+    Ivar ivar = class_getInstanceVariable(cls, name.UTF8String);
+    if (!ivar && [name hasPrefix:@"_"]) ivar = class_getInstanceVariable(cls, [name substringFromIndex:1].UTF8String);
+    if (!ivar) ivar = class_getInstanceVariable(cls, [@"$__lazy_storage_$_" stringByAppendingString:[name hasPrefix:@"_"] ? [name substringFromIndex:1] : name].UTF8String);
+    return ivar ? object_getIvar(owner, ivar) : nil;
+}
+
+/// The media of a reels cell (or any owner): the access object the cell was configured with, in the names 456 and 457 use for it, or one step inside
+/// the cell's overlay controller. Anything that is not an `IGMedia` is refused.
+static id SCIMediaFromNamedIvars(id owner) {
+    static Class mediaClass;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ mediaClass = NSClassFromString(@"IGMedia"); });
+    if (!owner || !mediaClass) return nil;
+    for (NSString *name in @[@"videoAccess", @"mediaAccess", @"mediaPassthrough", @"media", @"mediaItem"]) {
+        id value = SCINamedIvar(owner, name);
+        if (value && [value isKindOfClass:mediaClass]) return value;
+    }
+    for (NSString *holder in @[@"overlayController", @"mediaInfo"]) {
+        id inner = SCINamedIvar(owner, holder);
+        if (!inner) continue;
+        for (NSString *name in @[@"media", @"mediaAccess", @"videoAccess"]) {
+            id value = SCINamedIvar(inner, name);
+            if (value && [value isKindOfClass:mediaClass]) return value;
+        }
+    }
+    return nil;
+}
+
+/// An `IGMedia` held in one of `owner`'s own object-typed ivars, or one step inside the object such an ivar holds (a wrapper's `-media`).
+/// **Instagram 456/457 moved the model into a framework and reshaped the owners**, and the walk below that asks named accessors found nothing on the
+/// phone (the report: "Nothing found"). This does not ask for a name: it reads what the object holds, with `object_getIvar` (which runs no code) and
+/// only for ivars whose encoding says object. The media sits in an ivar of the cell that draws it, and the action row's cell is a
+/// *sibling* of that cell in the same section.
+static id SCIMediaByIvars(id owner) {
+    static Class mediaClass;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ mediaClass = NSClassFromString(@"IGMedia"); });
+    if (!owner || !mediaClass) return nil;
+    id byName = SCIMediaFromNamedIvars(owner);
+    if (byName) return byName;
+
+    for (Class c = object_getClass(owner); c && c != [NSObject class] && c != [UIView class] && c != [UICollectionViewCell class]; c = class_getSuperclass(c)) {
+        unsigned int count = 0;
+        Ivar *ivars = class_copyIvarList(c, &count);
+        id found = nil;
+        for (unsigned int i = 0; i < count && !found; i++) {
+            const char *type = ivar_getTypeEncoding(ivars[i]);
+            if (!type || type[0] != '@') continue;
+            id value = object_getIvar(owner, ivars[i]);
+            if (!value) continue;
+            if ([value isKindOfClass:mediaClass]) { found = value; break; }
+            // One step in: a view model or wrapper that exposes the media.
+            Method m = class_getInstanceMethod(object_getClass(value), @selector(media));
+            const char *mt = m ? method_getTypeEncoding(m) : NULL;
+            if (mt && mt[0] == '@') {
+                id inner = ((id (*)(id, SEL))objc_msgSend)(value, @selector(media));
+                if ([inner isKindOfClass:mediaClass]) found = inner;
+            }
+        }
+        if (ivars) free(ivars);
+        if (found) return found;
+    }
+    return nil;
+}
+
+/// The media cell of the post whose action row this is: the row is its own cell, the picture or video is another in the same collection-view section.
+static id SCIMediaFromSiblingCells(UIView *bar) {
+    UICollectionViewCell *own = nil;
+    UICollectionView *collection = nil;
+    for (UIView *v = bar; v; v = v.superview) {
+        if (!own && [v isKindOfClass:[UICollectionViewCell class]]) own = (UICollectionViewCell *)v;
+        if ([v isKindOfClass:[UICollectionView class]]) { collection = (UICollectionView *)v; break; }
+    }
+    if (!own || !collection) return nil;
+    NSIndexPath *path = [collection indexPathForCell:own];
+    if (!path) return nil;
+
+    for (UICollectionViewCell *cell in collection.visibleCells) {
+        if (cell == own) continue;
+        NSIndexPath *other = [collection indexPathForCell:cell];
+        if (!other || other.section != path.section) continue;
+        id media = SCIMediaByIvars(cell);
+        if (media) return media;
+        if ([cell respondsToSelector:NSSelectorFromString(@"mediaCellFeedItem")]) {
+            id item = SCISafeValueForKey(cell, @"mediaCellFeedItem");
+            if (SCIHasMediaPayload(item)) return item;
+        }
+    }
+    return nil;
+}
+
 /// Walks the delegate chain first, then the view hierarchy, looking for the media
 /// backing this action row.
 static id SCIMediaForButtonBar(UIView *bar) {
@@ -185,6 +283,31 @@ static id SCIMediaForButtonBar(UIView *bar) {
         }
 
         ancestor = ancestor.superview;
+    }
+
+    // The named accessors found nothing: read what the objects around the row hold (see `SCIMediaByIvars`), starting with the row's own delegates, then
+    // every view and controller above it, then the cell that draws the picture or video.
+    {
+        NSMutableArray *owners = [NSMutableArray array];
+        id delegate = nil;
+        @try { delegate = SCISafeValueForKey(bar, @"delegate"); } @catch (__unused id e) {}
+        if (delegate) [owners addObject:delegate];
+        id second = nil;
+        @try { second = SCISafeValueForKey(delegate, @"delegate"); } @catch (__unused id e) {}
+        if (second) [owners addObject:second];
+        [owners addObject:bar];
+        int depth = 0;
+        for (UIView *up = bar.superview; up && depth < 14; up = up.superview, depth++) {
+            [owners addObject:up];
+            id responder = [up nextResponder];
+            if ([responder isKindOfClass:[UIViewController class]]) [owners addObject:responder];
+        }
+        for (id owner in owners) {
+            SCIConsiderMedia(SCIMediaByIvars(owner), &best, &firstSeen);
+            if (best) return best;
+        }
+        SCIConsiderMedia(SCIMediaFromSiblingCells(bar), &best, &firstSeen);
+        if (best) return best;
     }
 
     // Nothing in the chain could resolve a video. The first match is what the old walk
@@ -333,6 +456,57 @@ static NSInteger SCIVisibleCarouselIndex(UIView *bar) {
     return NSNotFound;
 }
 
+/// For a press that found no media: where the walk went and what each stop holds. Fields are named, not read, except object-typed ivars whose
+/// class is told (`object_getIvar` runs nothing); Swift ivars (encoding unknown) are only listed. Written once, only on that failure.
+static NSString *SCIDescribeStop(id object, NSString *label) {
+    if (!object) return [NSString stringWithFormat:@"%@: nil", label];
+    NSMutableArray<NSString *> *fields = [NSMutableArray array];
+    NSArray<NSString *> *words = @[@"media", @"model", @"item", @"post", @"config", @"access", @"provider", @"fragment", @"info", @"viewmodel", @"delegate", @"source", @"feed"];
+    for (Class c = object_getClass(object); c && c != [NSObject class] && fields.count < 18; c = class_getSuperclass(c)) {
+        unsigned int n = 0;
+        Ivar *ivars = class_copyIvarList(c, &n);
+        for (unsigned int i = 0; i < n && fields.count < 18; i++) {
+            const char *rawName = ivar_getName(ivars[i]);
+            const char *types = ivar_getTypeEncoding(ivars[i]);
+            if (!rawName) continue;
+            NSString *name = [NSString stringWithUTF8String:rawName];
+            BOOL interesting = NO;
+            for (NSString *w in words) if ([name rangeOfString:w options:NSCaseInsensitiveSearch].location != NSNotFound) { interesting = YES; break; }
+            if (!interesting) continue;
+            NSString *kind = @"?";
+            if (types && types[0] == '@') {
+                id value = object_getIvar(object, ivars[i]);
+                kind = value ? NSStringFromClass([value class]) : @"nil";
+            }
+            [fields addObject:[NSString stringWithFormat:@"%@=%@", name, kind]];
+        }
+        if (ivars) free(ivars);
+    }
+    return [NSString stringWithFormat:@"%@: %@ { %@ }", label, NSStringFromClass([object class]), [fields componentsJoinedByString:@", "]];
+}
+
+static NSString *SCIDescribeButtonChain(UIView *bar) {
+    NSMutableArray<NSString *> *stops = [NSMutableArray array];
+    [stops addObject:SCIDescribeStop(bar, @"bar")];
+    id delegate = nil;
+    @try { delegate = SCISafeValueForKey(bar, @"delegate"); } @catch (__unused id e) {}
+    [stops addObject:SCIDescribeStop(delegate, @"bar.delegate")];
+    id second = nil;
+    @try { second = SCISafeValueForKey(delegate, @"delegate"); } @catch (__unused id e) {}
+    [stops addObject:SCIDescribeStop(second, @"bar.delegate.delegate")];
+    UIView *cell = bar;
+    while (cell && ![cell isKindOfClass:[UICollectionViewCell class]] && ![cell isKindOfClass:[UITableViewCell class]]) cell = cell.superview;
+    [stops addObject:SCIDescribeStop(cell, @"cell")];
+    id owner = [cell ?: bar nextResponder];
+    for (int i = 0; owner && ![owner isKindOfClass:[UIViewController class]] && i < 6; i++) owner = [owner nextResponder];
+    [stops addObject:SCIDescribeStop(owner, @"controller")];
+    NSMutableArray<NSString *> *up = [NSMutableArray array];
+    UIView *v = bar.superview;
+    for (int i = 0; v && i < 8; i++, v = v.superview) [up addObject:NSStringFromClass([v class])];
+    [stops addObject:[@"views above: " stringByAppendingString:[up componentsJoinedByString:@" < "]]];
+    return [stops componentsJoinedByString:@"\n"];
+}
+
 // The button's action: on a multi-item post, offer "this one" or "all N"; otherwise
 // download the single media directly.
 static void SCIHandleDownloadForBar(UIView *bar, UIView *anchor) {
@@ -377,6 +551,11 @@ static void SCIHandleDownloadForBar(UIView *bar, UIView *anchor) {
         return;
     }
 
+    if (!current) {
+        // Found nothing: say where the walk went (see `SCIDescribeButtonChain`), then take the usual refusal path.
+        NSString *chain = SCIDescribeButtonChain(bar);
+        [SCIDiagnostics recordButtonChain:chain];
+    }
     SCIDownloadMedia(current, anchor);
 }
 

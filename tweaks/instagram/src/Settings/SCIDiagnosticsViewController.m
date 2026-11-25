@@ -24,6 +24,7 @@ static NSString *_seenReplay = nil;
 static NSArray<NSString *> *_scanResults = nil;
 static NSArray<NSString *> *_timestampResults = nil;
 static NSString *_lastButtonMediaClass = nil;
+static NSString *_lastButtonChain = nil;
 static BOOL _buttonEverPressed = NO;
 static NSString *_lastDownloadKind = nil;
 static NSString *_storyRoute = nil;
@@ -116,6 +117,13 @@ static NSMutableArray<NSString *> *_dateRewriteSamples = nil;
 + (void)recordButtonMediaClass:(NSString *)className {
     _buttonEverPressed = YES;
     _lastButtonMediaClass = [className copy];
+    if (className) _lastButtonChain = nil;
+}
+
++ (void)recordButtonChain:(NSString *)chain {
+    _buttonEverPressed = YES;
+    _lastButtonMediaClass = nil;
+    _lastButtonChain = [chain copy];
 }
 
 + (void)recordTranscodeStage:(NSString *)name ok:(BOOL)ok detail:(NSString *)detail {
@@ -603,7 +611,9 @@ static NSMutableArray<NSString *> *_dateRewriteSamples = nil;
     [attached addObject:@{
         @"title": SCILocalized(@"diag_button_media"),
         @"detail": !_buttonEverPressed ? SCILocalized(@"diag_button_unpressed")
-                                       : (_lastButtonMediaClass ?: SCILocalized(@"diag_button_nomedia")),
+                                       : (_lastButtonMediaClass ?: (_lastButtonChain.length
+                                              ? [NSString stringWithFormat:@"%@\n%@", SCILocalized(@"diag_button_nomedia"), _lastButtonChain]
+                                              : SCILocalized(@"diag_button_nomedia"))),
         @"ok": @(_lastButtonMediaClass != nil)
     }];
 

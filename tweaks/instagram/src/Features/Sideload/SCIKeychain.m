@@ -23,11 +23,10 @@
 /// id), so the keychain answers every request for the old group with `errSecMissingEntitlement` (-34018): the session is kept in memory while the
 /// app runs, nothing is written or read back, and a launch from scratch finds no account.
 ///
-/// Rocket's Instagram build does not forget (read 2026-11-25, only the part that rewrites keychain queries; nothing of it is copied and what it
-/// does is described here from the disassembly): it takes the four `SecItem…` entry points over, and for a generic-password query naming a group the
-/// app does not hold it puts the app's first own group in its place. This does the same, more narrowly: **the original request is always made
-/// first, and only when the keychain refuses it for entitlement is it made again, in the app's own default group.** A request the keychain accepts
-/// is never touched, so a store build, a jailbreak or a correctly signed copy see no difference at all.
+/// An Instagram that keeps its session needs its keychain requests answered, so this takes over the four `SecItem…` entry points and, for a
+/// request naming a group the app does not hold, puts the app's own group in its place -- **narrowly: the original request is always made first, and
+/// only when the keychain refuses it for entitlement is it made again, in the app's own default group.** A request the keychain accepts is never
+/// touched, so a store build, a jailbreak or a correctly signed copy see no difference at all.
 ///
 /// The default group is what the keychain says it is: one throwaway item is written *without* a group, its `kSecAttrAccessGroup` read back, and the
 /// item deleted. No provisioning profile is parsed, so it holds for a profile, for TrollStore's own entitlements and for anything else.
