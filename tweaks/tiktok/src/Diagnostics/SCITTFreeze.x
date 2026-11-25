@@ -209,10 +209,26 @@ static void SCITTWriteEvidence(NSString *headline, NSString *body) {
 
 #pragma mark - The watchdog
 
+/// Is the app in front right now? Asked of UIKit on the main thread, because **the notification alone is not enough**: 0.31.2 waited for
+/// `UIApplicationDidBecomeActiveNotification`, and on the owner's phone it had already been posted by the time this library started watching
+/// (the report said `pings 0` beside a launch with a dozen touches in it: the watchdog had been blind for the whole launch). So the state is read,
+/// once at install and then once a second for as long as the answer is no.
+static void SCITTReconcileActive(void) {
+    BOOL front = UIApplication.sharedApplication.applicationState == UIApplicationStateActive;
+    if (front && !atomic_load(&sciActive)) {
+        atomic_store(&sciActiveSinceMs, SCITTNowMs());
+        atomic_store(&sciPingSentMs, SCITTNowMs());
+        atomic_store(&sciActive, true);
+    } else if (!front) {
+        atomic_store(&sciActive, false);
+    }
+}
+
 static void SCITTWatchdogTick(void) {
     uint64_t now = SCITTNowMs();
     if (!atomic_load(&sciActive)) {
         atomic_store(&sciPingSentMs, now);
+        dispatch_async(dispatch_get_main_queue(), ^{ SCITTReconcileActive(); });
         return;
     }
     if (!atomic_load(&sciPingOutstanding)) {
@@ -291,6 +307,8 @@ void SCITTInstallFreeze(void) {
     else dispatch_async(dispatch_get_main_queue(), capture);
 
     atomic_store(&sciActive, false);
+    if (pthread_main_np()) SCITTReconcileActive();
+    else dispatch_async(dispatch_get_main_queue(), ^{ SCITTReconcileActive(); });
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
     [center addObserverForName:UIApplicationDidBecomeActiveNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *n) {
         atomic_store(&sciActiveSinceMs, SCITTNowMs());
@@ -320,8 +338,8 @@ void SCITTInstallFreeze(void) {
 
 NSString *SCITTFreezeReport(void) {
     NSMutableString *out = [NSMutableString stringWithFormat:
-        @"%@; pings %lu, answers 2 s or more late %lu (longest %.1f s%@)",
-        sciState ?: @"not installed",
+        @"%@; app in front: %@; pings %lu, answers 2 s or more late %lu (longest %.1f s%@)",
+        sciState ?: @"not installed", atomic_load(&sciActive) ? @"yes" : @"no",
         (unsigned long)atomic_load(&sciPings), (unsigned long)atomic_load(&sciStalls),
         atomic_load(&sciLongestStallMs) / 1000.0,
         sciStallLog.count ? [@"; this launch: " stringByAppendingString:[sciStallLog componentsJoinedByString:@", "]] : @""];
