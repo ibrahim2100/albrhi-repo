@@ -38,3 +38,7 @@ A **Safari Web Extension** (`NSExtensionPointIdentifier = com.apple.Safari.web-e
 
 * A page load is needed before the hand-off (a blink of the website). Instagram and TikTok may change their page metadata or routes; the script then does nothing, it never breaks the website.
 * Not tried on a device or in the simulator; nothing here has run.
+
+## Built (2026-11-25)
+
+`tools/safari-ext/` (see CLAUDE.md §3.6): `build.sh` builds three extensions (`out/<app>/AlbrhiLinks.appex`), `add-to-ipa.py` puts the right one into an IPA by bundle id (measured on the stock Instagram 456.0.0 IPA: added with id `com.burbn.instagram.AlbrhiLinks` and the app's version numbers, and removed again). The address maps are tested in node (43 checks, one mutation shown to fail). **Nothing has run in Safari**; the first device report decides the unmeasured rows above.

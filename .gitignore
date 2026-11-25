@@ -75,3 +75,6 @@ tweaks/*/shared/
 *licence-ec-private.pem
 *.p8
 brand/.build/
+
+# Built Safari extensions (tools/safari-ext/build.sh)
+tools/safari-ext/out/

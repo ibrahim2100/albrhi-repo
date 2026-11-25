@@ -28,6 +28,14 @@ for script in shared/tests/host/run.sh tweaks/*/tests/host/run.sh; do
   echo
 done
 
+# The Safari extensions' address maps (tools/safari-ext): pure JavaScript, run in node.
+if [[ -x "$(command -v node)" ]]; then
+  count=$((count + 1))
+  echo "=== tools: safari-ext maps ==="
+  if ! bash tools/safari-ext/tests/run.sh; then failed+=("safari-ext"); fi
+  echo
+fi
+
 # The class-dump diff tool's self-test: two tiny dylibs, one method removed, one re-typed, one added.
 if [[ -x "$(command -v xcrun)" ]]; then
   count=$((count + 1))
