@@ -15,7 +15,6 @@
 #import "../Features/Comments/SCITTComments.h"
 #import "../Features/Copy/SCITTCopyMenu.h"
 #import "../Features/Copy/SCITTHold.h"
-#import "../Diagnostics/SCITTFreeze.h"
 #import "../Features/Storage/SCITTCache.h"
 #import "../Features/Speed/SCITTSpeed.h"
 #import "../Features/Lock/SCITTAppLock.h"
@@ -152,8 +151,6 @@ static NSDictionary *SCIHeavyRow(NSString *title, NSString *value, NSString *ico
                        @"safari", [UIColor systemBlueColor]),
                 SCIRow(SCILocalized(@"status_copy"), [NSString stringWithFormat:@"%@ | %@", SCITTCopyReport(), SCITTHoldReport()],
                        @"doc.on.doc", [UIColor systemBlueColor]),
-                SCIRow(SCILocalized(@"status_freeze"), SCITTFreezeReport(),
-                       @"snowflake", [UIColor systemRedColor]),
                 SCIRow(SCILocalized(@"status_avatar"), SCITTAvatarSaveReport(),
                        @"person.crop.circle", [UIColor systemBlueColor]),
                 SCIRow(SCILocalized(@"status_speed"), SCITTSpeedReport(),

@@ -29,6 +29,16 @@
 
 
 static NSMutableArray<SCITTMediaItem *> *sciRecent = nil;
+/// `sciRecent` is read and written from the main thread, the download's background queues and the diagnostics; one lock around each touch (never
+/// around a call into TikTok, which could wait on the main thread while the main thread waits here).
+static NSObject *SCITTRecentLock(void) {
+    static NSObject *lock;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ lock = [[NSObject alloc] init]; });
+    return lock;
+}
+static SCITTMediaItem *SCITTRecentFirst(void) { @synchronized (SCITTRecentLock()) { return sciRecent.firstObject; } }
+static NSArray<SCITTMediaItem *> *SCITTRecentCopy(void) { @synchronized (SCITTRecentLock()) { return [sciRecent copy] ?: @[]; } }
 static NSUInteger const kSCIMediaCap = 30;
 static NSString *sciLastAttemptState = nil;
 
@@ -906,15 +916,10 @@ static NSArray<NSString *> *sciPendingOrigins = nil;
 
 static void SCITTAddResolvedList(NSArray<NSURL *> *urls) {
     if (!urls.count) return;
-    if (!sciRecent) sciRecent = [NSMutableArray array];
-
     NSURL *primary = urls.firstObject;
 
     // Same video seen twice -- a recycled cell rebound, a scroll back up -- moves
     // to the front rather than duplicating.
-    for (SCITTMediaItem *existing in [sciRecent copy]) {
-        if ([existing.url isEqual:primary]) [sciRecent removeObject:existing];
-    }
 
     SCITTMediaItem *item = [[SCITTMediaItem alloc] init];
     item.url = primary;
@@ -925,9 +930,15 @@ static void SCITTAddResolvedList(NSArray<NSURL *> *urls) {
     item.stats = sciPendingStats;
     item.candidateOrigins = sciPendingOrigins;
     item.seen = [NSDate date];
-    [sciRecent insertObject:item atIndex:0];
-
-    while (sciRecent.count > kSCIMediaCap) [sciRecent removeLastObject];
+    @synchronized (SCITTRecentLock()) {
+        if (!sciRecent) sciRecent = [NSMutableArray array];
+        // Same video seen twice -- a recycled cell rebound, a scroll back up -- moves to the front rather than duplicating.
+        for (SCITTMediaItem *existing in [sciRecent copy]) {
+            if ([existing.url isEqual:primary]) [sciRecent removeObject:existing];
+        }
+        [sciRecent insertObject:item atIndex:0];
+        while (sciRecent.count > kSCIMediaCap) [sciRecent removeLastObject];
+    }
 }
 
 /// A photo post: its own entry, holding every picture.
@@ -1040,13 +1051,8 @@ static void SCITTCapturePostedDate(id model) {
 
 static void SCITTAddPhotoPost(NSArray<NSArray<NSURL *> *> *photos, NSURL *audio) {
     if (!photos.count) return;
-    if (!sciRecent) sciRecent = [NSMutableArray array];
-
     NSURL *primary = photos.firstObject.firstObject;
 
-    for (SCITTMediaItem *existing in [sciRecent copy]) {
-        if ([existing.url isEqual:primary]) [sciRecent removeObject:existing];
-    }
 
     SCITTMediaItem *item = [[SCITTMediaItem alloc] init];
     item.url = primary;
@@ -1069,9 +1075,15 @@ static void SCITTAddPhotoPost(NSArray<NSArray<NSURL *> *> *photos, NSURL *audio)
     item.posted = sciPendingPosted;
     item.stats = sciPendingStats;
     item.seen = [NSDate date];
-    [sciRecent insertObject:item atIndex:0];
-
-    while (sciRecent.count > kSCIMediaCap) [sciRecent removeLastObject];
+    @synchronized (SCITTRecentLock()) {
+        if (!sciRecent) sciRecent = [NSMutableArray array];
+        // Same video seen twice -- a recycled cell rebound, a scroll back up -- moves to the front rather than duplicating.
+        for (SCITTMediaItem *existing in [sciRecent copy]) {
+            if ([existing.url isEqual:primary]) [sciRecent removeObject:existing];
+        }
+        [sciRecent insertObject:item atIndex:0];
+        while (sciRecent.count > kSCIMediaCap) [sciRecent removeLastObject];
+    }
 }
 
 static void SCITTAddResolved(NSURL *url) {
@@ -1249,7 +1261,7 @@ static NSArray<NSURL *> *SCITTAllLinksForVideoModel(id videoModel, NSString **ou
 }
 
 + (void)refreshPhotoIndexFromController:(id)controller {
-    SCITTMediaItem *item = sciRecent.firstObject;
+    SCITTMediaItem *item = SCITTRecentFirst();
     if (!controller || !item.photoURLs.count) return;
 
     // Every candidate is read through its own real type encoding rather than a cast chosen here:
@@ -1311,7 +1323,7 @@ static NSArray<NSURL *> *SCITTAllLinksForVideoModel(id videoModel, NSString **ou
 + (NSString *)photoReport {
     if (!sciPhotoHolder) return @"no photo post seen yet";
 
-    SCITTMediaItem *item = sciRecent.firstObject;
+    SCITTMediaItem *item = SCITTRecentFirst();
 
     return [NSString stringWithFormat:
         @"%@ → %@ ×%lu (%@) → %lu picture(s), up to %lu link(s) each; showing index %@ via %@; "
@@ -1413,7 +1425,7 @@ static NSArray<NSURL *> *SCITTAllLinksForVideoModel(id videoModel, NSString **ou
     SEL idSel = NSSelectorFromString(@"itemID");
     id identifier = [model respondsToSelector:idSel] ? ((id (*)(id, SEL))objc_msgSend)(model, idSel) : nil;
     if (![identifier isKindOfClass:[NSString class]] || ![(NSString *)identifier length]) return nil;
-    for (SCITTMediaItem *item in [sciRecent copy]) {
+    for (SCITTMediaItem *item in SCITTRecentCopy()) {
         if ([item.itemID isEqualToString:identifier]) return item;
     }
     return nil;
@@ -1518,11 +1530,11 @@ static NSUInteger const kSCIMaxRetries = 10;
 }
 
 + (NSArray<SCITTMediaItem *> *)recent {
-    return [sciRecent copy] ?: @[];
+    return SCITTRecentCopy();
 }
 
 + (void)forgetAll {
-    [sciRecent removeAllObjects];
+    @synchronized (SCITTRecentLock()) { [sciRecent removeAllObjects]; }
 }
 
 + (NSString *)lastAttemptState {
@@ -1539,7 +1551,7 @@ static NSUInteger const kSCIMaxRetries = 10;
     if (sciWinningURLShape) {
         [out appendFormat:@"; link %@", sciWinningURLShape];
     }
-    [out appendFormat:@"; %lu kept", (unsigned long)sciRecent.count];
+    [out appendFormat:@"; %lu kept", (unsigned long)SCITTRecentCopy().count];
 
     // The last attempt's own detail is kept, but only after the counts, and only when
     // nothing has ever succeeded -- once one chain works, two hundred lines about

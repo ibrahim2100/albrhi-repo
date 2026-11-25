@@ -55,7 +55,14 @@ static BOOL SCITTModelIsAd(id built) {
     }
     if (SCITTModelIsFilteredOut(built)) return nil;
 
-    [SCITTMedia captureModel:built];
+    // **Not walked here (0.31.4).** This used to resolve the model's download links on the thread TikTok was building it on -- the feed parses on
+    // background queues, a few dozen models a second -- and the walk wrote to lists the main thread reads, with no lock between them. The finished
+    // model is handed to the main thread instead, where every reader of that state already is.
+    if (built) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [SCITTMedia captureModel:built];
+        });
+    }
     return built;
 }
 
@@ -70,7 +77,8 @@ static BOOL SCITTModelIsAd(id built) {
     }
     if (SCITTModelIsFilteredOut(built)) return nil;
 
-    [SCITTMedia captureModel:built];
+    // No capture here any more: a model fresh out of `-init` has nothing in it to resolve (and `-initWithDictionary:error:` above calls this on
+    // its way, so every model was walked once empty, failed, and was queued for ten retries on a timer).
     return built;
 }
 

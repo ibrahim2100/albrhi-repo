@@ -34,23 +34,24 @@
 
 %hook AWEVideoModel
 
+// **Never walked inside the model's own construction, and never on the thread that builds it (0.31.4).** This hook used to run the whole ladder
+// of getter chains (about fifteen of them) from `-init` *and* from `-initWithDictionary:error:`, synchronously, on whichever thread TikTok was
+// building the model on -- the feed parses on background queues, thirty models a second in the phone's report -- and the walk wrote to state the
+// main thread reads (`sciRecent`, the pending id/date, strong statics) with no lock between them. A `-init` hook sees a model with nothing in it
+// yet, so that half could only ever fail (and was counted as a failure); `-initWithDictionary:error:` returns the finished object. The walk now
+// happens once the construction has returned, on the main thread, one at a time.
 - (instancetype)initWithDictionary:(NSDictionary *)dictionary error:(NSError **)error {
     id built = %orig;
     if (built && SCIPrefEnabled(SCIPrefDownloadButton)) {
-        [SCITTMedia captureVideoModel:built];
-    }
-    return built;
-}
-
-- (instancetype)init {
-    id built = %orig;
-    if (built && SCIPrefEnabled(SCIPrefDownloadButton)) {
-        [SCITTMedia captureVideoModel:built];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [SCITTMedia captureVideoModel:built];
+        });
     }
     return built;
 }
 
 %end
+
 
 %end
 

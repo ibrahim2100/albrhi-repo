@@ -20,7 +20,6 @@
 #import "Features/Comments/SCITTComments.h"
 #import "Features/Browse/SCITTLinks.h"
 #import "Features/Copy/SCITTHold.h"
-#import "Diagnostics/SCITTFreeze.h"
 #import "Features/Storage/SCITTCache.h"
 #import "Features/Speed/SCITTSpeed.h"
 #import "Features/Lock/SCITTAppLock.h"
@@ -33,7 +32,7 @@
 #import "Settings/SCITTSettingsEntry.h"
 #import "Settings/SCITTGesture.h"
 
-NSString *SCIVersionString = @"v0.31.3";  // AlbrhiTT
+NSString *SCIVersionString = @"v0.31.4";  // AlbrhiTT
 
 ///
 /// TESTED ON TikTok 46.4.0. Every class here was confirmed present in that build's own
@@ -131,7 +130,6 @@ NSString *SCIVersionString = @"v0.31.3";  // AlbrhiTT
         return;
     }
 
-    SCITTInstallFreeze();
     SCITTInstallAdBlock();
     SCITTInstallBypass();
     SCITTInstallPrivacy();

@@ -96,9 +96,6 @@ static void SCITTApplyButtonStyle(UIButton *button) {
                     mode == SCITTButtonLabelNone ? @"no text" : (mode == SCITTButtonLabelWord ? @"Download" : @"name")];
 }
 
-static void SCITTRefreshStyledButtons(void) {
-    for (UIButton *button in sciStyledButtons.allObjects) SCITTApplyButtonStyle(button);
-}
 
 static BOOL sciRailPresent = NO;
 
@@ -1952,20 +1949,9 @@ static void SCITTRelayoutDateBesideName(UIView *nameButton) {
 %end
 
 void SCITTInstallButton(void) {
-    // A change in Settings reaches the buttons already on screen. The notification fires for **every** write to the app's defaults (TikTok writes
-    // plenty), so the work is coalesced into one pass on the main queue and each button only compares two numbers.
-    static BOOL refreshPending = NO;
-    [[NSNotificationCenter defaultCenter] addObserverForName:NSUserDefaultsDidChangeNotification object:nil queue:nil usingBlock:^(NSNotification *note) {
-        @synchronized ([NSNull null]) {
-            if (refreshPending) return;
-            refreshPending = YES;
-        }
-        dispatch_async(dispatch_get_main_queue(), ^{
-            @synchronized ([NSNull null]) { refreshPending = NO; }
-            SCITTRefreshStyledButtons();
-        });
-    }];
-
+    // (0.31.4: a change in Settings used to reach the buttons through a notification posted on every write to the app's defaults, with a lock on
+    // `[NSNull null]` shared by whoever else uses it. Gone: `SCITTApplyButtonStyle` runs on every layout pass of the rail and costs one comparison
+    // when nothing changed, so a new design shows on the next layout.)
     if (NSClassFromString(@"AWEPlayInteractionAuthorUserNameButton")) {
         %init(AuthorName);
     }
