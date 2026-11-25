@@ -4,6 +4,7 @@
 #import "shared/src/SCIPanelGate.h"
 #import "SCIFeatureAudit.h"
 #import "../Features/General/SCICopyText.h"
+#import "../Features/Sideload/SCIKeychain.h"
 #import "../Utils.h"
 #import "../Localization/SCILocalize.h"
 #import "../Tweak.h"
@@ -679,6 +680,7 @@ static NSMutableArray<NSString *> *_dateRewriteSamples = nil;
         @{@"header": SCILocalized(@"diag_section_audio"), @"rows": [self audioRows]},
         @{@"header": SCILocalized(@"diag_section_dateformat"), @"rows": [self dateFormatterRows]},
         @{@"header": SCILocalized(@"diag_section_timestamps"), @"rows": [self timestampRows]},
+        @{@"header": SCILocalized(@"diag_section_keychain"), @"rows": [self keychainRows]},
         @{@"header": SCILocalized(@"diag_section_copy"), @"rows": [self copyRows]},
         @{@"header": SCILocalized(@"diag_section_stories"), @"rows": @[
             @{@"title": SCILocalized(@"diag_seen_replay"),
@@ -1061,6 +1063,15 @@ static NSMutableArray<NSString *> *_dateRewriteSamples = nil;
 /// no confirmed identifier on these view models to match instead, so rather than guess one
 /// or delete a feature that works for somebody, the counts are shown: `12 seen, 0 matched`
 /// under a line naming the app's own language says exactly what is happening.
+/// What the keychain answered Instagram this launch (the sideload build asks again in the app's own group when it is refused for entitlement).
+- (NSArray *)keychainRows {
+    NSMutableArray *rows = [NSMutableArray array];
+    for (NSString *line in SCIKeychainReportLines()) {
+        [rows addObject:@{@"title": @"", @"detail": line, @"ok": @YES}];
+    }
+    return rows;
+}
+
 - (NSArray *)copyRows {
     NSMutableArray *rows = [NSMutableArray array];
     for (NSString *line in SCICopyReportLines()) {

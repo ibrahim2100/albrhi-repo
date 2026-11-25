@@ -49,3 +49,9 @@ clang -fobjc-arc -Wall -I"$OUT" -framework Foundation \
 "$OUT/test-cache"
 "$OUT/test-links"
 "$OUT/test-copy"
+
+# The keychain rule for a re-signed Instagram: compiled from the real source, run from a folder named *.app (only images inside an app are patched).
+mkdir -p "$OUT/Keychain.app"
+clang -DSCI_KEYCHAIN_TEST -fobjc-arc -Wall -Wno-unused-function -I"$ROOT" -framework Foundation -framework Security \
+    Test_Keychain.m -o "$OUT/Keychain.app/test-keychain"
+"$OUT/Keychain.app/test-keychain"
