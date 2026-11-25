@@ -930,11 +930,18 @@ shouldPersistLastBugReportId:(id)arg6
 #ifdef SCI_SELFCONTAINED
     // A copy signed again by a sideloading tool: put Instagram's keychain requests in a group the new signature holds, or its session is lost at
     // every launch. First, before Instagram reads its first account.
+    // (SCI_NO_KEYCHAIN / SCI_NO_RECEIPT / SCI_NO_APPGROUP leave one fix out of a build, to find which of them a phone's problem needs or suffers from.)
+#ifndef SCI_NO_KEYCHAIN
     SCIKeychainInstall();
+#endif
     // And do not take a re-signed copy for a TestFlight build ("You're now using Instagram Beta").
+#ifndef SCI_NO_RECEIPT
     SCIReceiptInstall();
+#endif
     // And the app group Instagram keeps part of its state in, which the new signature does not hold.
+#ifndef SCI_NO_APPGROUP
     SCIAppGroupInstall();
+#endif
 #endif
     // The hooks outside the groups below. Logos writes this call itself for
     // a file with no %ctor -- and stops the moment there is one, so leaving
