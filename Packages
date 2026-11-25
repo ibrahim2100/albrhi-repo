@@ -1065,10 +1065,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tweak.roothide
 Replaces: com.albrhi.tweak.roothide
 Filename: debs/com.albrhi.tweak_4.9.0_iphoneos-arm64.deb
-Size: 524598
-MD5sum: 24f946a5eb7083a0433cfd9236883a9f
-SHA1: 5886f96d9873756978e5d3b05769593d8cd6a157
-SHA256: c508eac80175a49af29fc27c28401df409248a81ff5a05b784fc8f31d7910708
+Size: 524854
+MD5sum: 7654cd9ab3ae76c8e3edc8eaf3eaca2f
+SHA1: 6033c20ffe01a64b2c1ae744b8a6210296b34c91
+SHA256: 9f21f9aea96517a99a4f55b888db5fbb3ff784a04ce50a5bdc0c7b7dfdfe4766
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download anything, hide the noise, browse invisibly — in Arabic or English.
  .
@@ -1213,10 +1213,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.tweak
 Replaces: com.albrhi.tweak
 Filename: debs/com.albrhi.tweak.roothide_4.9.0_iphoneos-arm64e.deb
-Size: 524630
-MD5sum: 9c2fe036b365a9f2562e245301177a99
-SHA1: 635fa4222ff711d792ccea4b82eda58001a18ca7
-SHA256: b9b7d0e2622ce9503df542c3e6332e6e2ef35b4ca107a1d152b23ea475812943
+Size: 524752
+MD5sum: ca27873f289b74521147b7e8d5262611
+SHA1: ab4b7367ac12a5f4426c0078ee9575614a0618f5
+SHA256: 0bd7d41ad4c804bb4cc125d0b0f95c1cf9ba8cbf327dfecbd2ad4ab8043eca0a
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download anything, hide the noise, browse invisibly — in Arabic or English.
  .
@@ -1287,10 +1287,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.twitter.roothide
 Replaces: com.albrhi.twitter.roothide
 Filename: debs/com.albrhi.twitter_0.23.0_iphoneos-arm64.deb
-Size: 112812
-MD5sum: 970a96e383339e13ef55dfd98ccc4887
-SHA1: fb68fa514ee75d51b79b9efe7b689b3157b17856
-SHA256: 16853c4d4a2ef0c8ff2424d3323d9ec6f2842c2a8f256bd66a7d7709be65d675
+Size: 112726
+MD5sum: bb251a42e139ee14937289c354b60d97
+SHA1: 5f3c28311a1d08ef03d54c79c6cc3d4159b413de
+SHA256: 476c4817f62cb9242993c29ddc0222dff826afd8b0b5ace80394fa46c6e6487c
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
  .
@@ -1362,10 +1362,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.twitter
 Replaces: com.albrhi.twitter
 Filename: debs/com.albrhi.twitter.roothide_0.23.0_iphoneos-arm64e.deb
-Size: 112614
-MD5sum: 4f6c37e22cbf3b3f77f9ede0af3becc2
-SHA1: 438146d80af42c4f0c803c23c5f188d51573ea9f
-SHA256: fe540a0dc75b790fe3af8141b0472446978f0e4fdda9946b30cf77114f3b363e
+Size: 112608
+MD5sum: 896daadd7674a6bc174b53dbdc571608
+SHA1: 3feed2c0a291799d04a52317bb25ebb331f45373
+SHA256: ec32f5bb4dfabdcf1a7dee22bc653f5d3ff116ad82da230313083d112b1b9958
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Save any video, photo or GIF — no ads, no Grok, less tracking. Arabic or English.
  .
@@ -1923,10 +1923,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.youtube.roothide
 Replaces: com.albrhi.youtube.roothide
 Filename: debs/com.albrhi.youtube_1.51.2_iphoneos-arm64.deb
-Size: 575596
-MD5sum: 0bc875ccb838048faea97fb2af8d0f61
-SHA1: 4c3243aba8c42c7cadf91b0a71ed5669b2855331
-SHA256: 4e5c91c52b2c789943a13227a1d5718de49135bbbaa719756fee7499c69e36c2
+Size: 575378
+MD5sum: 8be094493be9267ab791638ebbe73e8f
+SHA1: f64c186620d8173eb22952173fd970d19e4bfd76
+SHA256: 837073378f3d6789d91584add91fa200a88689e1477b257a7c67de80718199e5
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
  .
@@ -1986,10 +1986,10 @@ Depends: mobilesubstrate
 Conflicts: com.albrhi.youtube
 Replaces: com.albrhi.youtube
 Filename: debs/com.albrhi.youtube.roothide_1.51.2_iphoneos-arm64e.deb
-Size: 575392
-MD5sum: a6a8d2c45c2e2fdbdc9fc4110c110d25
-SHA1: 56b3ea973c5f49361c007fabf1b7a89207f3f6a5
-SHA256: 4372d3624e6449c8667684aff3f151d9cb6267dfe2013318fdd8caa4ad06dbe7
+Size: 575186
+MD5sum: dc8e47adbbff15f3a20c34c830792d44
+SHA1: dce9ee2839d0b484dff832d82b66a80e0a989282
+SHA256: 48cf6c99602471cf07dc168e009acb6bfd91f425fbe77300ba02d9c157146be7
 Homepage: https://github.com/ibrahim2100/albrhi-repo
 Description: Download videos, no ads, skip the sponsored parts, background playback — in Arabic or English.
  .
