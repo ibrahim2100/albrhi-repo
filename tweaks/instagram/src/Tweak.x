@@ -10,6 +10,7 @@
 #import "Compat/SCIResolve.h"
 #import "Features/Sideload/SCIKeychain.h"
 #import "Features/Sideload/SCIReceipt.h"
+#import "Features/Sideload/SCIAppGroup.h"
 
 ///////////////////////////////////////////////////////////
 
@@ -23,7 +24,7 @@
 ///////////////////////////////////////////////////////////
 
 // * Tweak version *
-NSString *SCIVersionString = @"v4.9.2";  // Albrhi
+NSString *SCIVersionString = @"v4.9.3";  // Albrhi
 
 // Variables that work across features
 
@@ -932,6 +933,8 @@ shouldPersistLastBugReportId:(id)arg6
     SCIKeychainInstall();
     // And do not take a re-signed copy for a TestFlight build ("You're now using Instagram Beta").
     SCIReceiptInstall();
+    // And the app group Instagram keeps part of its state in, which the new signature does not hold.
+    SCIAppGroupInstall();
 #endif
     // The hooks outside the groups below. Logos writes this call itself for
     // a file with no %ctor -- and stops the moment there is one, so leaving

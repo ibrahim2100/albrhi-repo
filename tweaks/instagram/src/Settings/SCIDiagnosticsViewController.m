@@ -6,6 +6,7 @@
 #import "../Features/General/SCICopyText.h"
 #import "../Features/Sideload/SCIKeychain.h"
 #import "../Features/Sideload/SCIReceipt.h"
+#import "../Features/Sideload/SCIAppGroup.h"
 #import "../Utils.h"
 #import "../Localization/SCILocalize.h"
 #import "../Tweak.h"
@@ -1067,7 +1068,7 @@ static NSMutableArray<NSString *> *_dateRewriteSamples = nil;
 /// What the keychain answered Instagram this launch (the sideload build asks again in the app's own group when it is refused for entitlement).
 - (NSArray *)keychainRows {
     NSMutableArray *rows = [NSMutableArray array];
-    for (NSString *line in [SCIKeychainReportLines() arrayByAddingObjectsFromArray:SCIReceiptReportLines()]) {
+    for (NSString *line in [[SCIKeychainReportLines() arrayByAddingObjectsFromArray:SCIReceiptReportLines()] arrayByAddingObjectsFromArray:SCIAppGroupReportLines()]) {
         [rows addObject:@{@"title": @"", @"detail": line, @"ok": @YES}];
     }
     return rows;
