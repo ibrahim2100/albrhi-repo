@@ -107,40 +107,40 @@
       "views": [
         {
           "class": "DepictionSubheaderView",
+          "title": "v1.123.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **تيك توك 0.31.4:**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "v1.122.0",
+          "useBoldText": true
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "• **تيك توك 0.31.3:**",
+          "useSpacing": true
+        },
+        {
+          "class": "DepictionSpacerView",
+          "spacing": 10
+        },
+        {
+          "class": "DepictionSubheaderView",
           "title": "v1.121.0",
           "useBoldText": true
         },
         {
           "class": "DepictionMarkdownView",
           "markdown": "• **إنستغرام 4.9.1:**",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.120.0",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• **تيك توك 0.31.2:**",
-          "useSpacing": true
-        },
-        {
-          "class": "DepictionSpacerView",
-          "spacing": 10
-        },
-        {
-          "class": "DepictionSubheaderView",
-          "title": "v1.119.0",
-          "useBoldText": true
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "• شريط التبويبات الزجاجي في iOS 26/27: إخفاء التبويبات صار يصل إليه (إنستا ترسمه بـ`UITabBarController` حقيقي).\n• ثلاث ميزات كانت صامتة على 450/456 رجعت مربوطة: إخفاء «تمت المشاهدة» في الرسائل، ونسخ التعليق، وسؤال تحديث صندوق الرسائل.\n• تواقيع جديدة: تأكيد الإعجاب والمتابعة وإعادة النشر وأزرار الاتصال ووضع Shh، وإيقاف تشغيل الفيد التلقائي، وإشعار لقطة الشاشة للرسائل المؤقتة، وغيرها (التفاصيل في سجل…\n• **لم يُرَ شيء منه يعمل على جهاز بعد.**",
           "useSpacing": true
         },
         {
@@ -156,7 +156,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Version",
-          "text": "1.121.0"
+          "text": "1.123.0"
         },
         {
           "class": "DepictionTableTextView",
