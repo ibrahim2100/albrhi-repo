@@ -9,6 +9,7 @@
 #import "Downloader/Queue/SCIDownloadQueue.h"
 #import "Compat/SCIResolve.h"
 #import "Features/Sideload/SCIKeychain.h"
+#import "Features/Sideload/SCIReceipt.h"
 
 ///////////////////////////////////////////////////////////
 
@@ -22,7 +23,7 @@
 ///////////////////////////////////////////////////////////
 
 // * Tweak version *
-NSString *SCIVersionString = @"v4.9.1";  // Albrhi
+NSString *SCIVersionString = @"v4.9.2";  // Albrhi
 
 // Variables that work across features
 
@@ -929,6 +930,8 @@ shouldPersistLastBugReportId:(id)arg6
     // A copy signed again by a sideloading tool: put Instagram's keychain requests in a group the new signature holds, or its session is lost at
     // every launch. First, before Instagram reads its first account.
     SCIKeychainInstall();
+    // And do not take a re-signed copy for a TestFlight build ("You're now using Instagram Beta").
+    SCIReceiptInstall();
 #endif
     // The hooks outside the groups below. Logos writes this call itself for
     // a file with no %ctor -- and stops the moment there is one, so leaving

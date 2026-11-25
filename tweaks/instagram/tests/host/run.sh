@@ -55,3 +55,7 @@ mkdir -p "$OUT/Keychain.app"
 clang -DSCI_KEYCHAIN_TEST -fobjc-arc -Wall -Wno-unused-function -I"$ROOT" -framework Foundation -framework Security \
     Test_Keychain.m -o "$OUT/Keychain.app/test-keychain"
 "$OUT/Keychain.app/test-keychain"
+
+# The receipt address rule (a re-signed copy must not look like a TestFlight build).
+clang -fobjc-arc -Wall -I"$ROOT" -framework Foundation "../../src/Features/Sideload/SCIReceipt.m" Test_Receipt.m -o "$OUT/test-receipt"
+"$OUT/test-receipt"
